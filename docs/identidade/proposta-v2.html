@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>especIAlista · Identidade v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f7f5f0; --ink:#0f1b2d; --sub:#55606f; --surface:#fff; --line:#e3e1db;
+    /* cores das especialidades: mesma luminosidade, matizes diferentes */
+    --cardio:oklch(0.52 0.17 22);
+    --reumato:#b4553a;
+    --endo:oklch(0.58 0.13 72);
+    --derma:oklch(0.55 0.12 130);
+    --geriatria:#0e7c7b;
+    --orto:oklch(0.52 0.11 230);
+    --neuro:oklch(0.48 0.15 268);
+    --psiq:oklch(0.48 0.15 305);
+    --pediatria:oklch(0.55 0.15 345);
+    --gineco:oklch(0.52 0.14 5);
+  }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:var(--ink); font-family:Inter, system-ui, sans-serif; padding:32px 16px 64px; }
+  .wrap { max-width:1100px; margin:0 auto; }
+  h1 { font-size:20px; font-weight:600; }
+  .lead { color:var(--sub); margin:6px 0 28px; font-size:15px; max-width:760px; line-height:1.5; }
+  h3 { font:600 12px Inter; letter-spacing:.08em; text-transform:uppercase; color:var(--sub); margin:36px 0 12px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:28px; }
+  .row { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+  .serifA { font-family:'Source Serif 4',serif; font-weight:600; }
+  .serifC { font-family:'DM Serif Display',serif; font-weight:400; }
+  .master { font-size:clamp(44px,8vw,76px); letter-spacing:-.01em; line-height:1.1; }
+  .master .ia { color:#111; }
+  .cap { font-size:13px; color:var(--sub); margin-top:10px; }
+  .mods { display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); }
+  .mod { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 20px; }
+  .mod .name { font-size:30px; color:var(--ink); }
+  .mod .bar { height:4px; border-radius:2px; margin-top:12px; }
+  .mod small { display:block; margin-top:8px; font-size:12px; color:var(--sub); }
+  .hero { display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); align-items:center; }
+  .hero h2 { font-family:'Source Serif 4',serif; font-weight:600; font-size:34px; line-height:1.15; }
+  .hero p { color:var(--sub); margin-top:12px; line-height:1.55; }
+  .btn { display:inline-block; margin-top:18px; background:var(--ink); color:#fff; font-weight:600; font-size:14px; padding:11px 18px; border-radius:8px; }
+  .nav { display:flex; justify-content:space-between; align-items:center; padding-bottom:22px; border-bottom:1px solid var(--line); margin-bottom:26px; }
+  .nav .logo { font-size:28px; }
+  .nav span { font-size:14px; color:var(--sub); margin-left:18px; }
+  .app { display:grid; grid-template-columns:190px 1fr; border:1px solid var(--line); border-radius:12px; overflow:hidden; font-size:13.5px; }
+  .side { background:var(--ink); color:#e8edf3; padding:16px 0; }
+  .side .brand { padding:0 16px 14px; font-size:22px; color:#fff; }
+  .side div.i { padding:8px 16px; opacity:.8; }
+  .side .on { opacity:1 !important; background:#ffffff1a; border-left:3px solid var(--c); padding-left:13px !important; }
+  .main { background:var(--surface); padding:18px; color:var(--sub); }
+  .warn { margin-top:26px; font-size:14px; color:var(--sub); line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>especIAlista · identidade v2</h1>
+  <p class="lead">Marca principal com letras nas cores dos módulos e "IA" em preto. Cada módulo tem seu nome com o "IA" na cor própria. Duas tipografias lado a lado: a da direção A (Source Serif) e a da direção C (DM Serif Display).</p>
+
+  <h3>Marca principal (landing page)</h3>
+  <div class="row">
+    <div class="card"><div class="master serifA" id="mA"></div><div class="cap">Source Serif 4 (direção A)</div></div>
+    <div class="card"><div class="master serifC" id="mC"></div><div class="cap">DM Serif Display (direção C)</div></div>
+  </div>
+
+  <h3>Módulos (cor própria no "IA")</h3>
+  <div class="mods serifA" id="modsA"></div>
+  <div class="mods serifC" id="modsC" style="margin-top:12px"></div>
+
+  <h3>Na landing page</h3>
+  <div class="card">
+    <div class="nav"><div class="logo serifA" id="navLogo"></div><div><span>Especialidades</span><span>Planos</span><span>Entrar</span></div></div>
+    <div class="hero">
+      <div>
+        <h2>Seu consultório especializado, do primeiro contato ao retorno.</h2>
+        <p>Anamnese por voz, prontuário estruturado e apoio à decisão configurados para a sua especialidade. Você decide; a IA organiza.</p>
+        <span class="btn">Conhecer os planos</span>
+      </div>
+      <div class="mods serifA" id="heroMods"></div>
+    </div>
+  </div>
+
+  <h3>No módulo do médico</h3>
+  <div class="row">
+    <div class="app" style="--c:var(--geriatria)"><div class="side"><div class="brand serifA">geriatr<span style="color:var(--geriatria)">IA</span></div><div class="i">Agenda</div><div class="i">Pacientes</div><div class="i on">Consulta</div><div class="i">Prontuário</div><div class="i">Retornos</div><div class="i">Documentos</div></div><div class="main">Área de trabalho…</div></div>
+    <div class="app" style="--c:var(--reumato)"><div class="side"><div class="brand serifA">reumatolog<span style="color:var(--reumato)">IA</span></div><div class="i">Agenda</div><div class="i">Pacientes</div><div class="i on">Consulta</div><div class="i">Prontuário</div><div class="i">Retornos</div><div class="i">Documentos</div></div><div class="main">Área de trabalho…</div></div>
+  </div>
+
+  <p class="warn">Observação: no fundo escuro da barra lateral, o "IA" usa a mesma cor da especialidade; se alguma ficar com pouco contraste, uso uma versão mais clara da mesma cor. As cores estão provisoriamente ligadas às especialidades; a ligação final depende de quais especialidades entram no lançamento.</p>
+</div>
+<script>
+  const colors = ['--cardio','--reumato','--endo','--derma','--geriatria','--orto','--neuro','--psiq','--pediatria','--gineco'];
+  function master(el){
+    const letters = 'espec'.split('').concat(['IA'], 'lista'.split(''));
+    let k = 0;
+    el.innerHTML = letters.map(l => l === 'IA'
+      ? '<span class="ia">IA</span>'
+      : `<span style="color:var(${colors[k++]})">${l}</span>`).join('');
+  }
+  ['mA','mC','navLogo'].forEach(id => master(document.getElementById(id)));
+
+  const mods = [
+    ['cardiolog','--cardio','Cardiologia'], ['reumatolog','--reumato','Reumatologia'],
+    ['endocrinolog','--endo','Endocrinologia'], ['dermatolog','--derma','Dermatologia'],
+    ['geriatr','--geriatria','Geriatria'], ['ortoped','--orto','Ortopedia'],
+    ['neurolog','--neuro','Neurologia'], ['psiquiatr','--psiq','Psiquiatria'],
+    ['pediatr','--pediatria','Pediatria'], ['ginecolog','--gineco','Ginecologia'],
+  ];
+  const card = ([stem,c,label]) => `<div class="mod"><div class="name">${stem}<span style="color:var(${c})">IA</span></div><div class="bar" style="background:var(${c})"></div><small>${label}</small></div>`;
+  document.getElementById('modsA').innerHTML = mods.map(card).join('');
+  document.getElementById('modsC').innerHTML = mods.map(card).join('');
+  document.getElementById('heroMods').innerHTML = mods.slice(0,4).map(card).join('');
+</script>
+</body>
+</html>

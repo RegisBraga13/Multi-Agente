@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>especIAlista · Identidade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Manrope:wght@400;600;800&family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root { --page:#f4f4f2; --ink:#1b1b1b; --muted:#666; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--page); color:var(--ink); font-family:Inter, system-ui, sans-serif; padding:32px 16px 64px; }
+  header { max-width:1200px; margin:0 auto 28px; }
+  header h1 { font-size:22px; font-weight:600; }
+  header p { color:var(--muted); margin-top:6px; font-size:15px; max-width:760px; }
+  .grid { max-width:1200px; margin:0 auto; display:grid; gap:20px; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); }
+  .opt { border-radius:14px; overflow:hidden; background:var(--bg); color:var(--fg); box-shadow:0 1px 3px #0001, 0 8px 24px #0000000d; display:flex; flex-direction:column; }
+  .tag { font:600 12px Inter; letter-spacing:.08em; text-transform:uppercase; padding:14px 22px 0; color:var(--sub); }
+  .logo { padding:10px 22px 18px; font-family:var(--logo); font-size:34px; letter-spacing:-.01em; }
+  .logo b { color:var(--accent); font-weight:inherit; }
+  .hero { margin:0 22px; padding:22px; border-radius:12px; background:var(--surface); }
+  .hero h2 { font-family:var(--display); font-weight:var(--dw); font-size:26px; line-height:1.15; }
+  .hero p { margin-top:10px; font-family:var(--body); font-size:14.5px; line-height:1.5; color:var(--sub); }
+  .btns { margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; }
+  .btn { font:600 14px var(--body); padding:10px 16px; border-radius:var(--r); border:1px solid transparent; }
+  .primary { background:var(--accent); color:var(--onaccent); }
+  .ghost { border-color:var(--line); color:var(--fg); }
+  .app { margin:16px 22px 0; display:grid; grid-template-columns:120px 1fr; border-radius:12px; overflow:hidden; border:1px solid var(--line); font-family:var(--body); font-size:13px; }
+  .side { background:var(--sidebar); color:var(--onside); padding:12px 0; }
+  .side div { padding:7px 14px; opacity:.8; }
+  .side .on { opacity:1; background:#ffffff1f; border-left:3px solid var(--accent2); padding-left:11px; }
+  .main { background:var(--surface); padding:12px; }
+  .chip { display:inline-block; font-size:11.5px; padding:3px 8px; border-radius:99px; margin:0 4px 6px 0; }
+  .c-rel { background:var(--rel); } .c-ia { background:var(--ia); } .c-ok { background:var(--ok); }
+  .flag { margin-top:4px; padding:8px; border-radius:8px; background:var(--flagbg); color:var(--flag); font-weight:600; font-size:12px; }
+  .sw { display:flex; padding:18px 22px 6px; gap:8px; }
+  .sw span { flex:1; height:44px; border-radius:8px; border:1px solid #0000001a; position:relative; }
+  .sw small { position:absolute; bottom:-18px; left:0; font:500 10.5px Inter; color:var(--sub); }
+  .type { padding:26px 22px 22px; font-size:13px; color:var(--sub); line-height:1.6; margin-top:auto; }
+  .type strong { color:var(--fg); font-weight:600; }
+
+  .a { --bg:#f7f5f0; --fg:#0f1b2d; --sub:#55606f; --surface:#ffffff; --accent:#0e7c7b; --onaccent:#fff; --accent2:#5fd3c4; --line:#d9dde3; --sidebar:#0f1b2d; --onside:#e8edf3; --logo:'Source Serif 4',serif; --display:'Source Serif 4',serif; --dw:600; --body:Inter,sans-serif; --r:8px; --rel:#e7eef9; --ia:#fdf1d8; --ok:#dcf3ec; --flagbg:#fde7e4; --flag:#a3271b; }
+  .b { --bg:#101418; --fg:#eef1f4; --sub:#9aa5b1; --surface:#182027; --accent:#7c9cff; --onaccent:#0b1020; --accent2:#7c9cff; --line:#2a343e; --sidebar:#0b0f13; --onside:#c9d2db; --logo:Manrope,sans-serif; --display:Manrope,sans-serif; --dw:800; --body:Manrope,sans-serif; --r:10px; --rel:#1f2c3f; --ia:#3a3220; --ok:#173a31; --flagbg:#3f1e1e; --flag:#ff9a8f; }
+  .c { --bg:#fbf8f4; --fg:#2a211c; --sub:#6e625a; --surface:#ffffff; --accent:#b4553a; --onaccent:#fff; --accent2:#f0a58c; --line:#e7ded6; --sidebar:#2a211c; --onside:#f3ebe4; --logo:'DM Serif Display',serif; --display:'DM Serif Display',serif; --dw:400; --body:'DM Sans',sans-serif; --r:99px; --rel:#ece7f6; --ia:#fbefd9; --ok:#e1efe3; --flagbg:#fbe4dc; --flag:#9c2f17; }
+  .notes { max-width:1200px; margin:28px auto 0; font-size:14px; color:var(--muted); line-height:1.6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>especIAlista · proposta de identidade visual (Fase 1)</h1>
+  <p>Três direções. Cada uma mostra logotipo, paleta, um trecho da landing page e um trecho do ambiente do médico (barra lateral, marcadores de proveniência e red flag). Escolha uma; ajustes finos vêm depois, aplicados direto nas páginas.</p>
+</header>
+
+<div class="grid">
+  <section class="opt a">
+    <div class="tag">A · Clínico sereno</div>
+    <div class="logo">espec<b>IA</b>lista</div>
+    <div class="hero">
+      <h2>Seu consultório especializado, do primeiro contato ao retorno.</h2>
+      <p>Anamnese por voz, prontuário estruturado e apoio à decisão configurados para a sua especialidade. Você decide; a IA organiza.</p>
+      <div class="btns"><span class="btn primary">Conhecer os planos</span><span class="btn ghost">Ver especialidades</span></div>
+    </div>
+    <div class="app">
+      <div class="side"><div>Agenda</div><div>Pacientes</div><div class="on">Consulta</div><div>Prontuário</div><div>Retornos</div><div>Documentos</div></div>
+      <div class="main"><span class="chip c-rel">Relatado</span><span class="chip c-ia">Inferido pela IA</span><span class="chip c-ok">Confirmado</span><div class="flag">Red flag: dor torácica aos esforços — avaliar</div></div>
+    </div>
+    <div class="sw"><span style="background:#0f1b2d"><small>#0F1B2D</small></span><span style="background:#0e7c7b"><small>#0E7C7B</small></span><span style="background:#5fd3c4"><small>#5FD3C4</small></span><span style="background:#f7f5f0"><small>#F7F5F0</small></span></div>
+    <div class="type"><strong>Tipografia:</strong> Source Serif 4 (títulos) + Inter (texto). <strong>Tom:</strong> confiança médica tradicional, calma, legível em consulta longa.</div>
+  </section>
+
+  <section class="opt b">
+    <div class="tag">B · Tecnologia precisa</div>
+    <div class="logo">espec<b>IA</b>lista</div>
+    <div class="hero">
+      <h2>Inteligência clínica feita para a sua especialidade.</h2>
+      <p>Anamnese por voz, prontuário estruturado e apoio à decisão configurados para a sua especialidade. Você decide; a IA organiza.</p>
+      <div class="btns"><span class="btn primary">Conhecer os planos</span><span class="btn ghost">Ver especialidades</span></div>
+    </div>
+    <div class="app">
+      <div class="side"><div>Agenda</div><div>Pacientes</div><div class="on">Consulta</div><div>Prontuário</div><div>Retornos</div><div>Documentos</div></div>
+      <div class="main"><span class="chip c-rel">Relatado</span><span class="chip c-ia">Inferido pela IA</span><span class="chip c-ok">Confirmado</span><div class="flag">Red flag: dor torácica aos esforços — avaliar</div></div>
+    </div>
+    <div class="sw"><span style="background:#101418"><small>#101418</small></span><span style="background:#182027"><small>#182027</small></span><span style="background:#7c9cff"><small>#7C9CFF</small></span><span style="background:#eef1f4"><small>#EEF1F4</small></span></div>
+    <div class="type"><strong>Tipografia:</strong> Manrope em tudo. <strong>Tom:</strong> produto de tecnologia, escuro e moderno. Atenção: tema escuro cansa mais em uso clínico diurno.</div>
+  </section>
+
+  <section class="opt c">
+    <div class="tag">C · Humano acolhedor</div>
+    <div class="logo">espec<b>IA</b>lista</div>
+    <div class="hero">
+      <h2>Mais tempo com o paciente, menos tempo com o prontuário.</h2>
+      <p>Anamnese por voz, prontuário estruturado e apoio à decisão configurados para a sua especialidade. Você decide; a IA organiza.</p>
+      <div class="btns"><span class="btn primary">Conhecer os planos</span><span class="btn ghost">Ver especialidades</span></div>
+    </div>
+    <div class="app">
+      <div class="side"><div>Agenda</div><div>Pacientes</div><div class="on">Consulta</div><div>Prontuário</div><div>Retornos</div><div>Documentos</div></div>
+      <div class="main"><span class="chip c-rel">Relatado</span><span class="chip c-ia">Inferido pela IA</span><span class="chip c-ok">Confirmado</span><div class="flag">Red flag: dor torácica aos esforços — avaliar</div></div>
+    </div>
+    <div class="sw"><span style="background:#2a211c"><small>#2A211C</small></span><span style="background:#b4553a"><small>#B4553A</small></span><span style="background:#f0a58c"><small>#F0A58C</small></span><span style="background:#fbf8f4"><small>#FBF8F4</small></span></div>
+    <div class="type"><strong>Tipografia:</strong> DM Serif Display (títulos) + DM Sans (texto). <strong>Tom:</strong> próximo, caloroso, foco na relação médico-paciente.</div>
+  </section>
+</div>
+
+<p class="notes">Em todas: o "IA" do nome em destaque (cor de acento), a mesma barra lateral do mapa de telas, e cores fixas para proveniência (Relatado · Inferido pela IA · Confirmado) e red flag. Logotipo é tipográfico; um símbolo gráfico pode vir depois, sem travar a Fase 1.</p>
+</body>
+</html>
