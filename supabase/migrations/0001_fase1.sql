@@ -58,7 +58,7 @@ create table public.credential_verifications (
 
 -- ---------- Contratação ----------
 create type public.subscription_status as enum
-  ('aguardando_pagamento', 'ativa', 'inadimplente', 'cancelada');
+  ('em_teste', 'aguardando_pagamento', 'ativa', 'inadimplente', 'cancelada');
 
 create table public.subscriptions (
   id            uuid primary key default gen_random_uuid(),
@@ -69,26 +69,33 @@ create table public.subscriptions (
   gateway       text,          -- a definir na LP-04
   gateway_ref   text,
   started_at    timestamptz,
+  trial_ends_at timestamptz,   -- fim do teste grátis
   canceled_at   timestamptz,
   created_at    timestamptz not null default now(),
-  updated_at    timestamptz not null default now()
+  updated_at    timestamptz not null default now(),
+  check (status <> 'em_teste' or trial_ends_at is not null)
 );
 
 -- um módulo vigente por especialidade por médico
 create unique index subscriptions_one_live_per_specialty
   on public.subscriptions (doctor_id, specialty_id)
-  where status in ('aguardando_pagamento', 'ativa', 'inadimplente');
+  where status in ('em_teste', 'aguardando_pagamento', 'ativa', 'inadimplente');
 
--- Módulo liberado = assinatura ativa E verificação aprovada
+-- Módulo liberado (acesso direto, também no teste):
+--   assinatura ativa, ou teste dentro do prazo;
+--   CRM informado (pedido de verificação aberto) e nunca recusado.
+-- A conferência do CRM acontece depois; se for recusada, o acesso cai.
 create view public.doctor_modules with (security_invoker = true) as
-select s.doctor_id, s.specialty_id, s.plan_id, s.started_at
+select s.doctor_id, s.specialty_id, s.plan_id, s.status, s.started_at, s.trial_ends_at
 from public.subscriptions s
-where s.status = 'ativa'
+where (s.status = 'ativa' or (s.status = 'em_teste' and s.trial_ends_at > now()))
   and exists (
     select 1 from public.credential_verifications v
-    where v.doctor_id = s.doctor_id
-      and v.specialty_id = s.specialty_id
-      and v.status = 'aprovada'
+    where v.doctor_id = s.doctor_id and v.status in ('pendente', 'aprovada')
+  )
+  and not exists (
+    select 1 from public.credential_verifications v
+    where v.doctor_id = s.doctor_id and v.status = 'recusada'
   );
 
 -- ---------- Auditoria (só INSERT) ----------

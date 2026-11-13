@@ -28,5 +28,6 @@ Migração: `supabase/migrations/0001_fase1.sql`.
 - `doctors` — perfil do médico, 1:1 com `auth.users`. CRM + UF obrigatórios; RQE opcional no cadastro.
 - `credential_verifications` — conferência de CRM/RQE (pendente / aprovada / recusada). Feita pela plataforma, não pelo médico.
 - `subscriptions` — contratação de um módulo de especialidade. Campos de gateway genéricos (`gateway`, `gateway_ref`) até o gateway ser escolhido.
-- `doctor_modules` (view) — módulo liberado = assinatura ativa **e** verificação aprovada (LP-05).
+- `subscriptions.status` inclui `em_teste`, com `trial_ends_at` (teste grátis).
+- `doctor_modules` (view) — módulo liberado = (assinatura ativa **ou** teste no prazo) **e** CRM informado e nunca recusado. Acesso é direto; a conferência do CRM (LP-05) vem depois e, se recusada, corta o acesso.
 - `audit_log` — quem fez o quê e quando; preenchido por triggers.

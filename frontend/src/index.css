@@ -1,68 +1,63 @@
+@import "tailwindcss";
+
+/* Tokens da marca — os mesmos valores da landing (modo claro, paleta Petróleo). */
+@theme {
+  --font-titulo: "Source Serif 4", Georgia, serif;
+  --font-texto: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-papel: #F9F8F5;
+  --color-branco: #FFFFFF;
+  --color-suave: #EEECE5;
+  --color-tinta: #13302F;
+  --color-apagado: #55665F;
+  --color-linha: #E0DDD5;
+  --color-petroleo: #174A48;
+  --color-escuro: #13302F;
+  --color-sobre-escuro: #ECF3F0;
+  --color-escuro-apagado: #A3BAB3;
+  --color-alerta: #C2301C;
+
+  /* as 10 cores do logo, na ordem das letras */
+  --color-l1: #8E3B5C;
+  --color-l2: #A85A2E;
+  --color-l3: #B07A1F;
+  --color-l4: #3F7352;
+  --color-l5: #0E7C7B;
+  --color-l6: #2F5D9E;
+  --color-l7: #5B4FA0;
+  --color-l8: #8A4F9E;
+  --color-l9: #4F6B7A;
+  --color-l10: #B0485F;
+}
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* cor da especialidade da página; cada página de especialidade troca --esp */
+  --esp: var(--color-petroleo);
+  --esp-claro: color-mix(in oklab, var(--esp) 14%, #F9F8F5);
+  --esp-medio: color-mix(in oklab, var(--esp) 45%, #F9F8F5);
+  --espectro: linear-gradient(90deg, var(--color-l1) 0 10%, var(--color-l2) 10% 20%, var(--color-l3) 20% 30%,
+    var(--color-l4) 30% 40%, var(--color-l5) 40% 50%, var(--color-l6) 50% 60%, var(--color-l7) 60% 70%,
+    var(--color-l8) 70% 80%, var(--color-l9) 80% 90%, var(--color-l10) 90% 100%);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
+* { border-radius: 0; }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  background-color: var(--color-papel);
+  background-image: url("/papel.png");
+  background-size: 512px 512px;
+  color: var(--color-tinta);
+  font-family: var(--font-texto);
+  -webkit-font-smoothing: antialiased;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+h1, h2, h3 {
+  font-family: var(--font-titulo);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
