@@ -10,8 +10,8 @@ Nada de Fase 2+ entra aqui. Ideias de outras fases vão para "Depois", no fim de
 - [x] Sistema de marca: especIAlista com letras coloridas e "IA" preto; módulos = nome da especialidade com "IA" na cor dela (geriatrIA, reumatologIA…)
 - [x] Landing trazida de `code\app-medico\public\landing.html` (funcionalidades + papel reciclado) → `frontend/public/landing.html`, com Source Serif 4 + Inter e marca nova
 - [x] Regra de cor: landing = cores do logo (uma por seção, na ordem das letras); o que mostra o módulo por dentro (demonstrações, LP-02, módulo do médico) = cor da especialidade
-- [x] Paleta Índigo (seletor temporário removido)
-- [x] Tema escuro na paleta Índigo, com as cores do logo clareadas para não sumirem
+- [x] Modo claro (padrão) na paleta Petróleo
+- [x] Modo noturno (opcional, botão ◐) na paleta Índigo, com as cores do logo clareadas para não sumirem
 - Landing gerada por `docs/identidade/adapta_landing.py` a partir da landing do app-medico
 - [ ] LP-01 Home
 - [ ] LP-02 Página da especialidade (template)

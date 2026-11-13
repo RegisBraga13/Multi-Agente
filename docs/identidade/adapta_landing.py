@@ -41,9 +41,9 @@ INDIGO_NOITE = ("--bg:#17152A;--alt:#1C1A33;--surface:#232040;--soft:#2A2748;--i
                 "--dark:#110F20;--ondark:#EEEAF6;--darkmuted:#A39DC0;--darkline:#2C2950;--darkcard:#1E1B38;--papel:none;color-scheme:dark;" + noite)
 
 estilo = f"""
-/* ---- especIAlista: paleta Índigo + cores do logo ---- */
-:root{{--ink:#221F3D;--muted:#5E5A72;--line:#E3DDD6;--soft:#F0ECE6;--trac:#B3ACA6;
-  --pet:#2E2A55;--onpet:#F9F8F5;--dark:#221F3D;--ondark:#EFECF6;--darkmuted:#ABA6C4;--darkline:#36325C;--darkcard:#2B2850;
+/* ---- especIAlista: modo claro Petróleo, modo noturno Índigo, + cores do logo ---- */
+:root{{--ink:#13302F;--muted:#55665F;--line:#E0DDD5;--soft:#EEECE5;--trac:#AEB3A8;
+  --pet:#174A48;--onpet:#F9F8F5;--dark:#13302F;--ondark:#ECF3F0;--darkmuted:#A3BAB3;--darkline:#24504D;--darkcard:#1B3E3C;
   --pes:color-mix(in oklab,var(--esp) 42%,#F9F8F5);--onpes:var(--ink);--ter:var(--esp);--onter:#FFFFFF;{dia}}}
 @media (prefers-color-scheme: dark){{ :root:not([data-theme="light"]){{{INDIGO_NOITE}}} }}
 :root[data-theme="dark"]{{{INDIGO_NOITE}}}
