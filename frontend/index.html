@@ -63,7 +63,7 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 .marca b{font-weight:800;color:var(--esp);transition:color .3s}
 
 /* topo */
-.topo{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--bg);background-image:var(--papel);background-size:512px 512px;border-bottom:1px solid transparent;transition:border-color .3s,box-shadow .3s}
+.topo{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--bg);border-bottom:1px solid transparent;transition:border-color .3s,box-shadow .3s}
 .topo.rolou{border-color:var(--line);box-shadow:0 10px 30px -24px rgba(30,43,42,.6)}
 .topo .wrap{display:flex;align-items:center;gap:36px;padding-block:14px}
 .topo .marca{font-size:26px;text-decoration:none}
@@ -354,7 +354,7 @@ td.fraco{color:var(--muted)}
 .btn-claro:hover{background:var(--ondark);color:var(--dark)}
 .final .garantias{justify-content:center;color:var(--darkmuted)}
 .rodape{background:var(--dark);color:var(--ondark);border-top:1px solid var(--darkline)}
-.rodape .wrap{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr));gap:40px;padding-block:72px 40px}
+.rodape .wrap{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:40px;padding-block:72px 40px}
 @media (max-width:860px){.rodape .wrap{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .rodape .marca{font-size:28px}
 .rodape .marca b{color:var(--pes)}
@@ -409,21 +409,18 @@ td.fraco{color:var(--muted)}
     <a href="#inicio" class="marca" aria-label="Início"><span style="color:var(--l1)">e</span><span style="color:var(--l2)">s</span><span style="color:var(--l3)">p</span><span style="color:var(--l4)">e</span><span style="color:var(--l5)">c</span><b class="ia">IA</b><span style="color:var(--l6)">l</span><span style="color:var(--l7)">i</span><span style="color:var(--l8)">s</span><span style="color:var(--l9)">t</span><span style="color:var(--l10)">a</span></a>
     <nav class="menu" aria-label="Principal">
       <a href="#funcionalidades">Funcionalidades</a>
-      <a href="#apoio">Hipóteses</a>
-      <a href="#precos">Preço</a>
+      <a href="#precos">Planos</a>
       <a href="#seguranca">Segurança</a>
-      <a href="#faq">FAQ</a>
+      <a href="#faq">Dúvidas</a>
     </nav>
     <div class="topo-dir">
-      <a href="/painel" class="so-desk">Entrar</a>
-      <button class="tema" id="tema" type="button" aria-label="Alternar dia e noite" title="Dia / noite"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button>
       <a href="/contratar" class="btn btn-pri so-desk">Começar grátis</a>
       <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="gaveta" aria-label="Abrir menu">≡</button>
     </div>
   </div>
   <div class="gaveta" id="gaveta">
     <div class="wrap">
-      <a href="#funcionalidades">Funcionalidades</a><a href="#apoio">Hipóteses</a><a href="#precos">Preço</a><a href="#seguranca">Segurança</a><a href="#faq">FAQ</a><a href="/painel">Entrar</a>
+      <a href="#funcionalidades">Funcionalidades</a><a href="#precos">Planos</a><a href="#seguranca">Segurança</a><a href="#faq">Dúvidas</a><a href="/contratar">Começar grátis</a>
     </div>
   </div>
 </div>
@@ -565,8 +562,7 @@ td.fraco{color:var(--muted)}
     <div class="wrap">
       <div class="cab">
         <span class="rot acento">Funcionalidades</span>
-        <h2 class="h2" id="h-func">Mais que transcrição.<br><span class="acento">A consulta inteira.</span></h2>
-        <p class="lead">Da agenda ao prontuário, tudo o que fecha uma consulta numa só tela. Passe o mouse para ver mais.</p>
+        <h2 class="h2" id="h-func">Consulta com transcrição de voz e registro clínico automatizado.</h2>
       </div>
       <div class="grade3" id="funcs"></div>
     </div>
@@ -577,7 +573,7 @@ td.fraco{color:var(--muted)}
     <div class="wrap">
       <div class="cab centro">
         <span class="rot acento">Em 3 passos</span>
-        <h2 class="h2" id="h-passos">Sem manual, sem treinamento.<br><span class="acento">Você usa na próxima consulta.</span></h2>
+        <h2 class="h2" id="h-passos">Interface intuitiva, navegação simplificada e fluida, para uma experiência prática e eficiente.</h2>
       </div>
       <div class="grade3">
         <article class="passo sobe" style="--cor:var(--pet)"><b>01</b><h3>Cadastre-se e confirme o CRM</h3><p>O CRM é verificado na contratação. RQE é opcional. Escolha uma ou mais especialidades e importe pacientes antigos, se quiser.</p><span class="liga"></span></article>
@@ -791,9 +787,7 @@ td.fraco{color:var(--muted)}
 <footer class="rodape">
   <div class="wrap">
     <div><span class="marca"><span style="color:var(--l1)">e</span><span style="color:var(--l2)">s</span><span style="color:var(--l3)">p</span><span style="color:var(--l4)">e</span><span style="color:var(--l5)">c</span><b class="ia">IA</b><span style="color:var(--l6)">l</span><span style="color:var(--l7)">i</span><span style="color:var(--l8)">s</span><span style="color:var(--l9)">t</span><span style="color:var(--l10)">a</span></span><p>A IA clínica que devolve tempo ao médico especialista. Feita no Brasil.</p></div>
-    <nav aria-label="Produto"><span class="rot">Produto</span><a href="#funcionalidades">Funcionalidades</a><a href="#precos">Preço</a><a href="#seguranca">Segurança</a><a href="/painel">Entrar</a></nav>
-    <nav aria-label="Para quem"><span class="rot">Para quem</span><a href="#inicio">Médicos</a><a href="#precos">Clínicas (em breve)</a><a href="#faq">Contato</a></nav>
-    <nav aria-label="Legal"><span class="rot">Legal</span><a href="#faq">Termos de uso</a><a href="#faq">Política de privacidade</a><a href="#seguranca">LGPD</a></nav>
+    <nav aria-label="Produto"><span class="rot">Produto</span><a href="#funcionalidades">Funcionalidades</a><a href="#precos">Planos</a><a href="#seguranca">Segurança e LGPD</a><a href="#faq">Dúvidas</a></nav>
   </div>
   <div class="wrap copy">© 2026 [Razão social] · [Cidade], [UF]</div>
   <button class="de-novo" id="deNovo" type="button">↑ Rolar de novo · próxima especialidade</button>
@@ -955,14 +949,14 @@ td.fraco{color:var(--muted)}
   // ---------- funcionalidades ----------
   const FUNCS = [
     ['var(--pet)','var(--onpet)','01','Transcrição clínica','Treinada no vocabulário da sua especialidade. Separa a fala do médico e a do paciente.','Funciona com o microfone do Tablet, do computador ou do celular, em consulta presencial ou por vídeo.',['Presencial ou online','Áudio descartado após transcrever']],
-    ['var(--pes)','var(--onpes)','02','História clínica estruturada','Identificação, anamnese, exame físico, diagnóstico e conduta, sempre nessa ordem, mesmo que resumida.','Alergias e medicamentos em uso e já usados são obrigatórios: se faltar, a IA lembra antes de fechar.',['Lembra o que faltou perguntar','Modelos por especialidade']],
+    ['var(--pes)','var(--onpes)','02','História clínica estruturada','Identificação, anamnese, exame físico, diagnóstico e conduta, sempre nessa ordem.','Alergias e medicamentos em uso e já usados são obrigatórios: se faltar, a IA lembra antes de fechar.',['Lembra o que faltou perguntar','Modelos por especialidade']],
     ['var(--ter)','var(--onter)','03','Hipóteses com CID','Diagnósticos prováveis com código e probabilidade, a partir do que foi dito e do prontuário.','Tudo que a IA sugere aparece tracejado. Só vira sólido, e entra no registro, quando você confirma.',['Tracejado até você confirmar','Alertas em vermelho']],
     ['var(--pet)','var(--onpet)','04','Anexos com assinatura','Receita, atestado, encaminhamento, laudo e orientações, gerados a partir da conduta.','Assinatura pelo VIDaaS ou outro certificado. Selo só nos documentos que exigem.',['VIDaaS ou outro certificado','Também emitidos pelo prontuário']],
     ['var(--pes)','var(--onpes)','05','Prontuário','Lido automaticamente a partir do retorno. Qualquer paciente, a qualquer momento.','Na tela inicial, Consulta, Retorno e Prontuário ficam lado a lado. Pacientes antigos podem ser importados.',['Importe pacientes antigos','Linha do tempo de consultas']],
     ['var(--ter)','var(--onter)','06','Agenda e área do paciente','A agenda é sua. O paciente responde o formulário antes da consulta.','O paciente escolhe: formulário por WhatsApp, página própria ou direto na consulta com você.',['Desktop, Tablet e celular','Opção de pré-consulta']]
   ];
   $('#funcs').innerHTML = FUNCS.map(([c,o,n,t,d,m,b])=>
-    '<article class="func sobe" tabindex="0" style="--cor:'+c+';--on:'+o+'"><span class="ico">'+n+'</span><h3>'+t+'</h3><p>'+d+'</p><div class="mais"><div><p>'+m+'</p></div></div><div class="itens">'+b.map(x=>'<span><span class="check">✓</span>'+x+'</span>').join('')+'</div></article>').join('');
+    '<article class="func sobe" tabindex="0" style="--cor:'+c+';--on:'+o+'"><span class="ico">'+n+'</span><h3>'+t+'</h3><div class="mais"><div><p>'+d+'</p><p>'+m+'</p></div></div><div class="itens">'+b.map(x=>'<span><span class="check">✓</span>'+x+'</span>').join('')+'</div></article>').join('');
 
   // ---------- documentos ----------
   let docAtual = 0;
@@ -1037,15 +1031,10 @@ td.fraco{color:var(--muted)}
   addEventListener('scroll',()=>topo.classList.toggle('rolou', scrollY>10),{passive:true});
   const links=$$('.menu a');
   const obsMenu = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ links.forEach(a=>a.classList.toggle('ativo', a.getAttribute('href')==='#'+e.target.id)); } }),{rootMargin:'-45% 0px -50% 0px'});
-  ['funcionalidades','apoio','precos','seguranca','faq'].forEach(id=>{ const el=document.getElementById(id); if(el) obsMenu.observe(el); });
+  ['funcionalidades','precos','seguranca','faq'].forEach(id=>{ const el=document.getElementById(id); if(el) obsMenu.observe(el); });
   $('#burger').addEventListener('click',e=>{ const g=$('#gaveta'); const ab=!g.classList.contains('aberta'); g.classList.toggle('aberta',ab); e.currentTarget.setAttribute('aria-expanded',ab); });
   $$('#gaveta a').forEach(a=>a.addEventListener('click',()=>{ $('#gaveta').classList.remove('aberta'); $('#burger').setAttribute('aria-expanded','false'); }));
 
-  // ---------- dia / noite ----------
-  $('#tema').addEventListener('click',()=>{
-    document.documentElement.dataset.theme = escuro() ? 'light' : 'dark';
-    trocaEsp(espAtual);
-  });
   matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>trocaEsp(espAtual));
 
   // ---------- rolar de novo (scroll infinito) ----------
