@@ -1,5 +1,7 @@
 # Fase 1 — escopo travado
 
+> Regra fundadora do produto: [constituicao.md](constituicao.md). Nada aqui pode contrariá-la.
+
 Entrega (seção 9 do .md): landing page, identidade visual, cadastro e contratação por especialidade.
 Nada de Fase 2+ entra aqui. Ideias de outras fases vão para "Depois", no fim deste arquivo.
 

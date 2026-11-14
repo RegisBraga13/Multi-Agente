@@ -1,5 +1,7 @@
 # Modelo de dados — desenho geral
 
+> Regra fundadora do produto: [constituicao.md](constituicao.md). As tabelas clínicas (Fase 2+) seguem os estados `rascunho_ia` → `revisado_medico` → `oficializado` definidos lá.
+
 Banco: Supabase (PostgreSQL). Só as tabelas da fase atual são criadas; o resto fica aqui como desenho, para não ser contrariado.
 
 ## Regras que valem para todas as fases
