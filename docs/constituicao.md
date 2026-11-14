@@ -30,6 +30,13 @@ Valem para a implementação do módulo clínico (Fase 2+ do roadmap). Registrad
 - Fase 4, ordem das fontes: (a) lookup determinístico em tabela de protocolos (chave = diagnóstico codificado + qualificadores → conduta + fonte/versão da diretriz); (b) RAG em diretrizes quando não há chave exata ou para complementar; (c) fontes externas. Cada sugestão carrega a **origem** visível ao médico ("protocolo X v.Y" vs. "sugestão da IA").
 - Toda edição do médico é **auditável** (quem, quando, o que mudou). É a base para calibrar a IA depois.
 
-## Em aberto
+## Dados de segurança (red flags)
 
-Em qualquer especialidade, a conduta depende de dados que estão na História Clínica (fase 2), não no DD: idade, peso, função renal/hepática, alergias, gestação, medicações em uso, gravidade. Como a fase 4 "só vê o DD", a recomendação técnica é: o DD oficializado carrega seus **qualificadores** (estágio, gravidade, forma clínica) e a fase 4 pode ler da História Clínica oficializada **somente** um conjunto fixo de dados de segurança (alergias, função renal/hepática, peso, gestação/lactação, medicações em uso) para dose e contraindicação. Alternativa: a fase 4 lê a História Clínica inteira. **Decisão pendente do autor.**
+Decisão do autor em 14/11/2026. A História Clínica oficializada (fase 2) contém dados de segurança que não cabem no DD: idade, peso, função renal/hepática, alergias, gestação/lactação, medicações em uso, gravidade e demais **red flags**. Esses dados **devem ser lidos e considerados** em duas fases:
+
+- **Fase 3 (DD):** entram na geração e na priorização dos diagnósticos diferenciais.
+- **Fase 4 (Conduta e tratamento):** entram obrigatoriamente na decisão de conduta, dose e contraindicação.
+
+Isso não altera a regra de origem: a conduta continua baseada nos DD oficializados; os dados de segurança são **restrição e verificação**, não fonte de novos diagnósticos. O DD oficializado também carrega seus **qualificadores** (estágio, gravidade, forma clínica).
+
+Implementação: os dados de segurança são um **bloco tipado e nomeado** dentro da História Clínica oficializada (ex.: `dados_de_seguranca`), extraído e revisado pelo médico na fase 2, e passado explicitamente às IAs das fases 3 e 4 ao lado do objeto oficializado da fase anterior. A IA deve registrar quais red flags considerou em cada sugestão, para o médico ver e auditar.
