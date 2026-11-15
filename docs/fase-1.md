@@ -13,7 +13,7 @@ Nada de Fase 2+ entra aqui. Ideias de outras fases vão para "Depois", no fim de
 - [x] Landing trazida de `code\app-medico\public\landing.html` (funcionalidades + papel reciclado) → `frontend/public/landing.html`, com Source Serif 4 + Inter e marca nova
 - [x] Regra de cor: landing = cores do logo (uma por seção, na ordem das letras); o que mostra o módulo por dentro (demonstrações, LP-02, módulo do médico) = cor da especialidade
 - [x] Modo claro (padrão) na paleta Petróleo
-- [x] Modo noturno (opcional, botão ◐) na paleta Índigo, com as cores do logo clareadas para não sumirem
+- [x] ~~Modo noturno~~ — removido da landing (resultado feio; só modo claro). Reavaliar só se houver um desenho bom
 - Landing: editada direto em `frontend/index.html`. `docs/identidade/adapta_landing.py` fica só como registro de como ela foi adaptada do app-medico (não rodar de novo: sobrescreveria as edições)
 - [ ] LP-01 Home
 - [x] ~~LP-02 Página da especialidade~~ — removida: não há página demonstrativa. Fluxo: landing → escolhe especialidade → testa ou compra → acesso direto ao módulo. A faixa da landing leva a `/contratar?esp=...`

@@ -6,7 +6,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400..800&family=Inter:wght@400..700&display=swap">
-<script>document.documentElement.dataset.theme='light'</script>
 <style>
 /* Layout: landing no modelo Solara — topo fixo, seções alternando papel e branco, duas faixas escuras. Cantos retos em tudo. */
 :root{
@@ -20,22 +19,10 @@
   --body:'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --sombra:0 30px 60px -36px rgba(30,43,42,.5);
 }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#1C1F1E; --alt:#202423; --surface:#272C2A; --soft:#2E3432; --ink:#F1E9DC; --muted:#B5AC9D; --line:#3A413E;
-  --pet:#4C928A; --onpet:#0F1715; --pes:#E9A57B; --onpes:#1E2B2A; --ter:#C07A5E; --onter:#1A1210;
-  --alerta:#FF7A5C; --onalerta:#1A0C08; --trac:#5C6662;
-  --dark:#121514; --ondark:#F1E9DC; --darkmuted:#9A9286; --darkline:#2C3331; --darkcard:#1A1E1D;
-  --papel:none; --sombra:0 30px 60px -30px rgba(0,0,0,.7); color-scheme:dark }}
-:root[data-theme="dark"]{
-  --bg:#1C1F1E; --alt:#202423; --surface:#272C2A; --soft:#2E3432; --ink:#F1E9DC; --muted:#B5AC9D; --line:#3A413E;
-  --pet:#4C928A; --onpet:#0F1715; --pes:#E9A57B; --onpes:#1E2B2A; --ter:#C07A5E; --onter:#1A1210;
-  --alerta:#FF7A5C; --onalerta:#1A0C08; --trac:#5C6662;
-  --dark:#121514; --ondark:#F1E9DC; --darkmuted:#9A9286; --darkline:#2C3331; --darkcard:#1A1E1D;
-  --papel:none; --sombra:0 30px 60px -30px rgba(0,0,0,.7); color-scheme:dark }
 
 *,*::before,*::after{box-sizing:border-box;border-radius:0}
 [hidden]{display:none!important}
-html{scroll-behavior:smooth;scroll-padding-top:84px}
+html{scroll-behavior:smooth}
 body{overflow-x:clip;background-color:var(--bg);background-image:var(--papel);background-size:512px 512px;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;transition:background-color .4s,color .4s}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
 a{color:inherit}
@@ -48,7 +35,7 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 .alt{background:var(--alt)}
 .rot{font-size:13px;font-weight:700;font-stretch:75%;letter-spacing:.14em;text-transform:uppercase}
 .acento{color:var(--ter)}
-.h2{font-size:clamp(36px,5vw,62px);font-weight:700;line-height:1.02}
+.h2{font-size:clamp(34px,4.2vw,52px);font-weight:700;line-height:1.02}
 .lead{font-size:clamp(17px,1.6vw,20px);color:var(--muted);max-width:62ch}
 .cab{display:flex;flex-direction:column;gap:18px}
 .cab.centro{align-items:center;text-align:center}
@@ -74,8 +61,6 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 .topo-dir{margin-left:auto;display:flex;align-items:center;gap:20px;font-size:15px;font-weight:500}
 .topo-dir a{text-decoration:none}
 .topo-dir .btn{padding:11px 18px;font-size:15px}
-.tema{width:40px;height:40px;display:grid;place-items:center;border:1.5px solid var(--line);background:transparent}
-.tema:hover{border-color:var(--ink)}
 .burger{display:none;width:44px;height:44px;border:1.5px solid var(--ink);background:transparent;font-weight:800}
 @media (max-width:980px){.menu,.topo-dir .so-desk{display:none}.burger{display:grid;place-items:center}}
 .gaveta{display:none;border-top:1px solid var(--line);background:var(--bg)}
@@ -87,12 +72,7 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:start;padding-block:clamp(48px,7vw,96px)}
 @media (max-width:980px){.hero{grid-template-columns:minmax(0,1fr)}}
 .hero-txt{display:flex;flex-direction:column;gap:26px;min-width:0}
-.selo{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;padding:8px 14px;background:var(--surface);border:1px solid var(--line);font-size:14px}
-.selo i{width:8px;height:8px;background:var(--pes)}
 .h1{font-size:clamp(42px,5.4vw,72px);font-weight:700;line-height:1.02;letter-spacing:-.045em}
-.riscado{position:relative;display:inline-block;color:var(--muted)}
-.riscado::after{content:"";position:absolute;left:-4px;right:-4px;top:52%;height:6px;background:var(--pes);transform-origin:left;animation:risca .9s .5s cubic-bezier(.6,0,.2,1) both}
-@keyframes risca{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .garantias{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;color:var(--muted)}
 .janela{position:relative;min-width:0}
 .app{background:var(--surface);border:1px solid var(--line);box-shadow:var(--sombra)}
@@ -106,7 +86,6 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 .pac-nome small{font-size:13px;color:var(--muted)}
 .grav{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;background:var(--soft);color:var(--alerta)}
 .grav i,.ponto{width:8px;height:8px;background:currentColor}
-@keyframes pulsa{0%,100%{opacity:1}50%{opacity:.2}}
 .relogio{padding:22px 0 16px;display:flex;flex-direction:column;align-items:center;gap:14px;background:var(--soft)}
 .relogio b{display:flex;font-size:clamp(56px,6vw,82px);font-weight:700;font-stretch:75%;line-height:1;font-variant-numeric:tabular-nums}
 .relogio b i{font-style:normal;display:inline-block;width:.6em;text-align:center}
@@ -122,7 +101,6 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 @media (max-width:980px){.rascunho{height:260px}.flutua{left:12px}}
 .rascunho h3{font-size:18px;letter-spacing:-.02em}
 .campo-r{font-size:11px;color:var(--muted)}
-.cursor{display:inline-block;width:2px;height:1em;background:var(--ter);vertical-align:-2px;margin-left:1px;animation:pulsa 1s steps(1) infinite}
 .flutua{position:absolute;left:-32px;bottom:-28px;padding:14px 16px;background:var(--surface);border:1.5px dashed var(--pes);box-shadow:var(--sombra);display:flex;flex-direction:column;gap:4px;max-width:240px;}
 .flutua.fora{transform:translateY(-10px);opacity:0}
 
@@ -140,17 +118,12 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 /* problema */
 .escuro{background:var(--dark);color:var(--ondark)}
 .escuro .lead{color:var(--darkmuted)}
-.tag-borda{align-self:flex-start;padding:6px 10px;border:1px solid var(--pes);color:var(--pes)}
 .nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:48px}
 @media (max-width:640px){.nums{grid-template-columns:minmax(0,1fr)}}
 .num{padding:32px;border:1px solid var(--darkline);background:var(--darkcard);display:flex;flex-direction:column;gap:10px;transition:border-color .25s,transform .25s}
 .num:hover{border-color:var(--pes);transform:translateY(-4px)}
 .num b{font-size:clamp(52px,6vw,76px);font-weight:700;font-stretch:75%;line-height:1;color:var(--pes)}
 .num span{color:var(--darkmuted)}
-.depo{margin:16px 0 0;padding:36px;border:1px solid var(--darkline);display:flex;flex-direction:column;gap:16px}
-.depo blockquote{margin:0;font-size:clamp(20px,2.4vw,28px);font-weight:500;font-stretch:110%;line-height:1.35}
-.aspas{font-size:72px;font-weight:800;line-height:.6;color:var(--pes)}
-.nota{font-size:13px;color:var(--darkmuted)}
 
 /* demo */
 .demo{background:var(--surface);border:1px solid var(--line);margin-top:48px}
@@ -201,13 +174,13 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 .anexos .sug{border:1.5px dashed var(--trac);color:var(--muted)}
 .assinar{align-self:flex-start;padding:14px 20px;border:0;background:var(--pet);color:var(--onpet);font-weight:700}
 .assinar.feito{background:var(--ink);color:var(--bg)}
-.link-mudo{border:0;background:none;color:var(--muted);font-size:15px;padding:8px}
 
 /* funcionalidades */
 .grade3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:56px}
 @media (max-width:980px){.grade3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){.grade3{grid-template-columns:minmax(0,1fr)}}
-.func{position:relative;padding:30px;background:var(--bg);border:1px solid var(--line);display:flex;flex-direction:column;gap:14px;overflow:hidden;transition:transform .25s,box-shadow .25s,border-color .25s}
+.func{position:relative;padding:30px;background:var(--bg);border:1px solid var(--line);display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:14px 14px;align-content:start;overflow:hidden;transition:transform .25s,box-shadow .25s,border-color .25s}
+.func>.mais,.func>.itens{grid-column:1/-1}
 .func::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--cor);transform:scaleX(0);transform-origin:left;transition:transform .35s}
 .func:hover{transform:translateY(-6px);box-shadow:var(--sombra);border-color:var(--cor)}
 .func:hover::before{transform:scaleX(1)}
@@ -266,23 +239,9 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 .ia-corpo [data-grupo].foco{outline-color:var(--pes)}
 
 /* celular */
-.pareia{background:var(--surface);border:1px solid var(--line);padding:36px;display:flex;flex-direction:column;align-items:center;gap:20px;box-shadow:var(--sombra);text-align:center}
-.qr{padding:14px;background:#FFFFFF;border:1px solid var(--line);position:relative;overflow:hidden}
-.qr canvas{display:block;width:189px;height:189px;image-rendering:pixelated}
-.qr::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--pes);top:0;display:none}
 @keyframes varre{0%,100%{top:8px}50%{top:calc(100% - 11px)}}
-.codigo{display:flex;gap:8px}
-.codigo span{width:52px;height:64px;display:grid;place-items:center;background:var(--soft);font-size:34px;font-weight:700;font-stretch:75%}
-.estado{display:inline-flex;align-items:center;gap:8px;font-size:14px}
-.estado.ok{color:var(--pet);font-weight:700}
 
 /* números */
-.faixa-num{background:var(--pet);color:var(--onpet)}
-.faixa-num .wrap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;padding-block:64px}
-@media (max-width:860px){.faixa-num .wrap{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.faixa-num div{display:flex;flex-direction:column;gap:8px;padding-left:20px;border-left:2px solid var(--pes)}
-.faixa-num b{font-size:clamp(40px,5vw,60px);font-weight:700;font-stretch:75%;line-height:1}
-.faixa-num span{font-size:15px;opacity:.85}
 
 /* comparativo */
 .tabela-cx{overflow-x:auto;margin-top:48px;border:1px solid var(--line);background:var(--surface)}
@@ -304,8 +263,7 @@ td.fraco{color:var(--muted)}
 .toggle button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
 .toggle .chip{margin-left:6px}
 .planos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-width:860px;margin-inline:auto;gap:16px;margin-top:48px;align-items:stretch}
-@media (max-width:980px){.planos{grid-template-columns:minmax(0,1fr);max-width:520px;margin-inline:auto}}
-.plano{position:relative;padding:34px;background:var(--bg);border:1px solid var(--line);display:flex;flex-direction:column;gap:16px;transition:transform .25s,box-shadow .25s}
+.plano{position:relative;padding:34px;background:var(--bg);border:2px solid var(--line);display:flex;flex-direction:column;gap:16px;transition:transform .25s,box-shadow .25s}
 .plano:hover{transform:translateY(-6px);box-shadow:var(--sombra)}
 .plano h3{font-size:26px;letter-spacing:-.02em}
 .plano .sub{font-size:15px;opacity:.8}
@@ -315,10 +273,8 @@ td.fraco{color:var(--muted)}
 .plano .itens{display:flex;flex-direction:column}
 .plano .itens span{padding:10px 0;border-top:1px solid var(--line);font-size:15px}
 .plano .btn{margin-top:auto;justify-content:center}
-.plano.destaque{background:var(--pet);color:var(--onpet);border-color:var(--pet)}
-.plano.destaque .itens span{border-color:color-mix(in srgb,var(--onpet) 25%,transparent)}
-.plano.destaque .check{color:var(--pes)}
-.fita{position:absolute;top:-13px;left:34px;padding:5px 10px;background:var(--pes);color:var(--onpes);font-size:11px}
+.plano.destaque{background:color-mix(in srgb,var(--ink) 7%,var(--surface));border-color:var(--pet)}
+.plano.destaque .check{color:var(--pet)}
 .btn-pes{background:var(--pes);color:var(--onpes)}
 .btn-pes:hover{background:var(--ink);color:var(--bg)}
 
@@ -330,7 +286,6 @@ td.fraco{color:var(--muted)}
 .seg i{width:12px;height:12px;background:var(--cor)}
 .seg h3{font-size:20px;letter-spacing:-.02em}
 .seg p{font-size:15px;color:var(--muted)}
-.pendente{color:var(--ter)}
 .selos{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding-top:32px;margin-top:48px;border-top:1px solid var(--line)}
 .selos span{padding:12px 18px;border:1.5px solid var(--ink)}
 .selos span.falta{border-style:dashed;border-color:var(--trac);color:var(--muted)}
@@ -368,8 +323,6 @@ td.fraco{color:var(--muted)}
 .rodape nav a:hover{color:var(--pes)}
 .rodape .rot{color:var(--darkmuted);font-size:12px}
 .copy{border-top:1px solid var(--darkline);padding-block:22px 36px !important;display:block !important;font-size:13px;color:var(--darkmuted)}
-.de-novo{display:block;width:100%;padding:18px;border:0;border-top:1px solid var(--darkline);background:var(--dark);color:var(--darkmuted);font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-stretch:75%}
-.de-novo:hover{color:var(--pes)}
 
 
 /* aparição suave ao rolar: parte de um estado visível */
@@ -381,23 +334,17 @@ td.fraco{color:var(--muted)}
   html{scroll-behavior:auto}
 }
 
-/* ---- especIAlista: modo claro Petróleo, modo noturno Índigo, + cores do logo ---- */
+/* ---- especIAlista: modo claro Petróleo + cores do logo ---- */
 :root{--ink:#13302F;--muted:#55665F;--line:#E0DDD5;--soft:#EEECE5;--trac:#AEB3A8;
   --pet:#174A48;--onpet:#F9F8F5;--dark:#13302F;--ondark:#ECF3F0;--darkmuted:#A3BAB3;--darkline:#24504D;--darkcard:#1B3E3C;
   --pes:color-mix(in oklab,var(--esp) 42%,#F9F8F5);--onpes:var(--ink);--ter:var(--esp);--onter:#FFFFFF;--l1:#8E3B5C;--l2:#A85A2E;--l3:#B07A1F;--l4:#3F7352;--l5:#0E7C7B;--l6:#2F5D9E;--l7:#5B4FA0;--l8:#8A4F9E;--l9:#4F6B7A;--l10:#B0485F}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--bg:#17152A;--alt:#1C1A33;--surface:#232040;--soft:#2A2748;--ink:#EEEAF6;--muted:#B4AECB;--line:#37335A;--pet:#A49DEB;--onpet:#17152A;--onpes:#17152A;--trac:#5A5578;--dark:#110F20;--ondark:#EEEAF6;--darkmuted:#A39DC0;--darkline:#2C2950;--darkcard:#1E1B38;--papel:none;color-scheme:dark;--l1:color-mix(in oklab,#8E3B5C 55%,#fff);--l2:color-mix(in oklab,#A85A2E 55%,#fff);--l3:color-mix(in oklab,#B07A1F 55%,#fff);--l4:color-mix(in oklab,#3F7352 55%,#fff);--l5:color-mix(in oklab,#0E7C7B 55%,#fff);--l6:color-mix(in oklab,#2F5D9E 55%,#fff);--l7:color-mix(in oklab,#5B4FA0 55%,#fff);--l8:color-mix(in oklab,#8A4F9E 55%,#fff);--l9:color-mix(in oklab,#4F6B7A 55%,#fff);--l10:color-mix(in oklab,#B0485F 55%,#fff)} }
-:root[data-theme="dark"]{--bg:#17152A;--alt:#1C1A33;--surface:#232040;--soft:#2A2748;--ink:#EEEAF6;--muted:#B4AECB;--line:#37335A;--pet:#A49DEB;--onpet:#17152A;--onpes:#17152A;--trac:#5A5578;--dark:#110F20;--ondark:#EEEAF6;--darkmuted:#A39DC0;--darkline:#2C2950;--darkcard:#1E1B38;--papel:none;color-scheme:dark;--l1:color-mix(in oklab,#8E3B5C 55%,#fff);--l2:color-mix(in oklab,#A85A2E 55%,#fff);--l3:color-mix(in oklab,#B07A1F 55%,#fff);--l4:color-mix(in oklab,#3F7352 55%,#fff);--l5:color-mix(in oklab,#0E7C7B 55%,#fff);--l6:color-mix(in oklab,#2F5D9E 55%,#fff);--l7:color-mix(in oklab,#5B4FA0 55%,#fff);--l8:color-mix(in oklab,#8A4F9E 55%,#fff);--l9:color-mix(in oklab,#4F6B7A 55%,#fff);--l10:color-mix(in oklab,#B0485F 55%,#fff)}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .trilho button{opacity:.75} }
-:root[data-theme="dark"] .trilho button{opacity:.75}
 .trilho button:hover,.trilho button.sel{opacity:1}
 :root{--espectro:linear-gradient(90deg,var(--l1) 0% 10%,var(--l2) 10% 20%,var(--l3) 20% 30%,var(--l4) 30% 40%,var(--l5) 40% 50%,var(--l6) 50% 60%,var(--l7) 60% 70%,var(--l8) 70% 80%,var(--l9) 80% 90%,var(--l10) 90% 100%)}
 .marca b.ia{color:var(--ink)!important}
 .topo::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--espectro);opacity:0;transition:opacity .3s}
 .topo.rolou::after{opacity:.8}
-.escuro,.faixa-num{border-top:3px solid;border-image:var(--espectro) 1;
+.escuro{border-top:3px solid;border-image:var(--espectro) 1;
   background-image:radial-gradient(55% 90% at 0% 0%,#5B4FA01f,transparent 70%),radial-gradient(55% 90% at 100% 100%,#0E7C7B1f,transparent 70%)}
-.faixa-num div:nth-child(1){border-left-color:var(--l2)}.faixa-num div:nth-child(2){border-left-color:var(--l4)}
-.faixa-num div:nth-child(3){border-left-color:var(--l6)}.faixa-num div:nth-child(4){border-left-color:var(--l1)}
 /* landing = cores do logo; tudo que mostra o módulo por dentro = cor da especialidade */
 .janela,.demo,.documento,.ia-painel{--ter:var(--esp);--pes:color-mix(in oklab,var(--esp) 42%,#F9F8F5)}
 /* rodapé no papel, para o "IA" aparecer */
@@ -405,7 +352,35 @@ td.fraco{color:var(--muted)}
 .rodape p,.rodape .rot,.copy,.rede{color:var(--muted)}
 .copy{border-top-color:var(--line)}
 .rodape nav a:hover{color:var(--esp)}
-.ver-esp{text-align:center;margin:18px 0 0}.ver-esp a{font-weight:600;color:var(--esp);text-decoration:none;border-bottom:1.5px solid currentColor}
+/* cada bloco ocupa exatamente uma tela (computador); âncoras do menu alinham no topo do bloco */
+html{scroll-padding-top:var(--h-topo,70px)}
+@media (min-width:981px) and (min-height:620px){
+  .secao,.final{min-height:calc(100svh - var(--h-topo,70px));display:flex;flex-direction:column;justify-content:center}
+  .secao{padding-block:clamp(28px,4.5svh,56px)}
+  .secao>.wrap,.final>.wrap{width:100%}
+  .final .wrap{padding-block:0}
+  .hero{min-height:calc(100svh - var(--h-topo,70px));align-items:center;align-content:center;padding-block:clamp(20px,3svh,40px)}
+  .app-corpo{padding:18px;gap:12px}
+  .relogio{padding:12px 0 10px;gap:8px}
+  .relogio b{font-size:clamp(44px,8svh,82px)}
+  .fala{height:70px}
+  .rascunho{height:clamp(140px,22svh,236px);padding:14px}
+  .grade3{margin-top:clamp(20px,3.5svh,40px)}
+  .func{padding:12px 18px;gap:6px 12px}
+  .func .ico{width:30px;height:30px;font-size:12px}
+  .func h3{font-size:18px}
+  .func .mais p{font-size:13px;line-height:1.4;padding-top:2px}
+  .func .itens span{padding:5px 0;font-size:13px}
+  .plano{padding:24px;gap:12px}
+  .plano .itens span{padding:5px 0}
+  .plano .preco b{font-size:clamp(36px,6svh,48px);line-height:1}
+  .plano .preco{min-height:56px;align-items:center}
+  .plano{padding-block:20px}
+  .planos{margin-top:clamp(16px,3svh,32px)}
+  .faq{max-width:1100px;margin-top:clamp(20px,3.5svh,36px);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:56px;align-items:start}
+  .faq summary{padding:14px 0}
+  .faq details p{padding-bottom:16px}
+}
 </style>
 
 <div class="topo" id="topo">
@@ -418,13 +393,13 @@ td.fraco{color:var(--muted)}
       <a href="#faq">Dúvidas</a>
     </nav>
     <div class="topo-dir">
-      <a href="/contratar" class="btn btn-pri so-desk">Começar grátis</a>
+      <a href="/contratar" class="btn btn-pri so-desk">Criar conta</a>
       <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="gaveta" aria-label="Abrir menu">≡</button>
     </div>
   </div>
   <div class="gaveta" id="gaveta">
     <div class="wrap">
-      <a href="#funcionalidades">Funcionalidades</a><a href="#precos">Planos</a><a href="#seguranca">Segurança</a><a href="#faq">Dúvidas</a><a href="/contratar">Começar grátis</a>
+      <a href="#funcionalidades">Funcionalidades</a><a href="#precos">Planos</a><a href="#seguranca">Segurança</a><a href="#faq">Dúvidas</a><a href="/contratar">Criar conta</a>
     </div>
   </div>
 </div>
@@ -625,7 +600,7 @@ td.fraco{color:var(--muted)}
 
   <!-- CELULAR COMO MICROFONE -->
   <section class="secao alt" aria-labelledby="h-cel">
-    <div class="wrap duas" style="align-items:center">
+    <div class="wrap">
       <div class="cab" style="gap:22px">
         <span class="rot acento">Sem aparelho extra</span>
         <h2 class="h2" id="h-cel">Comece no Tablet,<br><span class="acento">grave pelo celular.</span></h2>
@@ -636,15 +611,6 @@ td.fraco{color:var(--muted)}
           <div class="recurso" style="--cor:var(--ter)"><i></i><div><b>Código de confirmação</b><span>O mesmo código nos dois aparelhos, sem confusão entre salas.</span></div></div>
           <div class="recurso" style="--cor:var(--pet)"><i></i><div><b>Continue no Tablet</b><span>A transcrição aparece em tempo real na tela principal.</span></div></div>
         </div>
-      </div>
-      <div class="pareia sobe">
-        <h3 style="font-size:22px;letter-spacing:-.02em">Usar celular como microfone</h3>
-        <span style="color:var(--muted)">Aponte a câmera do celular.</span>
-        <div class="qr" aria-hidden="true"><canvas id="qr" width="21" height="21"></canvas></div>
-        <span style="color:var(--muted);font-size:14px">Código:</span>
-        <div class="codigo" id="codigo"><span>3</span><span>9</span><span>7</span><span>5</span></div>
-        <span class="estado" id="estado"><span class="ponto" style="color:var(--pes)"></span>Aguardando celular…</span>
-        <button class="link-mudo" id="simular" type="button" style="text-decoration:underline">Simular celular conectado</button>
       </div>
     </div>
   </section>
@@ -666,7 +632,7 @@ td.fraco{color:var(--muted)}
             <tr><td><b>Lembra o que faltou perguntar</b></td><td class="fraco">Não</td><td class="fraco">Não</td><td class="col-nossa"><span class="check">✓</span>Sim</td></tr>
             <tr><td><b>Anexos com assinatura digital</b></td><td class="fraco">Manual</td><td class="fraco">Não</td><td class="col-nossa"><span class="check">✓</span>VIDaaS integrado</td></tr>
             <tr><td><b>Prontuário lido no retorno</b></td><td class="fraco">Você relê</td><td class="fraco">Não</td><td class="col-nossa"><span class="check">✓</span>Automático</td></tr>
-            <tr><td><b>Custo</b></td><td class="fraco">Horas do seu dia</td><td class="fraco">Assinatura + seu tempo de edição</td><td class="col-nossa"><span class="check">✓</span>R$ [valor]/mês · teste grátis</td></tr>
+            <tr><td><b>Custo</b></td><td class="fraco">Horas do seu dia</td><td class="fraco">Assinatura + seu tempo de edição</td><td class="col-nossa"><span class="check">✓</span>R$ 349/mês · teste grátis</td></tr>
           </tbody>
         </table>
       </div>
@@ -679,23 +645,22 @@ td.fraco{color:var(--muted)}
       <div class="cab centro">
         <span class="rot acento">Planos</span>
         <div class="toggle" role="group" aria-label="Período de cobrança">
-          <button type="button" aria-pressed="true" data-per="m">Mensal</button>
-          <button type="button" aria-pressed="false" data-per="a">Anual <span class="chip chip-pes">−2 meses</span></button>
+          <button type="button" aria-pressed="true" data-per="m">Assinatura mensal</button>
+          <button type="button" aria-pressed="false" data-per="a">Assinatura anual</button>
         </div>
       </div>
       <div class="planos">
         <article class="plano destaque sobe">
-          <span class="fita rot">Mais escolhido</span>
-          <h3>Profissional</h3><p class="sub">Para quem quer as tardes de volta.</p>
-          <div class="preco"><span style="font-size:18px;font-weight:600">R$</span><b id="valor">[m]</b><span>/ mês</span></div><p class="nota-p" id="valorNota">Por médico · cobrança mensal</p>
-          <div class="itens"><span><span class="check">✓</span>Consultas ilimitadas</span><span><span class="check">✓</span>Mais de uma especialidade</span><span><span class="check">✓</span>Hipóteses, lembretes e conduta</span><span><span class="check">✓</span>Anexos com VIDaaS</span><span><span class="check">✓</span>Área do paciente</span><span><span class="check">✓</span>Importação de pacientes</span></div>
+          <h3>Profissional</h3>
+          <div class="preco"><span style="font-size:18px;font-weight:600">R$</span><b id="valor">349,00</b><span id="valorUn">/ mês</span></div><span class="chip chip-pes" id="econ" hidden style="align-self:flex-start">Economia de 2 meses</span>
+          <div class="itens"><span><span class="check">✓</span>Consultas ilimitadas</span><span><span class="check">✓</span>Hipóteses, lembretes e conduta</span><span><span class="check">✓</span>Atestados, laudos, receitas (padronizados)</span><span><span class="check">✓</span>Área do paciente</span><span><span class="check">✓</span>Importação de pacientes</span></div>
           <a href="/contratar" class="btn btn-pes">Contratar</a>
         </article>
         <article class="plano sobe">
-          <h3>Clínicas e empresas</h3><p class="sub">Para equipes, no futuro próximo.</p>
-          <div class="preco"><b>Em breve</b></div><p class="nota-p">Avisamos quando abrir</p>
-          <div class="itens"><span><span class="check">✓</span>Tudo do Profissional</span><span><span class="check">✓</span>Vários médicos</span><span><span class="check">✓</span>Painel da clínica</span><span><span class="check">✓</span>Permissões por usuário</span></div>
-          <a href="#contato" class="btn btn-sec">Quero ser avisado</a>
+          <h3>Clínicas e empresas</h3>
+          <div class="preco"><b>Sob consulta</b></div>
+          <div class="itens"><span><span class="check">✓</span>Tudo do Profissional</span><span><span class="check">✓</span>Várias especialidades</span><span><span class="check">✓</span>Painel da clínica</span><span><span class="check">✓</span>Permissões por usuário</span></div>
+          <a href="https://wa.me/5585991018813?text=Quero%20saber%20mais%20sobre%20o%20plano%20para%20cl%C3%ADnicas" target="_blank" rel="noopener" class="btn btn-sec">Falar com a equipe</a>
         </article>
       </div>
     </div>
@@ -707,7 +672,7 @@ td.fraco{color:var(--muted)}
       <div class="duas">
         <div class="cab" style="gap:22px">
           <span class="rot acento">Privacidade médica</span>
-          <h2 class="h2" id="h-seg" style="font-size:clamp(34px,4.2vw,52px)">Proteção garantida<br><span class="acento">dos dados dos pacientes.</span></h2>
+          <h2 class="h2" id="h-seg">Proteção garantida<br><span class="acento">dos dados dos pacientes.</span></h2>
         </div>
         <div class="grade2">
           <article class="seg sobe" style="--cor:var(--pet)"><i></i><h3>Criptografia</h3><p>Áudio e texto cifrados em trânsito e em repouso.</p></article>
@@ -717,7 +682,6 @@ td.fraco{color:var(--muted)}
         </div>
       </div>
       <div class="selos rot"><span>LGPD</span><span>CFM 2.314/22</span><span>ICP-Brasil</span><span class="falta">[Certificação]</span><span class="falta">[Certificação]</span><span class="falta">[Certificação]</span></div>
-      <p style="text-align:center;margin-top:18px;font-size:14px;color:var(--muted)">Encarregado de dados: [nome] · registrado na ANPD</p>
     </div>
   </section>
 
@@ -726,7 +690,7 @@ td.fraco{color:var(--muted)}
     <div class="wrap">
       <div class="cab centro">
         <span class="rot acento">Dúvidas frequentes</span>
-        <h2 class="h2" id="h-faq" style="font-size:clamp(34px,4.4vw,54px)">O que todo especialista<br><span class="acento">pergunta antes de começar.</span></h2>
+        <h2 class="h2" id="h-faq">O que todo especialista<br><span class="acento">pergunta antes de começar.</span></h2>
       </div>
       <div class="faq" id="faqLista"></div>
     </div>
@@ -746,14 +710,13 @@ td.fraco{color:var(--muted)}
 
 <footer class="rodape" id="contato">
   <div class="wrap">
-    <div><span class="marca"><span style="color:var(--l1)">e</span><span style="color:var(--l2)">s</span><span style="color:var(--l3)">p</span><span style="color:var(--l4)">e</span><span style="color:var(--l5)">c</span><b class="ia">IA</b><span style="color:var(--l6)">l</span><span style="color:var(--l7)">i</span><span style="color:var(--l8)">s</span><span style="color:var(--l9)">t</span><span style="color:var(--l10)">a</span></span><div class="redes" aria-label="Redes sociais"><span class="rede" role="img" aria-label="Instagram" title="Instagram · em breve"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 3.3.1 4.8 1.7 4.9 4.9.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 3.2-1.7 4.8-4.9 4.9-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-3.3-.1-4.8-1.7-4.9-4.9C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8C2.4 3.9 4 2.4 7.2 2.3 8.4 2.2 8.8 2.2 12 2.2zM12 0C8.7 0 8.3 0 7.1.1 2.7.3.3 2.7.1 7.1 0 8.3 0 8.7 0 12s0 3.7.1 4.9c.2 4.4 2.6 6.8 7 7 1.2.1 1.6.1 4.9.1s3.7 0 4.9-.1c4.4-.2 6.8-2.6 7-7 .1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.2-4.4-2.6-6.8-7-7C15.7 0 15.3 0 12 0zm0 5.8a6.2 6.2 0 100 12.4 6.2 6.2 0 000-12.4zM12 16a4 4 0 110-8 4 4 0 010 8zm6.4-11.8a1.4 1.4 0 100 2.9 1.4 1.4 0 000-2.9z"/></svg></span><span class="rede" role="img" aria-label="LinkedIn" title="LinkedIn · em breve"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9v5.7H9.4V9h3.4v1.6c.5-.9 1.6-1.8 3.4-1.8 3.6 0 4.3 2.400 4.300 5.500v6.200zM5.300 7.400a2.100 2.100 0 110-4.200 2.100 2.100 0 010 4.200zM7.100 20.500H3.600V9h3.500v11.500zM22.200 0H1.800C.8 0 0 .8 0 1.700v20.600c0 .9.8 1.700 1.800 1.700h20.400c1 0 1.800-.8 1.800-1.700V1.700C24 .8 23.200 0 22.200 0z"/></svg></span><span class="rede" role="img" aria-label="YouTube" title="YouTube · em breve"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.500 6.200a3 3 0 00-2.100-2.100C19.500 3.600 12 3.600 12 3.600s-7.500 0-9.400.5A3 3 0 00.5 6.200C0 8.100 0 12 0 12s0 3.900.5 5.800a3 3 0 002.100 2.100c1.900.5 9.400.5 9.400.5s7.500 0 9.400-.5a3 3 0 002.100-2.100c.5-1.900.5-5.800.5-5.800s0-3.900-.5-5.800zM9.600 15.600V8.400l6.200 3.600-6.200 3.600z"/></svg></span><span class="rede" role="img" aria-label="Facebook" title="Facebook · em breve"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12a12 12 0 10-13.900 11.900v-8.400H7.100V12h3V9.400c0-3 1.800-4.700 4.500-4.700 1.300 0 2.700.2 2.700.2v3h-1.500c-1.500 0-2 .9-2 1.900V12h3.400l-.5 3.500h-2.900v8.400A12 12 0 0024 12z"/></svg></span><span class="rede" role="img" aria-label="X" title="X · em breve"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.200 2.300h3.300l-7.200 8.300 8.500 11.200h-6.700l-5.200-6.800-6 6.800H1.600l7.700-8.800L1.200 2.300H8l4.700 6.200 5.500-6.200zm-1.200 17.500h1.800L7.100 4.200H5.100l11.900 15.600z"/></svg></span><span class="rede" role="img" aria-label="TikTok" title="TikTok · em breve"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.600 6.700a4.800 4.800 0 01-3.800-4.200V2h-3.500v13.700a2.900 2.900 0 11-2-2.800V9.300a6.400 6.400 0 105.500 6.400V8.600a8.300 8.300 0 004.800 1.500V6.700z"/></svg></span></div></div>
+    <div><span class="marca"><span style="color:var(--l1)">e</span><span style="color:var(--l2)">s</span><span style="color:var(--l3)">p</span><span style="color:var(--l4)">e</span><span style="color:var(--l5)">c</span><b class="ia">IA</b><span style="color:var(--l6)">l</span><span style="color:var(--l7)">i</span><span style="color:var(--l8)">s</span><span style="color:var(--l9)">t</span><span style="color:var(--l10)">a</span></span><div class="redes" aria-label="Redes sociais"><span class="rede" role="img" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 3.3.1 4.8 1.7 4.9 4.9.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 3.2-1.7 4.8-4.9 4.9-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-3.3-.1-4.8-1.7-4.9-4.9C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8C2.4 3.9 4 2.4 7.2 2.3 8.4 2.2 8.8 2.2 12 2.2zM12 0C8.7 0 8.3 0 7.1.1 2.7.3.3 2.7.1 7.1 0 8.3 0 8.7 0 12s0 3.7.1 4.9c.2 4.4 2.6 6.8 7 7 1.2.1 1.6.1 4.9.1s3.7 0 4.9-.1c4.4-.2 6.8-2.6 7-7 .1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.2-4.4-2.6-6.8-7-7C15.7 0 15.3 0 12 0zm0 5.8a6.2 6.2 0 100 12.4 6.2 6.2 0 000-12.4zM12 16a4 4 0 110-8 4 4 0 010 8zm6.4-11.8a1.4 1.4 0 100 2.9 1.4 1.4 0 000-2.9z"/></svg></span><span class="rede" role="img" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9v5.7H9.4V9h3.4v1.6c.5-.9 1.6-1.8 3.4-1.8 3.6 0 4.3 2.400 4.300 5.500v6.200zM5.300 7.400a2.100 2.100 0 110-4.200 2.100 2.100 0 010 4.200zM7.100 20.500H3.600V9h3.500v11.500zM22.200 0H1.800C.8 0 0 .8 0 1.700v20.600c0 .9.8 1.700 1.800 1.700h20.400c1 0 1.800-.8 1.800-1.700V1.700C24 .8 23.200 0 22.200 0z"/></svg></span><span class="rede" role="img" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.500 6.200a3 3 0 00-2.100-2.100C19.500 3.600 12 3.600 12 3.600s-7.500 0-9.400.5A3 3 0 00.5 6.200C0 8.100 0 12 0 12s0 3.900.5 5.800a3 3 0 002.100 2.100c1.900.5 9.400.5 9.400.5s7.500 0 9.400-.5a3 3 0 002.100-2.100c.5-1.900.5-5.800.5-5.800s0-3.900-.5-5.800zM9.600 15.600V8.400l6.200 3.600-6.200 3.600z"/></svg></span><span class="rede" role="img" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12a12 12 0 10-13.900 11.900v-8.400H7.100V12h3V9.400c0-3 1.800-4.700 4.500-4.700 1.300 0 2.700.2 2.700.2v3h-1.500c-1.500 0-2 .9-2 1.900V12h3.400l-.5 3.500h-2.900v8.400A12 12 0 0024 12z"/></svg></span><span class="rede" role="img" aria-label="X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.200 2.300h3.300l-7.200 8.300 8.500 11.200h-6.700l-5.200-6.800-6 6.800H1.600l7.700-8.800L1.200 2.300H8l4.700 6.200 5.500-6.200zm-1.200 17.500h1.800L7.100 4.200H5.100l11.900 15.600z"/></svg></span><span class="rede" role="img" aria-label="TikTok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.600 6.700a4.800 4.800 0 01-3.800-4.200V2h-3.500v13.700a2.900 2.900 0 11-2-2.800V9.300a6.400 6.400 0 105.500 6.400V8.600a8.300 8.300 0 004.800 1.500V6.700z"/></svg></span></div></div>
     <div style="display:flex;flex-direction:column;gap:28px">
       <nav aria-label="Produto"><span class="rot">Produto</span><a href="#funcionalidades">Funcionalidades</a><a href="#precos">Planos</a><a href="#seguranca">Segurança e LGPD</a><a href="#faq">Dúvidas</a></nav>
       <nav aria-label="Contato"><span class="rot">Contato</span><a href="https://wa.me/5585991018813" target="_blank" rel="noopener">WhatsApp · (85) 99101-8813</a><a href="mailto:regisbragasantos@gmail.com">regisbragasantos@gmail.com</a></nav>
     </div>
   </div>
   <div class="wrap copy">© 2026 [Razão social] · [Cidade], [UF]</div>
-  <button class="de-novo" id="deNovo" type="button">↑ Rolar de novo · próxima especialidade</button>
 </footer>
 
 <script>
@@ -765,28 +728,28 @@ td.fraco{color:var(--muted)}
 
   // ---------- especialidades ----------
   const ESP = {
-    derm: { raiz:'dermatolog', dia:'#A85A2E', noite:'#F0B08A', pac:['AR','Ana Ribeiro','24 anos · F · Consulta · Online','24F'],
+    derm: { raiz:'dermatolog', dia:'#A85A2E', pac:['AR','Ana Ribeiro','24 anos · F · Consulta · Online','24F'],
       fala:[['Médica','O que trouxe você hoje?'],['Paciente','Umas espinhas no rosto que não melhoram. Faz uns três meses.'],['Médica','Piora em algum período?'],['Paciente','Antes da menstruação fica bem pior.']],
       qp:'Lesões em face há três meses, com piora no período pré-menstrual.', hma:'Pápulas e pústulas em região malar e mentoniana, sem tratamento prévio.',
       lembra:'Alergia a medicamentos?', lembra2:'Uso de anticoncepcional?', pront:'Lipidograma pedido em [data], sem resultado',
       alerta:'Dipirona · relatada no formulário', alertaCurta:'Alergia: dipirona',
       hip:[['Acne vulgar','L70.0',64],['Rosácea','L71.9',21],['Dermatite perioral','L71.0',9]],
       conduta:'Peróxido de benzoíla 5% gel à noite · retorno em 8 semanas' },
-    reuma: { raiz:'reumatolog', dia:'#3F7352', noite:'#8CC29C', pac:['JS','João Souza','52 anos · M · Consulta · Presencial','52M'],
+    reuma: { raiz:'reumatolog', dia:'#3F7352', pac:['JS','João Souza','52 anos · M · Consulta · Presencial','52M'],
       fala:[['Médico','Onde dói mais?'],['Paciente','Nas mãos, nos dedos. De manhã fica tudo duro.'],['Médico','Quanto tempo dura essa rigidez?'],['Paciente','Mais de uma hora, todo dia, faz uns quatro meses.']],
       qp:'Dor e rigidez matinal em mãos há quatro meses.', hma:'Rigidez matinal acima de uma hora, edema em metacarpofalângicas bilateral.',
       lembra:'Medicamentos em uso e já usados?', lembra2:'Histórico familiar de doença autoimune?', pront:'Fator reumatoide e anti-CCP sem resultado',
       alerta:'AINE · relatou sangramento gástrico prévio', alertaCurta:'Atenção: AINE',
       hip:[['Artrite reumatoide','M06.9',58],['Lúpus eritematoso sistêmico','M32.9',17],['Poliartrose','M15.9',14]],
       conduta:'Solicitar FR, anti-CCP, VHS e PCR · radiografia de mãos · retorno com exames' },
-    cardio: { raiz:'cardiolog', dia:'#8E3B5C', noite:'#E39AB8', pac:['MF','Marcos Freitas','61 anos · M · Retorno · Presencial','61M'],
+    cardio: { raiz:'cardiolog', dia:'#8E3B5C', pac:['MF','Marcos Freitas','61 anos · M · Retorno · Presencial','61M'],
       fala:[['Médica','Essa dor no peito aparece quando?'],['Paciente','Quando subo ladeira. Passa se eu paro.'],['Médica','Irradia para algum lugar?'],['Paciente','Às vezes vai para o braço esquerdo.']],
       qp:'Dor torácica aos esforços há seis semanas.', hma:'Dor em aperto ao subir ladeira, alívio com repouso em poucos minutos, irradiação para membro superior esquerdo.',
       lembra:'Tabagismo atual ou prévio?', lembra2:'Uso de losartana: confirmar adesão', pront:'Teste ergométrico pedido em [data], sem resultado',
       alerta:'AAS · alergia relatada', alertaCurta:'Alergia: AAS',
       hip:[['Angina pectoris','I20.9',61],['Doença do refluxo','K21.9',16],['Dor torácica não especificada','R07.4',12]],
       conduta:'Teste ergométrico · ajuste de anti-hipertensivo · orientar sinais de alarme' },
-    psiq: { raiz:'psiquiatr', dia:'#5B4FA0', noite:'#A9A2D9', pac:['CL','Clara Lima','34 anos · F · Consulta · Online','34F'],
+    psiq: { raiz:'psiquiatr', dia:'#5B4FA0', pac:['CL','Clara Lima','34 anos · F · Consulta · Online','34F'],
       fala:[['Médico','Como tem sido seu sono?'],['Paciente','Acordo às três da manhã e não durmo mais.'],['Médico','E o ânimo durante o dia?'],['Paciente','Não tenho vontade de nada faz uns dois meses.']],
       qp:'Desânimo e insônia terminal há dois meses.', hma:'Humor deprimido, anedonia, despertar precoce, queda de rendimento no trabalho.',
       lembra:'Ideação suicida: perguntar diretamente', lembra2:'Uso de álcool e outras substâncias?', pront:'TSH pedido em [data], sem resultado',
@@ -796,19 +759,14 @@ td.fraco{color:var(--muted)}
   };
   const ORDEM = ['derm','reuma','cardio','psiq'];
   let espAtual = 'derm';
-  const escuro = () => {
-    const t = document.documentElement.dataset.theme;
-    return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-  };
-  function corEsp(k){ return escuro() ? ESP[k].noite : ESP[k].dia; }
+  function corEsp(k){ return ESP[k].dia; }
 
   // trilho de especialidades
   const trilho = $('#trilho');
-  const itensTrilho = [...ORDEM, 'endo'];
+  const itensTrilho = ORDEM;
   for (let r=0; r<4; r++) itensTrilho.forEach(k => {
     const b = document.createElement('button'); b.type='button';
-    if (k==='endo'){ b.innerHTML='endocrinolog<b style="color:var(--l3)">IA</b>'; b.disabled=true; b.title='Em breve'; }
-    else { b.dataset.esp=k; b.innerHTML = ESP[k].raiz + '<b>IA</b>'; b.addEventListener('click',()=>trocaEsp(k)); }
+    { b.dataset.esp=k; b.innerHTML = ESP[k].raiz + '<b>IA</b>'; b.addEventListener('click',()=>trocaEsp(k)); }
     if (r>0) b.setAttribute('aria-hidden','true'), b.tabIndex=-1;
     trilho.appendChild(b);
   });
@@ -817,7 +775,6 @@ td.fraco{color:var(--muted)}
   function trocaEsp(k){
     espAtual = k; const e = ESP[k];
     document.documentElement.style.setProperty('--esp', corEsp(k));
-    document.title = 'especIAlista';
     $('#hAvatar').textContent = e.pac[0]; $('#hNome').textContent = e.pac[1]; $('#hDados').textContent = e.pac[2];
     $$('.dAvatar').forEach(x=>x.textContent=e.pac[0]); $$('.dNome').forEach(x=>x.textContent=e.pac[1]);
     $$('.dLembra').forEach(x=>x.textContent=e.lembra); $$('.dAlerta').forEach(x=>x.textContent=e.alertaCurta);
@@ -825,8 +782,6 @@ td.fraco{color:var(--muted)}
     $('#iaAlerta').textContent = e.alerta; $('#iaLembra1').textContent = e.lembra2; $('#iaLembra2').textContent = e.pront; $('#iaConduta').textContent = e.conduta;
     montaHip($('#hipIA'), e.hip); montaHip($('#hipDemo'), e.hip);
     pintaTrilho(); iniciaHero(); montaDocs();
-    const SLUG={derm:'dermatologia',reuma:'reumatologia',cardio:'cardiologia',psiq:'psiquiatria'};
-    const v=$('#verEsp'); if(v){ v.href='/contratar?esp='+SLUG[k]; v.textContent='Testar grátis a '+e.raiz+'IA →'; }
   }
 
   // ---------- hipóteses (tracejado → sólido) ----------
@@ -849,10 +804,6 @@ td.fraco{color:var(--muted)}
   const pinta = () => { $('#relogio').innerHTML = fmt(seg).split('').map(c=>c===':'?'<i class="dp">:</i>':'<i>'+c+'</i>').join(''); };
   pinta();
 
-  let heroTimer = null;
-  function digita(el, txt, vel){ return new Promise(res=>{ if(reduz){ el.textContent=txt; return res(); } let i=0; const t=setInterval(()=>{ el.textContent = txt.slice(0, ++i); if(i>=txt.length){ clearInterval(t); res(); } }, vel); }); }
-  const espera = ms => new Promise(r=>setTimeout(r, reduz?0:ms));
-  let heroGen = 0;
   // abertura imóvel: tudo já escrito; só a onda de áudio se mexe
   function iniciaHero(){
     const e = ESP[espAtual];
@@ -883,9 +834,9 @@ td.fraco{color:var(--muted)}
   $$('#tipoAt .bloco').forEach(b=>b.addEventListener('click',()=>{ $$('#tipoAt .bloco').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); }));
   $$('#local button').forEach(b=>b.addEventListener('click',()=>{ $$('#local button').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); }));
   $('#assinar').addEventListener('click',e=>{ auto=false; e.currentTarget.classList.add('feito'); e.currentTarget.textContent='✓ Assinado e salvo no prontuário'; });
-  let demoGen=0, seg2=0, t2=null;
+  let demoGen=0;
   async function falaDemo(){
-    const g=++demoGen; const el=$('#fala2'); el.innerHTML=''; seg2=0; clearInterval(t2);
+    const g=++demoGen; const el=$('#fala2'); el.innerHTML='';
     $('#relogio2').textContent='04:23';
     for (const [q,t] of ESP[espAtual].fala){
       if (g!==demoGen) return;
@@ -901,7 +852,7 @@ td.fraco{color:var(--muted)}
       const p = Math.min(1,(now-inicioEtapa)/DUR);
       $('#barra').style.width = ((etapa + p)/3*100)+'%';
       if (p>=1) mostraEtapa((etapa+1)%3);
-    } else { $('#barra').style.width = ((etapa+1)/3*100)+'%'; if(!demoVisivel) inicioEtapa = now - 0; }
+    } else { $('#barra').style.width = ((etapa+1)/3*100)+'%'; if(!demoVisivel) inicioEtapa = now; }
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
@@ -946,32 +897,20 @@ td.fraco{color:var(--muted)}
     r.addEventListener('mouseenter',on); r.addEventListener('mouseleave',off);
   });
 
-  // ---------- QR e pareamento ----------
-  (function(){
-    const c=$('#qr').getContext('2d'); let s=7; const rnd=()=>{ s=(s*9301+49297)%233280; return s/233280; };
-    const fd=(r,co)=>{ for(const [r0,c0] of [[0,0],[0,14],[14,0]]){ const y=r-r0,x=co-c0; if(y<0||x<0||y>6||x>6) continue; return (y===0||y===6||x===0||x===6)||(y>=2&&y<=4&&x>=2&&x<=4); } return null; };
-    c.fillStyle='#1E2B2A';
-    for(let r=0;r<21;r++) for(let co=0;co<21;co++){ const f=fd(r,co); if(f===null ? rnd()>.52 : f) c.fillRect(co,r,1,1); }
-  })();
-  $('#simular').addEventListener('click',()=>{
-    const e=$('#estado'); e.classList.add('ok'); e.innerHTML='✓ Celular conectado · gravando para '+ESP[espAtual].pac[1];
-    $('#simular').textContent='Voltar para o microfone do Tablet';
-    $('#simular').onclick=()=>{ e.classList.remove('ok'); e.innerHTML='<span class="ponto" style="color:var(--pes)"></span>Aguardando celular…'; $('#simular').textContent='Simular celular conectado'; $('#simular').onclick=null; };
-  });
-
   // ---------- preço ----------
   $$('.toggle button').forEach(b=>b.addEventListener('click',()=>{
     $$('.toggle button').forEach(x=>x.setAttribute('aria-pressed', x===b));
     const anual = b.dataset.per==='a';
     const v=$('#valor'); v.animate?.([{transform:'translateY(-8px)',opacity:.2},{transform:'none',opacity:1}],{duration:300});
-    v.textContent = anual ? '[a]' : '[m]';
-    $('#valorNota').textContent = anual ? 'Cobrado por ano · 2 meses grátis' : 'Por médico · cobrança mensal';
+    $('#valorUn').textContent = anual ? '/ ano' : '/ mês';
+    v.textContent = anual ? '3.490,00' : '349,00';
+    $('#econ').hidden = !anual;
   }));
 
   // ---------- FAQ ----------
   const FAQ = [
     ['O que é?', 'Uma IA clínica para médicos especialistas autônomos. Durante a consulta, presencial ou online, ela escuta, organiza a história clínica, sugere hipóteses com CID e gera os Anexos para você revisar e assinar.'],
-    ['Quanto custa?', 'Há um período de teste grátis, sem cartão. Depois, o plano Profissional custa R$ [valor] por mês por médico, ou menos no plano anual.'],
+    ['Quanto custa?', 'Há um período de teste grátis, sem cartão. Depois, o plano Profissional custa R$ 349,00 por mês por médico, ou R$ 3.490,00 por ano (economia de 2 meses).'],
     ['Funciona para a minha especialidade?', 'Cada especialidade tem sua própria IA, com vocabulário e modelos próprios. Uma conta pode ter mais de uma especialidade.'],
     ['A IA decide o diagnóstico?', 'Não. Hipóteses e conduta chegam como sugestão, tracejadas. Só entram na história clínica quando você confirma.'],
     ['Funciona em consulta presencial e online?', 'Sim. O fluxo é o mesmo; você escolhe o local no início da consulta.'],
@@ -987,6 +926,7 @@ td.fraco{color:var(--muted)}
 
   // ---------- topo: sombra ao rolar, item ativo, menu móvel ----------
   const topo=$('#topo');
+  const medeTopo=()=>document.documentElement.style.setProperty('--h-topo',topo.offsetHeight+'px'); medeTopo(); addEventListener('resize',medeTopo);
   addEventListener('scroll',()=>topo.classList.toggle('rolou', scrollY>10),{passive:true});
   const links=$$('.menu a');
   const obsMenu = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ links.forEach(a=>a.classList.toggle('ativo', a.getAttribute('href')==='#'+e.target.id)); } }),{rootMargin:'-45% 0px -50% 0px'});
@@ -994,10 +934,6 @@ td.fraco{color:var(--muted)}
   $('#burger').addEventListener('click',e=>{ const g=$('#gaveta'); const ab=!g.classList.contains('aberta'); g.classList.toggle('aberta',ab); e.currentTarget.setAttribute('aria-expanded',ab); });
   $$('#gaveta a').forEach(a=>a.addEventListener('click',()=>{ $('#gaveta').classList.remove('aberta'); $('#burger').setAttribute('aria-expanded','false'); }));
 
-  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>trocaEsp(espAtual));
-
-  // ---------- rolar de novo (scroll infinito) ----------
-  $('#deNovo').addEventListener('click',()=>{ const i=(ORDEM.indexOf(espAtual)+1)%ORDEM.length; trocaEsp(ORDEM[i]); scrollTo({top:0,behavior:reduz?'auto':'smooth'}); });
 
   // ---------- subida suave dos blocos ----------
   if (!reduz && 'IntersectionObserver' in window){
@@ -1014,7 +950,7 @@ td.fraco{color:var(--muted)}
 <script>
 (function(){
   // cada seção da landing recebe uma cor do logo, na ordem das letras
-  [...document.querySelectorAll('section.secao, section.faixa-num, section.escuro')].forEach((s,i)=>{
+  [...document.querySelectorAll('section.secao, section.escuro')].forEach((s,i)=>{
     const c='var(--l'+(i%10+1)+')';
     s.style.setProperty('--ter', c);
     s.style.setProperty('--pes', 'color-mix(in oklab,'+c+' 55%,#F9F8F5)');
