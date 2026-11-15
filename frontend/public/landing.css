@@ -85,7 +85,7 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 .onda{display:flex;align-items:center;gap:4px;height:44px}
 .onda span{width:5px;background:var(--pes);animation:onda 1.8s ease-in-out infinite;transform-origin:center}
 @keyframes onda{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
-.fala{display:grid;grid-template-columns:72px minmax(0,1fr);align-content:start;gap:12px 12px;font-size:16px;line-height:1.45}
+.fala{display:grid;grid-template-columns:72px minmax(0,1fr);align-content:start;gap:5px 12px;font-size:16px;line-height:1.45}
 .fala .quem{font-size:11px;font-weight:700;font-stretch:75%;letter-spacing:.12em;text-transform:uppercase;padding-top:2px}
 
 
@@ -321,7 +321,7 @@ html{scroll-padding-top:var(--h-topo,70px)}
   .secao{padding-block:clamp(28px,4.5svh,56px)}
   .secao>.wrap,.final>.wrap{width:100%}
   .final .wrap{padding-block:0}
-  .hero{min-height:calc(100svh - var(--h-topo,70px));align-items:center;align-content:center;padding-block:clamp(20px,3svh,40px)}
+  .hero{min-height:calc(100svh - var(--h-topo,70px) - var(--h-pre,0px));align-items:center;align-content:center;padding-block:clamp(20px,3svh,40px)}
   .app-corpo{padding:18px;gap:12px}
   .relogio{padding:12px 0 10px;gap:8px}
   .relogio b{font-size:clamp(44px,8svh,82px)}
@@ -489,3 +489,30 @@ html{scroll-padding-top:var(--h-topo,70px)}
 #cond{gap:8px}
 .cg-linha{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .cg-alerta{background:var(--alerta);color:var(--onalerta)}
+
+/* como funciona: presencial e online */
+.cf-grade{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:center}
+@media (max-width:980px){.cf-grade{grid-template-columns:minmax(0,1fr);gap:32px}}
+.cf-rot{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+#como-funciona .recurso{padding:9px 0}
+.cf-card{background:var(--surface);border:1px solid var(--line);padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 30px 60px -40px rgba(30,43,42,.45)}
+.cf-abas{display:flex;gap:6px}
+.cf-abas button{flex:1;padding:10px 12px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);font:inherit;font-weight:600;font-size:15px;cursor:pointer}
+.cf-abas button[aria-selected=true]{background:var(--ink);color:var(--bg)}
+.cf-passos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.cf-passos li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:14px;padding:13px 0;border-top:1px solid var(--line);animation:cfEntra .45s both}
+.cf-passos li:first-child{border-top:0}
+.cf-passos .n{width:30px;height:30px;display:grid;place-items:center;background:var(--ter);color:#fff;font-weight:700;font-size:14px}
+.cf-passos b{display:block;font-size:17px}
+.cf-passos .t{display:block;font-size:14.5px;line-height:1.45;color:var(--muted)}
+.cf-nota{margin:0;font-size:12.5px;color:var(--muted)}
+@keyframes cfEntra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* como funciona: verdes trocados pelo bege #D2B287 */
+#como-funciona{--bege:#D2B287}
+#como-funciona .cf-abas button{border-color:var(--bege)}
+#como-funciona .cf-abas button[aria-selected=true]{background:var(--bege);color:var(--ink)}
+#como-funciona .recurso[style*="--pet"] i{background:var(--bege)}
+
+/* comparativo: IA legível no cabeçalho escuro */
+th.col-nossa b{color:#D2B287}
