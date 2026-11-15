@@ -17,6 +17,8 @@ export type Erros = Partial<Record<keyof DadosCadastro, string>>
 
 export const SENHA_MINIMA = 10
 
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
 /** 0 a 4: comprimento, maiúscula e minúscula, número, símbolo. */
 export function forcaSenha(senha: string): number {
   if (!senha) return 0
@@ -40,7 +42,7 @@ export function validarCadastro(d: DadosCadastro): Erros {
   const erros: Erros = {}
   const nome = d.nome.trim()
   if (nome.length < 3) erros.nome = 'Informe seu nome completo.'
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email.trim())) erros.email = 'Informe um e-mail válido.'
+  if (!EMAIL_REGEX.test(d.email.trim())) erros.email = 'Informe um e-mail válido.'
   if (d.senha.length < SENHA_MINIMA) erros.senha = `A senha precisa ter pelo menos ${SENHA_MINIMA} caracteres.`
   else if (forcaSenha(d.senha) < 3) erros.senha = 'Use letras maiúsculas e minúsculas, números ou símbolos.'
   return { ...erros, ...validarComplemento(d) }
