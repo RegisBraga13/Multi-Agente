@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useParams } from 'react-router-dom'
 import { buscarEspecialidade } from '../especialidades'
 import { Marca } from '../marca'
@@ -10,6 +10,7 @@ import { FormularioPaciente } from './formulario-paciente'
 import { PainelAgendamento } from './painel-agendamento'
 import type { RascunhoPedido } from './regras'
 import type { Medico, Modalidade } from './tipos'
+import { useTelaPequena } from './use-tela-pequena'
 
 const RASCUNHO_VAZIO: RascunhoPedido = {
   modalidade: 'presencial', data: null, inicio: null, nome: '', whatsapp: '', transcricao: null, forma: null,
@@ -44,14 +45,42 @@ function Pagina({ medico }: { medico: Medico }) {
 
   const selecionado = rascunho.data && rascunho.inicio ? { data: rascunho.data, inicio: rascunho.inicio } : null
 
+  // Janela modal: no celular o painel cobre a página; o formulário cobre em qualquer tela.
+  // Enquanto houver uma, o resto da página fica inerte (sem foco nem leitura por baixo).
+  const telaPequena = useTelaPequena()
+  const modal = preenchendo || (telaPequena && !!selecionado)
+  const tituloAgenda = useRef<HTMLHeadingElement>(null)
+  const algoAberto = preenchendo || !!selecionado
+  const estavaAberto = useRef(false)
+  useEffect(() => {
+    // ao fechar painel ou formulário, o foco volta à agenda
+    if (estavaAberto.current && !algoAberto) tituloAgenda.current?.focus()
+    estavaAberto.current = algoAberto
+  }, [algoAberto])
+
+  const painel = selecionado && !preenchendo && (
+    <PainelAgendamento
+      // trocar o horário reabre o painel no resumo; o que já foi digitado fica no rascunho
+      key={`${selecionado.data} ${selecionado.inicio}`}
+      modal={telaPequena}
+      medico={medico}
+      rascunho={rascunho}
+      onMudar={setRascunho}
+      onFechar={fecharPainel}
+      onPreencherNaPagina={() => setPreenchendo(true)}
+    />
+  )
+
   return (
     <div style={{ '--esp': esp?.cor } as CSSProperties} className="flex min-h-screen flex-col">
-      <Cabecalho medico={medico} profissional={esp?.profissional ?? ''} />
+      <div inert={modal}>
+        <Cabecalho medico={medico} profissional={esp?.profissional ?? ''} />
+      </div>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6">
+      <main inert={modal} className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6">
         <section id="agenda" aria-labelledby="h-agenda" className="scroll-mt-4 pt-10 pb-14">
           <p className="text-[13px] font-bold tracking-[.14em] text-(--esp) uppercase">Agenda</p>
-          <h2 id="h-agenda" className="mt-2 text-[clamp(28px,4vw,40px)] leading-[1.05] font-bold">Escolha o dia e o horário.</h2>
+          <h2 id="h-agenda" ref={tituloAgenda} tabIndex={-1} className="mt-2 text-[clamp(28px,4vw,40px)] leading-[1.05] font-bold outline-none">Escolha o dia e o horário.</h2>
           <div className="mt-6 grid grid-cols-[minmax(0,1fr)] items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
             <AgendaMedico
               agenda={agenda}
@@ -62,15 +91,8 @@ function Pagina({ medico }: { medico: Medico }) {
               onSelecionar={(data, inicio) => setRascunho((r) => ({ ...r, data, inicio }))}
             />
             {selecionado ? (
-              <PainelAgendamento
-                // trocar o horário reabre o painel no resumo; o que já foi digitado fica no rascunho
-                key={`${selecionado.data} ${selecionado.inicio}`}
-                medico={medico}
-                rascunho={rascunho}
-                onMudar={setRascunho}
-                onFechar={fecharPainel}
-                onPreencherNaPagina={() => setPreenchendo(true)}
-              />
+              // no celular o painel vai para fora da página (que fica inerte); no tablet e PC fica ao lado da agenda
+              !telaPequena && painel
             ) : (
               <aside className="hidden border border-dashed border-linha p-6 text-apagado md:block">
                 Escolha um horário para começar o agendamento.
@@ -86,6 +108,8 @@ function Pagina({ medico }: { medico: Medico }) {
         </div>
       </main>
 
+      {telaPequena && painel}
+
       {preenchendo && (
         <FormularioPaciente
           medico={medico}
@@ -94,7 +118,7 @@ function Pagina({ medico }: { medico: Medico }) {
         />
       )}
 
-      <footer className="border-t border-linha py-8 text-center text-[14px] text-apagado">
+      <footer inert={modal} className="border-t border-linha py-8 text-center text-[14px] text-apagado">
         Agendamento com <Marca className="text-[17px]" />
       </footer>
     </div>

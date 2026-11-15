@@ -63,6 +63,16 @@ export function gerarAgenda(hoje: Date): Agenda {
   return agenda
 }
 
+/** Dia mostrado na agenda: o que o paciente tocou, senão o do horário escolhido, senão o primeiro. */
+export function diaAberto(
+  dias: DiaAgenda[],
+  diaTocado: string | null,
+  selecionado: { data: string; inicio: string } | null,
+): string | undefined {
+  const existe = (d?: string | null) => (d && dias.some((x) => x.data === d) ? d : undefined)
+  return existe(diaTocado) ?? existe(selecionado?.data) ?? dias[0]?.data
+}
+
 export function horarioExiste(agenda: Agenda, modalidade: Modalidade, data: string, inicio: string): boolean {
   return !!agenda[modalidade].find((d) => d.data === data)?.horarios.some((h) => h.inicio === inicio && h.livre)
 }

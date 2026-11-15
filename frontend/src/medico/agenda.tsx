@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { diaAberto } from './exemplo'
 import { NOME_MODALIDADE, rotuloDiaCurto, rotuloDiaLongo } from './textos'
 import type { Agenda, Modalidade } from './tipos'
 
@@ -14,11 +15,7 @@ type Props = {
 export function AgendaMedico({ agenda, modalidade, atendeOnline, onModalidade, selecionado, onSelecionar }: Props) {
   const dias = agenda[modalidade]
   const [diaEscolhido, setDiaEscolhido] = useState<string | null>(null)
-  // dia aberto: o do horário escolhido, senão o que o paciente tocou, senão o primeiro da modalidade
-  const aberto =
-    dias.find((d) => d.data === selecionado?.data)?.data ??
-    dias.find((d) => d.data === diaEscolhido)?.data ??
-    dias[0]?.data
+  const aberto = diaAberto(dias, diaEscolhido, selecionado)
   const horarios = dias.find((d) => d.data === aberto)?.horarios.filter((h) => h.livre) ?? []
 
   return (
@@ -40,7 +37,7 @@ export function AgendaMedico({ agenda, modalidade, atendeOnline, onModalidade, s
       )}
 
       <p className="mt-5 text-[12px] font-bold tracking-[.14em] text-apagado uppercase">Escolha o dia</p>
-      <div className="-mx-4 mt-2 flex snap-x gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6" role="list">
+      <div className="-mx-4 mt-2 flex snap-x gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6">
         {dias.map((d) => {
           const r = rotuloDiaCurto(d.data)
           const sel = d.data === aberto
@@ -49,7 +46,6 @@ export function AgendaMedico({ agenda, modalidade, atendeOnline, onModalidade, s
             <button
               key={d.data}
               type="button"
-              role="listitem"
               aria-pressed={sel}
               aria-label={`${rotuloDiaLongo(d.data)}, ${livres} horários livres`}
               onClick={() => setDiaEscolhido(d.data)}
@@ -71,7 +67,7 @@ export function AgendaMedico({ agenda, modalidade, atendeOnline, onModalidade, s
       {horarios.length ? (
         <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
           {horarios.map((h) => {
-            const sel = selecionado?.data === aberto && selecionado.inicio === h.inicio
+            const sel = !!selecionado && selecionado.data === aberto && selecionado.inicio === h.inicio
             return (
               <button
                 key={h.inicio}

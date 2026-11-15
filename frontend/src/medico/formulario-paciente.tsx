@@ -23,6 +23,11 @@ export function FormularioPaciente({ medico, inicial, onConcluir }: Props) {
   useEffect(() => {
     titulo.current?.focus({ preventScroll: true })
   }, [pronto])
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onConcluir()
+    document.addEventListener('keydown', esc)
+    return () => document.removeEventListener('keydown', esc)
+  }, [onConcluir])
   // libera a miniatura da memória ao trocar a foto ou sair
   useEffect(() => () => { if (foto) URL.revokeObjectURL(foto.url) }, [foto])
 

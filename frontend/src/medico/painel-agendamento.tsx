@@ -6,6 +6,8 @@ import { artigo, NOME_MODALIDADE, rotuloDiaLongo, textoTranscricao } from './tex
 import type { Medico } from './tipos'
 
 type Props = {
+  /** no celular o painel cobre a página: vira janela modal */
+  modal: boolean
   medico: Medico
   rascunho: RascunhoPedido
   onMudar(r: RascunhoPedido): void
@@ -16,7 +18,7 @@ type Props = {
 type Passo = 1 | 2 | 3 | 4 | 'enviado'
 const TOTAL = 4
 
-export function PainelAgendamento({ medico, rascunho, onMudar, onFechar, onPreencherNaPagina }: Props) {
+export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, onPreencherNaPagina }: Props) {
   const [passo, setPasso] = useState<Passo>(1)
   const [erros, setErros] = useState<ErrosPedido>({})
   const [confirmouConsulta, setConfirmouConsulta] = useState(rascunho.forma === 'consulta')
@@ -55,6 +57,8 @@ export function PainelAgendamento({ medico, rascunho, onMudar, onFechar, onPreen
   return (
     <section
       aria-labelledby="h-painel"
+      role={modal ? 'dialog' : undefined}
+      aria-modal={modal || undefined}
       className="fixed inset-0 z-50 overflow-y-auto bg-papel md:sticky md:inset-auto md:top-4 md:z-auto md:overflow-visible md:bg-transparent"
     >
       <div className="min-h-full bg-branco p-5 sm:p-7 md:min-h-0 md:border md:border-t-4 md:border-linha md:shadow-[0_30px_60px_-36px_rgba(19,48,47,.5)]" style={{ borderTopColor: 'var(--esp)' }}>
@@ -152,21 +156,17 @@ export function PainelAgendamento({ medico, rascunho, onMudar, onFechar, onPreen
             <p className="mt-2 text-apagado">
               Seus dados e, se quiser, algumas perguntas sobre o motivo da consulta. Assim {artigo(medico)} já chega conhecendo o seu caso.
             </p>
-            <div className="mt-5 grid gap-3" role="radiogroup" aria-label="Como prefere preencher?">
-              <Opcao sel={r.forma === 'whatsapp'} onClick={() => escolherForma('whatsapp')} selo="Recomendado"
+            <fieldset className="mt-5 grid gap-3">
+              <legend className="sr-only">Como prefere preencher?</legend>
+              <Opcao valor="whatsapp" atual={r.forma} onEscolher={escolherForma} selo="Recomendado"
                 titulo="Receber no WhatsApp" texto="Você responde com calma, no seu tempo, antes da consulta." />
-              <Opcao sel={r.forma === 'pagina'} onClick={() => escolherForma('pagina')}
+              <Opcao valor="pagina" atual={r.forma} onEscolher={escolherForma}
                 titulo="Preencher aqui agora" texto="Leva poucos minutos." />
-              <button
-                type="button"
-                role="radio"
-                aria-checked={r.forma === 'consulta'}
-                onClick={() => escolherForma('consulta')}
-                className={`mt-1 text-left text-[14.5px] underline ${r.forma === 'consulta' ? 'font-semibold text-tinta' : 'text-apagado'}`}
-              >
+              <label className={`mt-1 flex cursor-pointer items-center gap-2.5 text-[14.5px] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-(--esp) ${r.forma === 'consulta' ? 'font-semibold text-tinta' : 'text-apagado'}`}>
+                <input type="radio" name="forma" value="consulta" checked={r.forma === 'consulta'} onChange={() => escolherForma('consulta')} className="h-4 w-4 accent-(--esp)" />
                 Prefiro preencher na consulta
-              </button>
-            </div>
+              </label>
+            </fieldset>
 
             {precisaReconsiderar && (
               <div className="mt-4 border-l-4 border-(--esp) bg-suave p-4">
@@ -234,15 +234,22 @@ function Linha({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   )
 }
 
-function Opcao({ sel, onClick, titulo, texto, selo }: { sel: boolean; onClick(): void; titulo: string; texto: string; selo?: string }) {
+type PropsOpcao = {
+  valor: FormaFormulario
+  atual: FormaFormulario | null
+  onEscolher(f: FormaFormulario): void
+  titulo: string
+  texto: string
+  selo?: string
+}
+
+function Opcao({ valor, atual, onEscolher, titulo, texto, selo }: PropsOpcao) {
+  const sel = atual === valor
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={sel}
-      onClick={onClick}
-      className={`flex w-full items-start gap-3 border-[1.5px] p-4 text-left transition ${sel ? 'border-(--esp) bg-(--esp)/10' : 'border-linha hover:border-tinta'}`}
+    <label
+      className={`flex w-full cursor-pointer items-start gap-3 border-[1.5px] p-4 text-left transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--esp) ${sel ? 'border-(--esp) bg-(--esp)/10' : 'border-linha hover:border-tinta'}`}
     >
+      <input type="radio" name="forma" value={valor} checked={sel} onChange={() => onEscolher(valor)} className="sr-only" />
       <span aria-hidden className={`mt-1 grid h-5 w-5 flex-none place-items-center border-[1.5px] ${sel ? 'border-(--esp) bg-(--esp) text-papel' : 'border-apagado'}`}>
         {sel ? '✓' : ''}
       </span>
@@ -253,6 +260,6 @@ function Opcao({ sel, onClick, titulo, texto, selo }: { sel: boolean; onClick():
         </span>
         <span className="mt-0.5 block text-[14.5px] text-apagado">{texto}</span>
       </span>
-    </button>
+    </label>
   )
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buscarMedico, gerarAgenda, horarioExiste } from './exemplo'
+import { buscarMedico, diaAberto, gerarAgenda, horarioExiste } from './exemplo'
 
 describe('gerarAgenda', () => {
   it('começa amanhã, mesmo tarde da noite', () => {
@@ -36,6 +36,22 @@ describe('horarioExiste', () => {
     expect(horarioExiste(a, 'presencial', '2026-11-17', '08:00')).toBe(true)
     expect(horarioExiste(a, 'presencial', '2026-11-17', '08:30')).toBe(false) // ocupado
     expect(horarioExiste(a, 'online', '2026-11-17', '08:00')).toBe(false) // outra modalidade
+  })
+})
+
+describe('diaAberto', () => {
+  const dias = gerarAgenda(new Date(2026, 10, 16, 9, 0)).presencial
+  it('abre o primeiro dia quando nada foi tocado', () => {
+    expect(diaAberto(dias, null, null)).toBe('2026-11-17')
+  })
+  it('o dia tocado vale mesmo com um horário já escolhido em outro dia', () => {
+    expect(diaAberto(dias, '2026-11-19', { data: '2026-11-17', inicio: '08:00' })).toBe('2026-11-19')
+  })
+  it('sem dia tocado, abre o dia do horário escolhido', () => {
+    expect(diaAberto(dias, null, { data: '2026-11-18', inicio: '08:00' })).toBe('2026-11-18')
+  })
+  it('dia tocado que não existe nesta modalidade cai no primeiro', () => {
+    expect(diaAberto(dias, '2026-11-22', null)).toBe('2026-11-17') // domingo
   })
 })
 
