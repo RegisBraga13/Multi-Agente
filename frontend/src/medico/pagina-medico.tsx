@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useParams } from 'react-router-dom'
 import { buscarEspecialidade } from '../especialidades'
 import { Marca } from '../marca'
@@ -6,6 +6,7 @@ import { NaoEncontrada } from '../nao-encontrada'
 import { AgendaMedico } from './agenda'
 import { buscarMedico, gerarAgenda, horarioExiste } from './exemplo'
 import { ComoFunciona, Duvidas, SobreTranscricao } from './informacoes'
+import { PainelAgendamento } from './painel-agendamento'
 import type { RascunhoPedido } from './regras'
 import type { Medico, Modalidade } from './tipos'
 
@@ -36,6 +37,9 @@ function Pagina({ medico }: { medico: Medico }) {
     })
   }
 
+  // fechar o painel devolve o paciente à agenda; nome e WhatsApp digitados continuam guardados
+  const fecharPainel = useCallback(() => setRascunho((r) => ({ ...r, data: null, inicio: null })), [])
+
   const selecionado = rascunho.data && rascunho.inicio ? { data: rascunho.data, inicio: rascunho.inicio } : null
 
   return (
@@ -55,9 +59,21 @@ function Pagina({ medico }: { medico: Medico }) {
               selecionado={selecionado}
               onSelecionar={(data, inicio) => setRascunho((r) => ({ ...r, data, inicio }))}
             />
-            <aside className="hidden border border-dashed border-linha p-6 text-apagado md:block">
-              Escolha um horário para começar o agendamento.
-            </aside>
+            {selecionado ? (
+              <PainelAgendamento
+                // trocar o horário reabre o painel no resumo; o que já foi digitado fica no rascunho
+                key={`${selecionado.data} ${selecionado.inicio}`}
+                medico={medico}
+                rascunho={rascunho}
+                onMudar={setRascunho}
+                onFechar={fecharPainel}
+                onPreencherNaPagina={() => undefined}
+              />
+            ) : (
+              <aside className="hidden border border-dashed border-linha p-6 text-apagado md:block">
+                Escolha um horário para começar o agendamento.
+              </aside>
+            )}
           </div>
         </section>
 

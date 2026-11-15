@@ -1,0 +1,258 @@
+import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
+import { Campo } from './campo'
+import { btnPrimario, btnSecundario, classeEntrada } from './estilos'
+import { formatarWhatsapp, normalizarWhatsapp, validarContato, validarPedido, type ErrosPedido, type FormaFormulario, type RascunhoPedido } from './regras'
+import { artigo, NOME_MODALIDADE, rotuloDiaLongo, textoTranscricao } from './textos'
+import type { Medico } from './tipos'
+
+type Props = {
+  medico: Medico
+  rascunho: RascunhoPedido
+  onMudar(r: RascunhoPedido): void
+  onFechar(): void
+  onPreencherNaPagina(): void
+}
+
+type Passo = 1 | 2 | 3 | 4 | 'enviado'
+const TOTAL = 4
+
+export function PainelAgendamento({ medico, rascunho, onMudar, onFechar, onPreencherNaPagina }: Props) {
+  const [passo, setPasso] = useState<Passo>(1)
+  const [erros, setErros] = useState<ErrosPedido>({})
+  const [confirmouConsulta, setConfirmouConsulta] = useState(rascunho.forma === 'consulta')
+  const titulo = useRef<HTMLHeadingElement>(null)
+  const r = rascunho
+
+  // foco no título a cada passo (leitor de tela e teclado acompanham a troca)
+  useEffect(() => {
+    titulo.current?.focus({ preventScroll: true })
+  }, [passo])
+
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onFechar()
+    document.addEventListener('keydown', esc)
+    return () => document.removeEventListener('keydown', esc)
+  }, [onFechar])
+
+  const muda = (parcial: Partial<RascunhoPedido>) => onMudar({ ...r, ...parcial })
+
+  function escolherForma(f: FormaFormulario) {
+    setConfirmouConsulta(false)
+    setErros((e) => ({ ...e, forma: undefined }))
+    muda({ forma: f })
+  }
+
+  function enviar() {
+    const e = validarPedido(r)
+    setErros(e)
+    if (Object.keys(e).length) return
+    setPasso('enviado')
+  }
+
+  const whatsapp = normalizarWhatsapp(r.whatsapp)
+  const precisaReconsiderar = r.forma === 'consulta' && !confirmouConsulta
+
+  return (
+    <section
+      aria-labelledby="h-painel"
+      className="fixed inset-0 z-50 overflow-y-auto bg-papel md:sticky md:inset-auto md:top-4 md:z-auto md:overflow-visible md:bg-transparent"
+    >
+      <div className="min-h-full bg-branco p-5 sm:p-7 md:min-h-0 md:border md:border-t-4 md:border-linha md:shadow-[0_30px_60px_-36px_rgba(19,48,47,.5)]" style={{ borderTopColor: 'var(--esp)' }}>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-[12px] font-bold tracking-[.14em] text-apagado uppercase">
+            {passo === 'enviado' ? 'Pedido enviado' : `Passo ${passo} de ${TOTAL}`}
+          </span>
+          <button type="button" onClick={onFechar} className="text-[14px] font-semibold text-apagado underline hover:text-tinta">
+            Fechar
+          </button>
+        </div>
+        {passo !== 'enviado' && (
+          <div className="mt-3 grid grid-cols-4 gap-1.5" aria-hidden>
+            {[1, 2, 3, 4].map((n) => (
+              <span key={n} className="h-1" style={{ background: n <= passo ? 'var(--esp)' : 'var(--color-linha)' }} />
+            ))}
+          </div>
+        )}
+
+        {passo === 1 && (
+          <>
+            <Titulo ref={titulo}>Seu horário</Titulo>
+            <dl className="mt-5 grid gap-3 border-y border-linha py-4 text-[16px]">
+              <Linha rotulo="Dia">{rotuloDiaLongo(r.data!)}</Linha>
+              <Linha rotulo="Hora">{r.inicio}</Linha>
+              <Linha rotulo="Consulta">
+                {NOME_MODALIDADE[r.modalidade]}
+                <small className="block text-[14px] text-apagado">
+                  {r.modalidade === 'presencial' ? `${medico.endereco} · ${medico.cidade}` : 'Por vídeo. O link chega pelo WhatsApp.'}
+                </small>
+              </Linha>
+            </dl>
+            <div className="mt-6 grid gap-3">
+              <button type="button" className={btnPrimario} onClick={() => setPasso(2)}>Continuar</button>
+              <button type="button" className={btnSecundario} onClick={onFechar}>Trocar horário</button>
+            </div>
+          </>
+        )}
+
+        {passo === 2 && (
+          <form
+            noValidate
+            onSubmit={(ev) => {
+              ev.preventDefault()
+              const e = validarContato(r)
+              setErros(e)
+              if (!Object.keys(e).length) setPasso(3)
+            }}
+          >
+            <Titulo ref={titulo}>Seus contatos</Titulo>
+            <p className="mt-2 text-apagado">É por aqui que o consultório confirma o horário e lembra você da consulta.</p>
+            <div className="mt-5 grid gap-4">
+              <Campo rotulo="Seu nome" erro={erros.nome}>
+                {(p) => <input {...p} autoComplete="name" value={r.nome} onChange={(e) => muda({ nome: e.target.value })} className={classeEntrada(p)} />}
+              </Campo>
+              <Campo rotulo="WhatsApp" erro={erros.whatsapp} ajuda="Celular com DDD.">
+                {(p) => (
+                  <input {...p} type="tel" inputMode="tel" autoComplete="tel" placeholder="(85) 99999-9999" value={r.whatsapp} onChange={(e) => muda({ whatsapp: e.target.value })} className={classeEntrada(p)} />
+                )}
+              </Campo>
+            </div>
+            <div className="mt-6 grid gap-3">
+              <button type="submit" className={btnPrimario}>Continuar</button>
+              <button type="button" className={btnSecundario} onClick={() => setPasso(1)}>Voltar</button>
+            </div>
+          </form>
+        )}
+
+        {passo === 3 && (
+          <>
+            <Titulo ref={titulo}>Transcrição da consulta</Titulo>
+            <p className="mt-3 text-[16px] leading-relaxed">{textoTranscricao(medico)}</p>
+            <div className="mt-6 grid gap-3" role="group" aria-label="Você concorda com a transcrição?">
+              {([['aceita', 'Concordo'], ['recusada', 'Não concordo']] as const).map(([v, t]) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={r.transcricao === v}
+                  onClick={() => { muda({ transcricao: v }); setPasso(4) }}
+                  className={`w-full border-[1.5px] px-6 py-4 text-[17px] font-bold transition ${
+                    r.transcricao === v ? 'border-(--esp) bg-(--esp) text-papel' : 'border-tinta hover:bg-suave'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+              <button type="button" className="mt-1 text-[14px] font-semibold text-apagado underline" onClick={() => setPasso(2)}>Voltar</button>
+            </div>
+          </>
+        )}
+
+        {passo === 4 && (
+          <>
+            <Titulo ref={titulo}>Formulário da consulta</Titulo>
+            <p className="mt-2 text-apagado">
+              Seus dados e, se quiser, algumas perguntas sobre o motivo da consulta. Assim {artigo(medico)} já chega conhecendo o seu caso.
+            </p>
+            <div className="mt-5 grid gap-3" role="radiogroup" aria-label="Como prefere preencher?">
+              <Opcao sel={r.forma === 'whatsapp'} onClick={() => escolherForma('whatsapp')} selo="Recomendado"
+                titulo="Receber no WhatsApp" texto="Você responde com calma, no seu tempo, antes da consulta." />
+              <Opcao sel={r.forma === 'pagina'} onClick={() => escolherForma('pagina')}
+                titulo="Preencher aqui agora" texto="Leva poucos minutos." />
+              <button
+                type="button"
+                role="radio"
+                aria-checked={r.forma === 'consulta'}
+                onClick={() => escolherForma('consulta')}
+                className={`mt-1 text-left text-[14.5px] underline ${r.forma === 'consulta' ? 'font-semibold text-tinta' : 'text-apagado'}`}
+              >
+                Prefiro preencher na consulta
+              </button>
+            </div>
+
+            {precisaReconsiderar && (
+              <div className="mt-4 border-l-4 border-(--esp) bg-suave p-4">
+                <p className="font-semibold">Tem certeza?</p>
+                <p className="mt-1 text-[15px]">
+                  Com o formulário respondido antes, {artigo(medico)} já chega à consulta conhecendo o seu caso, e o tempo com você rende mais. Pelo WhatsApp leva poucos minutos.
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <button type="button" className="bg-(--esp) px-4 py-3 font-bold text-papel" onClick={() => escolherForma('whatsapp')}>Receber no WhatsApp</button>
+                  <button type="button" className="border-[1.5px] border-tinta px-4 py-3 font-semibold" onClick={() => setConfirmouConsulta(true)}>Manter na consulta</button>
+                </div>
+              </div>
+            )}
+
+            {(erros.forma || erros.transcricao || erros.horario) && (
+              <p role="alert" className="mt-4 text-[14.5px] font-semibold text-alerta">{erros.forma ?? erros.transcricao ?? erros.horario}</p>
+            )}
+
+            {!precisaReconsiderar && (
+              <div className="mt-6 grid gap-3">
+                <button type="button" className={btnPrimario} onClick={enviar}>Enviar pedido</button>
+                <button type="button" className={btnSecundario} onClick={() => setPasso(3)}>Voltar</button>
+              </div>
+            )}
+          </>
+        )}
+
+        {passo === 'enviado' && (
+          <div role="status">
+            <Titulo ref={titulo}>Pedido enviado</Titulo>
+            <p className="mt-2 text-[16px]">
+              {rotuloDiaLongo(r.data!)}, às {r.inicio} · {NOME_MODALIDADE[r.modalidade]}
+            </p>
+            <ul className="mt-5 grid gap-3 border-y border-linha py-4 text-[15.5px]">
+              <li className="flex gap-2"><span className="text-(--esp)">✓</span>O consultório confirma o horário no seu WhatsApp, {whatsapp && formatarWhatsapp(whatsapp)}.</li>
+              {r.forma === 'whatsapp' && <li className="flex gap-2"><span className="text-(--esp)">✓</span>O formulário chega no mesmo WhatsApp.</li>}
+              {r.forma === 'consulta' && <li className="flex gap-2"><span className="text-(--esp)">✓</span>Você responde o formulário no início da consulta.</li>}
+            </ul>
+            <div className="mt-6 grid gap-3">
+              {r.forma === 'pagina' && <button type="button" className={btnPrimario} onClick={onPreencherNaPagina}>Preencher o formulário agora</button>}
+              <button type="button" className={btnSecundario} onClick={onFechar}>Fechar</button>
+            </div>
+            <p className="mt-5 border-l-4 border-alerta bg-[#fbe9e6] px-4 py-3 text-[14px]">Demonstração: nada foi enviado.</p>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function Titulo({ ref, children }: { ref: Ref<HTMLHeadingElement>; children: ReactNode }) {
+  return (
+    <h2 ref={ref} id="h-painel" tabIndex={-1} className="mt-5 text-[clamp(26px,3vw,32px)] leading-tight font-bold outline-none">
+      {children}
+    </h2>
+  )
+}
+
+function Linha({ rotulo, children }: { rotulo: string; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-3">
+      <dt className="text-[12px] font-bold tracking-[.14em] text-apagado uppercase leading-6">{rotulo}</dt>
+      <dd className="font-semibold">{children}</dd>
+    </div>
+  )
+}
+
+function Opcao({ sel, onClick, titulo, texto, selo }: { sel: boolean; onClick(): void; titulo: string; texto: string; selo?: string }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={sel}
+      onClick={onClick}
+      className={`flex w-full items-start gap-3 border-[1.5px] p-4 text-left transition ${sel ? 'border-(--esp) bg-(--esp)/10' : 'border-linha hover:border-tinta'}`}
+    >
+      <span aria-hidden className={`mt-1 grid h-5 w-5 flex-none place-items-center border-[1.5px] ${sel ? 'border-(--esp) bg-(--esp) text-papel' : 'border-apagado'}`}>
+        {sel ? '✓' : ''}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-2">
+          <b className="text-[17px]">{titulo}</b>
+          {selo && <span className="bg-(--esp) px-2 py-0.5 text-[11px] font-bold tracking-[.1em] text-papel uppercase">{selo}</span>}
+        </span>
+        <span className="mt-0.5 block text-[14.5px] text-apagado">{texto}</span>
+      </span>
+    </button>
+  )
+}

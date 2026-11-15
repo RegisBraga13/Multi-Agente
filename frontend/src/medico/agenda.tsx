@@ -40,7 +40,7 @@ export function AgendaMedico({ agenda, modalidade, atendeOnline, onModalidade, s
       )}
 
       <p className="mt-5 text-[12px] font-bold tracking-[.14em] text-apagado uppercase">Escolha o dia</p>
-      <div className="-mx-4 mt-2 flex snap-x gap-2 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6" role="list">
+      <div className="-mx-4 mt-2 flex snap-x gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6" role="list">
         {dias.map((d) => {
           const r = rotuloDiaCurto(d.data)
           const sel = d.data === aberto
