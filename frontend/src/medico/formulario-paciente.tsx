@@ -3,15 +3,17 @@ import { UFS } from '../cadastro/validacao'
 import { Campo } from './campo'
 import { btnPrimario, btnSecundario, classeEntrada } from './estilos'
 import { perguntasPreConsulta, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
-import { validarDadosPessoais, validarFoto, type DadosPessoais } from './regras'
-import { artigo } from './textos'
+import { formatarWhatsapp, normalizarWhatsapp, validarDadosPessoais, validarFoto, type DadosPessoais, type RascunhoPedido } from './regras'
+import { artigo, NOME_MODALIDADE, rotuloDiaLongo } from './textos'
 import type { Medico } from './tipos'
 
-type Props = { medico: Medico; inicial: { nome: string; whatsapp: string }; onConcluir(): void }
+type Props = { medico: Medico; pedido: RascunhoPedido; onConcluir(): void }
 
-export function FormularioPaciente({ medico, inicial, onConcluir }: Props) {
+/** Formulário do paciente, aberto dentro da página logo depois do pedido enviado. */
+export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
+  const whatsapp = normalizarWhatsapp(pedido.whatsapp)
   const [dados, setDados] = useState<DadosPessoais>({
-    nomeCompleto: inicial.nome, nascimento: '', sexo: '', whatsapp: inicial.whatsapp, email: '', cidade: '', uf: '',
+    nomeCompleto: pedido.nome, nascimento: '', sexo: '', whatsapp: pedido.whatsapp, email: '', cidade: '', uf: '',
   })
   const perguntas = perguntasPreConsulta(medico.especialidade)
   const [pre, setPre] = useState<RespostasPreConsulta>({})
@@ -22,14 +24,11 @@ export function FormularioPaciente({ medico, inicial, onConcluir }: Props) {
   const [pronto, setPronto] = useState(false)
   const titulo = useRef<HTMLHeadingElement>(null)
 
+  // ao abrir (e ao concluir), leva a tela e o foco até o formulário
   useEffect(() => {
+    titulo.current?.closest('section')?.scrollIntoView({ block: 'start' })
     titulo.current?.focus({ preventScroll: true })
   }, [pronto])
-  useEffect(() => {
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onConcluir()
-    document.addEventListener('keydown', esc)
-    return () => document.removeEventListener('keydown', esc)
-  }, [onConcluir])
   // libera a miniatura da memória ao trocar a foto ou sair
   useEffect(() => () => { if (foto) URL.revokeObjectURL(foto.url) }, [foto])
 
@@ -86,8 +85,15 @@ export function FormularioPaciente({ medico, inicial, onConcluir }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-y-auto bg-papel bg-[url(/papel.png)] bg-size-[512px]" role="dialog" aria-modal="true" aria-labelledby="h-form">
-      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-12">
+    <section aria-labelledby="h-form" className="scroll-mt-4 pt-10 pb-14">
+      {!pronto && whatsapp && pedido.data && (
+        <div role="status" className="mx-auto mb-6 max-w-2xl border-l-4 border-(--esp) bg-branco px-5 py-4 text-[15.5px]">
+          <b className="block">✓ Pedido enviado</b>
+          {rotuloDiaLongo(pedido.data)}, às {pedido.inicio} · {NOME_MODALIDADE[pedido.modalidade]}. O consultório confirma o horário no seu WhatsApp, {formatarWhatsapp(whatsapp)}.
+          <span className="mt-1 block text-[13.5px] text-apagado">Demonstração: nada foi enviado.</span>
+        </div>
+      )}
+      <div className="mx-auto max-w-2xl">
         <div className="border border-linha bg-branco p-5 shadow-[0_30px_60px_-36px_rgba(19,48,47,.5)] sm:p-9" style={{ borderTop: '4px solid var(--esp)' }}>
           {pronto ? (
             <div role="status">
@@ -163,6 +169,6 @@ export function FormularioPaciente({ medico, inicial, onConcluir }: Props) {
           )}
         </div>
       </div>
-    </div>
+    </section>
   )
 }

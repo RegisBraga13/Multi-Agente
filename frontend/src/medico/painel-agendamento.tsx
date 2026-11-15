@@ -48,6 +48,8 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
     const e = validarPedido(r)
     setErros(e)
     if (Object.keys(e).length) return
+    // quem escolheu preencher na página segue direto para o formulário, que abre na própria página
+    if (r.forma === 'pagina') return onPreencherNaPagina()
     setPasso('enviado')
   }
 
@@ -206,7 +208,6 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
               {r.forma === 'consulta' && <li className="flex gap-2"><span className="text-(--esp)">✓</span>Você responde o formulário no início da consulta.</li>}
             </ul>
             <div className="mt-6 grid gap-3">
-              {r.forma === 'pagina' && <button type="button" className={btnPrimario} onClick={onPreencherNaPagina}>Preencher o formulário agora</button>}
               <button type="button" className={btnSecundario} onClick={onFechar}>Fechar</button>
             </div>
             <p className="mt-5 border-l-4 border-alerta bg-[#fbe9e6] px-4 py-3 text-[14px]">Demonstração: nada foi enviado.</p>

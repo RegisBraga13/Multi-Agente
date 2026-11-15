@@ -45,10 +45,10 @@ function Pagina({ medico }: { medico: Medico }) {
 
   const selecionado = rascunho.data && rascunho.inicio ? { data: rascunho.data, inicio: rascunho.inicio } : null
 
-  // Janela modal: no celular o painel cobre a página; o formulário cobre em qualquer tela.
-  // Enquanto houver uma, o resto da página fica inerte (sem foco nem leitura por baixo).
+  // Janela modal: só o painel no celular, que cobre a página; o resto fica inerte por baixo.
+  // O formulário abre dentro da própria página, no lugar da agenda.
   const telaPequena = useTelaPequena()
-  const modal = preenchendo || (telaPequena && !!selecionado)
+  const modal = !preenchendo && telaPequena && !!selecionado
   const tituloAgenda = useRef<HTMLHeadingElement>(null)
   const algoAberto = preenchendo || !!selecionado
   const estavaAberto = useRef(false)
@@ -78,6 +78,13 @@ function Pagina({ medico }: { medico: Medico }) {
       </div>
 
       <main inert={modal} className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6">
+        {preenchendo ? (
+          <FormularioPaciente
+            medico={medico}
+            pedido={rascunho}
+            onConcluir={() => { setPreenchendo(false); fecharPainel() }}
+          />
+        ) : (
         <section id="agenda" aria-labelledby="h-agenda" className="scroll-mt-4 pt-10 pb-14">
           <p className="text-[13px] font-bold tracking-[.14em] text-(--esp) uppercase">Agenda</p>
           <h2 id="h-agenda" ref={tituloAgenda} tabIndex={-1} className="mt-2 text-[clamp(28px,4vw,40px)] leading-[1.05] font-bold outline-none">Escolha o dia e o horário.</h2>
@@ -100,6 +107,7 @@ function Pagina({ medico }: { medico: Medico }) {
             )}
           </div>
         </section>
+        )}
 
         <div className="flex flex-col gap-16 pb-20">
           <ComoFunciona />
@@ -109,14 +117,6 @@ function Pagina({ medico }: { medico: Medico }) {
       </main>
 
       {telaPequena && painel}
-
-      {preenchendo && (
-        <FormularioPaciente
-          medico={medico}
-          inicial={{ nome: rascunho.nome, whatsapp: rascunho.whatsapp }}
-          onConcluir={() => { setPreenchendo(false); fecharPainel() }}
-        />
-      )}
 
       <footer inert={modal} className="border-t border-linha py-8 text-center text-[14px] text-apagado">
         Agendamento com <Marca className="text-[17px]" />
