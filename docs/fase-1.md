@@ -31,6 +31,9 @@ Nada de Fase 2+ entra aqui. Ideias de outras fases vão para "Depois", no fim de
   - **Obrigatório por causa do selo:** criar o projeto Supabase na região de São Paulo (sa-east-1). O Google precisa ser ativado no Supabase (Auth → Providers)
 - [ ] Publicação (domínio, hospedagem)
 
+## Fase 2 começada antes do fim da Fase 1 (decisão do autor, 15/11/2026)
+- [~] PC-01 + PC-09 — página do médico e entrada do paciente (`/medico/<slug>`): agenda, modalidade, consentimento da transcrição, três formas de preencher o formulário e formulário na página. Primeira versão só visual, com dados de exemplo (Dra. Ana Souza, dermatologia); nada é gravado nem enviado. Design: [superpowers/specs/2026-11-15-pagina-do-medico-design.md](superpowers/specs/2026-11-15-pagina-do-medico-design.md). Falta: ligar ao Supabase, envio pelo WhatsApp, lembretes/confirmação/remarcação, aprovação do pedido pelo consultório (MD-06)
+
 ## Ordem
 Identidade → páginas públicas (LP-01, 02, 03, 08) → acesso (LP-06, 07) → verificação (LP-05) → gateway → contratação (LP-04) → publicação.
 As páginas públicas não dependem do banco nem do gateway, então ficam prontas primeiro.
