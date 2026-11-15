@@ -418,7 +418,7 @@ html{scroll-padding-top:var(--h-topo,70px)}
 .analise{border:1.5px dashed var(--trac);padding:10px 12px;font-size:13.5px;display:flex;flex-direction:column;gap:3px}
 .analise .t{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--esp)}
 @media (min-width:981px) and (min-height:620px){ .ex-card{padding:16px;gap:10px} }
-.demo-txt[hidden]{display:none}
+.demo-txt[hidden],.demo-dir [hidden]{display:none}
 @media (min-width:981px) and (min-height:620px){ #demo{padding-block:clamp(14px,2.2svh,26px)} }
 .demo-duas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:24px;align-items:stretch}
 @media (max-width:980px){.demo-duas{grid-template-columns:minmax(0,1fr)}}
@@ -436,6 +436,23 @@ html{scroll-padding-top:var(--h-topo,70px)}
 .hist-corpo .tx .f{visibility:hidden}
 .hist-corpo .sec.escreve .v::after{content:"";display:inline-block;width:2px;height:1em;background:var(--esp);vertical-align:-2px;margin-left:1px;animation:pulsa2 1s steps(1) infinite}
 @keyframes pulsa2{0%,100%{opacity:1}50%{opacity:0}}
+.dd-card{flex:1}
+.dd-dica{font-size:11px;font-weight:700;font-stretch:75%;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.dd-lista{flex:1;display:flex;flex-direction:column;gap:12px}
+.dd-lista .hip{flex:1;padding:0 18px;font-size:17px}
+.dd-lista .hip .pct{font-size:30px;width:80px}
+.dd-lista .hip .cid{font-size:14px}
+.dd-lista .hip .cx{width:20px;height:20px}
+.dd-lista .hip.add{background:transparent;color:var(--muted);border-style:dashed;cursor:pointer}
+.dd-lista .hip.add:hover{color:var(--ink);border-color:var(--ink)}
+.dd-lista .hip.add .cx{font-size:18px;border-style:dashed}
+.dd-lista .hip.edita{background:var(--surface);border:2px solid var(--pet);cursor:text}
+.dd-lista .hip.edita input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:17px;color:inherit;outline:none}
+.dd-lista .hip.edita.preenchida{background:var(--pet);color:var(--onpet);border-color:var(--pet)}
+.dd-lista .hip.edita.preenchida .cx{border-color:currentColor}
+.dd-lista .hip.edita.preenchida .cid{color:inherit}
+.dd-lista .hip.edita .cid{font-size:12px}
+.dd-lista .hip.proprio{cursor:pointer}
 </style>
 
 <div class="topo" id="topo">
@@ -519,7 +536,7 @@ html{scroll-padding-top:var(--h-topo,70px)}
   </section>
 
   <!-- DEMONSTRAÇÃO + HISTÓRIA CLÍNICA -->
-  <section class="secao" id="demo" aria-labelledby="h-demo">
+  <section class="secao" id="demo" aria-labelledby="h-dd">
     <div class="wrap">
       <div class="demo-duas">
         <article class="ex-card hist" id="hist">
@@ -529,9 +546,19 @@ html{scroll-padding-top:var(--h-topo,70px)}
         </article>
         <div class="demo-dir">
           <div class="cab">
+            <h2 class="h2" id="h-dd">A IA sugere,<br><span class="acento">você decide o diagnóstico.</span></h2>
+          </div>
+          <article class="ex-card dd-card" id="ddCard">
+            <header><span class="nf">3</span><h3>Diagnósticos diferenciais</h3><span class="est">Rascunho da IA</span></header>
+            <span class="dd-dica">Toque para confirmar</span>
+            <div class="dd-lista" id="hipDD"></div>
+            <p class="fonte">Parte apenas da história clínica oficializada. Você decide o diagnóstico.</p>
+          </article>
+          <!-- GUARDADO: bloco "Por voz ou digitação" (será reaproveitado nas hipóteses e na conduta) -->
+          <div class="cab" hidden>
             <h2 class="h2" id="h-demo">Por voz ou digitação.<br><span class="acento">Sua consulta, sua escolha.</span></h2>
           </div>
-          <div class="demo sobe">
+          <div class="demo sobe" hidden>
             <div class="demo-abas" role="tablist" aria-label="Etapas">
               <button role="tab" aria-selected="true" data-etapa="0"><span class="n">1</span>Escolher</button>
               <button role="tab" aria-selected="false" data-etapa="1"><span class="n">2</span>Ouvir</button>
@@ -835,7 +862,7 @@ html{scroll-padding-top:var(--h-topo,70px)}
     $$('.dLembra').forEach(x=>x.textContent=e.lembra); $$('.dAlerta').forEach(x=>x.textContent=e.alertaCurta);
     $('#iaPac').textContent = e.pac[1] + ' · ' + e.pac[3];
     $('#iaAlerta').textContent = e.alerta; $('#iaLembra1').textContent = e.lembra2; $('#iaLembra2').textContent = e.pront; $('#iaConduta').textContent = e.conduta;
-    montaHip($('#hipIA'), e.hip); montaHip($('#hipDemo'), e.hip);
+    montaHip($('#hipIA'), e.hip); montaHip($('#hipDemo'), e.hip); montaDD(e.hip);
     pintaTrilho(); iniciaHero(); montaFluxo(); iniciaHist();
   }
 
@@ -850,6 +877,27 @@ html{scroll-padding-top:var(--h-topo,70px)}
       b.addEventListener('click',()=>{ const ok=!b.classList.contains('ok'); b.classList.toggle('ok',ok); b.setAttribute('aria-pressed',ok); b.querySelector('.cx').textContent=ok?'✓':''; });
       alvo.appendChild(b);
     });
+  }
+
+  // ---------- diagnóstico diferencial: 3 hipóteses da IA + 1 caixa editável do médico ----------
+  let ddReset=null;
+  function montaDD(lista){
+    const alvo=$('#hipDD'); montaHip(alvo,lista);
+    const caixa=document.createElement('div'); alvo.appendChild(caixa);
+    let editando=false;
+    const mostraAdd=()=>{ editando=false; caixa.className='hip add'; caixa.tabIndex=0; caixa.setAttribute('role','button'); caixa.innerHTML='<span class="cx">+</span><span class="nome">Adicionar outro diagnóstico</span>'; };
+    const mostraEdita=()=>{
+      editando=true; caixa.className='hip edita'; caixa.removeAttribute('tabindex'); caixa.removeAttribute('role');
+      caixa.innerHTML='<span class="cx"></span><input type="text" maxlength="90" placeholder="Escreva a hipótese que você considera" aria-label="Hipótese diagnóstica do médico"><span class="cid">sua hipótese</span>';
+      const inp=caixa.querySelector('input');
+      inp.addEventListener('input',()=>{ const v=inp.value.trim(); caixa.classList.toggle('preenchida',!!v); caixa.querySelector('.cx').textContent=v?'✓':''; });
+      inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
+      inp.focus();
+    };
+    caixa.addEventListener('click',()=>{ if(!editando) mostraEdita(); });
+    caixa.addEventListener('keydown',e=>{ if(e.target!==caixa) return; if((e.key==='Enter'||e.key===' ')&&!editando){ e.preventDefault(); mostraEdita(); } });
+    ddReset=mostraAdd;
+    mostraAdd();
   }
 
   // ---------- abertura: relógio, onda, fala digitada ----------
@@ -968,6 +1016,7 @@ html{scroll-padding-top:var(--h-topo,70px)}
       }
       await esperaVis(15000); if(g!==histGen) return;
       secs.forEach((el,i)=>{ el.classList.remove('on','escreve'); poe(i,0); });
+      if(ddReset) ddReset();
       await esperaVis(600);
     }
   }
