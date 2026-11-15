@@ -76,9 +76,10 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 .garantias{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;color:var(--muted)}
 .janela{position:relative;min-width:0}
 .app{background:var(--surface);border:1px solid var(--line);box-shadow:var(--sombra)}
-.app-barra{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
-.app-barra i{width:10px;height:10px}
-.app-barra span{margin-left:12px;font-size:12px;font-stretch:75%;letter-spacing:.08em;color:var(--muted)}
+.app-barra{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.app-barra .nf{width:30px;height:30px;flex:none;display:grid;place-items:center;background:var(--pet);color:var(--onpet);font-weight:800;font-stretch:75%;font-size:13px}
+.app-barra h3{font-size:18px;line-height:1.15;letter-spacing:-.02em}
+.app-barra .andamento{margin-left:auto;font-size:12px;font-stretch:75%;letter-spacing:.08em;color:var(--muted)}
 .app-corpo{padding:22px;display:flex;flex-direction:column;gap:16px}
 .pac{display:flex;align-items:center;gap:12px}
 .avatar{width:40px;height:40px;flex:none;display:grid;place-items:center;background:var(--pes);color:var(--onpes);font-weight:700;font-stretch:75%}
@@ -93,16 +94,8 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 .onda{display:flex;align-items:center;gap:4px;height:44px}
 .onda span{width:5px;background:var(--pes);animation:onda 1.8s ease-in-out infinite;transform-origin:center}
 @keyframes onda{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
-.fala{display:grid;grid-template-columns:72px minmax(0,1fr);align-content:start;gap:8px 12px;font-size:14px;line-height:1.45;height:92px;overflow:hidden}
+.fala{display:grid;grid-template-columns:72px minmax(0,1fr);align-content:start;gap:12px 12px;font-size:16px;line-height:1.45}
 .fala .quem{font-size:11px;font-weight:700;font-stretch:75%;letter-spacing:.12em;text-transform:uppercase;padding-top:2px}
-.divisor{display:flex;align-items:center;gap:12px;color:var(--muted)}
-.divisor::before,.divisor::after{content:"";flex:1;height:1px;background:var(--line)}
-.rascunho{padding:18px;border:1.5px dashed var(--trac);display:flex;flex-direction:column;gap:8px;height:236px;overflow:hidden}
-@media (max-width:980px){.rascunho{height:260px}.flutua{left:12px}}
-.rascunho h3{font-size:18px;letter-spacing:-.02em}
-.campo-r{font-size:11px;color:var(--muted)}
-.flutua{position:absolute;left:-32px;bottom:-28px;padding:14px 16px;background:var(--surface);border:1.5px dashed var(--pes);box-shadow:var(--sombra);display:flex;flex-direction:column;gap:4px;max-width:240px;}
-.flutua.fora{transform:translateY(-10px);opacity:0}
 
 
 /* faixa de especialidades */
@@ -118,15 +111,9 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 /* problema */
 .escuro{background:var(--dark);color:var(--ondark)}
 .escuro .lead{color:var(--darkmuted)}
-.nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:48px}
-@media (max-width:640px){.nums{grid-template-columns:minmax(0,1fr)}}
-.num{padding:32px;border:1px solid var(--darkline);background:var(--darkcard);display:flex;flex-direction:column;gap:10px;transition:border-color .25s,transform .25s}
-.num:hover{border-color:var(--pes);transform:translateY(-4px)}
-.num b{font-size:clamp(52px,6vw,76px);font-weight:700;font-stretch:75%;line-height:1;color:var(--pes)}
-.num span{color:var(--darkmuted)}
 
 /* demo */
-.demo{background:var(--surface);border:1px solid var(--line);margin-top:48px}
+.demo{background:var(--surface);border:1px solid var(--line);margin-top:0}
 .demo-abas{display:flex;align-items:center;gap:6px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .demo-abas button[role=tab]{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border:0;background:transparent;color:var(--muted);font-weight:600;font-size:15px}
 .demo-abas button[aria-selected=true]{background:var(--soft);color:var(--ink)}
@@ -134,13 +121,13 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 .demo-abas .feito .n,.demo-abas [aria-selected=true] .n{background:var(--pet);color:var(--onpet)}
 .barra{flex:1;min-width:80px;height:3px;margin:0 16px;background:var(--line);position:relative;overflow:hidden}
 .barra i{position:absolute;inset:0 auto 0 0;width:0;background:var(--pet)}
-.demo-corpo{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:48px;padding:clamp(22px,4vw,44px);min-height:600px}
+.demo-corpo{display:block;padding:16px}
 @media (max-width:860px){.demo-corpo{grid-template-columns:minmax(0,1fr)}}
 .demo-txt{display:flex;flex-direction:column;gap:18px}
-.demo-txt h3,.doc-txt h3{font-size:clamp(26px,2.8vw,34px);line-height:1.08;letter-spacing:-.03em}
+.demo-txt h3{font-size:clamp(26px,2.8vw,34px);line-height:1.08;letter-spacing:-.03em}
 .lista-check{display:flex;flex-direction:column}
 .lista-check span{padding:12px 0;border-bottom:1px solid var(--line);font-size:15px}
-.demo-vis{background:var(--soft);padding:24px;display:flex;flex-direction:column;gap:14px;min-width:0;min-height:520px}
+.demo-vis{background:var(--soft);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0;min-height:400px}
 .painel{display:none;flex-direction:column;gap:14px;animation:entra .45s cubic-bezier(.2,.8,.2,1)}
 .painel.on{display:flex}
 @keyframes entra{from{transform:translateY(12px)}to{transform:none}}
@@ -205,22 +192,6 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;text-wrap:balance}
 @media (max-width:980px){.liga{display:none}}
 
 /* documentos */
-.abas-doc{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:40px}
-.abas-doc button{padding:14px 22px;border:1.5px solid var(--ink);background:transparent;font-weight:600}
-.abas-doc button[aria-selected=true]{background:var(--ink);color:var(--bg)}
-.chips-doc{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:16px;min-height:34px}
-.chips-doc span{padding:7px 12px;background:var(--soft);font-size:14px}
-.doc-grade{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:start;margin-top:32px}
-@media (max-width:860px){.doc-grade{grid-template-columns:minmax(0,1fr)}}
-.doc-txt{display:flex;flex-direction:column;gap:18px;padding-top:12px}
-.documento{background:var(--surface);border:1px solid var(--line);box-shadow:var(--sombra)}
-.documento header{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
-.documento header h3{font-size:22px;letter-spacing:-.02em}
-.documento header span{font-size:11px;color:var(--muted)}
-.documento .campos{padding:22px 26px;display:flex;flex-direction:column;gap:16px}
-.documento .campos div{display:flex;flex-direction:column;gap:6px}
-.documento .campos .rot{font-size:11px;color:var(--ter)}
-.documento footer{padding:14px 26px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);flex-wrap:wrap}
 
 /* apoio à decisão */
 .duas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:start}
@@ -346,7 +317,7 @@ td.fraco{color:var(--muted)}
 .escuro{border-top:3px solid;border-image:var(--espectro) 1;
   background-image:radial-gradient(55% 90% at 0% 0%,#5B4FA01f,transparent 70%),radial-gradient(55% 90% at 100% 100%,#0E7C7B1f,transparent 70%)}
 /* landing = cores do logo; tudo que mostra o módulo por dentro = cor da especialidade */
-.janela,.demo,.documento,.ia-painel{--ter:var(--esp);--pes:color-mix(in oklab,var(--esp) 42%,#F9F8F5)}
+.janela,.demo,.fluxo,.ia-painel{--ter:var(--esp);--pes:color-mix(in oklab,var(--esp) 42%,#F9F8F5)}
 /* rodapé no papel, para o "IA" aparecer */
 .rodape{background:var(--bg);background-image:var(--papel);background-size:512px 512px;color:var(--ink);border-top:3px solid;border-image:var(--espectro) 1}
 .rodape p,.rodape .rot,.copy,.rede{color:var(--muted)}
@@ -363,8 +334,6 @@ html{scroll-padding-top:var(--h-topo,70px)}
   .app-corpo{padding:18px;gap:12px}
   .relogio{padding:12px 0 10px;gap:8px}
   .relogio b{font-size:clamp(44px,8svh,82px)}
-  .fala{height:70px}
-  .rascunho{height:clamp(140px,22svh,236px);padding:14px}
   .grade3{margin-top:clamp(20px,3.5svh,40px)}
   .func{padding:12px 18px;gap:6px 12px}
   .func .ico{width:30px;height:30px;font-size:12px}
@@ -383,6 +352,90 @@ html{scroll-padding-top:var(--h-topo,70px)}
   .faq summary{padding:12px 0}
   .faq details p{padding-bottom:16px}
 }
+.fluxo{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:clamp(24px,4svh,44px);align-items:stretch}
+@media (max-width:980px){.fluxo{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.fluxo{grid-template-columns:minmax(0,1fr)}}
+.fase{position:relative;background:var(--surface);border:1.5px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:12px;transition:border-color .3s,background .3s,opacity .3s}
+.fase .topo-f{display:flex;align-items:center;gap:10px}
+.fase .nf{width:30px;height:30px;flex:none;display:grid;place-items:center;background:var(--pet);color:var(--onpet);font-weight:800;font-stretch:75%;font-size:13px}
+.fase h3{font-size:18px;line-height:1.15;letter-spacing:-.02em}
+.fase .sub-f{font-size:13px;color:var(--muted);margin-top:-6px}
+.fase .est{align-self:flex-start;font-size:11px;font-weight:700;font-stretch:75%;letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;border:1.5px dashed var(--trac);color:var(--muted)}
+.fase .corpo-f{flex:1;border:1.5px dashed var(--trac);padding:12px;font-size:14px;display:flex;flex-direction:column;gap:6px;line-height:1.4;transition:border-color .3s,background .3s}
+.fase .corpo-f .rot{font-size:10px;color:var(--ter)}
+.fase .dd{display:flex;gap:8px;align-items:baseline}
+.fase .dd b{flex:1;font-weight:600}
+.fase .dd i{font-style:normal;color:var(--muted);font-size:12px;font-weight:700}
+.fase .dd em{font-style:normal;font-weight:700;font-variant-numeric:tabular-nums}
+.fase .docs-f{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.fase .docs-f span{font-size:12px;padding:3px 7px;background:var(--soft)}
+.fase .fonte{font-size:12px;color:var(--muted)}
+.fase .btn-of{border:0;background:var(--pet);color:var(--onpet);font-weight:700;padding:11px 14px;font-size:14px}
+.fase .btn-of:hover{filter:brightness(1.15)}
+.fase[data-e=trav]{opacity:.55;background:var(--bg)}
+.fase[data-e=trav] .corpo-f{align-items:center;justify-content:center;text-align:center;color:var(--muted)}
+.fase[data-e=rasc]{border-color:var(--pet)}
+.fase[data-e=ofic]{border-color:var(--ter)}
+.fase[data-e=ofic] .est{border-style:solid;border-color:var(--ter);background:var(--ter);color:var(--onter)}
+.fase[data-e=ofic] .corpo-f{border-style:solid;border-color:var(--ter);background:color-mix(in srgb,var(--ter) 8%,var(--surface))}
+@media (min-width:981px) and (min-height:620px){ .fase{padding:16px} .fase .corpo-f{padding:10px;font-size:13.5px} }
+#exames{background:color-mix(in srgb,#2F5D9E 15%,#fff);border-top:3px solid;border-image:var(--espectro) 1}
+.ex-card{box-shadow:0 18px 40px -30px rgba(30,43,42,.45)}
+.ex-grade{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:stretch}
+@media (max-width:980px){.ex-grade{grid-template-columns:minmax(0,1fr)}}
+.ex-card{--esp:#A85A2E;background:var(--surface);color:var(--ink);border:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.ex-card header{display:flex;align-items:center;gap:10px}
+.ex-card .nf{width:30px;height:30px;flex:none;display:grid;place-items:center;background:var(--pet);color:var(--onpet);font-weight:800;font-stretch:75%;font-size:13px}
+.ex-card h3{flex:1;font-size:18px;line-height:1.15;letter-spacing:-.02em}
+.ex-card .est{font-size:11px;font-weight:700;font-stretch:75%;letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;border:1.5px dashed var(--trac);color:var(--muted);white-space:nowrap}
+.ex-card .fonte{font-size:12px;color:var(--muted);margin-top:auto}
+.foto{position:relative;aspect-ratio:2.5/1;overflow:hidden;background:var(--soft)}
+.foto-in{position:absolute;left:0;right:0;top:0;aspect-ratio:1000/650;transform:translateY(-12%)}
+.foto-in img{width:100%;height:100%;display:block;object-fit:cover}
+.mk{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#fff;color:#13302F;border:2px solid var(--esp);font:700 12px/18px var(--body);text-align:center;font-style:normal;opacity:0;transform:scale(.4);transition:opacity .3s,transform .3s}
+[data-fase="1"] .mk,[data-fase="2"] .mk{opacity:1;transform:none}
+.scan{position:absolute;left:0;right:0;top:0;height:3px;background:var(--esp);box-shadow:0 0 14px var(--esp);opacity:0}
+[data-fase="0"] .scan{opacity:1;animation:varre2 1.2s ease-in-out}
+@keyframes varre2{from{top:0}to{top:100%}}
+.estrut{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;border:1.5px dashed var(--trac);padding:10px 12px}
+.estrut>div{opacity:0;transform:translateY(6px);transition:opacity .4s,transform .4s}
+[data-fase="2"] .estrut>div{opacity:1;transform:none}
+.estrut>div:nth-child(2){transition-delay:.1s}.estrut>div:nth-child(3){transition-delay:.2s}.estrut>div:nth-child(4){transition-delay:.3s}.estrut>div:nth-child(5){transition-delay:.4s}
+.estrut dt{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--esp)}
+.estrut dd{margin:2px 0 0;font-size:13.5px;line-height:1.35}
+.abas-ex{display:flex;flex-wrap:wrap;gap:6px}
+.abas-ex button{padding:8px 12px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);font-weight:600;font-size:13px}
+.abas-ex button[aria-selected=true]{background:var(--ink);color:var(--bg)}
+.folha{background:#fff;border:1px solid var(--line);padding:12px 14px;font-size:13px;color:#1E2B2A}
+.folha .cab-f{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:4px}
+.folha table{width:100%;min-width:0;font-size:13px;border-collapse:collapse}
+.folha th{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:4px 6px 4px 0;border-bottom:1px solid var(--line)}
+.folha td{padding:5px 6px 5px 0;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line)}
+.folha td:last-child,.folha th:last-child{width:18px;padding-right:0;text-align:right}
+.folha td:nth-child(2){font-weight:600}
+.folha tr.alto td{background:color-mix(in srgb,var(--esp) 12%,#fff);font-weight:700}
+.folha tr.alto td:first-child{padding-left:4px}
+.analise{border:1.5px dashed var(--trac);padding:10px 12px;font-size:13.5px;display:flex;flex-direction:column;gap:3px}
+.analise .t{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--esp)}
+@media (min-width:981px) and (min-height:620px){ .ex-card{padding:16px;gap:10px} }
+.demo-txt[hidden]{display:none}
+@media (min-width:981px) and (min-height:620px){ #demo{padding-block:clamp(14px,2.2svh,26px)} }
+.demo-duas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:24px;align-items:stretch}
+@media (max-width:980px){.demo-duas{grid-template-columns:minmax(0,1fr)}}
+.demo-dir{display:flex;flex-direction:column;gap:18px;min-width:0}
+#exLab{background:color-mix(in srgb,#BFCDCD 50%,#fff);border-color:color-mix(in srgb,#7F9C9B 35%,#fff)}
+.ex-card.hist{--esp:unset;background:color-mix(in srgb,#7F9C9B 50%,#fff);border-color:color-mix(in srgb,#7F9C9B 70%,#fff)}
+.ex-card.hist .fonte,.ex-card.hist .est{color:#13302F}
+.ex-card.hist .est,.ex-card.hist .hist-corpo{border-color:#6F8E8D}
+.ex-card.hist .hist-corpo .rot{color:#0E2423}
+.hist-corpo{flex:1;border:1.5px dashed var(--trac);padding:10px 14px;display:flex;flex-direction:column;gap:6px}
+.hist-corpo .sec{display:flex;flex-direction:column;gap:2px;visibility:hidden}
+.hist-corpo .sec.on{visibility:visible}
+.hist-corpo .rot{font-size:10px;color:var(--esp)}
+.hist-corpo .tx{font-size:13px;line-height:1.35;white-space:pre-line}
+.hist-corpo .tx .f{visibility:hidden}
+.hist-corpo .sec.escreve .v::after{content:"";display:inline-block;width:2px;height:1em;background:var(--esp);vertical-align:-2px;margin-left:1px;animation:pulsa2 1s steps(1) infinite}
+@keyframes pulsa2{0%,100%{opacity:1}50%{opacity:0}}
 </style>
 
 <div class="topo" id="topo">
@@ -410,13 +463,13 @@ html{scroll-padding-top:var(--h-topo,70px)}
   <!-- ABERTURA -->
   <section class="wrap hero" aria-labelledby="h1">
     <div class="hero-txt">
-      <h1 class="h1" id="h1">Você cuida do paciente,<br><span class="acento">a IA cuida da documentação.</span></h1>
+      <h1 class="h1" id="h1">Consulta com transcrição de voz<br><span class="acento">e registro clínico automatizado.</span></h1>
       <p class="lead">Auxílio da IA desde a anamnese, prontuário completo, diagnóstico diferencial até a conduta e tratamento. Menos burocracia, mais medicina.</p>
-      <div class="garantias"><span><span class="check">✓</span>CRM verificado</span><span><span class="check">✓</span>LGPD</span><span><span class="check">✓</span>Tablet, computador e celular</span></div>
+      <div class="garantias"><span><span class="check">✓</span>CRM conferido</span><span><span class="check">✓</span>LGPD</span><span><span class="check">✓</span>Tablet, computador e celular</span></div>
     </div>
     <div class="janela">
       <div class="app" aria-label="Exemplo de consulta em andamento">
-        <div class="app-barra"><i style="background:var(--ter)"></i><i style="background:var(--pes)"></i><i style="background:var(--pet)"></i><span>consulta em andamento</span></div>
+        <div class="app-barra"><span class="nf">1</span><h3>Anamnese</h3><span class="andamento">consulta em andamento</span></div>
         <div class="app-corpo">
           <div class="pac">
             <span class="avatar" id="hAvatar">AR</span>
@@ -428,19 +481,7 @@ html{scroll-padding-top:var(--h-topo,70px)}
             <div class="onda" id="onda" aria-hidden="true"></div>
           </div>
           <div class="fala" id="fala" aria-live="polite"></div>
-          <div class="divisor rot" style="font-size:11px">Gerando história clínica</div>
-          <div class="rascunho">
-            <h3>Anamnese</h3>
-            <span class="rot campo-r">Queixa principal</span>
-            <span id="hQP" style="font-size:15px"></span>
-            <span class="rot campo-r">História atual</span>
-            <span style="font-size:15px" id="hHMA"></span>
-          </div>
         </div>
-      </div>
-      <div class="flutua fora" id="flutua">
-        <span class="rot" style="font-size:11px;color:var(--muted)">Faltou perguntar</span>
-        <b id="hLembra" style="font-size:15px">Alergia a medicamentos?</b>
       </div>
     </div>
   </section>
@@ -450,66 +491,87 @@ html{scroll-padding-top:var(--h-topo,70px)}
     <div class="trilho" id="trilho"></div>
   </section>
 
-  <!-- PROBLEMA -->
-  <section class="escuro secao" aria-labelledby="h-prob">
+  <!-- EXAME FÍSICO E EXAMES COMPLEMENTARES -->
+  <section class="secao" id="exames" aria-label="Exame físico e exames complementares">
     <div class="wrap">
-      <div class="cab">
-        <h2 class="h2" id="h-prob" style="max-width:900px">Os números revelam uma realidade: menos tempo para o paciente, mais desgaste para o médico.</h2>
-      </div>
-      <div class="nums">
-        <div class="num sobe"><b>2h 30</b><span>por dia escrevendo prontuário, em média</span></div>
-        <div class="num sobe"><b>38%</b><span>menos contato visual com o paciente</span></div>
-        <div class="num sobe"><b>71%</b><span>dos médicos relatam burnout no Brasil</span></div>
-        <div class="num sobe"><b>12 min</b><span>é o tempo médio gasto por consulta documentando</span></div>
+      <div class="ex-grade">
+        <article class="ex-card" id="exFisico" data-fase="0">
+          <header><span class="nf">2</span><h3>Exame físico</h3><span class="est">Rascunho da IA</span></header>
+          <div class="foto"><div class="foto-in"><img src="/img/acne-exemplo.jpg" alt="Foto de exemplo de acne vulgar em linha mandibular e região malar" width="1000" height="650"><span class="scan"></span><i class="mk" style="left:30.6%;top:16%;transition-delay:0.00s">1</i><i class="mk" style="left:35.8%;top:32.1%;transition-delay:0.18s">2</i><i class="mk" style="left:35.4%;top:44.2%;transition-delay:0.36s">3</i><i class="mk" style="left:27.5%;top:50%;transition-delay:0.54s">4</i><i class="mk" style="left:47.8%;top:60.3%;transition-delay:0.72s">5</i><i class="mk" style="left:55.4%;top:63.5%;transition-delay:0.90s">6</i><i class="mk" style="left:33.6%;top:64.7%;transition-delay:1.08s">7</i></div></div>
+          <dl class="estrut">
+            <div><dt>Morfologia</dt><dd>Pápulas eritematosas e pústulas; nódulos isolados</dd></div>
+            <div><dt>Localização</dt><dd>Linha mandibular e região malar; extensão ao pescoço</dd></div>
+            <div><dt>Lesões marcadas</dt><dd>7 inflamatórias</dd></div>
+            <div><dt>Gravidade estimada</dt><dd>Moderada, a confirmar no exame</dd></div>
+            <div><dt>Cicatrizes</dt><dd>Não evidentes na imagem</dd></div>
+          </dl>
+          <p class="fonte">Descrição gerada pela IA a partir da foto. Revise, edite e oficialize.</p>
+        </article>
+        <article class="ex-card" id="exLab">
+          <header><span class="nf">2</span><h3>Exames complementares</h3><span class="est">Rascunho da IA</span></header>
+          <div class="abas-ex" role="tablist" id="abasEx"></div>
+          <div class="folha" id="folha"></div>
+          <div class="analise" id="analiseEx" aria-live="polite"></div>
+          <p class="fonte">Paciente e valores fictícios, só para exemplo. Revise e oficialize.</p>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- DEMONSTRAÇÃO -->
+  <!-- DEMONSTRAÇÃO + HISTÓRIA CLÍNICA -->
   <section class="secao" id="demo" aria-labelledby="h-demo">
     <div class="wrap">
-      <div class="cab centro">
-        <h2 class="h2" id="h-demo">Por voz ou digitação.<br><span class="acento">Sua consulta, sua escolha.</span></h2>
-      </div>
-      <div class="demo sobe">
-        <div class="demo-abas" role="tablist" aria-label="Etapas">
-          <button role="tab" aria-selected="true" data-etapa="0"><span class="n">1</span>Escolher</button>
-          <button role="tab" aria-selected="false" data-etapa="1"><span class="n">2</span>Ouvir</button>
-          <button role="tab" aria-selected="false" data-etapa="2"><span class="n">3</span>Assinar</button>
-          <span class="barra" aria-hidden="true"><i id="barra"></i></span>
-        </div>
-        <div class="demo-corpo">
-          <div class="demo-txt">
-            <h3 id="dTit">Escolha o atendimento e o paciente.</h3>
-            <p class="lead" id="dTxt" style="font-size:17px"></p>
-            <div class="lista-check" id="dChk"></div>
+      <div class="demo-duas">
+        <article class="ex-card hist" id="hist">
+          <header><span class="nf">2</span><h3>História clínica</h3><span class="est">Rascunho da IA</span></header>
+          <div class="hist-corpo" id="histCorpo" aria-live="off"></div>
+          <p class="fonte">Montada só com as etapas 1 e 2 oficializadas. Revise e oficialize.</p>
+        </article>
+        <div class="demo-dir">
+          <div class="cab">
+            <h2 class="h2" id="h-demo">Por voz ou digitação.<br><span class="acento">Sua consulta, sua escolha.</span></h2>
           </div>
-          <div class="demo-vis">
-            <div class="painel on" data-p="0">
-              <span class="rot" style="font-size:11px;color:var(--muted)">Atendimento</span>
-              <div class="blocos3" id="tipoAt">
-                <button class="bloco sel" type="button">Consulta</button><button class="bloco" type="button">Retorno</button><button class="bloco" type="button">Prontuário</button>
-              </div>
-              <span class="rot" style="font-size:11px;color:var(--muted)">Paciente</span>
-              <div class="cartao pac"><span class="avatar dAvatar">AR</span><span class="pac-nome"><b class="dNome">Ana Ribeiro</b><small>formulário recebido por WhatsApp</small></span></div>
-              <span class="rot" style="font-size:11px;color:var(--muted)">Local</span>
-              <div class="opcoes2" id="local"><button type="button">Presencial · consultório</button><button type="button" class="sel">Online · vídeo</button></div>
+          <div class="demo sobe">
+            <div class="demo-abas" role="tablist" aria-label="Etapas">
+              <button role="tab" aria-selected="true" data-etapa="0"><span class="n">1</span>Escolher</button>
+              <button role="tab" aria-selected="false" data-etapa="1"><span class="n">2</span>Ouvir</button>
+              <button role="tab" aria-selected="false" data-etapa="2"><span class="n">3</span>Assinar</button>
+              <span class="barra" aria-hidden="true"><i id="barra"></i></span>
             </div>
-            <div class="painel" data-p="1">
-              <div class="cartao" style="display:flex;flex-direction:column;align-items:center;gap:10px">
-                <span class="grav rot"><i></i>Gravando</span>
-                <b style="font-size:60px;font-weight:700;font-stretch:75%;line-height:1;font-variant-numeric:tabular-nums" id="relogio2">04:23</b>
-                <small style="color:var(--muted)">Áudio descartado depois de transcrito</small>
-              </div>
-              <div class="cartao fala" id="fala2" style="height:150px"></div>
-              <div class="lembra"><span class="chip chip-pes">Faltou perguntar</span><span class="dLembra">Alergia a algum medicamento?</span></div>
+            <div class="demo-corpo">
+            <div class="demo-txt" hidden>
+              <h3 id="dTit">Escolha o atendimento e o paciente.</h3>
+              <p class="lead" id="dTxt" style="font-size:17px"></p>
+              <div class="lista-check" id="dChk"></div>
             </div>
-            <div class="painel" data-p="2">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="rot" style="font-size:11px;color:var(--muted)">Hipóteses · toque para confirmar</span><span class="chip dAlerta" style="background:var(--alerta);color:var(--onalerta)">Alergia: dipirona</span></div>
-              <div id="hipDemo" style="display:flex;flex-direction:column;gap:8px"></div>
-              <span class="rot" style="font-size:11px;color:var(--muted);margin-top:4px">Anexos</span>
-              <div class="anexos"><span><b>Receita</b><small>assinatura + selo</small></span><span><b>Orientações</b><small>só assinatura</small></span><span class="sug"><b>+ Atestado</b><small>sugerido</small></span></div>
-              <button class="assinar" id="assinar" type="button">Assinar com VIDaaS e salvar no prontuário</button>
+            <div class="demo-vis">
+              <div class="painel on" data-p="0">
+                <span class="rot" style="font-size:11px;color:var(--muted)">Atendimento</span>
+                <div class="blocos3" id="tipoAt">
+                  <button class="bloco sel" type="button">Consulta</button><button class="bloco" type="button">Retorno</button>
+                </div>
+                <span class="rot" style="font-size:11px;color:var(--muted)">Paciente</span>
+                <div class="cartao pac"><span class="avatar dAvatar">AR</span><span class="pac-nome"><b class="dNome">Ana Ribeiro</b><small>formulário recebido por WhatsApp</small></span></div>
+                <span class="rot" style="font-size:11px;color:var(--muted)">Local</span>
+                <div class="opcoes2" id="local"><button type="button">Presencial · consultório</button><button type="button" class="sel">Online · vídeo</button></div>
+              </div>
+              <div class="painel" data-p="1">
+                <div class="cartao" style="display:flex;flex-direction:column;align-items:center;gap:10px">
+                  <span class="grav rot"><i></i>Gravando</span>
+                  <b style="font-size:60px;font-weight:700;font-stretch:75%;line-height:1;font-variant-numeric:tabular-nums" id="relogio2">04:23</b>
+                  <small style="color:var(--muted)">Áudio descartado depois de transcrito</small>
+                </div>
+                <div class="cartao fala" id="fala2" style="height:150px"></div>
+                <div class="lembra"><span class="chip chip-pes">Faltou perguntar</span><span class="dLembra">Alergia a algum medicamento?</span></div>
+              </div>
+              <div class="painel" data-p="2">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="rot" style="font-size:11px;color:var(--muted)">Hipóteses · toque para confirmar</span><span class="chip dAlerta" style="background:var(--alerta);color:var(--onalerta)">Alergia: dipirona</span></div>
+                <div id="hipDemo" style="display:flex;flex-direction:column;gap:8px"></div>
+                <span class="rot" style="font-size:11px;color:var(--muted);margin-top:4px">Anexos</span>
+                <div class="anexos"><span><b>Receita</b><small>assinatura + selo</small></span><span><b>Orientações</b><small>só assinatura</small></span><span class="sug"><b>+ Atestado</b><small>sugerido</small></span></div>
+                <button class="assinar" id="assinar" type="button">Assinar com VIDaaS e salvar no prontuário</button>
+              </div>
+            </div>
             </div>
           </div>
         </div>
@@ -522,7 +584,7 @@ html{scroll-padding-top:var(--h-topo,70px)}
     <div class="wrap">
       <div class="cab">
         <span class="rot acento">Funcionalidades</span>
-        <h2 class="h2" id="h-func">Consulta com transcrição de voz e registro clínico automatizado.</h2>
+        <h2 class="h2" id="h-func">Você cuida do paciente,<br><span class="acento">a IA cuida da documentação.</span></h2>
       </div>
       <div class="grade3" id="funcs"></div>
     </div>
@@ -536,34 +598,21 @@ html{scroll-padding-top:var(--h-topo,70px)}
         <h2 class="h2" id="h-passos">Interface intuitiva, navegação simplificada e fluida,<br><span style="color:var(--l6)">para uma experiência prática e eficiente.</span></h2>
       </div>
       <div class="grade3">
-        <article class="passo sobe" style="--cor:color-mix(in srgb,var(--l6) 100%,#000 35%)"><b>01</b><h3>Cadastre-se e confirme o CRM</h3><p>O CRM é verificado na contratação. RQE é opcional. Escolha uma ou mais especialidades e importe pacientes antigos, se quiser.</p><span class="liga"></span></article>
+        <article class="passo sobe" style="--cor:color-mix(in srgb,var(--l6) 100%,#000 35%)"><b>01</b><h3>Cadastre-se e confirme o CRM</h3><p>O CRM é conferido depois do cadastro. RQE é opcional. Escolha uma ou mais especialidades e importe pacientes antigos, se quiser.</p><span class="liga"></span></article>
         <article class="passo sobe" style="--cor:var(--l6)"><b>02</b><h3>Comece a consulta como sempre</h3><p>Toque em Consulta ou Retorno, escolha presencial ou online e converse com o paciente.</p><span class="liga"></span></article>
         <article class="passo sobe" style="--cor:color-mix(in srgb,var(--l6) 55%,#fff)"><b>03</b><h3>Revise, assine e envie</h3><p>Confirme as hipóteses, gere os Anexos, assine com seu certificado digital e envie ao paciente. Tudo vai para o prontuário.</p></article>
       </div>
     </div>
   </section>
 
-  <!-- TIPOS DE DOCUMENTO -->
-  <section class="secao alt" aria-labelledby="h-docs">
+  <!-- FLUXO DA CONSULTA -->
+  <section class="secao alt" id="fluxo-sec" aria-labelledby="h-fluxo">
     <div class="wrap">
       <div class="cab centro">
-        <span class="rot acento">Tipos de documento</span>
-        <h2 class="h2" id="h-docs">Um documento para cada<br><span class="acento">momento da consulta.</span></h2>
+        <span class="rot acento">Fluxo da consulta</span>
+        <h2 class="h2" id="h-fluxo">A IA propõe,<br><span class="acento">você oficializa cada etapa.</span></h2>
       </div>
-      <div class="abas-doc" role="tablist" id="abasDoc"></div>
-      <div class="chips-doc" id="chipsDoc"></div>
-      <div class="doc-grade">
-        <div class="doc-txt">
-          <h3 id="docTit"></h3>
-          <p class="lead" id="docTxt" style="font-size:17px"></p>
-          <div class="lista-check" id="docChk"></div>
-        </div>
-        <article class="documento" id="docCartao">
-          <header><h3 id="docNome"></h3><span class="rot" id="docPac"></span></header>
-          <div class="campos" id="docCampos"></div>
-          <footer><span>Dra. [Nome] · CRM [nº]</span><span id="docAss"></span></footer>
-        </article>
-      </div>
+      <div class="fluxo" id="fluxo"></div>
     </div>
   </section>
 
@@ -573,7 +622,7 @@ html{scroll-padding-top:var(--h-topo,70px)}
       <div class="cab" style="gap:22px">
         <span class="rot acento">Apoio à decisão</span>
         <h2 class="h2" id="h-apoio">Uma segunda leitura,<br><span class="acento">sem sair da consulta.</span></h2>
-        <p class="lead">Enquanto você conversa, a IA lê o que foi dito e o prontuário. Sugere, lembra e alerta. Nada entra na história clínica sem o seu toque.</p>
+        <p class="lead">A IA organiza o que foi dito em história clínica. Depois que você revisa e oficializa, ela sugere hipóteses e conduta. Nada avança sem a sua decisão.</p>
         <div class="recursos">
           <div class="recurso" data-alvo="alerta" style="--cor:var(--alerta)"><i></i><div><b>Sinais de alerta</b><span>Alergias, doses e sintomas que pedem investigação aparecem em vermelho, sempre no topo.</span></div></div>
           <div class="recurso" data-alvo="hip" style="--cor:var(--pet)"><i></i><div><b>Hipóteses com CID e probabilidade</b><span>Ordenadas da mais à menos provável. Você confirma com um toque.</span></div></div>
@@ -605,13 +654,13 @@ html{scroll-padding-top:var(--h-topo,70px)}
     <div class="wrap">
       <div class="cab" style="gap:22px">
         <span class="rot acento">Sem aparelho extra</span>
-        <h2 class="h2" id="h-cel">Comece no Tablet,<br><span class="acento">grave pelo celular.</span></h2>
-        <p class="lead">O microfone do tablet ou do notebook pega o teclado e o ruído da sala. O celular na mesa pega a conversa. A IA liga os dois em segundos.</p>
+        <h2 class="h2" id="h-cel">Comece no tablet,<br><span class="acento">grave pelo celular.</span></h2>
+        <p class="lead">O microfone do tablet ou do computador pega o teclado e o ruído da sala. O celular na mesa pega a conversa. O pareamento liga os dois em segundos.</p>
         <div class="recursos">
           <div class="recurso" style="--cor:var(--pet)"><i></i><div><b>Pareamento por QR</b><span>Aponte a câmera e pronto. Sem login no celular, sem app para baixar.</span></div></div>
-          <div class="recurso" style="--cor:var(--pes)"><i></i><div><b>Áudio melhor</b><span>O microfone do celular costuma ser superior ao do notebook.</span></div></div>
+          <div class="recurso" style="--cor:var(--pes)"><i></i><div><b>Áudio melhor</b><span>O microfone do celular costuma ser superior ao do computador.</span></div></div>
           <div class="recurso" style="--cor:var(--ter)"><i></i><div><b>Código de confirmação</b><span>O mesmo código nos dois aparelhos, sem confusão entre salas.</span></div></div>
-          <div class="recurso" style="--cor:var(--pet)"><i></i><div><b>Continue no Tablet</b><span>A transcrição aparece em tempo real na tela principal.</span></div></div>
+          <div class="recurso" style="--cor:var(--pet)"><i></i><div><b>Continue no tablet</b><span>A transcrição aparece em tempo real na tela principal.</span></div></div>
         </div>
       </div>
     </div>
@@ -628,11 +677,11 @@ html{scroll-padding-top:var(--h-topo,70px)}
         <table>
           <thead><tr><th class="rot" scope="col">Critério</th><th scope="col">Prontuário manual</th><th scope="col">Transcrição genérica</th><th scope="col" class="col-nossa">espec<b>IA</b>lista</th></tr></thead>
           <tbody>
-            <tr><td><b>Tempo para documentar</b></td><td class="fraco">10 a 15 min digitando</td><td class="fraco">Texto bruto e edição manual</td><td class="col-nossa"><span class="check">✓</span>Pronta ao fim da consulta</td></tr>
+            <tr><td><b>Tempo para documentar</b></td><td class="fraco">10 a 15 min digitando</td><td class="fraco">Texto bruto e edição manual</td><td class="col-nossa"><span class="check">✓</span>Pronta para sua revisão ao fim da consulta</td></tr>
             <tr><td><b>Identificação → conduta</b></td><td class="fraco">Você redige</td><td class="fraco">Não estrutura</td><td class="col-nossa"><span class="check">✓</span>Estruturada por especialidade</td></tr>
-            <tr><td><b>Hipóteses com CID e %</b></td><td class="fraco">Não</td><td class="fraco">Não</td><td class="col-nossa"><span class="check">✓</span>Sim, como sugestão</td></tr>
+            <tr><td><b>Hipóteses com CID e %</b></td><td class="fraco">Não</td><td class="fraco">Não</td><td class="col-nossa"><span class="check">✓</span>Sim, como sugestão para você confirmar</td></tr>
             <tr><td><b>Lembra o que faltou perguntar</b></td><td class="fraco">Não</td><td class="fraco">Não</td><td class="col-nossa"><span class="check">✓</span>Sim</td></tr>
-            <tr><td><b>Anexos com assinatura digital</b></td><td class="fraco">Manual</td><td class="fraco">Não</td><td class="col-nossa"><span class="check">✓</span>VIDaaS integrado</td></tr>
+            <tr><td><b>Anexos com assinatura digital</b></td><td class="fraco">Manual</td><td class="fraco">Não</td><td class="col-nossa"><span class="check">✓</span>Certificado digital</td></tr>
             <tr><td><b>Prontuário lido no retorno</b></td><td class="fraco">Você relê</td><td class="fraco">Não</td><td class="col-nossa"><span class="check">✓</span>Automático</td></tr>
             <tr><td><b>Custo</b></td><td class="fraco">Horas do seu dia</td><td class="fraco">Assinatura + seu tempo de edição</td><td class="col-nossa"><span class="check">✓</span>R$ 349/mês · teste grátis</td></tr>
           </tbody>
@@ -680,10 +729,10 @@ html{scroll-padding-top:var(--h-topo,70px)}
           <article class="seg sobe" style="--cor:var(--pet)"><i></i><h3>Criptografia</h3><p>Áudio e texto cifrados em trânsito e em repouso.</p></article>
           <article class="seg sobe" style="--cor:var(--pes)"><i></i><h3>Dados na Nuvem</h3><p>Armazenados e criptografados em servidores no Brasil</p></article>
           <article class="seg sobe" style="--cor:var(--ter)"><i></i><h3>Áudio descartável</h3><p>Depois de transcrito, o áudio original é apagado.</p></article>
-          <article class="seg sobe" style="--cor:var(--pet)"><i></i><h3>Registro de acessos</h3><p>Cada acesso e edição fica registrado e pode ser exportado.</p></article>
+          <article class="seg sobe" style="--cor:var(--pet)"><i></i><h3>Registro de acessos</h3><p>Cada acesso e edição fica registrado.</p></article>
         </div>
       </div>
-      <div class="selos rot"><span>LGPD</span><span>CFM 2.314/22</span><span>ICP-Brasil</span><span class="falta">[Certificação]</span><span class="falta">[Certificação]</span><span class="falta">[Certificação]</span></div>
+      <div class="selos rot"><span>LGPD</span><span>CFM 2.314/22</span><span>ICP-Brasil</span></div>
     </div>
   </section>
 
@@ -714,7 +763,7 @@ html{scroll-padding-top:var(--h-topo,70px)}
   <div class="wrap">
     <div><span class="marca"><span style="color:var(--l1)">e</span><span style="color:var(--l2)">s</span><span style="color:var(--l3)">p</span><span style="color:var(--l4)">e</span><span style="color:var(--l5)">c</span><b class="ia">IA</b><span style="color:var(--l6)">l</span><span style="color:var(--l7)">i</span><span style="color:var(--l8)">s</span><span style="color:var(--l9)">t</span><span style="color:var(--l10)">a</span></span><div class="redes" aria-label="Redes sociais"><span class="rede" role="img" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 3.3.1 4.8 1.7 4.9 4.9.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 3.2-1.7 4.8-4.9 4.9-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-3.3-.1-4.8-1.7-4.9-4.9C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8C2.4 3.9 4 2.4 7.2 2.3 8.4 2.2 8.8 2.2 12 2.2zM12 0C8.7 0 8.3 0 7.1.1 2.7.3.3 2.7.1 7.1 0 8.3 0 8.7 0 12s0 3.7.1 4.9c.2 4.4 2.6 6.8 7 7 1.2.1 1.6.1 4.9.1s3.7 0 4.9-.1c4.4-.2 6.8-2.6 7-7 .1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.2-4.4-2.6-6.8-7-7C15.7 0 15.3 0 12 0zm0 5.8a6.2 6.2 0 100 12.4 6.2 6.2 0 000-12.4zM12 16a4 4 0 110-8 4 4 0 010 8zm6.4-11.8a1.4 1.4 0 100 2.9 1.4 1.4 0 000-2.9z"/></svg></span><span class="rede" role="img" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9v5.7H9.4V9h3.4v1.6c.5-.9 1.6-1.8 3.4-1.8 3.6 0 4.3 2.400 4.300 5.500v6.200zM5.300 7.400a2.100 2.100 0 110-4.200 2.100 2.100 0 010 4.200zM7.100 20.500H3.600V9h3.500v11.500zM22.200 0H1.800C.8 0 0 .8 0 1.700v20.600c0 .9.8 1.700 1.800 1.700h20.400c1 0 1.800-.8 1.800-1.700V1.700C24 .8 23.200 0 22.200 0z"/></svg></span><span class="rede" role="img" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.500 6.200a3 3 0 00-2.100-2.100C19.500 3.600 12 3.600 12 3.600s-7.500 0-9.400.5A3 3 0 00.5 6.200C0 8.100 0 12 0 12s0 3.900.5 5.800a3 3 0 002.100 2.100c1.900.5 9.400.5 9.400.5s7.500 0 9.400-.5a3 3 0 002.100-2.100c.5-1.900.5-5.800.5-5.800s0-3.900-.5-5.800zM9.600 15.600V8.400l6.200 3.600-6.200 3.600z"/></svg></span><span class="rede" role="img" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12a12 12 0 10-13.900 11.900v-8.400H7.100V12h3V9.400c0-3 1.800-4.700 4.500-4.700 1.300 0 2.700.2 2.700.2v3h-1.500c-1.500 0-2 .9-2 1.900V12h3.400l-.5 3.500h-2.900v8.400A12 12 0 0024 12z"/></svg></span><span class="rede" role="img" aria-label="X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.200 2.300h3.300l-7.200 8.300 8.500 11.200h-6.700l-5.200-6.800-6 6.800H1.600l7.700-8.800L1.200 2.300H8l4.700 6.200 5.500-6.200zm-1.200 17.500h1.800L7.100 4.200H5.100l11.900 15.600z"/></svg></span><span class="rede" role="img" aria-label="TikTok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.600 6.700a4.800 4.800 0 01-3.800-4.200V2h-3.500v13.700a2.900 2.900 0 11-2-2.800V9.300a6.400 6.400 0 105.500 6.400V8.600a8.300 8.300 0 004.800 1.500V6.700z"/></svg></span></div></div>
     <div style="display:flex;flex-direction:column;gap:28px">
-      <nav aria-label="Produto"><span class="rot">Produto</span><a href="#funcionalidades">Funcionalidades</a><a href="#precos">Planos</a><a href="#seguranca">Segurança e LGPD</a><a href="#faq">Dúvidas</a></nav>
+      <nav aria-label="Produto"><span class="rot">Produto</span><a href="#funcionalidades">Funcionalidades</a><a href="#precos">Planos</a><a href="#seguranca">Segurança</a><a href="#faq">Dúvidas</a></nav>
       <nav aria-label="Contato"><span class="rot">Contato</span><a href="https://wa.me/5585991018813" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:currentColor;vertical-align:-3px;margin-right:8px"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.1-1.300-.5-2.400-1.500-.9-.8-1.500-1.800-1.700-2.100-.2-.3 0-.5.100-.6l.5-.5c.1-.2.200-.3.300-.5.100-.2 0-.4 0-.5-.1-.1-.7-1.600-.9-2.200-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.100-.8.400-.3.300-1 1-1 2.500s1.100 2.900 1.200 3.100c.1.200 2.100 3.200 5.100 4.500 2.500 1 3 .8 3.500.7.600-.1 1.800-.7 2-1.400.2-.7.200-1.300.2-1.400-.1-.2-.3-.3-.6-.4zM12 2a10 10 0 00-8.600 15L2 22l5.200-1.400A10 10 0 1012 2z"/></svg>WhatsApp · (85) 99101-8813</a><a href="mailto:regisbragasantos@gmail.com">regisbragasantos@gmail.com</a></nav>
     </div>
   </div>
@@ -733,31 +782,35 @@ html{scroll-padding-top:var(--h-topo,70px)}
     derm: { raiz:'dermatolog', dia:'#A85A2E', pac:['AR','Ana Ribeiro','24 anos · F · Consulta · Online','24F'],
       fala:[['Médica','O que trouxe você hoje?'],['Paciente','Umas espinhas no rosto que não melhoram. Faz uns três meses.'],['Médica','Piora em algum período?'],['Paciente','Antes da menstruação fica bem pior.']],
       qp:'Lesões em face há três meses, com piora no período pré-menstrual.', hma:'Pápulas e pústulas em região malar e mentoniana, sem tratamento prévio.',
-      lembra:'Alergia a medicamentos?', lembra2:'Uso de anticoncepcional?', pront:'Lipidograma pedido em [data], sem resultado',
-      alerta:'Dipirona · relatada no formulário', alertaCurta:'Alergia: dipirona',
+      lembra:'Medicamentos em uso e já usados?', lembra2:'Uso de anticoncepcional?', pront:'Lipidograma pedido na última consulta, sem resultado',
+      ant:'Nega comorbidades e uso contínuo de medicações.', hdaH:'Paciente de 24 anos refere lesões inflamatórias na face há cerca de três meses, de início gradual, com aumento progressivo do número e da dor local. Localizam-se principalmente em região malar e mentoniana e ao longo da mandíbula, com extensão recente ao pescoço. Observa piora nítida na semana que antecede a menstruação, com surgimento de novas lesões. Relata pele oleosa e manipulação frequente das lesões. Não fez tratamento prévio, tópico ou oral. Refere impacto na autoestima. Nega febre e lesões em outras áreas do corpo.', efH:'Face, com predomínio à direita: 7 lesões inflamatórias. Na região malar e linha mandibular, 3 pápulas eritematosas (3 a 5 mm), 2 pústulas e 1 nódulo inflamatório (cerca de 8 mm) no ângulo da mandíbula. No pescoço, 1 pápula. Comedões fechados esparsos. Pele oleosa. Sem cicatrizes atróficas evidentes. Gravidade estimada: moderada.', exH:'Hemograma: sem alterações (hemoglobina 12,8 g/dL, hematócrito 38,5%, leucócitos 7.200/mm³, plaquetas 265.000/mm³).\nTestosterona total: 58 ng/dL (referência 10 a 55), levemente acima.\nDHEA-S, SHBG e TSH: dentro da referência (290 µg/dL, 32 nmol/L, 2,1 µUI/mL).\nLipidograma: sem alterações (colesterol total 172, LDL 98, HDL 54, triglicerídeos 96 mg/dL).\nTGO e TGP: 21 e 18 U/L, normais.', alerta:'Dipirona · relatada no formulário', alertaCurta:'Alergia: dipirona',
       hip:[['Acne vulgar','L70.0',64],['Rosácea','L71.9',21],['Dermatite perioral','L71.0',9]],
-      conduta:'Peróxido de benzoíla 5% gel à noite · retorno em 8 semanas' },
+      conduta:'Peróxido de benzoíla 5% gel à noite · retorno em 8 semanas',
+      ef:'Pápulas e pústulas inflamatórias em linha mandibular e região malar, nódulos isolados, extensão ao pescoço.', ex:'Hemograma, perfil hormonal e lipidograma com TGO/TGP trazidos pelo paciente.' },
     reuma: { raiz:'reumatolog', dia:'#3F7352', pac:['JS','João Souza','52 anos · M · Consulta · Presencial','52M'],
       fala:[['Médico','Onde dói mais?'],['Paciente','Nas mãos, nos dedos. De manhã fica tudo duro.'],['Médico','Quanto tempo dura essa rigidez?'],['Paciente','Mais de uma hora, todo dia, faz uns quatro meses.']],
       qp:'Dor e rigidez matinal em mãos há quatro meses.', hma:'Rigidez matinal acima de uma hora, edema em metacarpofalângicas bilateral.',
       lembra:'Medicamentos em uso e já usados?', lembra2:'Histórico familiar de doença autoimune?', pront:'Fator reumatoide e anti-CCP sem resultado',
-      alerta:'AINE · relatou sangramento gástrico prévio', alertaCurta:'Atenção: AINE',
+      ant:'Gastrite com sangramento prévio. Nega histórico familiar de doença autoimune.', hdaH:'Paciente de 52 anos refere dor e rigidez nas mãos há cerca de quatro meses, de início insidioso e simétrica, acometendo punhos e pequenas articulações dos dedos. A rigidez matinal dura mais de uma hora e melhora ao longo do dia. Há edema discreto dos dedos e dificuldade para tarefas finas, como abotoar a camisa. Usou AINE de forma eventual, com alívio parcial, e suspendeu por sangramento gástrico prévio. Nega febre, perda de peso e lesões de pele.', efH:'Mãos, bilateral: dor e edema à palpação de 2ª e 3ª metacarpofalângicas e de interfalângicas proximais, com 6 articulações dolorosas e 4 edemaciadas. Rigidez ao movimento. Sem deformidades fixas. Força de preensão reduzida. Sem nódulos subcutâneos.', exH:'Fator reumatoide: solicitado, resultado pendente.\nAnti-CCP: solicitado, resultado pendente.\nVHS e PCR: solicitados, resultados pendentes.\nRadiografia de mãos: solicitada.', alerta:'AINE · relatou sangramento gástrico prévio', alertaCurta:'Atenção: AINE',
       hip:[['Artrite reumatoide','M06.9',58],['Lúpus eritematoso sistêmico','M32.9',17],['Poliartrose','M15.9',14]],
-      conduta:'Solicitar FR, anti-CCP, VHS e PCR · radiografia de mãos · retorno com exames' },
+      conduta:'Solicitar FR, anti-CCP, VHS e PCR · radiografia de mãos · retorno com exames',
+      ef:'Edema e dor à palpação de metacarpofalângicas e interfalângicas proximais, bilateral.', ex:'FR, anti-CCP, VHS e PCR solicitados.' },
     cardio: { raiz:'cardiolog', dia:'#8E3B5C', pac:['MF','Marcos Freitas','61 anos · M · Retorno · Presencial','61M'],
       fala:[['Médica','Essa dor no peito aparece quando?'],['Paciente','Quando subo ladeira. Passa se eu paro.'],['Médica','Irradia para algum lugar?'],['Paciente','Às vezes vai para o braço esquerdo.']],
       qp:'Dor torácica aos esforços há seis semanas.', hma:'Dor em aperto ao subir ladeira, alívio com repouso em poucos minutos, irradiação para membro superior esquerdo.',
-      lembra:'Tabagismo atual ou prévio?', lembra2:'Uso de losartana: confirmar adesão', pront:'Teste ergométrico pedido em [data], sem resultado',
-      alerta:'AAS · alergia relatada', alertaCurta:'Alergia: AAS',
+      lembra:'Tabagismo atual ou prévio?', lembra2:'Uso de losartana: confirmar adesão', pront:'Teste ergométrico pedido na última consulta, sem resultado',
+      ant:'Hipertensão arterial em uso de losartana. Ex-tabagista, parou há 5 anos.', hdaH:'Paciente de 61 anos, em retorno, refere dor torácica em aperto há seis semanas, desencadeada por esforço, como subir ladeira, com duração de poucos minutos e alívio com repouso. Em algumas ocasiões irradia para o membro superior esquerdo. Nega dor em repouso, síncope e palpitações. Mantém uso regular de losartana. Reduziu a atividade física por receio dos sintomas.', efH:'PA 148×92 mmHg, FC 78 bpm regular, SpO₂ 97%. Ausculta cardíaca: bulhas normofonéticas em 2 tempos, sem sopros. Ausculta pulmonar: murmúrio vesicular presente, sem ruídos adventícios. Sem edema de membros inferiores. Pulsos periféricos simétricos.', exH:'ECG de repouso: ritmo sinusal, FC 78 bpm, sem alterações agudas.\nTeste ergométrico: solicitado, resultado pendente.', alerta:'AAS · alergia relatada', alertaCurta:'Alergia: AAS',
       hip:[['Angina pectoris','I20.9',61],['Doença do refluxo','K21.9',16],['Dor torácica não especificada','R07.4',12]],
-      conduta:'Teste ergométrico · ajuste de anti-hipertensivo · orientar sinais de alarme' },
+      conduta:'Teste ergométrico · ajuste de anti-hipertensivo · orientar sinais de alarme',
+      ef:'PA 148×92 mmHg, FC 78 bpm. Ausculta cardíaca sem sopros.', ex:'ECG de repouso: ritmo sinusal, sem alterações agudas.' },
     psiq: { raiz:'psiquiatr', dia:'#5B4FA0', pac:['CL','Clara Lima','34 anos · F · Consulta · Online','34F'],
       fala:[['Médico','Como tem sido seu sono?'],['Paciente','Acordo às três da manhã e não durmo mais.'],['Médico','E o ânimo durante o dia?'],['Paciente','Não tenho vontade de nada faz uns dois meses.']],
       qp:'Desânimo e insônia terminal há dois meses.', hma:'Humor deprimido, anedonia, despertar precoce, queda de rendimento no trabalho.',
-      lembra:'Ideação suicida: perguntar diretamente', lembra2:'Uso de álcool e outras substâncias?', pront:'TSH pedido em [data], sem resultado',
-      alerta:'Risco: avaliar ideação suicida', alertaCurta:'Sinal de alerta',
+      lembra:'Ideação suicida: perguntar diretamente', lembra2:'Uso de álcool e outras substâncias?', pront:'TSH pedido na última consulta, sem resultado',
+      ant:'Sem internações psiquiátricas prévias. Nega uso de álcool e outras substâncias.', hdaH:'Paciente de 34 anos refere desânimo e perda de interesse há cerca de dois meses, com despertar às três da manhã e dificuldade para voltar a dormir. Relata queda de rendimento no trabalho, dificuldade de concentração e isolamento social progressivo. Percebe o humor pior pela manhã. Nega episódios prévios de euforia. Nunca usou medicação psiquiátrica.', efH:'Vigil e orientada. Humor deprimido, afeto constrito. Discurso lentificado, sem alteração do curso ou do conteúdo do pensamento. Sem alucinações. Insight preservado. Ideação suicida: a avaliar diretamente.', exH:'TSH: solicitado, resultado pendente.', alerta:'Risco: avaliar ideação suicida', alertaCurta:'Sinal de alerta',
       hip:[['Episódio depressivo moderado','F32.1',57],['Ansiedade generalizada','F41.1',22],['Transtorno de adaptação','F43.2',13]],
-      conduta:'Iniciar ISRS em dose baixa · psicoterapia · retorno em 4 semanas' }
+      conduta:'Iniciar ISRS em dose baixa · psicoterapia · retorno em 4 semanas',
+      ef:'Humor deprimido, afeto constrito, sem alteração do pensamento.', ex:'TSH solicitado.' }
   };
   const ORDEM = ['derm','reuma','cardio','psiq'];
   let espAtual = 'derm';
@@ -783,7 +836,7 @@ html{scroll-padding-top:var(--h-topo,70px)}
     $('#iaPac').textContent = e.pac[1] + ' · ' + e.pac[3];
     $('#iaAlerta').textContent = e.alerta; $('#iaLembra1').textContent = e.lembra2; $('#iaLembra2').textContent = e.pront; $('#iaConduta').textContent = e.conduta;
     montaHip($('#hipIA'), e.hip); montaHip($('#hipDemo'), e.hip);
-    pintaTrilho(); iniciaHero(); montaDocs();
+    pintaTrilho(); iniciaHero(); montaFluxo(); iniciaHist();
   }
 
   // ---------- hipóteses (tracejado → sólido) ----------
@@ -810,16 +863,14 @@ html{scroll-padding-top:var(--h-topo,70px)}
   function iniciaHero(){
     const e = ESP[espAtual];
     const fala = $('#fala');
-    fala.innerHTML = e.fala.slice(0,2).map(([q,t])=>'<span class="quem" style="color:'+(q==='Paciente'?'var(--ter)':'var(--pet)')+'">'+q+'</span><span>'+t+'</span>').join('');
-    $('#hQP').textContent = e.qp; $('#hHMA').textContent = e.hma; $('#hLembra').textContent = e.lembra;
-    $('#flutua').classList.remove('fora');
+    fala.innerHTML = e.fala.map(([q,t])=>'<span class="quem" style="color:'+(q==='Paciente'?'var(--ter)':'var(--pet)')+'">'+q+'</span><span>'+t+'</span>').join('');
   }
 
   // ---------- demonstração em 3 etapas ----------
   const ETAPAS = [
-    { t:'Escolha o atendimento e o paciente.', x:'Consulta, Retorno ou Prontuário, num toque. O paciente já chega com o formulário respondido, e você diz se é presencial ou online.', c:['Pacientes do dia na tela inicial','Formulário prévio por WhatsApp ou página própria','Presencial ou online, no mesmo fluxo'] },
+    { t:'Escolha o atendimento e o paciente.', x:'Consulta ou Retorno, num toque. O paciente já chega com o formulário respondido, e você diz se é presencial ou online.', c:['Pacientes do dia na tela inicial','Formulário prévio por WhatsApp ou página própria','Presencial ou online, no mesmo fluxo'] },
     { t:'Apenas converse. A IA escuta tudo.', x:'A transcrição separa médico e paciente e acompanha a anamnese. Se faltou perguntar algo obrigatório, ela lembra antes de você fechar.', c:['Reconhece termos da sua especialidade','Lembra o que faltou perguntar','Áudio descartado depois de transcrito'] },
-    { t:'Revise, confirme e assine.', x:'A história clínica chega organizada, com hipóteses, CID e probabilidade. Você confirma o que vale, gera os Anexos e assina.', c:['Sugestões tracejadas até você confirmar','Anexos com assinatura digital (VIDaaS)','Tudo salvo no prontuário do paciente'] }
+    { t:'Revise, confirme e assine.', x:'A história clínica chega organizada. Você revisa e oficializa; só então a IA sugere hipóteses com CID, e depois a conduta. Você confirma e assina.', c:['Sugestões tracejadas até você confirmar','Anexos com assinatura digital (VIDaaS)','Tudo salvo no prontuário do paciente'] }
   ];
   let etapa = 0, auto = true, inicioEtapa = performance.now(); const DUR = 7000;
   const abas = $$('.demo-abas [role=tab]');
@@ -861,36 +912,95 @@ html{scroll-padding-top:var(--h-topo,70px)}
 
   // ---------- funcionalidades ----------
   const FUNCS = [
-    ['var(--pet)','var(--onpet)','01','Transcrição clínica','Treinada no vocabulário da sua especialidade. Separa a fala do médico e a do paciente.','Funciona com o microfone do Tablet, do computador ou do celular, em consulta presencial ou por vídeo.',['Presencial ou online','Áudio descartado após transcrever']],
+    ['var(--pet)','var(--onpet)','01','Transcrição clínica','Treinada no vocabulário da sua especialidade. Separa a fala do médico e a do paciente.','Funciona com o microfone do tablet, do computador ou do celular, em consulta presencial ou por vídeo.',['Presencial ou online','Áudio descartado após transcrever']],
     ['var(--pes)','var(--onpes)','02','História clínica estruturada','Identificação, anamnese, exame físico, diagnóstico e conduta, sempre nessa ordem.','Alergias e medicamentos em uso e já usados são obrigatórios: se faltar, a IA lembra antes de fechar.',['Lembra o que faltou perguntar','Modelos por especialidade']],
     ['var(--ter)','var(--onter)','03','Hipóteses com CID','Diagnósticos prováveis com código e probabilidade, a partir do que foi dito e do prontuário.','Tudo que a IA sugere aparece tracejado. Só vira sólido, e entra no registro, quando você confirma.',['Tracejado até você confirmar','Alertas em vermelho']],
     ['var(--pet)','var(--onpet)','04','Anexos com assinatura','Receita, atestado, encaminhamento, laudo e orientações, gerados a partir da conduta.','Assinatura pelo VIDaaS ou outro certificado. Selo só nos documentos que exigem.',['VIDaaS ou outro certificado','Também emitidos pelo prontuário']],
     ['var(--pes)','var(--onpes)','05','Prontuário','Lido automaticamente a partir do retorno. Qualquer paciente, a qualquer momento.','Na tela inicial, Consulta, Retorno e Prontuário ficam lado a lado. Pacientes antigos podem ser importados.',['Importe pacientes antigos','Linha do tempo de consultas']],
-    ['var(--ter)','var(--onter)','06','Agenda e área do paciente','A agenda é sua. O paciente responde o formulário antes da consulta.','O paciente escolhe: formulário por WhatsApp, página própria ou direto na consulta com você.',['Desktop, Tablet e celular','Opção de pré-consulta']]
+    ['var(--ter)','var(--onter)','06','Agenda e área do paciente','A agenda é sua. O paciente responde o formulário antes da consulta.','O paciente escolhe: formulário por WhatsApp, página própria ou direto na consulta com você.',['Computador, tablet e celular','Opção de pré-consulta']]
   ];
   $('#funcs').innerHTML = FUNCS.map(([c,o,n,t,d,m,b])=>
     '<article class="func sobe" tabindex="0" style="--cor:'+c+';--on:'+o+'"><span class="ico">'+n+'</span><h3>'+t+'</h3><div class="mais"><div><p>'+d+'</p><p>'+m+'</p></div></div><div class="itens">'+b.map(x=>'<span><span class="check">✓</span>'+x+'</span>').join('')+'</div></article>').join('');
 
-  // ---------- documentos ----------
-  let docAtual = 0;
-  function DOCS(){ const e=ESP[espAtual]; return [
-    { n:'História clínica', t:'Primeira consulta completa ao fim da conversa.', x:'Organizada em identificação, anamnese, exame físico, diagnóstico e conduta. Pronta para a primeira consulta.', c:['Ordem fixa, mesmo quando resumida','Antecedentes ditos na conversa já entram','Exame físico sugerido pela queixa'], d:'História clínica', p:e.pac[1]+' · '+e.pac[3], a:'Assinatura digital', f:[['Queixa principal',e.qp],['História atual',e.hma],['Diagnóstico',e.hip[0][0]+' ('+e.hip[0][1]+')']], ch:[] },
-    { n:'Retorno', t:'O retorno já começa com o prontuário lido.', x:'Da segunda consulta em diante, a IA traz o que mudou desde a última vez e o que ficou pendente.', c:['Resumo da consulta anterior','Exames pedidos e ainda sem resultado','Evolução lado a lado'], d:'Evolução', p:e.pac[1]+' · retorno', a:'Assinatura digital', f:[['Desde a última consulta','Boa adesão ao tratamento proposto. Melhora parcial dos sintomas.'],['Pendências',e.pront],['Conduta','Manter tratamento. Reavaliar com exames.']], ch:[] },
-    { n:'Anexos', t:'Os documentos saem da conduta.', x:'Cada Anexo nasce do que você decidiu. Uns pedem só assinatura, outros pedem selo; a IA sabe qual é qual.', c:['Assinatura VIDaaS ou outro certificado','Selo apenas quando exigido','Também emitidos pelo prontuário'], d:'Receita', p:e.pac[1], a:'Assinatura + selo', f:[['Prescrição',e.conduta],['Orientações','[Orientações ao paciente geradas a partir da conduta]'],['Validade','[Conforme o tipo de receita]']], ch:['Receita','Atestado','Encaminhamento','Laudo','Orientações'] },
-    { n:'Modelos da especialidade', t:'Seus modelos, do seu jeito.', x:'Vamos montar juntos os modelos de cada especialidade e a forma como são preenchidos.', c:['Um conjunto por especialidade','Campos obrigatórios definidos por você','Ajuste fino a qualquer momento'], d:'Modelo · '+e.raiz+'ia', p:'Em construção', a:'—', f:[['Campos','[Definidos com o médico durante a construção]'],['Obrigatórios','Alergias · medicamentos em uso e já usados'],['Exemplo','[Modelo real a inserir]']], ch:[] }
-  ]; }
-  function montaDocs(){
-    const D = DOCS();
-    $('#abasDoc').innerHTML = D.map((d,i)=>'<button type="button" role="tab" aria-selected="'+(i===docAtual)+'" data-i="'+i+'">'+d.n+'</button>').join('');
-    $$('#abasDoc button').forEach(b=>b.addEventListener('click',()=>{ docAtual=+b.dataset.i; montaDocs(); }));
-    const d = D[docAtual];
-    $('#chipsDoc').innerHTML = d.ch.map(c=>'<span>'+c+'</span>').join('');
-    $('#docTit').textContent=d.t; $('#docTxt').textContent=d.x;
-    $('#docChk').innerHTML = d.c.map(c=>'<span><span class="check">✓</span>'+c+'</span>').join('');
-    $('#docNome').textContent=d.d; $('#docPac').textContent=d.p; $('#docAss').textContent=d.a;
-    $('#docCampos').innerHTML = d.f.map(([r,v])=>'<div><span class="rot">'+r+'</span><span>'+v+'</span></div>').join('');
-    const c=$('#docCartao'); c.style.animation='none'; c.offsetHeight; c.style.animation='entra .4s cubic-bezier(.2,.8,.2,1)';
+  // ---------- exame físico e exames complementares (exemplo fixo: dermatologia) ----------
+  const EXAMES=[
+    { n:'Hemograma', rows:[['Hemoglobina','12,8','g/dL','12,0 – 15,5',0],['Hematócrito','38,5','%','36,0 – 46,0',0],['Leucócitos','7.200','/mm³','4.000 – 11.000',0],['Plaquetas','265.000','/mm³','150.000 – 450.000',0]], obs:'Sem alterações.' },
+    { n:'Perfil hormonal', rows:[['Testosterona total','58','ng/dL','10 – 55',1],['DHEA-S','290','µg/dL','65 – 380',0],['SHBG','32','nmol/L','18 – 144',0],['TSH','2,1','µUI/mL','0,4 – 4,0',0]], obs:'Correlacionar com a clínica.' },
+    { n:'Lipidograma e TGO/TGP', rows:[['Colesterol total','172','mg/dL','< 190',0],['LDL','98','mg/dL','< 130',0],['HDL','54','mg/dL','> 45',0],['Triglicerídeos','96','mg/dL','< 150',0],['TGO','21','U/L','< 32',0],['TGP','18','U/L','< 33',0]], obs:'Sem alterações. Valores basais registrados.' }
+  ];
+  let exAba=0, exPausa=0, exVis=false, exT=0;
+  function montaExames(){
+    $('#abasEx').innerHTML=EXAMES.map((x,i)=>'<button type="button" role="tab" aria-selected="'+(i===exAba)+'" data-i="'+i+'">'+x.n+'</button>').join('');
+    const x=EXAMES[exAba];
+    $('#folha').innerHTML='<div class="cab-f"><span>'+x.n+' · Laboratório Exemplo</span><span>Ana Ribeiro, 24 anos · coleta 12/11/2026</span></div><table><thead><tr><th>Exame</th><th>Resultado</th><th>Referência</th><th></th></tr></thead><tbody>'+
+      x.rows.map(([n,v,u,r,a])=>'<tr'+(a?' class="alto"':'')+'><td>'+n+'</td><td>'+v+' '+u+'</td><td>'+r+'</td><td>'+(a?'↑':'')+'</td></tr>').join('')+'</tbody></table>';
+    const fora=x.rows.filter(r=>r[4]), ok=x.rows.length-fora.length;
+    $('#analiseEx').innerHTML='<span class="t">Análise estruturada</span><span>Dentro da referência: '+ok+' de '+x.rows.length+'</span><span>Fora da referência: '+(fora.length?fora.map(r=>r[0]+' '+r[1]+' '+r[2]+', levemente acima').join('; '):'nenhum')+'</span><span>'+x.obs+'</span>';
   }
+  $('#abasEx').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(!b) return; exAba=+b.dataset.i; exPausa=12; montaExames(); });
+  montaExames();
+  new IntersectionObserver(es=>es.forEach(e=>exVis=e.isIntersecting),{threshold:.3}).observe($('#exames'));
+  const exFisico=$('#exFisico');
+  if(reduz) exFisico.dataset.fase='2';
+  setInterval(()=>{
+    if(!exVis||document.hidden) return;
+    if(!reduz){ exT=(exT+1)%11; exFisico.dataset.fase = exT<1?'0':exT<3?'1':'2'; }
+    if(exPausa>0){ exPausa--; } else if(exT%4===3){ exAba=(exAba+1)%EXAMES.length; montaExames(); }
+  },1000);
+
+  // ---------- história clínica escrita ao vivo ----------
+  let histGen=0, histVis=false;
+  new IntersectionObserver(es=>es.forEach(e=>histVis=e.isIntersecting),{threshold:.3}).observe($('#hist'));
+  const esperaVis=async ms=>{ await new Promise(x=>setTimeout(x,ms)); while(!histVis||document.hidden) await new Promise(x=>setTimeout(x,200)); };
+  async function iniciaHist(){
+    const g=++histGen, e=ESP[espAtual], box=$('#histCorpo');
+    const S=[['Identificação', e.pac[1]+' · '+e.pac[2]],['Queixa principal', e.qp],['História da doença atual', e.hdaH],['Antecedentes e alertas', e.ant+' Alerta: '+e.alerta+'.'],['Exame físico', e.efH],['Exames complementares', e.exH]];
+    box.innerHTML=S.map(([r,x])=>'<div class="sec"><span class="rot">'+r+'</span><span class="tx"><span class="v"></span><span class="f"></span></span></div>').join('');
+    const secs=[...box.children];
+    const poe=(i,n)=>{ const [,x]=S[i]; const tx=secs[i].querySelector('.tx'); tx.firstChild.textContent=x.slice(0,n); tx.lastChild.textContent=x.slice(n); };
+    S.forEach((_,i)=>poe(i,0));
+    if(reduz){ S.forEach((x,i)=>{ secs[i].classList.add('on'); poe(i,S[i][1].length); }); return; }
+    while(g===histGen){
+      for(let i=0;i<S.length;i++){
+        secs[i].classList.add('on','escreve');
+        const tam=S[i][1].length; for(let n=3;;n+=3){ if(g!==histGen) return; poe(i,Math.min(n,tam)); if(n>=tam) break; await esperaVis(33); }
+        secs[i].classList.remove('escreve');
+      }
+      await esperaVis(15000); if(g!==histGen) return;
+      secs.forEach((el,i)=>{ el.classList.remove('on','escreve'); poe(i,0); });
+      await esperaVis(600);
+    }
+  }
+
+  // ---------- fluxo da consulta: a IA propõe, o médico oficializa ----------
+  let fase=0, fluxoT=0, fluxoVis=false;
+  function montaFluxo(){
+    const e=ESP[espAtual];
+    const F=[
+      { t:'Anamnese', s:'Conversa transcrita', fonte:'Fonte: a conversa com o paciente',
+        h:'<span class="rot">Queixa principal</span><span>'+e.qp+'</span><span class="rot">História atual</span><span>'+e.hma+'</span>' },
+      { t:'Exame físico e exames', s:'Análise com auxílio de IA', fonte:'Com a anamnese, gera a história clínica estruturada',
+        h:'<span class="rot">Exame físico</span><span>'+e.ef+'</span><span class="rot">Exames complementares</span><span>'+e.ex+'</span>' },
+      { t:'Diagnósticos diferenciais', s:'Só depois da história clínica', fonte:'Parte apenas da história clínica oficializada',
+        h:[...e.hip].sort((a,b)=>b[2]-a[2]).map(([n,c,p])=>'<span class="dd"><b>'+n+'</b><i>'+c+'</i><em>'+p+'%</em></span>').join('') },
+      { t:'Conduta e tratamento', s:'Só a partir dos diagnósticos', fonte:'Parte apenas dos diagnósticos oficializados',
+        h:'<span>'+e.conduta+'</span><div class="docs-f"><span>Receita</span><span>Atestado</span><span>Laudo</span><span>Orientações</span></div>' }
+    ];
+    $('#fluxo').innerHTML=F.map((x,i)=>{
+      const st = i<fase?'ofic':i===fase?'rasc':'trav';
+      const est = st==='ofic'?'Oficializado ✓':st==='rasc'?'Rascunho da IA':'Aguardando';
+      const corpo = st==='trav' ? 'Libera quando a etapa anterior for oficializada.' : x.h;
+      return '<article class="fase" data-e="'+st+'"><div class="topo-f"><span class="nf">'+(i+1)+'</span><h3>'+x.t+'</h3></div><span class="sub-f">'+x.s+'</span><span class="est">'+est+'</span><div class="corpo-f">'+corpo+'</div><span class="fonte">'+x.fonte+'</span>'+(st==='rasc'?'<button type="button" class="btn-of" data-i="'+i+'">Revisar e oficializar</button>':'')+'</article>';
+    }).join('');
+  }
+  $('#fluxo').addEventListener('click',ev=>{ const b=ev.target.closest('.btn-of'); if(!b) return; fase=+b.dataset.i+1; fluxoT=-6; montaFluxo(); });
+  new IntersectionObserver(es=>es.forEach(x=>fluxoVis=x.isIntersecting),{threshold:.4}).observe($('#fluxo'));
+  setInterval(()=>{
+    if(!fluxoVis||document.hidden) return;
+    fluxoT++;
+    if(fase<4){ if(fluxoT>=3){ fluxoT=0; fase++; montaFluxo(); } }
+    else if(fluxoT>=5){ fluxoT=0; fase=0; montaFluxo(); }
+  },1000);
 
   // ---------- apoio: destacar parte do painel ao passar o mouse ----------
   $$('#apoio .recurso').forEach(r=>{
@@ -918,7 +1028,7 @@ html{scroll-padding-top:var(--h-topo,70px)}
     ['Preciso de autorização do paciente para gravar?', 'O paciente é avisado sobre a gravação e decide se aceita ou não.'],
     ['Como funciona a assinatura dos Anexos?', 'Certificado digital para os documentos que exigem selo. As receitas podem ser enviadas por e-mail ou WhatsApp.'],
     ['Posso importar meus pacientes antigos?', 'Sim. Prontuários antigos podem ser atualizados na nova plataforma.'],
-    ['Funciona no Tablet, no computador e no celular?', 'Sim. É um app web pensado primeiro para o Tablet, e perfeito também no computador e no celular.'],
+    ['Funciona no tablet, no computador e no celular?', 'Sim. É um app web pensado primeiro para o tablet, e perfeito também no computador e no celular.'],
     ['Como o paciente marca a consulta?', 'De três formas: formulário enviado por WhatsApp, preenchimento na plataforma do app ou no início da consulta com o médico.'],
     ['Como começar?', 'Crie a conta, confirme o CRM e comece na próxima consulta.']
   ];
