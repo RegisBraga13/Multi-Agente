@@ -30,6 +30,7 @@ export default defineConfig({
       input: {
         landing: raiz('./index.html'),
         app: raiz('./app.html'),
+        funcionalidades: raiz('./funcionalidades.html'),
       },
     },
   },

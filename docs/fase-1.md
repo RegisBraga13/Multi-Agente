@@ -41,3 +41,15 @@ As páginas públicas não dependem do banco nem do gateway, então ficam pronta
   - Nova consulta: gravar primeiro e atribuir o paciente depois; paciente existente (busca por nome/CPF) ou novo; tipo de documento (primeira consulta = HPMA/RS/antecedentes/HD/conduta · evolução = SOAP); resumo lateral; aviso "áudio apagado após a transcrição"
   - Modelos: anamnese, evolução e receita, com padrão do médico e variáveis (@paciente.nome, @medico.crm, @data.hoje)
   - Ajustes: nome, e-mail, CRM + UF, especialidade
+- Conduta e tratamento no app (definido em 15/11/2026; a landing mostra só uma demonstração ilustrativa disso):
+  - Prescrição assistida por grupos, com **um único clique por grupo**: o médico escolhe a alternativa e passa ao próximo. Exemplo (acne grau II papulopustulosa):
+    1. Cuidados básicos: rotina para pele oleosa/acneica · rotina para pele sensível (orientação comum: não espremer lesões)
+    2. Tratamento tópico: adapaleno + peróxido de benzoíla · peróxido de benzoíla + clindamicina · tretinoína + clindamicina · ácido azelaico · peróxido de benzoíla isolado · adapaleno isolado
+    3. Tratamento sistêmico (uma opção, quando indicada): não indicar · doxiciclina oral · limeciclina oral · anticoncepcional combinado · espironolactona · isotretinoína oral
+    4. Seguimento: reavaliar em 8 semanas · em 12 semanas · conforme avaliação clínica
+  - Seleções inteligentes: opções incompatíveis geram alertas ou exigem ajustes
+  - Texto automático: a conduta é montada a partir das opções escolhidas (cuidados, tópico, sistêmico, orientações, reavaliação)
+  - Edição livre: antes de salvar, o médico pode alterar qualquer trecho, inclusive posologia, duração e orientações
+  - Prescrição separada: medicamentos selecionados abrem campos de dose, concentração, veículo, frequência e duração
+  - Interface: mostrar primeiro só os nomes dos tratamentos; descrição, posologia e cuidados aparecem ao selecionar cada opção (formulário compacto durante a consulta)
+  - Princípio clínico: terapia tópica multimodal e uso criterioso de antibióticos (diretrizes AAD e NICE, a conferir na construção)

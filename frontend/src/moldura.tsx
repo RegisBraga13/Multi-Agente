@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { Marca } from './marca'
 
 const LINKS = [
-  { href: '/#funcionalidades', texto: 'Funcionalidades' },
+  { href: '/funcionalidades.html', texto: 'Funcionalidades' },
   { href: '/#precos', texto: 'Preço' },
   { href: '/#seguranca', texto: 'Segurança' },
   { href: '/#faq', texto: 'FAQ' },
