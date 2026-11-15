@@ -6,5 +6,8 @@ export function classeEntrada(p: PropsCampo) {
   return `w-full border-[1.5px] bg-papel px-4 py-3 text-[16px] outline-none transition focus:border-(--esp) focus:bg-branco ${p['aria-invalid'] ? 'border-alerta' : 'border-linha'}`
 }
 
+/** Cada atalho do topo abre uma "página": a seção ocupa ao menos a altura da tela, e a seguinte só aparece rolando. */
+export const PAGINA = 'min-h-svh py-12 sm:py-16'
+
 export const btnPrimario = 'w-full bg-(--esp) px-6 py-4 text-[17px] font-bold text-papel transition hover:-translate-y-0.5'
 export const btnSecundario = 'w-full border-[1.5px] border-tinta px-6 py-3.5 text-[16px] font-semibold transition hover:bg-tinta hover:text-papel'

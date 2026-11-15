@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 import { Campo } from './campo'
 import { btnPrimario, btnSecundario, classeEntrada } from './estilos'
 import { formatarWhatsapp, normalizarWhatsapp, validarContato, validarPedido, type ErrosPedido, type FormaFormulario, type RascunhoPedido } from './regras'
-import { artigo, NOME_MODALIDADE, rotuloDiaLongo, textoTranscricao } from './textos'
+import { NOME_MODALIDADE, rotuloDiaLongo, TEXTO_TRANSCRICAO } from './textos'
 import type { Medico } from './tipos'
 
 type Props = {
@@ -132,7 +132,7 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
         {passo === 3 && (
           <>
             <Titulo ref={titulo}>Transcrição da consulta</Titulo>
-            <p className="mt-3 text-[16px] leading-relaxed">{textoTranscricao(medico)}</p>
+            <p className="mt-3 text-[16px] leading-relaxed">{TEXTO_TRANSCRICAO}</p>
             <div className="mt-6 grid gap-3" role="group" aria-label="Você concorda com a transcrição?">
               {([['aceita', 'Concordo'], ['recusada', 'Não concordo']] as const).map(([v, t]) => (
                 <button
@@ -156,7 +156,7 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
           <>
             <Titulo ref={titulo}>Formulário da consulta</Titulo>
             <p className="mt-2 text-apagado">
-              Seus dados e, se quiser, algumas perguntas sobre o motivo da consulta. Assim {artigo(medico)} já chega conhecendo o seu caso.
+              Seus dados e, se quiser, algumas perguntas sobre o motivo da consulta. Assim seu médico já chega conhecendo o seu caso.
             </p>
             <fieldset className="mt-5 grid gap-3">
               <legend className="sr-only">Como prefere preencher?</legend>
@@ -174,7 +174,7 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
               <div className="mt-4 border-l-4 border-(--esp) bg-suave p-4">
                 <p className="font-semibold">Tem certeza?</p>
                 <p className="mt-1 text-[15px]">
-                  Com o formulário respondido antes, {artigo(medico)} já chega à consulta conhecendo o seu caso, e o tempo com você rende mais. Pelo WhatsApp leva poucos minutos.
+                  Com o formulário respondido antes, seu médico já chega à consulta conhecendo o seu caso, e o tempo com você rende mais. Pelo WhatsApp leva poucos minutos.
                 </p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   <button type="button" className="bg-(--esp) px-4 py-3 font-bold text-papel" onClick={() => escolherForma('whatsapp')}>Receber no WhatsApp</button>

@@ -56,6 +56,20 @@ export type DadosPessoais = {
   email: string
   cidade: string
   uf: string
+  profissao: string // opcional
+  trabalhoExposto: 'sim' | 'nao' | '' // ao ar livre, ao sol ou a produtos químicos; opcional
+  atendimento: 'particular' | 'convenio' | '' // opcional
+  convenio: string // nome do convênio, se houver; opcional
+}
+
+/** Anos completos na data de hoje; null se a data de nascimento não for válida. */
+export function calcularIdade(nascimento: string, hoje: Date): number | null {
+  if (!nascimentoValido(nascimento, hoje)) return null
+  const [a, m, d] = nascimento.split('-').map(Number)
+  let idade = hoje.getFullYear() - a
+  // ainda não fez aniversário este ano (29/02 conta como 01/03 nos anos comuns)
+  if (new Date(hoje.getFullYear(), m - 1, d) > new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) idade--
+  return idade
 }
 
 function nascimentoValido(iso: string, hoje: Date): boolean {

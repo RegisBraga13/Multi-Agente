@@ -5,7 +5,8 @@ import { Marca } from '../marca'
 import { NaoEncontrada } from '../nao-encontrada'
 import { AgendaMedico } from './agenda'
 import { buscarMedico, gerarAgenda, horarioExiste } from './exemplo'
-import { ComoFunciona, Duvidas, SobreTranscricao } from './informacoes'
+import { PAGINA } from './estilos'
+import { ComoFunciona, Duvidas } from './informacoes'
 import { FormularioPaciente } from './formulario-paciente'
 import { PainelAgendamento } from './painel-agendamento'
 import type { RascunhoPedido } from './regras'
@@ -78,6 +79,10 @@ function Pagina({ medico }: { medico: Medico }) {
       </div>
 
       <main inert={modal} className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6">
+        {/* primeiro o paciente entende como funciona; a agenda fica no final */}
+        <ComoFunciona />
+        <Duvidas medico={medico} />
+
         {preenchendo ? (
           <FormularioPaciente
             medico={medico}
@@ -85,9 +90,8 @@ function Pagina({ medico }: { medico: Medico }) {
             onConcluir={() => { setPreenchendo(false); fecharPainel() }}
           />
         ) : (
-        <section id="agenda" aria-labelledby="h-agenda" className="scroll-mt-4 pt-10 pb-14">
-          <p className="text-[13px] font-bold tracking-[.14em] text-(--esp) uppercase">Agenda</p>
-          <h2 id="h-agenda" ref={tituloAgenda} tabIndex={-1} className="mt-2 text-[clamp(28px,4vw,40px)] leading-[1.05] font-bold outline-none">Escolha o dia e o horário.</h2>
+        <section id="agenda" aria-labelledby="h-agenda" className={`${PAGINA} border-t border-linha`}>
+          <h2 id="h-agenda" ref={tituloAgenda} tabIndex={-1} className="text-[clamp(28px,4vw,40px)] leading-[1.05] font-bold outline-none">Escolha o dia e o horário.</h2>
           <div className="mt-6 grid grid-cols-[minmax(0,1fr)] items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
             <AgendaMedico
               agenda={agenda}
@@ -108,12 +112,6 @@ function Pagina({ medico }: { medico: Medico }) {
           </div>
         </section>
         )}
-
-        <div className="flex flex-col gap-16 pb-20">
-          <ComoFunciona />
-          <SobreTranscricao medico={medico} />
-          <Duvidas medico={medico} />
-        </div>
       </main>
 
       {telaPequena && painel}
@@ -125,31 +123,50 @@ function Pagina({ medico }: { medico: Medico }) {
   )
 }
 
+const ATALHOS = [
+  ['#como-funciona', 'Como funciona'],
+  ['#duvidas', 'Dúvidas'],
+  ['#agenda', 'Agendar consulta'],
+] as const
+
 function Cabecalho({ medico, profissional }: { medico: Medico; profissional: string }) {
   const iniciais = medico.nome.split(' ').map((p) => p[0]).slice(0, 2).join('')
   return (
     <header className="border-b border-linha bg-branco" style={{ borderTop: '4px solid var(--esp)' }}>
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:flex-row sm:items-center sm:px-6 sm:py-10">
-        {medico.foto ? (
-          <img src={medico.foto} alt="" className="h-24 w-24 flex-none object-cover sm:h-28 sm:w-28" />
-        ) : (
-          <span aria-hidden className="grid h-24 w-24 flex-none place-items-center bg-(--esp) font-titulo text-[38px] font-bold text-papel sm:h-28 sm:w-28">
-            {iniciais}
-          </span>
-        )}
-        <div className="min-w-0 flex-1">
-          <h1 className="text-[clamp(32px,5vw,48px)] leading-[1.02] font-bold">{medico.tratamento} {medico.nome}</h1>
-          <p className="mt-1 text-[14px] font-bold tracking-[.14em] text-(--esp) uppercase">{profissional}</p>
-          <p className="mt-3 text-[15px]">
-            CRM {medico.crm}-{medico.uf}{medico.rqe ? ` · RQE ${medico.rqe}` : ''}
-          </p>
-          <p className="mt-1 text-[15px] text-apagado">
-            {medico.endereco} · {medico.cidade}{medico.atendeOnline ? ' · Atende online' : ''}
-          </p>
+      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+        <div className="flex min-w-0 items-center gap-4">
+          {medico.foto ? (
+            <img src={medico.foto} alt="" className="h-14 w-14 flex-none object-cover sm:h-16 sm:w-16" />
+          ) : (
+            <span aria-hidden className="grid h-14 w-14 flex-none place-items-center bg-(--esp) font-titulo text-[21px] font-bold text-papel sm:h-16 sm:w-16 sm:text-[24px]">
+              {iniciais}
+            </span>
+          )}
+          <div className="min-w-0">
+            <h1 className="text-[clamp(23px,3vw,28px)] leading-[1.1] font-bold">{medico.tratamento} {medico.nome}</h1>
+            <p className="mt-0.5 text-[12px] font-bold tracking-[.14em] text-(--esp) uppercase">
+              {profissional} <span className="font-semibold tracking-normal normal-case text-tinta">· CRM {medico.crm}-{medico.uf}{medico.rqe ? ` · RQE ${medico.rqe}` : ''}</span>
+            </p>
+            <p className="mt-0.5 text-[14px] text-apagado">
+              {medico.endereco} · {medico.cidade}{medico.atendeOnline ? ' · Atende online' : ''}
+            </p>
+          </div>
         </div>
-        <a href="#agenda" className="self-start bg-(--esp) px-6 py-4 text-[17px] font-bold text-papel no-underline transition hover:-translate-y-0.5 sm:self-center">
-          Agendar consulta
-        </a>
+        {/* atalhos: quem quer entender antes lê; quem já decidiu vai direto à agenda */}
+        <nav aria-label="Nesta página" className="flex-none">
+          <ul className="flex flex-wrap gap-2">
+            {ATALHOS.map(([href, rotulo]) => (
+              <li key={href}>
+                <a
+                  href={href}
+                  className={`block border-[1.5px] px-3.5 py-2 text-[14px] font-semibold no-underline transition ${href === '#agenda' ? 'border-(--esp) bg-(--esp) text-papel hover:-translate-y-0.5' : 'border-linha bg-papel text-tinta hover:border-(--esp) hover:text-(--esp)'}`}
+                >
+                  {rotulo}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
     </header>
   )

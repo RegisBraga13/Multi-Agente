@@ -1,5 +1,5 @@
 // Textos e formatação compartilhados pelas telas da página do médico.
-import type { Medico, Modalidade } from './tipos'
+import type { Modalidade } from './tipos'
 
 const comoData = (iso: string) => {
   const [a, m, d] = iso.split('-').map(Number)
@@ -23,10 +23,11 @@ export function rotuloDiaLongo(iso: string) {
 
 export const NOME_MODALIDADE: Record<Modalidade, string> = { presencial: 'Presencial', online: 'Online' }
 
-/** "a médica" / "o médico" */
-export const artigo = (m: Medico) => (m.tratamento === 'Dra.' ? 'a médica' : 'o médico')
+// Decisão do autor (15/11/2026): nos textos para o paciente, sempre "seu médico",
+// qualquer que seja a especialidade ou o gênero. O nome do médico continua onde aparece.
 
-/** Texto curto sobre a transcrição: aparece na seção e no momento do consentimento. */
-export function textoTranscricao(m: Medico) {
-  return `Com a sua autorização, a conversa da consulta é transformada em texto para o prontuário. Só ${artigo(m)} e a equipe clínica leem. O áudio é apagado logo depois de transcrito. Você pode recusar: a consulta acontece do mesmo jeito.`
-}
+/** Mesma frase na seção Como funciona e no momento do consentimento. */
+export const ACESSO_TRANSCRICAO = 'Apenas seu médico tem acesso, e o áudio é apagado depois de transcrito.'
+
+/** Texto do consentimento, no agendamento. */
+export const TEXTO_TRANSCRICAO = `Com a sua autorização, a conversa da consulta é transformada em texto para o prontuário. ${ACESSO_TRANSCRICAO} Você pode recusar: a consulta acontece do mesmo jeito.`

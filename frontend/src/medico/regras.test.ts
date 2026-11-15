@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  FOTO_MAX_BYTES, normalizarWhatsapp, validarContato, validarDadosPessoais, validarFoto, validarPedido,
+  calcularIdade, FOTO_MAX_BYTES, normalizarWhatsapp, validarContato, validarDadosPessoais, validarFoto, validarPedido,
   type DadosPessoais, type RascunhoPedido,
 } from './regras'
 
@@ -50,8 +50,11 @@ describe('validarDadosPessoais', () => {
     const d: DadosPessoais = {
       nomeCompleto: 'Maria Lima', nascimento: '1990-05-02', sexo: 'F',
       whatsapp: '85991018813', email: '', cidade: 'Fortaleza', uf: 'CE',
+      profissao: '', trabalhoExposto: '', atendimento: '', convenio: '',
     }
     expect(validarDadosPessoais(d, hoje)).toEqual({})
+    // profissão, trabalho exposto e convênio são opcionais
+    expect(validarDadosPessoais({ ...d, profissao: 'Pedreiro', trabalhoExposto: 'sim', atendimento: 'convenio', convenio: '' }, hoje)).toEqual({})
     expect(validarDadosPessoais({ ...d, nomeCompleto: 'Maria' }, hoje).nomeCompleto).toBeDefined()
     expect(validarDadosPessoais({ ...d, nascimento: '2027-01-01' }, hoje).nascimento).toBeDefined()
     expect(validarDadosPessoais({ ...d, nascimento: '1890-01-01' }, hoje).nascimento).toBeDefined()
@@ -59,6 +62,23 @@ describe('validarDadosPessoais', () => {
     expect(validarDadosPessoais({ ...d, email: 'maria@' }, hoje).email).toBeDefined()
     const vazio = validarDadosPessoais({ ...d, sexo: '', cidade: ' ', uf: 'XX', whatsapp: '1' }, hoje)
     expect(Object.keys(vazio).sort()).toEqual(['cidade', 'sexo', 'uf', 'whatsapp'])
+  })
+})
+
+describe('calcularIdade', () => {
+  const hoje = new Date(2026, 10, 15)
+  it('conta os anos completos, virando no dia do aniversário', () => {
+    expect(calcularIdade('1990-11-15', hoje)).toBe(36)
+    expect(calcularIdade('1990-11-16', hoje)).toBe(35)
+    expect(calcularIdade('1990-05-02', hoje)).toBe(36)
+    expect(calcularIdade('2026-11-15', hoje)).toBe(0)
+  })
+  it('nascido em 29/02 faz aniversário em 01/03 nos anos comuns', () => {
+    expect(calcularIdade('2000-02-29', new Date(2026, 1, 28))).toBe(25)
+    expect(calcularIdade('2000-02-29', new Date(2026, 2, 1))).toBe(26)
+  })
+  it('data incompleta, impossível ou futura não tem idade', () => {
+    for (const iso of ['', '1990-02-31', '2027-01-01', '1890-01-01']) expect(calcularIdade(iso, hoje)).toBeNull()
   })
 })
 
