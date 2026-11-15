@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { UFS } from '../cadastro/validacao'
 import { Campo } from './campo'
 import { btnPrimario, btnSecundario, classeEntrada } from './estilos'
-import { validarDadosPessoais, validarFoto, type DadosPessoais, type PreConsulta } from './regras'
+import { perguntasPreConsulta, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
+import { validarDadosPessoais, validarFoto, type DadosPessoais } from './regras'
 import { artigo } from './textos'
 import type { Medico } from './tipos'
 
@@ -12,7 +13,8 @@ export function FormularioPaciente({ medico, inicial, onConcluir }: Props) {
   const [dados, setDados] = useState<DadosPessoais>({
     nomeCompleto: inicial.nome, nascimento: '', sexo: '', whatsapp: inicial.whatsapp, email: '', cidade: '', uf: '',
   })
-  const [pre, setPre] = useState<PreConsulta>({ queixa: '', desdeQuando: '', medicamentos: '', alergias: '' })
+  const perguntas = perguntasPreConsulta(medico.especialidade)
+  const [pre, setPre] = useState<RespostasPreConsulta>({})
   const [erros, setErros] = useState<Partial<Record<keyof DadosPessoais, string>>>({})
   const [tentou, setTentou] = useState(false)
   const [foto, setFoto] = useState<{ nome: string; url: string } | null>(null)
@@ -36,7 +38,30 @@ export function FormularioPaciente({ medico, inicial, onConcluir }: Props) {
     setDados(novo)
     if (tentou) setErros(validarDadosPessoais(novo, new Date()))
   }
-  const mudaPre = (campo: keyof PreConsulta, valor: string) => setPre((p) => ({ ...p, [campo]: valor }))
+  const mudaPre = (id: string, valor: string) => setPre((p) => ({ ...p, [id]: valor }))
+
+  function campoPergunta(q: Pergunta) {
+    if (q.tipo === 'foto') {
+      return (
+        <div key={q.id} className="grid gap-4">
+          <Campo rotulo={q.rotulo} erro={erroFoto || undefined} ajuda={q.ajuda}>
+            {(p) => (
+              <input {...p} type="file" accept="image/*" onChange={(e) => escolherFoto(e.target.files?.[0])}
+                className="block w-full text-[15px] file:mr-4 file:border-[1.5px] file:border-tinta file:bg-transparent file:px-4 file:py-2.5 file:font-semibold" />
+            )}
+          </Campo>
+          {foto && <img src={foto.url} alt={`Foto escolhida: ${foto.nome}`} className="max-h-56 w-auto self-start border border-linha object-contain" />}
+        </div>
+      )
+    }
+    return (
+      <Campo key={q.id} rotulo={q.rotulo} ajuda={q.ajuda}>
+        {(p) => q.tipo === 'texto-longo'
+          ? <textarea {...p} rows={q.id === 'queixa' ? 3 : 2} placeholder={q.placeholder} value={pre[q.id] ?? ''} onChange={(e) => mudaPre(q.id, e.target.value)} className={classeEntrada(p)} />
+          : <input {...p} placeholder={q.placeholder} value={pre[q.id] ?? ''} onChange={(e) => mudaPre(q.id, e.target.value)} className={classeEntrada(p)} />}
+      </Campo>
+    )
+  }
 
   function escolherFoto(arquivo: File | undefined) {
     setFoto(null)
@@ -126,25 +151,7 @@ export function FormularioPaciente({ medico, inicial, onConcluir }: Props) {
                 </legend>
                 <p className="clear-both pt-2 text-[15px] text-apagado">Responda o que puder. Ajuda {artigo(medico)} a chegar à consulta conhecendo o seu caso.</p>
                 <div className="mt-4 grid gap-4">
-                  <Campo rotulo="O que trouxe você à consulta?">
-                    {(p) => <textarea {...p} rows={3} value={pre.queixa} onChange={(e) => mudaPre('queixa', e.target.value)} className={classeEntrada(p)} />}
-                  </Campo>
-                  <Campo rotulo="Desde quando?">
-                    {(p) => <input {...p} placeholder="Ex.: uns três meses" value={pre.desdeQuando} onChange={(e) => mudaPre('desdeQuando', e.target.value)} className={classeEntrada(p)} />}
-                  </Campo>
-                  <Campo rotulo="Medicamentos e cremes que usa ou já usou">
-                    {(p) => <textarea {...p} rows={2} value={pre.medicamentos} onChange={(e) => mudaPre('medicamentos', e.target.value)} className={classeEntrada(p)} />}
-                  </Campo>
-                  <Campo rotulo="Alergia a algum medicamento?">
-                    {(p) => <input {...p} placeholder="Ex.: dipirona. Se não tiver, escreva “não”." value={pre.alergias} onChange={(e) => mudaPre('alergias', e.target.value)} className={classeEntrada(p)} />}
-                  </Campo>
-                  <Campo rotulo="Foto da lesão (opcional)" erro={erroFoto || undefined} ajuda="Uma foto com boa luz ajuda. Até 10 MB.">
-                    {(p) => (
-                      <input {...p} type="file" accept="image/*" onChange={(e) => escolherFoto(e.target.files?.[0])}
-                        className="block w-full text-[15px] file:mr-4 file:border-[1.5px] file:border-tinta file:bg-transparent file:px-4 file:py-2.5 file:font-semibold" />
-                    )}
-                  </Campo>
-                  {foto && <img src={foto.url} alt={`Foto escolhida: ${foto.nome}`} className="max-h-56 w-auto self-start border border-linha object-contain" />}
+                  {perguntas.map(campoPergunta)}
                 </div>
               </fieldset>
 

@@ -58,8 +58,6 @@ export type DadosPessoais = {
   uf: string
 }
 
-export type PreConsulta = { queixa: string; desdeQuando: string; medicamentos: string; alergias: string }
-
 function nascimentoValido(iso: string, hoje: Date): boolean {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
   if (!m) return false
