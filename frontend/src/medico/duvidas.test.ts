@@ -33,6 +33,9 @@ describe('duvidasDaPagina', () => {
 
 describe('linkWhatsapp', () => {
   it('monta o link do WhatsApp com o número normalizado', () => {
-    expect(linkWhatsapp('5585991018813')).toBe('https://wa.me/5585991018813')
+    expect(linkWhatsapp('5585912345678')).toBe('https://wa.me/5585912345678')
+  })
+  it('leva a mensagem pronta, codificada', () => {
+    expect(linkWhatsapp('5585912345678', 'Olá, *Ana*\n2 fotos & mais')).toBe('https://wa.me/5585912345678?text=Ol%C3%A1%2C%20*Ana*%0A2%20fotos%20%26%20mais')
   })
 })

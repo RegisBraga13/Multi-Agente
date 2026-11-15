@@ -44,7 +44,7 @@ export function ComoFunciona() {
 export function Duvidas({ medico }: { medico: Medico }) {
   return (
     <section id="duvidas" aria-labelledby="h-duv" className={`${PAGINA} border-t border-linha`}>
-      <Titulo id="h-duv">Antes de agendar, tire suas dúvidas.</Titulo>
+      <Titulo id="h-duv">Tire suas dúvidas.</Titulo>
       <div className="mt-6 border-t border-linha">
         {duvidasDaPagina(medico.especialidade).map((d) => (
           <details key={d.id} className="group border-b border-linha">

@@ -75,5 +75,6 @@ export function duvidasDaPagina(especialidade: string): Duvida[] {
   return lista
 }
 
-/** Número já normalizado ('55' + DDD + número) → link que abre a conversa no WhatsApp. */
-export const linkWhatsapp = (numero: string) => `https://wa.me/${numero}`
+/** Número já normalizado ('55' + DDD + número) → link que abre a conversa no WhatsApp, com a mensagem pronta se houver. */
+export const linkWhatsapp = (numero: string, texto?: string) =>
+  `https://wa.me/${numero}${texto ? `?text=${encodeURIComponent(texto)}` : ''}`

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import { UFS } from '../cadastro/validacao'
 import { Campo } from './campo'
 import { btnPrimario, btnSecundario, classeEntrada } from './estilos'
+import { linkWhatsapp } from './duvidas'
+import { mensagemFormulario } from './mensagem'
 import { GrupoOpcoes } from './opcoes'
 import { alternarOpcao, partesPreConsulta, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
 import { calcularIdade, formatarWhatsapp, normalizarWhatsapp, validarDadosPessoais, validarFoto, type DadosPessoais, type RascunhoPedido } from './regras'
@@ -30,6 +32,7 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
   const [fotos, setFotos] = useState<Record<string, Foto>>({})
   const [errosFoto, setErrosFoto] = useState<Record<string, string>>({})
   const [pronto, setPronto] = useState(false)
+  const [linkEnvio, setLinkEnvio] = useState('')
   const titulo = useRef<HTMLHeadingElement>(null)
   const idade = calcularIdade(dados.nascimento, new Date())
 
@@ -104,6 +107,12 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
       requestAnimationFrame(() => document.querySelector<HTMLElement>('#formulario-paciente [aria-invalid="true"]')?.focus())
       return
     }
+    // teste: o formulário segue pelo WhatsApp do próprio paciente, com a mensagem pronta para o consultório
+    const link = linkWhatsapp(medico.whatsappConsultorio, mensagemFormulario({
+      medico, pedido, dados, partes, respostas: pre, fotos: Object.keys(fotos).length, hoje: new Date(),
+    }))
+    setLinkEnvio(link)
+    window.open(link, '_blank', 'noopener')
     setPronto(true)
   }
 
@@ -120,10 +129,17 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
         <div className="border border-linha bg-branco p-5 shadow-[0_30px_60px_-36px_rgba(19,48,47,.5)] sm:p-9" style={{ borderTop: '4px solid var(--esp)' }}>
           {pronto ? (
             <div role="status">
-              <h2 id="h-form" ref={titulo} tabIndex={-1} className="text-[clamp(28px,4vw,38px)] leading-tight font-bold outline-none">Recebido.</h2>
-              <p className="mt-3 text-[17px]">{medico.tratamento} {medico.nome} vai ler antes da consulta.</p>
-              <button type="button" className={`${btnPrimario} mt-7`} onClick={onConcluir}>Voltar à página</button>
-              <p className="mt-5 border-l-4 border-alerta bg-[#fbe9e6] px-4 py-3 text-[14px]">Demonstração: nada foi enviado.</p>
+              <h2 id="h-form" ref={titulo} tabIndex={-1} className="text-[clamp(28px,4vw,38px)] leading-tight font-bold outline-none">Falta só enviar.</h2>
+              <p className="mt-3 text-[17px]">
+                O WhatsApp abriu com o formulário pronto. Toque em enviar para {medico.tratamento} {medico.nome} receber antes da consulta.
+              </p>
+              {Object.keys(fotos).length > 0 && (
+                <p className="mt-2 text-[17px]">Depois, mande as fotos na mesma conversa.</p>
+              )}
+              <a href={linkEnvio} target="_blank" rel="noopener noreferrer" className={`${btnPrimario} mt-7 block text-center no-underline`}>
+                Abrir o WhatsApp de novo
+              </a>
+              <button type="button" className={`${btnSecundario} mt-3`} onClick={onConcluir}>Voltar à página</button>
             </div>
           ) : (
             <form id="formulario-paciente" noValidate onSubmit={enviar}>
