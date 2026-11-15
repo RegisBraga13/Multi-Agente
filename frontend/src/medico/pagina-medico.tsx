@@ -6,6 +6,7 @@ import { NaoEncontrada } from '../nao-encontrada'
 import { AgendaMedico } from './agenda'
 import { buscarMedico, gerarAgenda, horarioExiste } from './exemplo'
 import { ComoFunciona, Duvidas, SobreTranscricao } from './informacoes'
+import { FormularioPaciente } from './formulario-paciente'
 import { PainelAgendamento } from './painel-agendamento'
 import type { RascunhoPedido } from './regras'
 import type { Medico, Modalidade } from './tipos'
@@ -25,6 +26,7 @@ function Pagina({ medico }: { medico: Medico }) {
   const esp = buscarEspecialidade(medico.especialidade)
   const agenda = useMemo(() => gerarAgenda(new Date()), [])
   const [rascunho, setRascunho] = useState<RascunhoPedido>(RASCUNHO_VAZIO)
+  const [preenchendo, setPreenchendo] = useState(false)
 
   useEffect(() => {
     document.title = `${medico.tratamento} ${medico.nome} · ${esp?.nome ?? ''}`
@@ -67,7 +69,7 @@ function Pagina({ medico }: { medico: Medico }) {
                 rascunho={rascunho}
                 onMudar={setRascunho}
                 onFechar={fecharPainel}
-                onPreencherNaPagina={() => undefined}
+                onPreencherNaPagina={() => setPreenchendo(true)}
               />
             ) : (
               <aside className="hidden border border-dashed border-linha p-6 text-apagado md:block">
@@ -83,6 +85,14 @@ function Pagina({ medico }: { medico: Medico }) {
           <Duvidas medico={medico} />
         </div>
       </main>
+
+      {preenchendo && (
+        <FormularioPaciente
+          medico={medico}
+          inicial={{ nome: rascunho.nome, whatsapp: rascunho.whatsapp }}
+          onConcluir={() => { setPreenchendo(false); fecharPainel() }}
+        />
+      )}
 
       <footer className="border-t border-linha py-8 text-center text-[14px] text-apagado">
         Agendamento com <Marca className="text-[17px]" />
