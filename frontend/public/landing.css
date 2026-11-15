@@ -490,6 +490,13 @@ html{scroll-padding-top:var(--h-topo,70px)}
 .cg-linha{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .cg-alerta{background:var(--alerta);color:var(--onalerta)}
 
+/* celular (até 640px): planos e rodapé em uma coluna; tablet e computador não mudam */
+@media (max-width:640px){
+  .planos{grid-template-columns:minmax(0,1fr)}
+  .rodape .wrap{grid-template-columns:minmax(0,1fr)}
+  .rodape nav a{overflow-wrap:anywhere}
+}
+
 /* como funciona: presencial e online */
 .cf-grade{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:center}
 @media (max-width:980px){.cf-grade{grid-template-columns:minmax(0,1fr);gap:32px}}
