@@ -150,6 +150,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
               campos={conteudo.exame}
               fotos={conteudo.fotos}
               fotoExemplo={at.paciente.nome === 'Mariana Costa' ? '/img/acne-exemplo.jpg' : null}
+              marcas={conteudo.marcas}
               complementares={conteudo.complementares}
               situacao={estado.blocos.exame.estado}
               onEditar={() => fazer('editar', 'exame')}

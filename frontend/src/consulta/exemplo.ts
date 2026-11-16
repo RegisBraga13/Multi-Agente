@@ -16,6 +16,8 @@ export type ConteudoConsulta = {
   alertas: Alerta[]
   /** fotos já anexadas ao exame físico */
   fotos: number
+  /** lesões marcadas pela IA na foto 1 (posição em % da imagem inteira) */
+  marcas: [number, number][]
   exame: CampoExame[]
   complementares: Complementar[]
 }
@@ -29,13 +31,15 @@ export function buscarAtendimento(id: string, agora: Date): Atendimento | undefi
 /** Campos do exame físico de Dermatologia (pacote da especialidade). */
 const CAMPOS_DERMATO = ['Morfologia', 'Localização', 'Extensão', 'Gravidade estimada', 'Achados associados']
 
-type Rascunho = { exame: [string, string, string, string, string]; fotos: number; fala: string; alertas?: string[]; faltou?: string[] }
+type Rascunho = { exame: [string, string, string, string, string]; fotos: number; fala: string; alertas?: string[]; faltou?: string[]; marcas?: [number, number][] }
 
 // Rascunho da IA a partir das fotos, por paciente de exemplo.
 const RASCUNHOS: Record<string, Rascunho> = {
   'Mariana Costa': {
-    exame: ['Pápulas eritematosas e pústulas; comedões abertos e fechados', 'Face (região mandibular e malar) e dorso superior', '7 lesões inflamatórias na face; dorso com lesões esparsas', 'Moderada, a confirmar no exame', 'Sem cicatrizes evidentes nas fotos'],
+    exame: ['Pápulas, pústulas e comedões', 'Região mandibular e malar; dorso', '7 lesões na face; dorso esparso', 'Moderada, a confirmar', 'Sem cicatrizes nas fotos'],
     fotos: 4, fala: 'Vou olhar o rosto e as costas com a luz.', faltou: ['Planeja engravidar nos próximos meses?'],
+    // as mesmas 7 lesões marcadas na foto da landing
+    marcas: [[30.6, 16], [35.8, 32.1], [35.4, 44.2], [27.5, 50], [47.8, 60.3], [55.4, 63.5], [33.6, 64.7]],
   },
   'João Pedro Lima': {
     exame: ['Placas eritematosas bem delimitadas com escamas prateadas', 'Cotovelos e joelhos, simétricas', 'Cerca de 4% da superfície corporal', 'Leve a moderada', 'Unhas sem depressões nas fotos'],
@@ -151,6 +155,7 @@ export function conteudoDaConsulta(at: Atendimento, slug: string): ConteudoConsu
     faltouPerguntar: r.faltou ?? [],
     alertas,
     fotos: r.fotos,
+    marcas: r.marcas ?? [],
     exame: CAMPOS_DERMATO.map((rotulo, i) => ({ rotulo, valor: r.exame[i], prov: 'inferido_ia' })),
     complementares: COMPLEMENTARES[nome] ?? [],
   }

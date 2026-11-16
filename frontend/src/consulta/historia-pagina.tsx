@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { TextoCrescente } from '../medico/texto-crescente'
 import type { SecaoHistoria } from './historia'
 import type { Situacao } from './tipos'
+import { SEM_CORRETOR } from './campo-linha'
 import { BotaoOficializar, Cartao } from './ui'
 
 /** Ritmo da landing (index.html, iniciaHist): 3 caracteres a cada 33 ms. */
@@ -101,6 +102,7 @@ export function PaginaHistoria({ secoes, textos, mudou, sugestoes, primeira, sit
               ) : (
                 <div className={sugestoes[i] ? 'mt-0.5 grid grid-cols-2 gap-2' : 'mt-0.5'}>
                   <TextoCrescente
+                    {...SEM_CORRETOR}
                     value={textos[i]}
                     onChange={(e) => mudar(i, e.target.value)}
                     aria-label={s.rotulo}

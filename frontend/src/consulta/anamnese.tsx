@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Alerta, Fala } from './exemplo'
 import type { EstadoConsulta, RespostaAlerta, Situacao } from './tipos'
+import { SEM_CORRETOR } from './campo-linha'
 import { BotaoOficializar, Cartao, ROTULO } from './ui'
 
 /** Simulação: uma fala nova a cada 3 s de gravação. */
@@ -105,6 +106,7 @@ export function Anamnese({ falas, faltouPerguntar, alertas, respostas, situacao,
       <div className="flex min-h-[150px] flex-1 flex-col border-[1.5px] border-linha focus-within:border-tinta">
         <textarea
           ref={caixa}
+          {...SEM_CORRETOR}
           value={texto}
           onChange={(e) => { setTexto(e.target.value); mudou() }}
           placeholder="Queixa, história, antecedentes…"
