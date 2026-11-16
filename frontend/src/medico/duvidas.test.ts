@@ -3,15 +3,15 @@ import { ESPECIALIDADES } from '../especialidades'
 import { duvidasDaPagina, linkWhatsapp } from './duvidas'
 
 describe('duvidasDaPagina', () => {
-  it('dermatologia: perguntas comuns e a das fotos logo depois da transcrição', () => {
+  it('dermatologia: perguntas comuns e a das fotos logo depois de médico ou IA; sem a da gravação', () => {
     const ids = duvidasDaPagina('dermatologia').map((d) => d.id)
-    expect(ids).toEqual(['reserva', 'remarcar', 'online', 'preencher', 'protecao', 'medico_ou_ia', 'transcricao', 'fotos', 'receita', 'valor', 'retorno'])
+    expect(ids).toEqual(['reserva', 'remarcar', 'online', 'preencher', 'protecao', 'medico_ou_ia', 'fotos', 'receita', 'valor', 'retorno'])
   })
 
   it('especialidade sem pacote próprio fica só com as comuns', () => {
     const ids = duvidasDaPagina('cardiologia').map((d) => d.id)
     expect(ids).not.toContain('fotos')
-    expect(ids).toHaveLength(10)
+    expect(ids).toHaveLength(9)
   })
 
   it('textos sem gênero nem especialidade: sempre "seu médico"', () => {
@@ -23,10 +23,9 @@ describe('duvidasDaPagina', () => {
     }
   })
 
-  it('remarcar oferece o WhatsApp do consultório; transcrição diz quem acessa e que o áudio é apagado', () => {
+  it('remarcar oferece o WhatsApp do consultório; proteção com o texto do autor', () => {
     const d = Object.fromEntries(duvidasDaPagina('dermatologia').map((x) => [x.id, x]))
     expect(d.remarcar.acao).toBe('whatsapp-consultorio')
-    expect(d.transcricao.resposta).toContain('Apenas seu médico tem acesso, e o áudio é apagado depois de transcrito.')
     expect(d.protecao.resposta).toBe('Seus dados são tratados com confidencialidade e conforme a legislação de proteção de dados.')
   })
 })

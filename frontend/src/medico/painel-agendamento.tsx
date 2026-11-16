@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 import { Campo } from './campo'
-import { btnPrimario, btnSecundario, classeEntrada } from './estilos'
+import { btnPainel, btnPainelSecundario, classeEntrada } from './estilos'
 import { formatarWhatsapp, normalizarWhatsapp, validarContato, validarPedido, type ErrosPedido, type FormaFormulario, type RascunhoPedido } from './regras'
 import { NOME_MODALIDADE, rotuloDiaLongo, TEXTO_TRANSCRICAO } from './textos'
 import type { Medico } from './tipos'
@@ -61,9 +61,9 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
       aria-labelledby="h-painel"
       role={modal ? 'dialog' : undefined}
       aria-modal={modal || undefined}
-      className="fixed inset-0 z-50 overflow-y-auto bg-papel md:sticky md:inset-auto md:top-4 md:z-auto md:overflow-visible md:bg-transparent"
+      className="fixed inset-0 z-50 overflow-y-auto bg-papel md:relative md:inset-auto md:z-auto md:overflow-visible md:bg-transparent"
     >
-      <div className="min-h-full bg-branco p-5 sm:p-7 md:min-h-0 md:border md:border-t-4 md:border-linha md:shadow-[0_30px_60px_-36px_rgba(19,48,47,.5)]" style={{ borderTopColor: 'var(--esp)' }}>
+      <div className="min-h-full bg-branco p-5 sm:p-6 md:h-full md:px-6 md:py-5 md:min-h-0 md:border md:border-t-4 md:border-linha md:shadow-[0_30px_60px_-36px_rgba(19,48,47,.5)]" style={{ borderTopColor: 'var(--esp)' }}>
         <div className="flex items-center justify-between gap-4">
           <span className="text-[12px] font-bold tracking-[.14em] text-apagado uppercase">
             {passo === 'enviado' ? 'Pedido enviado' : `Passo ${passo} de ${TOTAL}`}
@@ -73,7 +73,7 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
           </button>
         </div>
         {passo !== 'enviado' && (
-          <div className="mt-3 grid grid-cols-4 gap-1.5" aria-hidden>
+          <div className="mt-2.5 grid grid-cols-4 gap-1.5" aria-hidden>
             {[1, 2, 3, 4].map((n) => (
               <span key={n} className="h-1" style={{ background: n <= passo ? 'var(--esp)' : 'var(--color-linha)' }} />
             ))}
@@ -83,7 +83,7 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
         {passo === 1 && (
           <>
             <Titulo ref={titulo}>Seu horário</Titulo>
-            <dl className="mt-5 grid gap-3 border-y border-linha py-4 text-[16px]">
+            <dl className="mt-4 grid gap-2.5 border-y border-linha py-3 text-[15.5px]">
               <Linha rotulo="Dia">{rotuloDiaLongo(r.data!)}</Linha>
               <Linha rotulo="Hora">{r.inicio}</Linha>
               <Linha rotulo="Consulta">
@@ -93,9 +93,9 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
                 </small>
               </Linha>
             </dl>
-            <div className="mt-6 grid gap-3">
-              <button type="button" className={btnPrimario} onClick={() => setPasso(2)}>Continuar</button>
-              <button type="button" className={btnSecundario} onClick={onFechar}>Trocar horário</button>
+            <div className="mt-5 grid gap-2.5">
+              <button type="button" className={btnPainel} onClick={() => setPasso(2)}>Continuar</button>
+              <button type="button" className={btnPainelSecundario} onClick={onFechar}>Trocar horário</button>
             </div>
           </>
         )}
@@ -111,20 +111,20 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
             }}
           >
             <Titulo ref={titulo}>Seus contatos</Titulo>
-            <p className="mt-2 text-apagado">É por aqui que o consultório confirma o horário e lembra você da consulta.</p>
-            <div className="mt-5 grid gap-4">
+            <p className="mt-1.5 text-[14.5px] text-apagado">É por aqui que o consultório confirma o horário e lembra você da consulta.</p>
+            <div className="mt-4 grid gap-3">
               <Campo rotulo="Seu nome" erro={erros.nome}>
                 {(p) => <input {...p} autoComplete="name" value={r.nome} onChange={(e) => muda({ nome: e.target.value })} className={classeEntrada(p)} />}
               </Campo>
-              <Campo rotulo="WhatsApp" erro={erros.whatsapp} ajuda="Celular com DDD.">
+              <Campo rotulo="WhatsApp (celular com DDD)" erro={erros.whatsapp}>
                 {(p) => (
                   <input {...p} type="tel" inputMode="tel" autoComplete="tel" placeholder="(85) 99999-9999" value={r.whatsapp} onChange={(e) => muda({ whatsapp: e.target.value })} className={classeEntrada(p)} />
                 )}
               </Campo>
             </div>
-            <div className="mt-6 grid gap-3">
-              <button type="submit" className={btnPrimario}>Continuar</button>
-              <button type="button" className={btnSecundario} onClick={() => setPasso(1)}>Voltar</button>
+            <div className="mt-5 grid gap-2.5">
+              <button type="submit" className={btnPainel}>Continuar</button>
+              <button type="button" className="mt-1 text-[14px] font-semibold text-apagado underline" onClick={() => setPasso(1)}>Voltar</button>
             </div>
           </form>
         )}
@@ -132,15 +132,15 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
         {passo === 3 && (
           <>
             <Titulo ref={titulo}>Transcrição da consulta</Titulo>
-            <p className="mt-3 text-[16px] leading-relaxed">{TEXTO_TRANSCRICAO}</p>
-            <div className="mt-6 grid gap-3" role="group" aria-label="Você concorda com a transcrição?">
+            <p className="mt-2 text-[15px] leading-relaxed">{TEXTO_TRANSCRICAO}</p>
+            <div className="mt-5 grid gap-2.5" role="group" aria-label="Você concorda com a transcrição?">
               {([['aceita', 'Concordo'], ['recusada', 'Não concordo']] as const).map(([v, t]) => (
                 <button
                   key={v}
                   type="button"
                   aria-pressed={r.transcricao === v}
                   onClick={() => { muda({ transcricao: v }); setPasso(4) }}
-                  className={`w-full border-[1.5px] px-6 py-4 text-[17px] font-bold transition ${
+                  className={`w-full border-[1.5px] px-5 py-3 text-[16px] font-bold transition ${
                     r.transcricao === v ? 'border-(--esp) bg-(--esp) text-papel' : 'border-tinta hover:bg-suave'
                   }`}
                 >
@@ -155,14 +155,11 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
         {passo === 4 && (
           <>
             <Titulo ref={titulo}>Formulário da consulta</Titulo>
-            <p className="mt-2 text-apagado">
-              Seus dados e, se quiser, algumas perguntas sobre o motivo da consulta. Assim seu médico já chega conhecendo o seu caso.
-            </p>
-            <fieldset className="mt-5 grid gap-3">
+            <fieldset className="mt-3.5 grid gap-2">
               <legend className="sr-only">Como prefere preencher?</legend>
-              <Opcao valor="whatsapp" atual={r.forma} onEscolher={escolherForma} selo="Recomendado"
-                titulo="Receber no WhatsApp" texto="Você responde com calma, no seu tempo, antes da consulta." />
-              <Opcao valor="pagina" atual={r.forma} onEscolher={escolherForma}
+              <Opcao valor="whatsapp" atual={r.forma} onEscolher={escolherForma} selo="Recomendado" compacto={precisaReconsiderar}
+                titulo="Receber no WhatsApp" texto="Responda com calma." />
+              <Opcao valor="pagina" atual={r.forma} onEscolher={escolherForma} compacto={precisaReconsiderar}
                 titulo="Preencher aqui agora" texto="Leva poucos minutos." />
               <label className={`mt-1 flex cursor-pointer items-center gap-2.5 text-[14.5px] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-(--esp) ${r.forma === 'consulta' ? 'font-semibold text-tinta' : 'text-apagado'}`}>
                 <input type="radio" name="forma" value="consulta" checked={r.forma === 'consulta'} onChange={() => escolherForma('consulta')} className="h-4 w-4 accent-(--esp)" />
@@ -171,14 +168,14 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
             </fieldset>
 
             {precisaReconsiderar && (
-              <div className="mt-4 border-l-4 border-(--esp) bg-suave p-4">
+              <div className="mt-2.5 border-l-4 border-(--esp) bg-suave px-3.5 py-2.5">
                 <p className="font-semibold">Tem certeza?</p>
-                <p className="mt-1 text-[15px]">
-                  Com o formulário respondido antes, seu médico já chega à consulta conhecendo o seu caso, e o tempo com você rende mais. Pelo WhatsApp leva poucos minutos.
+                <p className="mt-0.5 text-[13.5px] leading-snug">
+                  Com o formulário respondido antes, seu médico já chega conhecendo o seu caso. Pelo WhatsApp leva poucos minutos.
                 </p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <button type="button" className="bg-(--esp) px-4 py-3 font-bold text-papel" onClick={() => escolherForma('whatsapp')}>Receber no WhatsApp</button>
-                  <button type="button" className="border-[1.5px] border-tinta px-4 py-3 font-semibold" onClick={() => setConfirmouConsulta(true)}>Manter na consulta</button>
+                <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
+                  <button type="button" className="bg-(--esp) px-3 py-2 text-[14.5px] font-bold text-papel" onClick={() => escolherForma('whatsapp')}>Receber no WhatsApp</button>
+                  <button type="button" className="border-[1.5px] border-tinta px-3 py-2 text-[14.5px] font-semibold" onClick={() => setConfirmouConsulta(true)}>Manter na consulta</button>
                 </div>
               </div>
             )}
@@ -188,9 +185,9 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
             )}
 
             {!precisaReconsiderar && (
-              <div className="mt-6 grid gap-3">
-                <button type="button" className={btnPrimario} onClick={enviar}>Enviar pedido</button>
-                <button type="button" className={btnSecundario} onClick={() => setPasso(3)}>Voltar</button>
+              <div className="mt-5 grid gap-2.5">
+                <button type="button" className={btnPainel} onClick={enviar}>Enviar pedido</button>
+                <button type="button" className="mt-1 text-[14px] font-semibold text-apagado underline" onClick={() => setPasso(3)}>Voltar</button>
               </div>
             )}
           </>
@@ -207,8 +204,8 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
               {r.forma === 'whatsapp' && <li className="flex gap-2"><span className="text-(--esp)">✓</span>O formulário chega no mesmo WhatsApp.</li>}
               {r.forma === 'consulta' && <li className="flex gap-2"><span className="text-(--esp)">✓</span>Você responde o formulário no início da consulta.</li>}
             </ul>
-            <div className="mt-6 grid gap-3">
-              <button type="button" className={btnSecundario} onClick={onFechar}>Fechar</button>
+            <div className="mt-5 grid gap-2.5">
+              <button type="button" className={btnPainelSecundario} onClick={onFechar}>Fechar</button>
             </div>
             <p className="mt-5 border-l-4 border-alerta bg-[#fbe9e6] px-4 py-3 text-[14px]">Demonstração: nada foi enviado.</p>
           </div>
@@ -220,7 +217,7 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
 
 function Titulo({ ref, children }: { ref: Ref<HTMLHeadingElement>; children: ReactNode }) {
   return (
-    <h2 ref={ref} id="h-painel" tabIndex={-1} className="mt-5 text-[clamp(26px,3vw,32px)] leading-tight font-bold outline-none">
+    <h2 ref={ref} id="h-painel" tabIndex={-1} className="mt-2.5 text-[clamp(22px,2.4vw,26px)] leading-tight font-bold outline-none">
       {children}
     </h2>
   )
@@ -242,13 +239,15 @@ type PropsOpcao = {
   titulo: string
   texto: string
   selo?: string
+  /** só o título, sem a explicação (enquanto o "Tem certeza?" aparece) */
+  compacto?: boolean
 }
 
-function Opcao({ valor, atual, onEscolher, titulo, texto, selo }: PropsOpcao) {
+function Opcao({ valor, atual, onEscolher, titulo, texto, selo, compacto }: PropsOpcao) {
   const sel = atual === valor
   return (
     <label
-      className={`flex w-full cursor-pointer items-start gap-3 border-[1.5px] p-4 text-left transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--esp) ${sel ? 'border-(--esp) bg-(--esp)/10' : 'border-linha hover:border-tinta'}`}
+      className={`flex w-full cursor-pointer items-start gap-3 border-[1.5px] p-3 text-left transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--esp) ${sel ? 'border-(--esp) bg-(--esp)/10' : 'border-linha hover:border-tinta'}`}
     >
       <input type="radio" name="forma" value={valor} checked={sel} onChange={() => onEscolher(valor)} className="sr-only" />
       <span aria-hidden className={`mt-1 grid h-5 w-5 flex-none place-items-center border-[1.5px] ${sel ? 'border-(--esp) bg-(--esp) text-papel' : 'border-apagado'}`}>
@@ -256,10 +255,10 @@ function Opcao({ valor, atual, onEscolher, titulo, texto, selo }: PropsOpcao) {
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
-          <b className="text-[17px]">{titulo}</b>
+          <b className="text-[16px]">{titulo}</b>
           {selo && <span className="bg-(--esp) px-2 py-0.5 text-[11px] font-bold tracking-[.1em] text-papel uppercase">{selo}</span>}
         </span>
-        <span className="mt-0.5 block text-[14.5px] text-apagado">{texto}</span>
+        {!compacto && <span className="mt-0.5 block text-[14px] text-apagado">{texto}</span>}
       </span>
     </label>
   )

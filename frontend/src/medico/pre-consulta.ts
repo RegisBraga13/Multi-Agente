@@ -26,7 +26,7 @@ export type Parte = { titulo: string; perguntas: Pergunta[]; nota?: string }
 /** Respostas da pré-consulta, pela chave de cada pergunta (as fotos vão à parte). */
 export type RespostasPreConsulta = Record<string, string | string[]>
 
-const QUEIXA: Pergunta = { id: 'queixa', rotulo: 'O que trouxe você à consulta?', tipo: 'texto-longo' }
+const QUEIXA: Pergunta = { id: 'queixa', rotulo: 'Qual o motivo da sua consulta?', tipo: 'texto-longo' }
 const DESDE: Pergunta = { id: 'desde_quando', rotulo: 'Desde quando?', tipo: 'texto', placeholder: 'Ex.: uns três meses' }
 const ALERGIAS: Pergunta = {
   id: 'alergias', rotulo: 'Alergias', tipo: 'texto',

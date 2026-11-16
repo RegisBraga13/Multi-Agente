@@ -23,24 +23,28 @@ describe('mensagemFormulario', () => {
     expect(m).toContain('Transcrição da consulta: aceita')
   })
 
-  it('identificação com idade calculada, sem campos opcionais vazios', () => {
+  it('identificação com idade calculada; trabalho e atendimento à parte; sem campos vazios', () => {
     const m = mensagemFormulario({ ...base, respostas: {} })
     expect(m).toContain('*1. Identificação*')
     expect(m).toContain('Nascimento: 02/05/1990 (36 anos)')
     expect(m).toContain('Sexo: Feminino')
     expect(m).toContain('WhatsApp: (85) 91234-5678')
     expect(m).toContain('Cidade: Fortaleza/CE')
-    expect(m).toContain('Trabalha ao ar livre, exposto ao sol ou a produtos químicos: Sim')
-    expect(m).toContain('Atendimento: Convênio (Unimed)')
+    expect(m).toContain('*2. Trabalho e atendimento*\nTrabalha ao ar livre, exposto ao sol ou a produtos químicos: Sim\nAtendimento: Convênio (Unimed)')
     expect(m).not.toContain('E-mail')
     expect(m).not.toContain('Profissão')
   })
 
   it('só as partes respondidas, com a numeração do formulário; várias opções juntas', () => {
     const m = mensagemFormulario({ ...base, respostas: { queixa: 'Manchas no rosto', sintomas: ['Coça', 'Dói'], familia: [] } })
-    expect(m).toContain('*2. Queixa principal*\nO que trouxe você à consulta? Manchas no rosto\nCoça, dói ou sangra? Coça, Dói')
+    expect(m).toContain('*3. Queixa principal*\nQual o motivo da sua consulta? Manchas no rosto\nCoça, dói ou sangra? Coça, Dói')
     expect(m).not.toContain('Fototipo')
     expect(m).not.toContain('Histórico familiar')
+  })
+
+  it('sem trabalho e atendimento preenchidos, o bloco não aparece', () => {
+    const m = mensagemFormulario({ ...base, dados: { ...dados, trabalhoExposto: '', atendimento: '' }, respostas: {} })
+    expect(m).not.toContain('Trabalho e atendimento')
   })
 
   it('pergunta que não aparece para o sexo marcado não vai na mensagem', () => {

@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { UFS } from '../cadastro/validacao'
 import { Campo } from './campo'
 import { btnPrimario, btnSecundario, classeEntrada } from './estilos'
 import { linkWhatsapp } from './duvidas'
 import { mensagemFormulario } from './mensagem'
+import { blocoRespondido, blocosDoFormulario, type Bloco } from './blocos'
 import { GrupoOpcoes } from './opcoes'
+import { TextoCrescente } from './texto-crescente'
 import { alternarOpcao, partesPreConsulta, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
 import { calcularIdade, formatarWhatsapp, normalizarWhatsapp, validarDadosPessoais, validarFoto, type DadosPessoais, type RascunhoPedido } from './regras'
-import { NOME_MODALIDADE, rotuloDiaLongo } from './textos'
+import { diaComSemana, horaCurta, NOME_MODALIDADE } from './textos'
 import type { Medico } from './tipos'
 
 type Props = { medico: Medico; pedido: RascunhoPedido; onConcluir(): void }
@@ -16,6 +18,9 @@ type Foto = { nome: string; url: string }
 const SIM_NAO = [{ valor: 'sim', rotulo: 'Sim' }, { valor: 'nao', rotulo: 'Não' }]
 const ATENDIMENTO = [{ valor: 'particular', rotulo: 'Particular' }, { valor: 'convenio', rotulo: 'Convênio' }]
 const comoOpcoes = (lista: readonly string[]) => lista.map((t) => ({ valor: t, rotulo: t }))
+/** Texto longo, foto e listas grandes de opções ocupam a linha toda; o resto divide a linha no PC. */
+const ocupaLinhaToda = (q: Pergunta) =>
+  q.tipo === 'texto-longo' || q.tipo === 'foto' || (q.opcoes ?? []).join('').length > 28
 const semChave = <T,>(r: Record<string, T>, chave: string) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== chave))
 
 /** Formulário do paciente, aberto dentro da página logo depois do pedido enviado. */
@@ -33,6 +38,10 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
   const [errosFoto, setErrosFoto] = useState<Record<string, string>>({})
   const [pronto, setPronto] = useState(false)
   const [linkEnvio, setLinkEnvio] = useState('')
+  const blocos = blocosDoFormulario(partes)
+  const [etapa, setEtapa] = useState(0)
+  const tituloBloco = useRef<HTMLHeadingElement>(null)
+  const primeiraEtapa = useRef(true)
   const titulo = useRef<HTMLHeadingElement>(null)
   const idade = calcularIdade(dados.nascimento, new Date())
 
@@ -91,22 +100,35 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
     return (
       <Campo key={q.id} rotulo={q.rotulo} ajuda={q.ajuda}>
         {(p) => q.tipo === 'texto-longo'
-          ? <textarea {...p} rows={q.id === 'queixa' ? 3 : 2} placeholder={q.placeholder} value={texto} onChange={(e) => mudaPre(q.id, e.target.value)} className={classeEntrada(p)} />
+          ? <TextoCrescente {...p} placeholder={q.placeholder} value={texto} onChange={(e) => mudaPre(q.id, e.target.value)} className={classeEntrada(p)} />
           : <input {...p} placeholder={q.placeholder} value={texto} onChange={(e) => mudaPre(q.id, e.target.value)} className={classeEntrada(p)} />}
       </Campo>
     )
   }
 
-  function enviar(ev: FormEvent) {
-    ev.preventDefault()
+  // um bloco por vez; o último passo é a revisão
+  const ultimo = blocos.length // índice da revisão
+  useEffect(() => {
+    if (primeiraEtapa.current) { primeiraEtapa.current = false; return }
+    tituloBloco.current?.closest('section')?.scrollIntoView({ block: 'start' })
+    tituloBloco.current?.focus({ preventScroll: true })
+  }, [etapa])
+
+  function validarIdentificacao(): boolean {
     setTentou(true)
     const e = validarDadosPessoais(dados, new Date())
     setErros(e)
-    if (Object.keys(e).length) {
-      // espera a tela marcar os campos com erro antes de levar o foco ao primeiro
-      requestAnimationFrame(() => document.querySelector<HTMLElement>('#formulario-paciente [aria-invalid="true"]')?.focus())
-      return
-    }
+    if (!Object.keys(e).length) return true
+    // espera a tela marcar os campos com erro antes de levar o foco ao primeiro
+    requestAnimationFrame(() => document.querySelector<HTMLElement>('#formulario-paciente [aria-invalid="true"]')?.focus())
+    return false
+  }
+
+  function avancar(ev: FormEvent) {
+    ev.preventDefault()
+    if (etapa === 0 && !validarIdentificacao()) return
+    if (etapa < ultimo) return setEtapa(etapa + 1)
+    if (!validarIdentificacao()) return setEtapa(0)
     // teste: o formulário segue pelo WhatsApp do próprio paciente, com a mensagem pronta para o consultório
     const link = linkWhatsapp(medico.whatsappConsultorio, mensagemFormulario({
       medico, pedido, dados, partes, respostas: pre, fotos: Object.keys(fotos).length, hoje: new Date(),
@@ -116,17 +138,112 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
     setPronto(true)
   }
 
+  const bloco = blocos[etapa] as Bloco | undefined
+  const estado = { dados, respostas: pre, fotos: Object.keys(fotos), hoje: new Date() }
+
+  function conteudoDoBloco(b: Bloco) {
+    if ('parte' in b) {
+      return (
+        <>
+          {/* no PC, perguntas curtas lado a lado; as longas ocupam a linha toda */}
+          <div className="grid gap-3.5 sm:grid-flow-row-dense sm:grid-cols-[3fr_2fr] sm:gap-x-5">
+            {b.parte.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map((q) => (
+              <div key={q.id} className={ocupaLinhaToda(q) ? 'sm:col-span-2' : ''}>{campoPergunta(q)}</div>
+            ))}
+          </div>
+          {b.parte.nota && <p className="mt-4 bg-suave px-4 py-3 text-[14px] text-apagado">{b.parte.nota}</p>}
+        </>
+      )
+    }
+    if (b.id === 'trabalho') {
+      return (
+        <div className="grid gap-5">
+          <Campo rotulo="Profissão">
+            {(p) => <input {...p} autoComplete="organization-title" value={dados.profissao} onChange={(e) => muda('profissao', e.target.value)} className={classeEntrada(p)} />}
+          </Campo>
+          <GrupoOpcoes rotulo="Trabalha ao ar livre, exposto ao sol ou a produtos químicos?" modo="uma" opcoes={SIM_NAO}
+            marcadas={[dados.trabalhoExposto]} onAlternar={(v) => muda('trabalhoExposto', v as DadosPessoais['trabalhoExposto'])} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <GrupoOpcoes rotulo="Atendimento" modo="uma" opcoes={ATENDIMENTO}
+              marcadas={[dados.atendimento]} onAlternar={(v) => muda('atendimento', v as DadosPessoais['atendimento'])} />
+            {dados.atendimento === 'convenio' && (
+              <Campo rotulo="Qual convênio?">
+                {(p) => <input {...p} value={dados.convenio} onChange={(e) => muda('convenio', e.target.value)} className={classeEntrada(p)} />}
+              </Campo>
+            )}
+          </div>
+        </div>
+      )
+    }
+    // Campos com a largura do que cabem neles: data, sexo, WhatsApp e UF estreitos;
+    // nome, e-mail e cidade crescem e ocupam o espaço que sobra na linha.
+    return (
+      <div className="flex flex-wrap gap-x-3 gap-y-3 sm:gap-x-4">
+        <div className="min-w-[13rem] flex-1">
+          <Campo rotulo="Nome completo" erro={erros.nomeCompleto}>
+            {(p) => <input {...p} autoComplete="name" value={dados.nomeCompleto} onChange={(e) => muda('nomeCompleto', e.target.value)} className={classeEntrada(p)} />}
+          </Campo>
+        </div>
+        <div className="w-[9.5rem]">
+          <Campo rotulo="Nascimento" erro={erros.nascimento} ajuda={idade !== null ? `${idade} ${idade === 1 ? 'ano' : 'anos'}` : undefined}>
+            {(p) => <input {...p} type="date" autoComplete="bday" value={dados.nascimento} onChange={(e) => muda('nascimento', e.target.value)} className={classeEntrada(p)} />}
+          </Campo>
+        </div>
+        <div className="w-[8rem]">
+          <Campo rotulo="Sexo" erro={erros.sexo}>
+            {(p) => (
+              <select {...p} value={dados.sexo} onChange={(e) => muda('sexo', e.target.value as DadosPessoais['sexo'])} className={classeEntrada(p)}>
+                <option value="">Escolha</option>
+                <option value="F">Feminino</option>
+                <option value="M">Masculino</option>
+                <option value="outro">Outro</option>
+              </select>
+            )}
+          </Campo>
+        </div>
+        <div className="w-[10rem]">
+          <Campo rotulo="WhatsApp" erro={erros.whatsapp}>
+            {(p) => <input {...p} type="tel" inputMode="tel" autoComplete="tel" value={dados.whatsapp} onChange={(e) => muda('whatsapp', e.target.value)} className={classeEntrada(p)} />}
+          </Campo>
+        </div>
+        <div className="min-w-[13rem] flex-1">
+          <Campo rotulo="E-mail (opcional)" erro={erros.email}>
+            {(p) => <input {...p} type="email" inputMode="email" autoComplete="email" value={dados.email} onChange={(e) => muda('email', e.target.value)} className={classeEntrada(p)} />}
+          </Campo>
+        </div>
+        {/* Cidade e UF sempre juntas na mesma linha; a cidade cresce */}
+        <div className="flex min-w-[15rem] flex-1 gap-3">
+          <div className="min-w-0 flex-1">
+            <Campo rotulo="Cidade" erro={erros.cidade}>
+              {(p) => <input {...p} autoComplete="address-level2" value={dados.cidade} onChange={(e) => muda('cidade', e.target.value)} className={classeEntrada(p)} />}
+            </Campo>
+          </div>
+          <div className="w-[5.5rem] flex-none">
+            <Campo rotulo="UF" erro={erros.uf}>
+              {(p) => (
+                <select {...p} value={dados.uf} onChange={(e) => muda('uf', e.target.value)} className={classeEntrada(p)}>
+                  <option value="">—</option>
+                  {UFS.map((u) => <option key={u}>{u}</option>)}
+                </select>
+              )}
+            </Campo>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <section aria-labelledby="h-form" className="scroll-mt-4 pt-10 pb-14">
-      {!pronto && whatsapp && pedido.data && (
-        <div role="status" className="mx-auto mb-6 max-w-2xl border-l-4 border-(--esp) bg-branco px-5 py-4 text-[15.5px]">
-          <b className="block">✓ Pedido enviado</b>
-          {rotuloDiaLongo(pedido.data)}, às {pedido.inicio} · {NOME_MODALIDADE[pedido.modalidade]}. O consultório confirma o horário no seu WhatsApp, {formatarWhatsapp(whatsapp)}.
-          <span className="mt-1 block text-[13.5px] text-apagado">Demonstração: nada foi enviado.</span>
+    <section aria-labelledby="h-form" className="scroll-mt-4 pt-4 pb-14">
+      {!pronto && etapa === 0 && whatsapp && pedido.data && (
+        <div role="status" className="mx-auto mb-4 max-w-3xl border-l-4 border-(--esp) bg-branco px-5 py-3 text-[15px] leading-snug">
+          <b className="block">✓ Solicitação de agendamento registrada</b>
+          <span className="block">{diaComSemana(pedido.data)} · {horaCurta(pedido.inicio ?? '')} · {NOME_MODALIDADE[pedido.modalidade]}</span>
+          <span className="block text-apagado">Confirmação pelo WhatsApp {formatarWhatsapp(whatsapp)}</span>
         </div>
       )}
-      <div className="mx-auto max-w-2xl">
-        <div className="border border-linha bg-branco p-5 shadow-[0_30px_60px_-36px_rgba(19,48,47,.5)] sm:p-9" style={{ borderTop: '4px solid var(--esp)' }}>
+      <div className="mx-auto max-w-3xl">
+        <div className="border border-linha bg-branco p-4 shadow-[0_30px_60px_-36px_rgba(19,48,47,.5)] sm:px-8 sm:py-5" style={{ borderTop: '4px solid var(--esp)' }}>
           {pronto ? (
             <div role="status">
               <h2 id="h-form" ref={titulo} tabIndex={-1} className="text-[clamp(28px,4vw,38px)] leading-tight font-bold outline-none">Falta só enviar.</h2>
@@ -142,108 +259,77 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
               <button type="button" className={`${btnSecundario} mt-3`} onClick={onConcluir}>Voltar à página</button>
             </div>
           ) : (
-            <form id="formulario-paciente" noValidate onSubmit={enviar}>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-[12px] font-bold tracking-[.14em] text-(--esp) uppercase">{medico.tratamento} {medico.nome}</span>
-                <button type="button" onClick={onConcluir} className="text-[14px] font-semibold text-apagado underline hover:text-tinta">Fazer depois</button>
+            <form id="formulario-paciente" noValidate onSubmit={avancar}>
+              {/* cabeçalho numa linha só: título, parte atual e "Fazer depois"; a barra de progresso logo abaixo */}
+              <div className="flex items-baseline justify-between gap-4">
+                <h2 id="h-form" ref={titulo} tabIndex={-1} className="text-[13px] font-bold tracking-[.14em] text-(--esp) uppercase outline-none">
+                  Formulário da consulta
+                  <span className="ml-2 font-semibold tracking-normal normal-case text-apagado">· {bloco ? `Parte ${etapa + 1} de ${blocos.length}` : 'Revisão'}</span>
+                </h2>
+                <button type="button" onClick={onConcluir} className="flex-none text-[14px] font-semibold text-apagado underline hover:text-tinta">Fazer depois</button>
               </div>
-              <h2 id="h-form" ref={titulo} tabIndex={-1} className="mt-3 text-[clamp(28px,4vw,38px)] leading-tight font-bold outline-none">Formulário da consulta</h2>
+              <div className="mt-2 grid gap-1" style={{ gridTemplateColumns: `repeat(${blocos.length}, minmax(0, 1fr))` }} aria-hidden>
+                {blocos.map((b, n) => (
+                  <span key={b.id} className="h-1" style={{ background: n <= etapa ? 'var(--esp)' : 'var(--color-linha)' }} />
+                ))}
+              </div>
 
-              <ParteNumerada numero={1} titulo="Identificação" className="mt-7">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <Campo rotulo="Nome completo" erro={erros.nomeCompleto}>
-                      {(p) => <input {...p} autoComplete="name" value={dados.nomeCompleto} onChange={(e) => muda('nomeCompleto', e.target.value)} className={classeEntrada(p)} />}
-                    </Campo>
-                  </div>
-                  <Campo rotulo="Data de nascimento" erro={erros.nascimento} ajuda={idade !== null ? `Idade: ${idade} ${idade === 1 ? 'ano' : 'anos'}` : undefined}>
-                    {(p) => <input {...p} type="date" autoComplete="bday" value={dados.nascimento} onChange={(e) => muda('nascimento', e.target.value)} className={classeEntrada(p)} />}
-                  </Campo>
-                  <Campo rotulo="Sexo" erro={erros.sexo}>
-                    {(p) => (
-                      <select {...p} value={dados.sexo} onChange={(e) => muda('sexo', e.target.value as DadosPessoais['sexo'])} className={classeEntrada(p)}>
-                        <option value="">Escolha</option>
-                        <option value="F">Feminino</option>
-                        <option value="M">Masculino</option>
-                        <option value="outro">Outro</option>
-                      </select>
-                    )}
-                  </Campo>
-                  <Campo rotulo="WhatsApp" erro={erros.whatsapp}>
-                    {(p) => <input {...p} type="tel" inputMode="tel" autoComplete="tel" value={dados.whatsapp} onChange={(e) => muda('whatsapp', e.target.value)} className={classeEntrada(p)} />}
-                  </Campo>
-                  <Campo rotulo="E-mail (opcional)" erro={erros.email}>
-                    {(p) => <input {...p} type="email" inputMode="email" autoComplete="email" value={dados.email} onChange={(e) => muda('email', e.target.value)} className={classeEntrada(p)} />}
-                  </Campo>
-                  <Campo rotulo="Cidade" erro={erros.cidade}>
-                    {(p) => <input {...p} autoComplete="address-level2" value={dados.cidade} onChange={(e) => muda('cidade', e.target.value)} className={classeEntrada(p)} />}
-                  </Campo>
-                  <Campo rotulo="UF" erro={erros.uf}>
-                    {(p) => (
-                      <select {...p} value={dados.uf} onChange={(e) => muda('uf', e.target.value)} className={classeEntrada(p)}>
-                        <option value="">—</option>
-                        {UFS.map((u) => <option key={u}>{u}</option>)}
-                      </select>
-                    )}
-                  </Campo>
-                  <div className="sm:col-span-2">
-                    <Campo rotulo="Profissão (opcional)">
-                      {(p) => <input {...p} autoComplete="organization-title" value={dados.profissao} onChange={(e) => muda('profissao', e.target.value)} className={classeEntrada(p)} />}
-                    </Campo>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <GrupoOpcoes rotulo="Trabalha ao ar livre, exposto ao sol ou a produtos químicos?" modo="uma" opcoes={SIM_NAO}
-                      marcadas={[dados.trabalhoExposto]} onAlternar={(v) => muda('trabalhoExposto', v as DadosPessoais['trabalhoExposto'])} />
-                  </div>
-                  <GrupoOpcoes rotulo="Atendimento" modo="uma" opcoes={ATENDIMENTO}
-                    marcadas={[dados.atendimento]} onAlternar={(v) => muda('atendimento', v as DadosPessoais['atendimento'])} />
-                  {dados.atendimento === 'convenio' && (
-                    <Campo rotulo="Qual convênio?">
-                      {(p) => <input {...p} value={dados.convenio} onChange={(e) => muda('convenio', e.target.value)} className={classeEntrada(p)} />}
-                    </Campo>
-                  )}
-                </div>
-              </ParteNumerada>
-
-              <div className="mt-10 border-t border-linha pt-7">
-                <p className="text-[13px] font-bold tracking-[.14em] uppercase">
-                  Pré-consulta <span className="font-semibold tracking-normal normal-case text-apagado">· opcional</span>
+              {etapa === 0 && (
+                <p className="mt-4 border-l-4 border-(--esp) bg-suave px-4 py-2.5 text-[14.5px]">
+                  Só a identificação é obrigatória. O restante é opcional, mas ajuda seu médico a se preparar.
                 </p>
-                <p className="pt-2 text-[15px] text-apagado">Responda o que puder. Ajuda seu médico a chegar à consulta conhecendo o seu caso.</p>
-              </div>
+              )}
 
-              {partes.map((parte, i) => (
-                <ParteNumerada key={parte.titulo} numero={i + 2} titulo={parte.titulo} className="mt-8">
-                  <div className="grid gap-5">
-                    {parte.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map(campoPergunta)}
-                  </div>
-                  {parte.nota && <p className="mt-4 bg-suave px-4 py-3 text-[14px] text-apagado">{parte.nota}</p>}
-                </ParteNumerada>
-              ))}
+              {bloco ? (
+                <>
+                  <h3 ref={tituloBloco} tabIndex={-1} className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-1 outline-none">
+                    <span aria-hidden className="grid h-8 w-8 flex-none place-items-center bg-(--esp)/12 text-[14px] font-bold text-(--esp)">{etapa + 1}</span>
+                    <span className="text-[22px] leading-tight font-bold">{bloco.titulo}</span>
+                    <span className={`px-2 py-0.5 text-[11px] font-bold tracking-[.1em] uppercase ${bloco.obrigatorio ? 'bg-(--esp) text-papel' : 'bg-suave text-apagado'}`}>
+                      {bloco.obrigatorio ? 'Obrigatório' : 'Opcional'}
+                    </span>
+                  </h3>
+                  <div className="mt-4">{conteudoDoBloco(bloco)}</div>
+                </>
+              ) : (
+                <>
+                  <h3 ref={tituloBloco} tabIndex={-1} className="mt-4 text-[22px] leading-tight font-bold outline-none">Revise e envie</h3>
+                  <ul className="mt-4 border-t border-linha">
+                    {blocos.map((b, n) => {
+                      const ok = blocoRespondido(b, estado)
+                      return (
+                        <li key={b.id} className="flex items-center gap-3 border-b border-linha py-2 text-[15px]">
+                          <span aria-hidden className={`w-5 text-center font-bold ${ok ? 'text-(--esp)' : 'text-apagado'}`}>{ok ? '✓' : '–'}</span>
+                          <span className="min-w-0 flex-1">{n + 1}. {b.titulo}</span>
+                          <span className="hidden text-[13px] text-apagado sm:inline">{ok ? 'respondido' : 'não respondido'}</span>
+                          <button type="button" onClick={() => setEtapa(n)} className="text-[14px] font-semibold text-(--esp) underline" aria-label={`Editar ${b.titulo}`}>Editar</button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  <p className="mt-5 text-[14px] text-apagado">
+                    {medico.tratamento} {medico.nome} confere e completa as respostas com você na consulta.
+                  </p>
+                </>
+              )}
 
-              <p className="mt-9 text-[14px] text-apagado">
-                {medico.tratamento} {medico.nome} confere e completa as respostas com você na consulta.
-              </p>
-              <div className="mt-4 grid gap-3">
-                <button type="submit" className={btnPrimario}>Enviar</button>
-                <button type="button" className={btnSecundario} onClick={onConcluir}>Fazer depois</button>
+              {/* navegação numa linha só: Voltar à esquerda; Pular e Próximo à direita */}
+              <div className="mt-5 flex items-center gap-4 border-t border-linha pt-4 text-[14.5px] font-semibold">
+                {etapa > 0 && (
+                  <button type="button" onClick={() => setEtapa(etapa - 1)} className="text-apagado underline hover:text-tinta">Voltar</button>
+                )}
+                <span className="flex-1" />
+                {bloco && !bloco.obrigatorio && (
+                  <button type="button" onClick={() => setEtapa(etapa + 1)} className="text-apagado underline hover:text-tinta">Pular</button>
+                )}
+                <button type="submit" className="bg-(--esp) px-7 py-3 text-[16px] font-bold text-papel transition hover:-translate-y-0.5">
+                  {bloco ? 'Próximo' : 'Enviar'}
+                </button>
               </div>
             </form>
           )}
         </div>
       </div>
     </section>
-  )
-}
-
-function ParteNumerada({ numero, titulo, className, children }: { numero: number; titulo: string; className?: string; children: ReactNode }) {
-  return (
-    <fieldset className={className}>
-      <legend className="float-left mb-4 flex w-full items-center gap-3">
-        <span aria-hidden className="grid h-8 w-8 flex-none place-items-center bg-(--esp)/12 text-[14px] font-bold text-(--esp)">{numero}</span>
-        <span className="text-[19px] font-bold">{titulo}</span>
-      </legend>
-      <div className="clear-both">{children}</div>
-    </fieldset>
   )
 }

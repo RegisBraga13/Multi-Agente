@@ -61,3 +61,6 @@ h1, h2, h3 {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* reserva o espaço da barra de rolagem: páginas curtas e longas não "pulam" de lado */
+html { scrollbar-gutter: stable; }

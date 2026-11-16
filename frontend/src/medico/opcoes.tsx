@@ -15,15 +15,15 @@ export function GrupoOpcoes({ rotulo, ajuda, modo, opcoes, marcadas, onAlternar 
   const id = useId()
   return (
     <fieldset aria-describedby={ajuda ? `${id}-ajuda` : undefined}>
-      <legend className="mb-1.5 text-[14px] font-semibold">{rotulo}</legend>
+      <legend className="mb-1 text-[14px] font-semibold">{rotulo}</legend>
       {ajuda && <p id={`${id}-ajuda`} className="-mt-1 mb-2 text-[13px] text-apagado">{ajuda}</p>}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {opcoes.map((o) => {
           const sel = marcadas.includes(o.valor)
           return (
             <label
               key={o.valor}
-              className={`flex cursor-pointer items-center gap-2 border-[1.5px] px-3.5 py-2.5 text-[15px] transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--esp) ${sel ? 'border-(--esp) bg-(--esp)/10 font-semibold' : 'border-linha bg-papel hover:border-tinta'}`}
+              className={`flex cursor-pointer items-center gap-1.5 border-[1.5px] px-2 py-1.5 text-[14px] transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--esp) ${sel ? 'border-(--esp) bg-(--esp)/10 font-semibold' : 'border-linha bg-papel hover:border-tinta'}`}
             >
               <input
                 type={modo === 'uma' ? 'radio' : 'checkbox'}

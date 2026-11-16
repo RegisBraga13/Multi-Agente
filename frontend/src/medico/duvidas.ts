@@ -1,7 +1,6 @@
 // Perguntas frequentes da página do médico. Textos do autor (15/11/2026).
 // As comuns valem para todas as especialidades; o pacote de cada uma pode acrescentar as suas.
 // Regra: sempre "seu médico", sem gênero nem especialidade.
-import { ACESSO_TRANSCRICAO } from './textos'
 
 export type Duvida = {
   id: string
@@ -37,10 +36,6 @@ const COMUNS: Duvida[] = [
     resposta: 'Pelo seu médico. A inteligência artificial é utilizada apenas como ferramenta de apoio, sem substituir a avaliação e as decisões médicas.',
   },
   {
-    id: 'transcricao', pergunta: 'A consulta será gravada ou transcrita?',
-    resposta: `A transcrição por voz é opcional. Você pode recusá-la sem prejudicar seu atendimento. ${ACESSO_TRANSCRICAO}`,
-  },
-  {
     id: 'receita', pergunta: 'A consulta online permite receita médica?',
     resposta: 'Sim, quando clinicamente indicado. Seu médico poderá emitir uma prescrição digital conforme as normas aplicáveis.',
   },
@@ -58,7 +53,7 @@ const COMUNS: Duvida[] = [
 const PACOTES: Partial<Record<string, { depoisDe: string; duvida: Duvida }[]>> = {
   dermatologia: [
     {
-      depoisDe: 'transcricao',
+      depoisDe: 'medico_ou_ia',
       duvida: {
         id: 'fotos', pergunta: 'Posso enviar fotos das lesões antes da consulta?',
         resposta: 'Sim, o formulário disponibiliza esse recurso. As imagens podem auxiliar na avaliação médica, mas não substituem o exame clínico.',

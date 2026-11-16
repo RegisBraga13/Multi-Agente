@@ -44,11 +44,15 @@ export function mensagemFormulario({ medico, pedido, dados, partes, respostas, f
     ['WhatsApp', whatsapp ? formatarWhatsapp(whatsapp) : dados.whatsapp.trim()],
     ['E-mail', dados.email.trim()],
     ['Cidade', dados.cidade.trim() && `${dados.cidade.trim()}/${dados.uf}`],
+  ]
+  const trabalho: [string, string][] = [
     ['Profissão', dados.profissao.trim()],
     ['Trabalha ao ar livre, exposto ao sol ou a produtos químicos', SIM_NAO[dados.trabalhoExposto]],
     ['Atendimento', atendimento],
   ]
-  linhas.push('', '*1. Identificação*', ...ident.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`))
+  const comValor = (l: [string, string][]) => l.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`)
+  linhas.push('', '*1. Identificação*', ...comValor(ident))
+  if (comValor(trabalho).length) linhas.push('', '*2. Trabalho e atendimento*', ...comValor(trabalho))
 
   let respondeu = false
   partes.forEach((parte, i) => {
@@ -57,7 +61,7 @@ export function mensagemFormulario({ medico, pedido, dados, partes, respostas, f
       .map((q) => `${q.rotulo.replace(/:$/, '')}${q.rotulo.endsWith('?') ? '' : ':'} ${texto(respostas[q.id])}`)
     if (!itens.length) return
     respondeu = true
-    linhas.push('', `*${i + 2}. ${parte.titulo}*`, ...itens)
+    linhas.push('', `*${i + 3}. ${parte.titulo}*`, ...itens)
   })
   if (!respondeu) linhas.push('', 'Pré-consulta: não respondida.')
   if (fotos > 0) linhas.push('', `Vou enviar ${fotos} ${fotos === 1 ? 'foto' : 'fotos'} em seguida, nesta conversa.`)

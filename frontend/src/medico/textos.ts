@@ -21,6 +21,16 @@ export function rotuloDiaLongo(iso: string) {
   return comoData(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
+/** "20/11 (sexta)" */
+export function diaComSemana(iso: string) {
+  const d = comoData(iso)
+  const semana = d.toLocaleDateString('pt-BR', { weekday: 'long' }).split('-')[0]
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} (${semana})`
+}
+
+/** "09:00" → "09h"; "18:30" → "18h30" */
+export const horaCurta = (hhmm: string) => hhmm.replace(/:00$/, 'h').replace(':', 'h')
+
 export const NOME_MODALIDADE: Record<Modalidade, string> = { presencial: 'Presencial', online: 'Online' }
 
 // Decisão do autor (15/11/2026): nos textos para o paciente, sempre "seu médico",
