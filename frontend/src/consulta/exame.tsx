@@ -1,9 +1,9 @@
-// Página 1, coluna da direita: exame físico (fotos + campos da especialidade) e exames complementares.
-import { useState } from 'react'
+// Página 1, coluna da direita: exame físico (fotos + campos da especialidade); exames complementares num painel por cima.
+import { useCallback, useState } from 'react'
 import { TextoCrescente } from '../medico/texto-crescente'
 import type { CampoExame, Complementar } from './exemplo'
 import type { Situacao } from './tipos'
-import { BotaoOficializar, Cartao, ROTULO } from './ui'
+import { BotaoOficializar, Cartao, Gaveta, ROTULO } from './ui'
 
 type Props = {
   campos: CampoExame[]
@@ -13,12 +13,14 @@ type Props = {
   complementares: Complementar[]
   situacao: Situacao
   onEditar: () => void
-  onOficializar: () => void
+  /** salva com os valores atuais (a história clínica é montada com eles) */
+  onOficializar: (valores: { rotulo: string; valor: string }[]) => void
   onAviso: (texto: string) => void
 }
 
 export function Exame({ campos, fotos, fotoExemplo, complementares, situacao, onEditar, onOficializar, onAviso }: Props) {
-  const [aba, setAba] = useState<'fisico' | 'complementares'>('fisico')
+  const [laudos, setLaudos] = useState(false)
+  const fecharLaudos = useCallback(() => setLaudos(false), [])
   const [valores, setValores] = useState(() => campos.map((c) => c.valor))
   /** campos que o médico já mexeu: deixam de ser sugestão da IA */
   const [mexidos, setMexidos] = useState<boolean[]>(() => campos.map(() => false))
@@ -31,26 +33,21 @@ export function Exame({ campos, fotos, fotoExemplo, complementares, situacao, on
     if (situacao !== 'revisado_medico') onEditar()
   }
 
-  const abas = (
-    <div role="tablist" className="flex">
-      {([['fisico', 'Exame físico'], ['complementares', `Complementares${complementares.length ? ` (${complementares.length})` : ''}`]] as const).map(([id, nome]) => (
-        <button key={id} type="button" role="tab" aria-selected={aba === id} onClick={() => setAba(id)}
-          className={`border-[1.5px] px-3 py-1 text-[13.5px] font-semibold ${aba === id ? 'border-tinta bg-tinta text-papel' : 'border-linha hover:border-tinta'}`}>
-          {nome}
-        </button>
-      ))}
+  const inserir = (
+    <div className="flex flex-1 justify-center">
+      <button type="button" onClick={() => setLaudos(true)} className="border-[1.5px] border-tinta px-3 py-1 text-[14px] font-bold hover:bg-tinta hover:text-papel">
+        Inserir prints, arquivos, laudos{complementares.length ? ` (${complementares.length})` : ''}
+      </button>
     </div>
   )
 
   return (
     <Cartao
-      titulo="Exame"
-      situacao={situacao}
-      extra={abas}
-      rodape={<BotaoOficializar rotulo="Oficializar exame" oficializado={oficializado} onClick={onOficializar} />}
+      titulo="Exame físico e complementar"
+      cabecalho={inserir}
+      rodape={<BotaoOficializar rotulo="Salvar exame físico" oficializado={oficializado} onClick={() => onOficializar(campos.map((c, i) => ({ rotulo: c.rotulo, valor: valores[i] })))} />}
     >
-      {aba === 'fisico' ? (
-        <>
+      <>
           <div className="flex flex-wrap gap-2">
             {Array.from({ length: fotos }, (_, i) =>
               i === 0 && fotoExemplo ? (
@@ -83,11 +80,13 @@ export function Exame({ campos, fotos, fotoExemplo, complementares, situacao, on
             })}
           </dl>
           <p className="mt-2 text-[13px] text-apagado">
-            {temRascunho ? 'Tracejado = descrição da IA a partir das fotos. Revise, edite e oficialize.' : 'Sem fotos ainda: descreva o exame.'}
+            {temRascunho ? 'Tracejado = descrição da IA a partir das fotos. Revise, edite e salve.' : 'Sem fotos ainda: descreva o exame.'}
           </p>
-        </>
-      ) : (
-        <Complementares lista={complementares} onAnexar={() => onAviso('Anexar laudos chega numa próxima etapa.')} />
+      </>
+      {laudos && (
+        <Gaveta titulo="Prints, arquivos, laudos" onFechar={fecharLaudos}>
+          <Complementares lista={complementares} onAnexar={() => onAviso('Anexar laudos chega numa próxima etapa.')} />
+        </Gaveta>
       )}
     </Cartao>
   )

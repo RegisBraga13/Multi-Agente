@@ -34,7 +34,8 @@ describe('conteudoDaConsulta', () => {
   it('alergia da ficha vira sinal de alerta', () => {
     const at = todos.find((x) => x.ficha.situacao === 'pronta' && x.ficha.alergias.length > 0)!
     const c = conteudoDaConsulta(at, 'dermatologia')
-    expect(c.alertas.some((a) => a.texto.includes('Alergia'))).toBe(true)
+    expect(c.alertas.some((a) => a.tipo === 'alergia' && a.texto.includes('Alergia'))).toBe(true)
+    expect(c.alertas.filter((a) => a.tipo === 'sinal').every((a) => !a.texto.includes('Alergia'))).toBe(true)
   })
 
   it('exame complementar: MISSING sem valor, INFERRED com aviso', () => {

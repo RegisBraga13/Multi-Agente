@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { estiloAlergia } from '../alergia'
 import { buscarEspecialidade, type Especialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
 import { NaoEncontrada } from '../nao-encontrada'
@@ -76,7 +77,7 @@ function Pagina({ esp }: { esp: Especialidade }) {
   }, [aberto, vista])
 
   const painel = escolhido ? (
-    <PainelFicha at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => setAviso('O prontuário é uma das próximas etapas do módulo.')} />
+    <PainelFicha classeAlergia={estiloAlergia(esp)} at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => setAviso('O prontuário é uma das próximas etapas do módulo.')} />
   ) : (
     <CartaoFichas prontas={atual.fichasProntas} faltam={atual.semFicha} />
   )
@@ -293,7 +294,7 @@ function CartaoFichas({ prontas, faltam }: { prontas: number; faltam: number }) 
 
 const ROTULO = 'text-[11px] font-bold tracking-[0.14em] text-apagado uppercase'
 
-function PainelFicha({ at, agora, onFechar, onProntuario }: { at: Atendimento; agora: Date; onFechar: () => void; onProntuario: () => void }) {
+function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario }: { classeAlergia: string; at: Atendimento; agora: Date; onFechar: () => void; onProntuario: () => void }) {
   const titulo = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
     titulo.current?.focus({ preventScroll: true })
@@ -311,7 +312,7 @@ function PainelFicha({ at, agora, onFechar, onProntuario }: { at: Atendimento; a
         <div className="mt-2.5 space-y-2 text-[14.5px] leading-snug">
           {f.alergias.length > 0 ? (
             f.alergias.map((a) => (
-              <div key={a.substancia} className="bg-alerta-clinico px-3 py-1.5 text-branco">
+              <div key={a.substancia} className={`px-3 py-1.5 ${classeAlergia}`}>
                 <p className="text-[11px] font-bold tracking-[0.14em] uppercase opacity-90">Alergia</p>
                 <p><b className="text-[16px]">{a.substancia}</b> · {a.reacao}</p>
               </div>

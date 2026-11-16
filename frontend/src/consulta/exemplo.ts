@@ -5,7 +5,8 @@ import type { Atendimento } from '../modulo/tipos'
 import type { Extraido, Proveniencia } from './tipos'
 
 export type Fala = { quem: 'Médico' | 'Paciente'; texto: string; /** 'mm:ss' do início da gravação */ aos: string }
-export type Alerta = { id: string; texto: string }
+/** `alergia` é o único aviso em vermelho; `sinal` = red flag, discreto */
+export type Alerta = { id: string; tipo: 'alergia' | 'sinal'; texto: string }
 export type CampoExame = { rotulo: string; valor: string; prov: Proveniencia }
 export type Complementar = { exame: string; data: string; origem: string; itens: { nome: string; v: Extraido<string> }[] }
 
@@ -47,7 +48,7 @@ const RASCUNHOS: Record<string, Rascunho> = {
   'Carlos Henrique Rocha': {
     exame: ['Lesão pigmentada assimétrica, bordas irregulares, duas tonalidades', 'Dorso, região escapular direita', 'Lesão única, cerca de 8 mm', 'A definir na dermatoscopia', 'Outros nevos sem atipia nas fotos'],
     fotos: 3, fala: 'Vou examinar a pinta com o dermatoscópio.',
-    alertas: ['Pinta que mudou de cor e cresceu (critérios ABCDE)'], faltou: ['Alguém na família teve câncer de pele?'],
+    alertas: ['Pinta mudou cor e tamanho (ABCDE)'], faltou: ['Alguém na família teve câncer de pele?'],
   },
   'Fernanda Oliveira': {
     exame: ['Máculas acastanhadas de bordas irregulares', 'Região malar e lábio superior, simétricas', 'Face, cerca de 3% da superfície', 'Moderada', 'Sem eritema ou descamação'],
@@ -64,7 +65,7 @@ const RASCUNHOS: Record<string, Rascunho> = {
   'Antônio Barbosa': {
     exame: ['Pápula perolada com ulceração central e telangiectasias', 'Asa nasal esquerda', 'Lesão única, cerca de 6 mm', 'A definir na biópsia', 'Pele com dano solar crônico'],
     fotos: 2, fala: 'Vou examinar a ferida do nariz de perto.',
-    alertas: ['Ferida que não cicatriza há mais de 4 semanas'], faltou: ['Toma anticoagulante além do AAS?'],
+    alertas: ['Ferida não cicatriza há >4 sem'], faltou: ['Toma anticoagulante além do AAS?'],
   },
   'Camila Sampaio': {
     exame: ['Vesículas e descamação com fissuras', 'Dorso e palmas das mãos', 'Ambas as mãos', 'Moderada', 'Pele ressecada, sem sinais de infecção'],
@@ -136,14 +137,14 @@ export function conteudoDaConsulta(at: Atendimento, slug: string): ConteudoConsu
     if (f.alergias.length) {
       falas.push({ quem: 'Médico', texto: 'E alergia a algum medicamento?' })
       falas.push({ quem: 'Paciente', texto: f.alergias.map((a) => `${a.substancia}, me deu ${a.reacao}`).join('; ') + '.' })
-      f.alergias.forEach((a, i) => alertas.push({ id: `alergia-${i}`, texto: `Alergia a ${a.substancia.toLowerCase()} na ficha (${a.reacao})` }))
+      f.alergias.forEach((a, i) => alertas.push({ id: `alergia-${i}`, tipo: 'alergia', texto: `Alergia: ${a.substancia.toLowerCase()} (${a.reacao})` }))
     }
   } else {
     falas.push({ quem: 'Paciente', texto: 'Vim por causa de um problema na pele.' })
     falas.push({ quem: 'Médico', texto: 'Desde quando? Está usando algum remédio?' })
   }
   falas.push({ quem: 'Médico', texto: r.fala })
-  ;(r.alertas ?? []).forEach((t, i) => alertas.push({ id: `sinal-${i}`, texto: t }))
+  ;(r.alertas ?? []).forEach((t, i) => alertas.push({ id: `sinal-${i}`, tipo: 'sinal', texto: t }))
 
   return {
     falas: falas.map((x, i) => ({ ...x, aos: tempo(8 + i * 26) })),

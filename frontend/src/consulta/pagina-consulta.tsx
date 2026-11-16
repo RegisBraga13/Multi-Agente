@@ -1,6 +1,6 @@
 // Consulta (Módulo A): estrutura comum das 4 páginas — topo com o paciente, navegador das etapas,
 // Anexos — e a página da etapa atual. Só visual, dados de exemplo; o estado vive na memória da página.
-import { useCallback, useEffect, useMemo, useReducer, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { buscarEspecialidade, type Especialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
@@ -8,8 +8,10 @@ import { NaoEncontrada } from '../nao-encontrada'
 import { idade } from '../modulo/dia'
 import type { Atendimento } from '../modulo/tipos'
 import { Anamnese } from './anamnese'
-import { ETAPAS, editar, ehEtapa, inicial, nomeSituacao, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
+import { ETAPAS, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
 import { Exame } from './exame'
+import { montarHistoria, type SecaoHistoria } from './historia'
+import { PaginaHistoria } from './historia-pagina'
 import { buscarAtendimento, conteudoDaConsulta } from './exemplo'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
@@ -51,10 +53,55 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
   const alergias = f.situacao === 'pronta' ? f.alergias : []
   const fazer = (tipo: 'oficializar' | 'editar', bloco: Bloco) => despachar({ tipo, bloco })
 
+  // o que foi salvo na página 1: a história é montada só com isso
+  const fontes = useRef<{ anamnese: string; exame: { rotulo: string; valor: string }[] }>({ anamnese: '', exame: [] })
+  const [historia, setHistoria] = useState<{ versao: number; secoes: SecaoHistoria[] } | null>(null)
+
+  /** Salvar anamnese ou exame. Quando os dois ficam salvos, a história é montada e a página dela abre. */
+  const salvarPagina1 = (bloco: 'anamnese' | 'exame') => {
+    const novo = oficializar(estado, bloco)
+    despachar({ tipo: 'oficializar', bloco })
+    if (!podeOficializar(estado, 'historia') && podeOficializar(novo, 'historia')) {
+      const f = fontes.current
+      setHistoria((h) => ({ versao: (h?.versao ?? 0) + 1, secoes: montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares) }))
+      navegar(`${base}/historia`)
+    }
+  }
+
+  // etapa atual como título (sem número) + atalhos para as etapas já liberadas
+  const navegador = (
+    <nav aria-label="Etapas da consulta" className="flex flex-wrap items-center gap-1.5">
+      {[...ETAPAS].sort((x, y) => Number(y.id === etapa) - Number(x.id === etapa)).map((x) => {
+        const s = situacaoDaEtapa(estado, x.id)
+        // etapas seguintes só aparecem quando liberadas (a anterior oficializada)
+        if (x.id !== etapa && s === 'bloqueado') return null
+        const aqui = x.id === etapa
+        const marca = (s === 'oficializado' || s === 'desatualizado') && (
+          <span className={`shrink-0 truncate text-[12px] ${s === 'desatualizado' ? 'font-bold' : 'text-apagado'}`}>
+            {s === 'oficializado' ? '✓ Salvo' : 'Desatualizado'}
+          </span>
+        )
+        // a etapa atual é o título da página (sem número); as liberadas viram atalhos ao lado
+        if (aqui) return (
+          <h1 key={x.id} className="flex h-[38px] items-center gap-3 pr-2 text-[24px] font-semibold">{x.rotulo}{marca}</h1>
+        )
+        return (
+          <Link key={x.id} to={`${base}/${x.id}`}
+            className="flex h-[38px] min-w-0 items-center gap-3 border border-linha bg-branco px-3 no-underline transition hover:bg-(--esp-claro)">
+            <span className="flex min-w-0 items-baseline gap-3">
+              <span className="truncate text-[15px] font-semibold">{x.rotulo}</span>
+              {marca}
+            </span>
+          </Link>
+        )
+      })}
+    </nav>
+  )
+
   return (
     <div style={{ '--esp': esp.cor } as CSSProperties} className="cor-esp flex min-h-screen flex-col bg-papel bg-[url(/papel.png)] bg-size-[512px]">
       <header className="mx-auto w-full max-w-6xl px-4 pt-2.5 sm:px-6">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 lg:gap-x-5">
           <Link to={`/modulo/${esp.slug}`} className="no-underline" aria-label={`${esp.raiz}IA, início`}><NomeModulo esp={esp} className="text-[26px]" /></Link>
           <p className="text-[15px]">
             <b className="text-[17px]">{at.paciente.nome}</b>
@@ -70,29 +117,15 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
           </button>
         </div>
 
-        <nav aria-label="Etapas da consulta" className="mt-2.5 grid grid-cols-2 gap-1.5 lg:flex">
-          {ETAPAS.map((x, i) => {
-            const s = situacaoDaEtapa(estado, x.id)
-            const aqui = x.id === etapa
-            return (
-              <Link key={x.id} to={`${base}/${x.id}`} aria-current={aqui ? 'page' : undefined}
-                className={`flex min-w-0 items-baseline gap-2 px-3 py-1.5 no-underline transition lg:flex-auto ${aqui ? 'bg-(--esp) text-papel' : 'border border-linha bg-branco hover:bg-(--esp-claro)'}`}>
-                <span className="font-titulo text-[20px] leading-none font-semibold">{i + 1}</span>
-                <span className="flex min-w-0 flex-1 flex-col lg:flex-row lg:items-baseline lg:justify-between lg:gap-2">
-                  <span className="truncate text-[15px] font-semibold">{x.rotulo}</span>
-                  <span className={`shrink-0 truncate text-[12px] ${aqui ? 'opacity-85' : s === 'desatualizado' ? 'font-semibold text-alerta-clinico' : 'text-apagado'}`}>
-                    {s === 'oficializado' ? '✓ ' : ''}{nomeSituacao(s, true)}
-                  </span>
-                </span>
-              </Link>
-            )
-          })}
-        </nav>
+        {/* na página 1 o navegador fica sobre a coluna da anamnese */}
+        {etapa !== 'anamnese-exame' && <div className="mt-2.5">{navegador}</div>}
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-3 sm:px-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-3 sm:px-6">
         {/* a página 1 fica montada (escondida) nas outras etapas: gravação, notas e campos não se perdem */}
-        <div className={`grid gap-4 lg:grid-cols-2 ${etapa === 'anamnese-exame' ? '' : 'hidden'}`}>
+        <div className={`grid flex-1 gap-4 lg:grid-cols-2 ${etapa === 'anamnese-exame' ? '' : 'hidden'}`}>
+          <div className="flex min-w-0 flex-col gap-3 [&>section]:flex-1">
+            {navegador}
             <Anamnese
               falas={conteudo.falas}
               faltouPerguntar={conteudo.faltouPerguntar}
@@ -103,8 +136,11 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
               podeGravar={podeGravar(f)}
               onEditar={() => fazer('editar', 'anamnese')}
               onResponder={(id, r) => despachar({ tipo: 'alerta', id, r })}
-              onOficializar={() => fazer('oficializar', 'anamnese')}
+              onOficializar={(texto) => { fontes.current.anamnese = texto; salvarPagina1('anamnese') }}
             />
+          </div>
+          <div className="flex min-w-0 flex-col gap-3 [&>section]:flex-1">
+            <h2 className="flex h-[38px] items-center text-[24px] font-semibold">Exame físico e complementar</h2>
             <Exame
               campos={conteudo.exame}
               fotos={conteudo.fotos}
@@ -112,11 +148,25 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
               complementares={conteudo.complementares}
               situacao={estado.blocos.exame.estado}
               onEditar={() => fazer('editar', 'exame')}
-              onOficializar={() => fazer('oficializar', 'exame')}
+              onOficializar={(valores) => { fontes.current.exame = valores; salvarPagina1('exame') }}
               onAviso={setAviso}
             />
+          </div>
         </div>
-        {etapa !== 'anamnese-exame' && (
+        {etapa === 'historia' && historia && situacaoDaEtapa(estado, 'historia') !== 'bloqueado' ? (
+          <div className="flex flex-1 flex-col [&>section]:flex-1">
+            {situacaoDaEtapa(estado, 'historia') === 'desatualizado' && !podeOficializar(estado, 'historia') && (
+              <p className="mb-2 text-[14px] font-semibold">A anamnese ou o exame físico mudou. Salve de novo para a IA refazer a história.</p>
+            )}
+            <PaginaHistoria
+              key={historia.versao}
+              secoes={historia.secoes}
+              situacao={situacaoDaEtapa(estado, 'historia')}
+              onEditar={() => fazer('editar', 'historia')}
+              onSalvar={() => fazer('oficializar', 'historia')}
+            />
+          </div>
+        ) : etapa !== 'anamnese-exame' && (
           <EtapaSeguinte etapa={etapa} estado={estado} onOficializar={(b) => fazer('oficializar', b)} onIr={(id) => navegar(`${base}/${id}`)} />
         )}
       </main>
@@ -133,9 +183,9 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
 }
 
 const TEXTO_ETAPA: Record<Exclude<EtapaId, 'anamnese-exame'>, { bloco: Bloco; antes: EtapaId; bloqueio: string; ia: string }> = {
-  historia: { bloco: 'historia', antes: 'anamnese-exame', bloqueio: 'Oficialize a anamnese e o exame para a IA montar a história clínica.', ia: 'A IA monta a história só com a anamnese e o exame oficializados. Você revisa, edita e oficializa.' },
-  diagnosticos: { bloco: 'diagnosticos', antes: 'historia', bloqueio: 'Oficialize a história clínica para a IA sugerir os diagnósticos diferenciais.', ia: 'A IA sugere hipóteses só a partir da história oficializada. Você decide o diagnóstico.' },
-  conduta: { bloco: 'conduta', antes: 'diagnosticos', bloqueio: 'Oficialize os diagnósticos para a IA sugerir conduta e tratamento.', ia: 'A IA sugere a conduta só a partir dos diagnósticos oficializados, com a fonte de cada item. Ao fim, Finalizar consulta.' },
+  historia: { bloco: 'historia', antes: 'anamnese-exame', bloqueio: 'Salve a anamnese e o exame físico para a IA montar a história clínica.', ia: 'A IA monta a história só com a anamnese e o exame físico salvos. Você revisa, edita e salva.' },
+  diagnosticos: { bloco: 'diagnosticos', antes: 'historia', bloqueio: 'Salve a história clínica para a IA sugerir os diagnósticos diferenciais.', ia: 'A IA sugere hipóteses só a partir da história salva. Você decide o diagnóstico.' },
+  conduta: { bloco: 'conduta', antes: 'diagnosticos', bloqueio: 'Salve os diagnósticos para a IA sugerir conduta e tratamento.', ia: 'A IA sugere a conduta só a partir dos diagnósticos salvos, com a fonte de cada item. Ao fim, Finalizar consulta.' },
 }
 
 /** Páginas 2–4: ainda não construídas. Mostram a regra da etapa e permitem simular a oficialização. */
@@ -146,7 +196,7 @@ function EtapaSeguinte({ etapa, estado, onOficializar, onIr }: { etapa: Exclude<
   const anterior = ETAPAS.find((x) => x.id === t.antes)!
   return (
     <div className="mx-auto mt-[8vh] max-w-[620px]">
-      <Cartao titulo={rotulo} situacao={s}>
+      <Cartao titulo={rotulo}>
         {s === 'bloqueado' ? (
           <>
             <p className="text-[16px]">{t.bloqueio}</p>
@@ -156,18 +206,18 @@ function EtapaSeguinte({ etapa, estado, onOficializar, onIr }: { etapa: Exclude<
           </>
         ) : (
           <>
-            {s === 'desatualizado' && <p className="mb-2 text-[15px] font-semibold text-alerta-clinico">A etapa anterior mudou depois da oficialização. Revise antes de seguir.</p>}
+            {s === 'desatualizado' && <p className="mb-2 text-[15px] font-semibold">A etapa anterior mudou depois de salva. Revise antes de seguir.</p>}
             <p className="text-[16px]">{t.ia}</p>
             <p className={`${ROTULO} mt-4`}>Esta página é a próxima entrega</p>
             <div className="mt-3 flex items-center gap-3">
               {s === 'oficializado' ? <EtiquetaSituacao s="oficializado" /> : !podeOficializar(estado, t.bloco) ? (
                 <>
-                  <span className="text-[14px] text-apagado">Oficialize de novo a etapa anterior.</span>
+                  <span className="text-[14px] text-apagado">Salve de novo a etapa anterior.</span>
                   <button type="button" onClick={() => onIr(anterior.id)} className="border-[1.5px] border-tinta px-3 py-1.5 text-[14px] font-semibold hover:bg-tinta hover:text-papel">Ir para {anterior.rotulo}</button>
                 </>
               ) : (
                 <button type="button" onClick={() => onOficializar(t.bloco)} className="bg-(--esp) px-4 py-2 text-[15px] font-bold text-papel hover:-translate-y-0.5">
-                  Oficializar (simulação)
+                  Salvar (simulação)
                 </button>
               )}
             </div>
@@ -184,7 +234,7 @@ function PainelAnexos({ condutaPronta, onFechar, onAviso }: { condutaPronta: boo
   return (
     <Gaveta titulo="Anexos" onFechar={onFechar}>
       <p className="text-[14.5px] text-apagado">
-        {condutaPronta ? 'Preenchidos a partir da conduta oficializada. Revise, assine e envie.' : 'Ficam prontos para revisar depois da conduta oficializada. Um atestado pode ser feito a qualquer momento.'}
+        {condutaPronta ? 'Preenchidos a partir da conduta salva. Revise, assine e envie.' : 'Ficam prontos para revisar depois da conduta salva. Um atestado pode ser feito a qualquer momento.'}
       </p>
       <ul className="mt-3 divide-y divide-linha border-y border-linha bg-branco">
         {DOCUMENTOS.map((d) => {

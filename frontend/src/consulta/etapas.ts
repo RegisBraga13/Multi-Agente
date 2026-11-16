@@ -3,7 +3,7 @@ import type { Ficha } from '../modulo/tipos'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta, Situacao } from './tipos'
 
 export const ETAPAS: { id: EtapaId; rotulo: string; curto: string }[] = [
-  { id: 'anamnese-exame', rotulo: 'Anamnese e exame', curto: 'Anamnese' },
+  { id: 'anamnese-exame', rotulo: 'Anamnese', curto: 'Anamnese' },
   { id: 'historia', rotulo: 'História clínica', curto: 'História' },
   { id: 'diagnosticos', rotulo: 'Diagnósticos', curto: 'Diagnósticos' },
   { id: 'conduta', rotulo: 'Conduta e tratamento', curto: 'Conduta' },
@@ -89,7 +89,7 @@ export function podeGravar(ficha: Ficha): boolean {
 const NOME_SITUACAO: Record<Situacao, string> = {
   rascunho_ia: 'Rascunho da IA',
   revisado_medico: 'Revisado',
-  oficializado: 'Oficializado',
+  oficializado: 'Salvo',
   desatualizado: 'Desatualizado',
   bloqueado: 'Aguardando etapa anterior',
 }
