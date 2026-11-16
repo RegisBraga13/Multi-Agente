@@ -12,6 +12,7 @@ export const MEDICO_EXEMPLO: Medico = {
   cidade: 'Fortaleza',
   atendeOnline: true,
   whatsappConsultorio: '5585991018813',
+  convenios: ['Unimed', 'Hapvida', 'Bradesco Saúde', 'SulAmérica', 'Cassi', 'Camed'],
 }
 
 const MEDICOS: Medico[] = [MEDICO_EXEMPLO]

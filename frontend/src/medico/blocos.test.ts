@@ -6,15 +6,15 @@ import type { DadosPessoais } from './regras'
 const partes = partesPreConsulta('dermatologia')
 const dados: DadosPessoais = {
   nomeCompleto: 'Maria Lima', nascimento: '1990-05-02', sexo: 'M', whatsapp: '85912345678', email: '',
-  cidade: 'Fortaleza', uf: 'CE', profissao: '', trabalhoExposto: '', atendimento: '', convenio: '',
+  cidade: 'Fortaleza', uf: 'CE', profissao: '', trabalhoExposto: '',
 }
 const hoje = new Date(2026, 10, 16)
 
 describe('blocosDoFormulario', () => {
-  it('identificação obrigatória, trabalho e atendimento e as partes da especialidade opcionais', () => {
+  it('identificação obrigatória, trabalho e as partes da especialidade opcionais', () => {
     const b = blocosDoFormulario(partes)
     expect(b.map((x) => x.titulo)).toEqual([
-      'Identificação', 'Trabalho e atendimento', 'Queixa principal', 'Fototipo e exposição ao sol',
+      'Identificação', 'Trabalho', 'Queixa principal', 'Fototipo e exposição ao sol',
       'Rotina de cuidados', 'Saúde geral', 'Histórico familiar', 'Fotos',
     ])
     expect(b.map((x) => x.obrigatorio)).toEqual([true, false, false, false, false, false, false, false])
@@ -28,9 +28,9 @@ describe('blocoRespondido', () => {
     expect(blocoRespondido(ident, { dados, respostas: {}, fotos: [], hoje })).toBe(true)
     expect(blocoRespondido(ident, { dados: { ...dados, uf: '' }, respostas: {}, fotos: [], hoje })).toBe(false)
   })
-  it('trabalho e atendimento: qualquer campo preenchido', () => {
+  it('trabalho: qualquer campo preenchido', () => {
     expect(blocoRespondido(trabalho, { dados, respostas: {}, fotos: [], hoje })).toBe(false)
-    expect(blocoRespondido(trabalho, { dados: { ...dados, atendimento: 'particular' }, respostas: {}, fotos: [], hoje })).toBe(true)
+    expect(blocoRespondido(trabalho, { dados: { ...dados, trabalhoExposto: 'nao' }, respostas: {}, fotos: [], hoje })).toBe(true)
   })
   it('parte da especialidade: alguma resposta visível não vazia', () => {
     expect(blocoRespondido(queixa, { dados, respostas: { queixa: '  ', sintomas: [] }, fotos: [], hoje })).toBe(false)

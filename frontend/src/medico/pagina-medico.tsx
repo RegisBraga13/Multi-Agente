@@ -14,7 +14,7 @@ import { useTelaPequena } from './use-tela-pequena'
 import { useVista, type Vista } from './use-vista'
 
 const RASCUNHO_VAZIO: RascunhoPedido = {
-  modalidade: 'presencial', data: null, inicio: null, nome: '', whatsapp: '', transcricao: null, forma: null,
+  modalidade: 'presencial', data: null, inicio: null, nome: '', whatsapp: '', atendimento: null, convenio: '', transcricao: null, forma: null,
 }
 
 export function PaginaMedico() {

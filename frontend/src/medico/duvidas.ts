@@ -7,13 +7,17 @@ export type Duvida = {
   pergunta: string
   resposta: string
   /** botão junto da resposta */
-  acao?: 'whatsapp-consultorio'
+  acao?: 'whatsapp-consultorio' | 'lista-convenios'
 }
 
 const COMUNS: Duvida[] = [
   {
     id: 'reserva', pergunta: 'O horário fica reservado imediatamente?',
     resposta: 'Você escolhe o horário disponível e recebe a confirmação do consultório após a validação do agendamento.',
+  },
+  {
+    id: 'convenios', pergunta: 'Quais convênios são atendidos?', acao: 'lista-convenios',
+    resposta: 'Atendimento particular e pelos convênios abaixo. O consultório confirma a cobertura pelo WhatsApp.',
   },
   {
     id: 'remarcar', pergunta: 'Posso cancelar ou remarcar?', acao: 'whatsapp-consultorio',

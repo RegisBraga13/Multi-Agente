@@ -55,6 +55,13 @@ export function Duvidas({ medico }: { medico: Medico }) {
         </summary>
         <div className="max-w-[70ch] pb-3 text-[14.5px] sm:pb-4 sm:text-[15px]">
           <p className="text-apagado">{d.resposta}</p>
+          {d.acao === 'lista-convenios' && (
+            <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Convênios atendidos">
+              {['Particular', ...medico.convenios].map((c) => (
+                <li key={c} className="border border-linha bg-branco px-2.5 py-1 text-[14px] font-semibold text-tinta">{c}</li>
+              ))}
+            </ul>
+          )}
           {d.acao === 'whatsapp-consultorio' && (
             <a
               href={linkWhatsapp(medico.whatsappConsultorio)} target="_blank" rel="noopener noreferrer"

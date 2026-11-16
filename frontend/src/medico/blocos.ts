@@ -9,7 +9,7 @@ export type Bloco =
 export function blocosDoFormulario(partes: Parte[]): Bloco[] {
   return [
     { id: 'identificacao', titulo: 'Identificação', obrigatorio: true },
-    { id: 'trabalho', titulo: 'Trabalho e atendimento', obrigatorio: false },
+    { id: 'trabalho', titulo: 'Trabalho', obrigatorio: false },
     ...partes.map((parte, i) => ({ id: `parte-${i}`, titulo: parte.titulo, obrigatorio: false as const, parte })),
   ]
 }
@@ -24,5 +24,5 @@ export function blocoRespondido(b: Bloco, { dados, respostas, fotos, hoje }: Est
     return b.parte.perguntas.some((q) => perguntaVisivel(q, dados.sexo) && (q.tipo === 'foto' ? fotos.includes(q.id) : preenchida(respostas[q.id])))
   }
   if (b.id === 'identificacao') return Object.keys(validarDadosPessoais(dados, hoje)).length === 0
-  return !!(dados.profissao.trim() || dados.trabalhoExposto || dados.atendimento)
+  return !!(dados.profissao.trim() || dados.trabalhoExposto)
 }

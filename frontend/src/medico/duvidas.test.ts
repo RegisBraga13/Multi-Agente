@@ -5,13 +5,13 @@ import { duvidasDaPagina, linkWhatsapp } from './duvidas'
 describe('duvidasDaPagina', () => {
   it('dermatologia: perguntas comuns e a das fotos logo depois de médico ou IA; sem a da gravação', () => {
     const ids = duvidasDaPagina('dermatologia').map((d) => d.id)
-    expect(ids).toEqual(['reserva', 'remarcar', 'online', 'preencher', 'protecao', 'medico_ou_ia', 'fotos', 'receita', 'valor', 'retorno'])
+    expect(ids).toEqual(['reserva', 'convenios', 'remarcar', 'online', 'preencher', 'protecao', 'medico_ou_ia', 'fotos', 'receita', 'valor', 'retorno'])
   })
 
   it('especialidade sem pacote próprio fica só com as comuns', () => {
     const ids = duvidasDaPagina('cardiologia').map((d) => d.id)
     expect(ids).not.toContain('fotos')
-    expect(ids).toHaveLength(9)
+    expect(ids).toHaveLength(10)
   })
 
   it('textos sem gênero nem especialidade: sempre "seu médico"', () => {
@@ -26,6 +26,7 @@ describe('duvidasDaPagina', () => {
   it('remarcar oferece o WhatsApp do consultório; proteção com o texto do autor', () => {
     const d = Object.fromEntries(duvidasDaPagina('dermatologia').map((x) => [x.id, x]))
     expect(d.remarcar.acao).toBe('whatsapp-consultorio')
+    expect(d.convenios.acao).toBe('lista-convenios')
     expect(d.protecao.resposta).toBe('Seus dados são tratados com confidencialidade e conforme a legislação de proteção de dados.')
   })
 })

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 import { Campo } from './campo'
 import { btnPainel, btnPainelSecundario, classeEntrada } from './estilos'
-import { formatarWhatsapp, normalizarWhatsapp, validarContato, validarPedido, type ErrosPedido, type FormaFormulario, type RascunhoPedido } from './regras'
+import { convenioAtendido, formatarWhatsapp, normalizarWhatsapp, validarAtendimento, validarContato, validarPedido, type ErrosPedido, type FormaFormulario, type RascunhoPedido } from './regras'
 import { NOME_MODALIDADE, rotuloDiaLongo, TEXTO_TRANSCRICAO } from './textos'
 import type { Medico } from './tipos'
 
@@ -15,13 +15,16 @@ type Props = {
   onPreencherNaPagina(): void
 }
 
-type Passo = 1 | 2 | 3 | 4 | 'enviado'
-const TOTAL = 4
+type Passo = 1 | 2 | 3 | 4 | 5 | 'enviado'
+const TOTAL = 5
+const OUTRO = 'Outro'
 
 export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, onPreencherNaPagina }: Props) {
   const [passo, setPasso] = useState<Passo>(1)
   const [erros, setErros] = useState<ErrosPedido>({})
   const [confirmouConsulta, setConfirmouConsulta] = useState(rascunho.forma === 'consulta')
+  // convênio fora da lista do médico: o paciente digita o nome
+  const [outro, setOutro] = useState(!!rascunho.convenio && !convenioAtendido(medico.convenios, rascunho.convenio))
   const titulo = useRef<HTMLHeadingElement>(null)
   const r = rascunho
 
@@ -73,8 +76,8 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
           </button>
         </div>
         {passo !== 'enviado' && (
-          <div className="mt-2.5 grid grid-cols-4 gap-1.5" aria-hidden>
-            {[1, 2, 3, 4].map((n) => (
+          <div className="mt-2.5 grid grid-cols-5 gap-1.5" aria-hidden>
+            {[1, 2, 3, 4, 5].map((n) => (
               <span key={n} className="h-1" style={{ background: n <= passo ? 'var(--esp)' : 'var(--color-linha)' }} />
             ))}
           </div>
@@ -130,6 +133,76 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
         )}
 
         {passo === 3 && (
+          <form
+            noValidate
+            onSubmit={(ev) => {
+              ev.preventDefault()
+              const e = validarAtendimento(r)
+              setErros(e)
+              if (!Object.keys(e).length) setPasso(4)
+            }}
+          >
+            <Titulo ref={titulo}>Particular ou convênio?</Titulo>
+            <div className="mt-3.5 grid grid-cols-2 gap-2" role="group" aria-label="Tipo de atendimento">
+              {([['particular', 'Particular'], ['convenio', 'Convênio']] as const).map(([v, t]) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={r.atendimento === v}
+                  onClick={() => { setErros({}); muda({ atendimento: v, convenio: v === 'particular' ? '' : r.convenio }) }}
+                  className={`border-[1.5px] px-3 py-2.5 text-[16px] font-bold transition ${r.atendimento === v ? 'border-(--esp) bg-(--esp) text-papel' : 'border-tinta hover:bg-suave'}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            {erros.atendimento && <p role="alert" className="mt-2 text-[14px] font-semibold text-alerta">{erros.atendimento}</p>}
+
+            {r.atendimento === 'convenio' && (
+              <div className="mt-4">
+                {/* campo que abre a lista do médico ao clicar; "Outro" deixa digitar */}
+                <Campo rotulo="Seu convênio" erro={outro ? undefined : erros.convenio}>
+                  {(p) => (
+                    <select
+                      {...p}
+                      value={outro ? OUTRO : r.convenio}
+                      onChange={(e) => {
+                        const c = e.target.value
+                        setErros({})
+                        setOutro(c === OUTRO)
+                        muda({ convenio: c === OUTRO ? '' : c })
+                      }}
+                      className={classeEntrada(p)}
+                    >
+                      <option value="">Escolha</option>
+                      {medico.convenios.map((c) => <option key={c}>{c}</option>)}
+                      <option value={OUTRO}>Outro (digitar)</option>
+                    </select>
+                  )}
+                </Campo>
+                {outro && (
+                  <div className="mt-2.5">
+                    <Campo rotulo="Nome do convênio" erro={erros.convenio}>
+                      {(p) => <input {...p} value={r.convenio} onChange={(e) => muda({ convenio: e.target.value })} className={classeEntrada(p)} />}
+                    </Campo>
+                    {r.convenio.trim() && !convenioAtendido(medico.convenios, r.convenio) && (
+                      <p className="mt-2 border-l-4 border-(--esp) bg-suave px-3 py-2 text-[13.5px] leading-snug">
+                        Pode não ser atendido; o consultório confirma.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="mt-5 grid gap-2.5">
+              <button type="submit" className={btnPainel}>Continuar</button>
+              <button type="button" className="mt-1 text-[14px] font-semibold text-apagado underline" onClick={() => setPasso(2)}>Voltar</button>
+            </div>
+          </form>
+        )}
+
+        {passo === 4 && (
           <>
             <Titulo ref={titulo}>Transcrição da consulta</Titulo>
             <p className="mt-2 text-[15px] leading-relaxed">{TEXTO_TRANSCRICAO}</p>
@@ -139,7 +212,7 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
                   key={v}
                   type="button"
                   aria-pressed={r.transcricao === v}
-                  onClick={() => { muda({ transcricao: v }); setPasso(4) }}
+                  onClick={() => { muda({ transcricao: v }); setPasso(5) }}
                   className={`w-full border-[1.5px] px-5 py-3 text-[16px] font-bold transition ${
                     r.transcricao === v ? 'border-(--esp) bg-(--esp) text-papel' : 'border-tinta hover:bg-suave'
                   }`}
@@ -147,12 +220,12 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
                   {t}
                 </button>
               ))}
-              <button type="button" className="mt-1 text-[14px] font-semibold text-apagado underline" onClick={() => setPasso(2)}>Voltar</button>
+              <button type="button" className="mt-1 text-[14px] font-semibold text-apagado underline" onClick={() => setPasso(3)}>Voltar</button>
             </div>
           </>
         )}
 
-        {passo === 4 && (
+        {passo === 5 && (
           <>
             <Titulo ref={titulo}>Formulário da consulta</Titulo>
             <fieldset className="mt-3.5 grid gap-2">
@@ -180,14 +253,14 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
               </div>
             )}
 
-            {(erros.forma || erros.transcricao || erros.horario) && (
-              <p role="alert" className="mt-4 text-[14.5px] font-semibold text-alerta">{erros.forma ?? erros.transcricao ?? erros.horario}</p>
+            {(erros.forma || erros.transcricao || erros.horario || erros.atendimento || erros.convenio) && (
+              <p role="alert" className="mt-4 text-[14.5px] font-semibold text-alerta">{erros.forma ?? erros.transcricao ?? erros.horario ?? erros.atendimento ?? erros.convenio}</p>
             )}
 
             {!precisaReconsiderar && (
               <div className="mt-5 grid gap-2.5">
                 <button type="button" className={btnPainel} onClick={enviar}>Enviar pedido</button>
-                <button type="button" className="mt-1 text-[14px] font-semibold text-apagado underline" onClick={() => setPasso(3)}>Voltar</button>
+                <button type="button" className="mt-1 text-[14px] font-semibold text-apagado underline" onClick={() => setPasso(4)}>Voltar</button>
               </div>
             )}
           </>

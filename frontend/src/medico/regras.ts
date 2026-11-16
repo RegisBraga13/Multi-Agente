@@ -11,11 +11,15 @@ export type RascunhoPedido = {
   inicio: string | null
   nome: string
   whatsapp: string
+  /** particular ou convênio: escolhido no agendamento, porque o consultório precisa dele para confirmar */
+  atendimento: 'particular' | 'convenio' | null
+  /** nome do convênio (da lista do médico, ou digitado em "Outro") */
+  convenio: string
   transcricao: Transcricao | null
   forma: FormaFormulario | null
 }
 
-export type ErrosPedido = Partial<Record<'horario' | 'nome' | 'whatsapp' | 'transcricao' | 'forma', string>>
+export type ErrosPedido = Partial<Record<'horario' | 'nome' | 'whatsapp' | 'atendimento' | 'convenio' | 'transcricao' | 'forma', string>>
 
 /** Celular brasileiro → '55' + DDD + 9 dígitos; null se não for um celular válido. */
 export function normalizarWhatsapp(texto: string): string | null {
@@ -39,10 +43,24 @@ export function validarContato(r: Pick<RascunhoPedido, 'nome' | 'whatsapp'>): Er
   return e
 }
 
+export function validarAtendimento(r: Pick<RascunhoPedido, 'atendimento' | 'convenio'>): ErrosPedido {
+  if (!r.atendimento) return { atendimento: 'Escolha particular ou convênio.' }
+  if (r.atendimento === 'convenio' && !r.convenio.trim()) return { convenio: 'Escolha o seu convênio.' }
+  return {}
+}
+
+const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
+
+/** O convênio digitado está na lista do médico? (sem diferenciar maiúsculas, acentos e espaços) */
+export function convenioAtendido(lista: readonly string[], nome: string): boolean {
+  const alvo = semAcento(nome)
+  return lista.some((c) => semAcento(c) === alvo)
+}
+
 export function validarPedido(r: RascunhoPedido): ErrosPedido {
   const e: ErrosPedido = {}
   if (!r.data || !r.inicio) e.horario = 'Escolha o dia e o horário.'
-  Object.assign(e, validarContato(r))
+  Object.assign(e, validarContato(r), validarAtendimento(r))
   if (!r.transcricao) e.transcricao = 'Responda se concorda com a transcrição.'
   if (!r.forma) e.forma = 'Escolha como prefere preencher o formulário.'
   return e
@@ -58,8 +76,6 @@ export type DadosPessoais = {
   uf: string
   profissao: string // opcional
   trabalhoExposto: 'sim' | 'nao' | '' // ao ar livre, ao sol ou a produtos químicos; opcional
-  atendimento: 'particular' | 'convenio' | '' // opcional
-  convenio: string // nome do convênio, se houver; opcional
 }
 
 /** Anos completos na data de hoje; null se a data de nascimento não for válida. */

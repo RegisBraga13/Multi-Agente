@@ -29,14 +29,14 @@ export function mensagemFormulario({ medico, pedido, dados, partes, respostas, f
   if (pedido.data && pedido.inicio) {
     linhas.push(`Pedido: ${rotuloDiaLongo(pedido.data)}, às ${pedido.inicio} · ${NOME_MODALIDADE[pedido.modalidade]}`)
   }
+  if (pedido.atendimento) {
+    linhas.push(`Atendimento: ${pedido.atendimento === 'convenio' ? `Convênio (${pedido.convenio.trim()})` : 'Particular'}`)
+  }
   if (pedido.transcricao) linhas.push(`Transcrição da consulta: ${pedido.transcricao}`)
 
   const idade = calcularIdade(dados.nascimento, hoje)
   const [a, m, d] = dados.nascimento.split('-')
   const whatsapp = normalizarWhatsapp(dados.whatsapp)
-  const atendimento = dados.atendimento === 'convenio'
-    ? `Convênio${dados.convenio.trim() ? ` (${dados.convenio.trim()})` : ''}`
-    : dados.atendimento === 'particular' ? 'Particular' : ''
   const ident: [string, string][] = [
     ['Nome', dados.nomeCompleto.trim()],
     ['Nascimento', idade === null ? '' : `${d}/${m}/${a} (${idade} ${idade === 1 ? 'ano' : 'anos'})`],
@@ -48,11 +48,10 @@ export function mensagemFormulario({ medico, pedido, dados, partes, respostas, f
   const trabalho: [string, string][] = [
     ['Profissão', dados.profissao.trim()],
     ['Trabalha ao ar livre, exposto ao sol ou a produtos químicos', SIM_NAO[dados.trabalhoExposto]],
-    ['Atendimento', atendimento],
   ]
   const comValor = (l: [string, string][]) => l.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`)
   linhas.push('', '*1. Identificação*', ...comValor(ident))
-  if (comValor(trabalho).length) linhas.push('', '*2. Trabalho e atendimento*', ...comValor(trabalho))
+  if (comValor(trabalho).length) linhas.push('', '*2. Trabalho*', ...comValor(trabalho))
 
   let respondeu = false
   partes.forEach((parte, i) => {

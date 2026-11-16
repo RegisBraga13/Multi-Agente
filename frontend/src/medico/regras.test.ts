@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
-  calcularIdade, FOTO_MAX_BYTES, normalizarWhatsapp, validarContato, validarDadosPessoais, validarFoto, validarPedido,
+  calcularIdade, convenioAtendido, FOTO_MAX_BYTES, normalizarWhatsapp, validarAtendimento, validarContato, validarDadosPessoais, validarFoto, validarPedido,
   type DadosPessoais, type RascunhoPedido,
 } from './regras'
 
 const base: RascunhoPedido = {
   modalidade: 'presencial', data: '2026-11-17', inicio: '08:00',
-  nome: 'Maria Lima', whatsapp: '(85) 99101-8813', transcricao: 'aceita', forma: 'whatsapp',
+  nome: 'Maria Lima', whatsapp: '(85) 99101-8813', atendimento: 'particular', convenio: '', transcricao: 'aceita', forma: 'whatsapp',
 }
 
 describe('normalizarWhatsapp', () => {
@@ -27,13 +27,31 @@ describe('validarPedido', () => {
     expect(validarPedido({ ...base, transcricao: 'recusada' })).toEqual({})
   })
 
-  it('exige horário, nome, WhatsApp, resposta da transcrição e forma', () => {
-    const e = validarPedido({ ...base, data: null, nome: '  ', whatsapp: '123', transcricao: null, forma: null })
-    expect(Object.keys(e).sort()).toEqual(['forma', 'horario', 'nome', 'transcricao', 'whatsapp'])
+  it('exige horário, nome, WhatsApp, atendimento, resposta da transcrição e forma', () => {
+    const e = validarPedido({ ...base, data: null, nome: '  ', whatsapp: '123', atendimento: null, transcricao: null, forma: null })
+    expect(Object.keys(e).sort()).toEqual(['atendimento', 'forma', 'horario', 'nome', 'transcricao', 'whatsapp'])
   })
 
   it('quem escolhe preencher na consulta ainda precisa de nome e WhatsApp', () => {
     expect(validarPedido({ ...base, forma: 'consulta', whatsapp: '' }).whatsapp).toBeDefined()
+  })
+})
+
+describe('validarAtendimento', () => {
+  it('particular basta; convênio exige o nome do convênio', () => {
+    expect(validarAtendimento({ atendimento: 'particular', convenio: '' })).toEqual({})
+    expect(validarAtendimento({ atendimento: 'convenio', convenio: 'Unimed' })).toEqual({})
+    expect(Object.keys(validarAtendimento({ atendimento: 'convenio', convenio: '  ' }))).toEqual(['convenio'])
+    expect(Object.keys(validarAtendimento({ atendimento: null, convenio: '' }))).toEqual(['atendimento'])
+  })
+})
+
+describe('convenioAtendido', () => {
+  const lista = ['Unimed', 'Bradesco Saúde']
+  it('compara sem diferenciar maiúsculas, acentos e espaços', () => {
+    expect(convenioAtendido(lista, 'unimed')).toBe(true)
+    expect(convenioAtendido(lista, ' bradesco saude ')).toBe(true)
+    expect(convenioAtendido(lista, 'Amil')).toBe(false)
   })
 })
 
@@ -50,11 +68,11 @@ describe('validarDadosPessoais', () => {
     const d: DadosPessoais = {
       nomeCompleto: 'Maria Lima', nascimento: '1990-05-02', sexo: 'F',
       whatsapp: '85991018813', email: '', cidade: 'Fortaleza', uf: 'CE',
-      profissao: '', trabalhoExposto: '', atendimento: '', convenio: '',
+      profissao: '', trabalhoExposto: '',
     }
     expect(validarDadosPessoais(d, hoje)).toEqual({})
-    // profissão, trabalho exposto e convênio são opcionais
-    expect(validarDadosPessoais({ ...d, profissao: 'Pedreiro', trabalhoExposto: 'sim', atendimento: 'convenio', convenio: '' }, hoje)).toEqual({})
+    // profissão e trabalho exposto são opcionais
+    expect(validarDadosPessoais({ ...d, profissao: 'Pedreiro', trabalhoExposto: 'sim' }, hoje)).toEqual({})
     expect(validarDadosPessoais({ ...d, nomeCompleto: 'Maria' }, hoje).nomeCompleto).toBeDefined()
     expect(validarDadosPessoais({ ...d, nascimento: '2027-01-01' }, hoje).nascimento).toBeDefined()
     expect(validarDadosPessoais({ ...d, nascimento: '1890-01-01' }, hoje).nascimento).toBeDefined()

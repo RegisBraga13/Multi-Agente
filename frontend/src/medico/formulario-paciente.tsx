@@ -16,7 +16,6 @@ type Props = { medico: Medico; pedido: RascunhoPedido; onConcluir(): void }
 type Foto = { nome: string; url: string }
 
 const SIM_NAO = [{ valor: 'sim', rotulo: 'Sim' }, { valor: 'nao', rotulo: 'Não' }]
-const ATENDIMENTO = [{ valor: 'particular', rotulo: 'Particular' }, { valor: 'convenio', rotulo: 'Convênio' }]
 const comoOpcoes = (lista: readonly string[]) => lista.map((t) => ({ valor: t, rotulo: t }))
 /** Texto longo, foto e listas grandes de opções ocupam a linha toda; o resto divide a linha no PC. */
 const ocupaLinhaToda = (q: Pergunta) =>
@@ -28,7 +27,7 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
   const whatsapp = normalizarWhatsapp(pedido.whatsapp)
   const [dados, setDados] = useState<DadosPessoais>({
     nomeCompleto: pedido.nome, nascimento: '', sexo: '', whatsapp: pedido.whatsapp, email: '', cidade: '', uf: '',
-    profissao: '', trabalhoExposto: '', atendimento: '', convenio: '',
+    profissao: '', trabalhoExposto: '',
   })
   const partes = partesPreConsulta(medico.especialidade)
   const [pre, setPre] = useState<RespostasPreConsulta>({})
@@ -163,15 +162,6 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
           </Campo>
           <GrupoOpcoes rotulo="Trabalha ao ar livre, exposto ao sol ou a produtos químicos?" modo="uma" opcoes={SIM_NAO}
             marcadas={[dados.trabalhoExposto]} onAlternar={(v) => muda('trabalhoExposto', v as DadosPessoais['trabalhoExposto'])} />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <GrupoOpcoes rotulo="Atendimento" modo="uma" opcoes={ATENDIMENTO}
-              marcadas={[dados.atendimento]} onAlternar={(v) => muda('atendimento', v as DadosPessoais['atendimento'])} />
-            {dados.atendimento === 'convenio' && (
-              <Campo rotulo="Qual convênio?">
-                {(p) => <input {...p} value={dados.convenio} onChange={(e) => muda('convenio', e.target.value)} className={classeEntrada(p)} />}
-              </Campo>
-            )}
-          </div>
         </div>
       )
     }

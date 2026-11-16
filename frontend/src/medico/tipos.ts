@@ -18,6 +18,8 @@ export type Medico = {
   cidade: string
   atendeOnline: boolean
   whatsappConsultorio: string
+  /** convênios que o médico atende; ele mesmo edita no app (Configurações do consultório). Particular sempre. */
+  convenios: string[]
 }
 
 export type Horario = { inicio: string /* 'HH:MM' */; livre: boolean }
