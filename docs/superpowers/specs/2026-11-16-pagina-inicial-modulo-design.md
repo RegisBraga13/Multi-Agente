@@ -43,3 +43,14 @@ Endereço `/modulo/<slug>`; ‹ Hoje › para outros dias; "próximo" = primeiro
 
 ## Para o construtor
 Valores visuais (tamanhos, espaços) decididos na tela pronta, por print.
+
+## Revisão 2 (16/11/2026) — modelos do autor
+O autor trouxe modelos (prints) e pediu "faça o que sugere":
+- Início = saudação ("Bom dia, Dra. …") com data e nº de pacientes; três cartões **01 · Nova — Consulta**, **02 · Evolução — Retorno**,
+  **03 · Histórico — Prontuário**; abaixo, cartão **Hoje** (lista) + cartão escuro **Fichas de pré-consulta** ao lado.
+- Linha do paciente: horário · nome em negrito + "Consulta · Presencial · Unimed" · etiqueta da ficha (*Ficha pronta*, *Link enviado*, *Sem ficha*); "Próximo".
+- Clicar no paciente abre a **ficha recebida** ao lado (alergia em destaque, queixa, em uso, antecedentes, transcrição), no lugar do cartão de fichas.
+- Para caber em 690 px: Hoje começa no próximo paciente e mostra só os que cabem; atendidos viram contagem; "Ver agenda" abre o dia inteiro (#agenda, com ‹ Hoje ›).
+- Fora agora (ideias para depois, não estão no .md): pagamento antecipado, horário liberado quando o particular não paga, oferta do horário em fila pelo WhatsApp.
+- Calls meus: fonte mantida (Source Serif 4 + Inter, identidade combinada); cores dos cartões = petróleo · tom claro da especialidade · cor da especialidade;
+  link Prontuário sai da linha e vai para o painel da ficha; cartões e "Iniciar" seguem com aviso de próxima etapa.
