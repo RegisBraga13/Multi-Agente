@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { buscarEspecialidade, type Especialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
 import { NaoEncontrada } from '../nao-encontrada'
@@ -33,6 +33,7 @@ function Pagina({ esp }: { esp: Especialidade }) {
   const [selecionado, setSelecionado] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
   const medico = MEDICO_EXEMPLO
+  const navegar = useNavigate()
 
   const deHoje = useMemo(() => vistaDoDia(dataLocal(agora), agora), [agora])
   const doDia = useMemo(() => vistaDoDia(dia, agora), [dia, agora])
@@ -98,7 +99,13 @@ function Pagina({ esp }: { esp: Especialidade }) {
             <h1 className="mt-1 text-[clamp(30px,4vw,44px)] leading-[1.1] font-semibold">
               {saudacao(agora)}, {medico.tratamento} {medico.nome}
             </h1>
-            <Cartoes onEscolher={(o) => setAviso(`${o} é a próxima etapa do módulo.`)} />
+            <Cartoes onEscolher={(o) => {
+              if (o !== 'Consulta') return setAviso(`${o} é a próxima etapa do módulo.`)
+              // consulta do paciente aberto na ficha; sem nenhum aberto, do próximo
+              const id = selecionado ?? deHoje.proximo
+              if (id) navegar(`/modulo/${esp.slug}/consulta/${id}/anamnese-exame`)
+              else setAviso('Nenhum paciente a seguir hoje.')
+            }} />
             <Grade lado={painel}>
               <ListaDeHoje vista={deHoje} selecionado={selecionado} onSelecionar={setSelecionado} />
             </Grade>
