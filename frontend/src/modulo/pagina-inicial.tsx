@@ -81,7 +81,7 @@ function Pagina({ esp }: { esp: Especialidade }) {
   )
 
   return (
-    <div style={{ '--esp': esp.cor } as CSSProperties} className="flex min-h-screen flex-col bg-papel bg-[url(/papel.png)] bg-size-[512px]">
+    <div style={{ '--esp': esp.cor } as CSSProperties} className="cor-esp flex min-h-screen flex-col bg-papel bg-[url(/papel.png)] bg-size-[512px]">
       <header ref={topo} className="mx-auto w-full max-w-6xl px-4 pt-2.5 sm:px-6">
         <a href="#" className="no-underline" aria-label={`${esp.raiz}IA, início`}>
           <NomeModulo esp={esp} className="text-[26px]" />
@@ -152,7 +152,7 @@ function Grade({ lado, children, semMargem = false }: { lado: ReactNode; childre
 
 const CARTOES = [
   { titulo: 'Consulta', estilo: 'bg-petroleo text-papel' },
-  { titulo: 'Retorno', estilo: 'bg-[color-mix(in_oklab,var(--esp)_55%,var(--color-papel))] text-tinta' },
+  { titulo: 'Retorno', estilo: 'bg-(--esp-medio) text-tinta' },
   { titulo: 'Prontuário', estilo: 'bg-(--esp) text-papel' },
 ] as const
 
@@ -241,7 +241,7 @@ function Linhas({ lista, proximo, selecionado, onSelecionar, compacta = false }:
             type="button"
             onClick={() => onSelecionar(x.id)}
             aria-pressed={x.id === selecionado}
-            className={`grid w-full grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-x-4 px-5 ${compacta ? 'py-[5px]' : 'py-2'} text-left transition hover:bg-suave/60 ${x.id === realce ? 'bg-[color-mix(in_oklab,var(--esp)_14%,white)] hover:bg-[color-mix(in_oklab,var(--esp)_18%,white)]' : ''} ${x.atendido ? 'text-apagado' : ''}`}
+            className={`grid w-full grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-x-4 px-5 ${compacta ? 'py-[5px]' : 'py-2'} text-left transition hover:bg-suave/60 ${x.id === realce ? 'bg-(--esp-claro) hover:bg-suave' : ''} ${x.atendido ? 'text-apagado' : ''}`}
           >
             <span className="text-[17px] font-bold tabular-nums">{x.inicio}</span>
             <span className="min-w-0">
@@ -264,7 +264,7 @@ function Linhas({ lista, proximo, selecionado, onSelecionar, compacta = false }:
 function EtiquetaFicha({ situacao }: { situacao: Atendimento['ficha']['situacao'] }) {
   if (situacao === 'pronta') return <span className="w-[104px] border-[1.5px] border-petroleo py-0.5 text-center text-[12.5px] font-semibold text-petroleo">Ficha pronta</span>
   return (
-    <span className="w-[104px] border-[1.5px] border-dashed border-[color-mix(in_oklab,var(--esp)_45%,white)] py-0.5 text-center text-[12.5px] font-medium text-[color-mix(in_oklab,var(--esp)_75%,black)]">
+    <span className="w-[104px] border-[1.5px] border-dashed border-(--esp-medio) py-0.5 text-center text-[12.5px] font-medium text-apagado">
       {situacao === 'link-enviado' ? 'Link enviado' : 'Sem ficha'}
     </span>
   )
@@ -304,9 +304,9 @@ function PainelFicha({ at, agora, onFechar, onProntuario }: { at: Atendimento; a
         <div className="mt-2.5 space-y-2 text-[14.5px] leading-snug">
           {f.alergias.length > 0 ? (
             f.alergias.map((a) => (
-              <div key={a.substancia} className="border-[1.5px] border-alerta px-3 py-1.5">
-                <p className="text-[11px] font-bold tracking-[0.14em] text-alerta uppercase">Alergia</p>
-                <p><b className="text-[16px] text-alerta">{a.substancia}</b> <span className="text-alerta">· {a.reacao}</span></p>
+              <div key={a.substancia} className="bg-alerta-clinico px-3 py-1.5 text-branco">
+                <p className="text-[11px] font-bold tracking-[0.14em] uppercase opacity-90">Alergia</p>
+                <p><b className="text-[16px]">{a.substancia}</b> · {a.reacao}</p>
               </div>
             ))
           ) : (

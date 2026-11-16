@@ -16,6 +16,8 @@
   --color-sobre-escuro: #ECF3F0;
   --color-escuro-apagado: #A3BAB3;
   --color-alerta: #C2301C;
+  /* alergias e sinais de alerta clínicos: o mesmo --alerta da landing, em bloco cheio com texto branco */
+  --color-alerta-clinico: #A34634;
 
   /* as 10 cores do logo, na ordem das letras */
   --color-l1: #8E3B5C;
@@ -33,11 +35,16 @@
 :root {
   /* cor da especialidade da página; cada página de especialidade troca --esp */
   --esp: var(--color-petroleo);
-  --esp-claro: color-mix(in oklab, var(--esp) 14%, #F9F8F5);
-  --esp-medio: color-mix(in oklab, var(--esp) 45%, #F9F8F5);
   --espectro: linear-gradient(90deg, var(--color-l1) 0 10%, var(--color-l2) 10% 20%, var(--color-l3) 20% 30%,
     var(--color-l4) 30% 40%, var(--color-l5) 40% 50%, var(--color-l6) 50% 60%, var(--color-l7) 60% 70%,
     var(--color-l8) 70% 80%, var(--color-l9) 80% 90%, var(--color-l10) 90% 100%);
+}
+
+/* tons da cor da especialidade. Calculados também onde a página troca --esp (classe cor-esp),
+   senão ficariam presos ao petróleo do :root */
+:root, .cor-esp {
+  --esp-claro: color-mix(in oklab, var(--esp) 14%, #F9F8F5);
+  --esp-medio: color-mix(in oklab, var(--esp) 45%, #F9F8F5);
 }
 
 * { border-radius: 0; }
