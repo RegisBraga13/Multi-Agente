@@ -8,7 +8,7 @@ const raiz = (arquivo: string) => fileURLToPath(new URL(arquivo, import.meta.url
 // Páginas do app React. Tudo o que começar com estes caminhos abre o app.html;
 // o resto (a raiz "/") é a landing estática em index.html.
 // Em produção, a hospedagem precisa da mesma regra de reescrita.
-export const ROTAS_DO_APP = ['/contratar', '/entrar', '/medico']
+export const ROTAS_DO_APP = ['/contratar', '/entrar', '/medico', '/modulo']
 
 function rotasDoApp(): Plugin {
   return {
