@@ -12,6 +12,8 @@ import { ETAPAS, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, pode
 import { Exame } from './exame'
 import { atualizarHistoria, montarHistoria, type SecaoHistoria } from './historia'
 import { PaginaHistoria } from './historia-pagina'
+import { atualizarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, primeirosItens, type ItemDD, type NaoPerder } from './diagnosticos'
+import { PaginaDiagnosticos } from './diagnosticos-pagina'
 import { buscarAtendimento, conteudoDaConsulta } from './exemplo'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
@@ -64,7 +66,9 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
     despachar({ tipo: 'oficializar', bloco })
     if (!podeOficializar(estado, 'historia') && podeOficializar(novo, 'historia')) {
       const f = fontes.current
-      const novas = montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares)
+      // sinais de alerta da anamnese, com a resposta do médico, entram em "Antecedentes e alertas"
+      const sinais = conteudo.alertas.filter((x) => x.tipo === 'sinal').map((x) => ({ texto: x.texto, resposta: novo.alertas[x.id] }))
+      const novas = montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais })
       // primeira vez: tudo novo; depois: a IA mexe só no que mudou
       setHistoria((h) => h
         ? { versao: h.versao + 1, geradas: novas, ...atualizarHistoria(h.geradas, h.textos, novas) }
@@ -72,6 +76,34 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
       navegar(`${base}/historia`)
     }
   }
+
+  /** Diagnósticos: itens = hipóteses da IA + as do médico, cada uma com a decisão dele */
+  const [dd, setDd] = useState<{ versao: number; itens: ItemDD[]; naoPerder: NaoPerder | null; naoPerderAvaliado: boolean } | null>(null)
+  /** última versão já escrita "ao vivo" de cada página: ao voltar, aparece pronta (não escreve de novo) */
+  const [escrita, setEscrita] = useState({ historia: 0, diagnosticos: 0 })
+  const escreveu = (pagina: 'historia' | 'diagnosticos', versao: number) =>
+    setEscrita((e) => (e[pagina] === versao ? e : { ...e, [pagina]: versao }))
+
+  /** Salvar história. Ao liberar os diagnósticos, a IA sugere (ou atualiza só o que mudou) e a página deles abre. */
+  const salvarHistoria = () => {
+    const novo = oficializar(estado, 'historia')
+    despachar({ tipo: 'oficializar', bloco: 'historia' })
+    if (!historia || podeOficializar(estado, 'diagnosticos') || !podeOficializar(novo, 'diagnosticos')) return
+    // a IA usa só a história salva: o texto que está na tela, com as edições do médico
+    const salva = historia.geradas.map((s, i) => ({ rotulo: s.rotulo, texto: historia.textos[i] }))
+    const r = montarDiagnosticos(esp.slug, at.paciente.nome, salva)
+    setDd((d) => d
+      ? { versao: d.versao + 1, itens: atualizarDiagnosticos(d.itens, r.hipoteses), naoPerder: r.naoPerder, naoPerderAvaliado: d.naoPerderAvaliado && d.naoPerder?.cid === r.naoPerder?.cid }
+      : { versao: 1, itens: primeirosItens(r.hipoteses), naoPerder: r.naoPerder, naoPerderAvaliado: false })
+    navegar(`${base}/diagnosticos`)
+  }
+
+  /** O médico mexeu nos diagnósticos: deixam de estar salvos (e a conduta, se salva, fica desatualizada). */
+  const mexerDd = (f: (d: NonNullable<typeof dd>) => NonNullable<typeof dd>) => {
+    setDd((d) => d && f(d))
+    if (estado.blocos.diagnosticos.estado !== 'revisado_medico') fazer('editar', 'diagnosticos')
+  }
+  const nosItens = (f: (itens: ItemDD[]) => ItemDD[]) => mexerDd((d) => ({ ...d, itens: f(d.itens) }))
 
   // etapa atual como título (sem número) + atalhos para as etapas já liberadas
   const navegador = (
@@ -166,6 +198,8 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
             )}
             <PaginaHistoria
               key={historia.versao}
+              animar={escrita.historia < historia.versao}
+              onEscrito={() => escreveu('historia', historia.versao)}
               secoes={historia.geradas}
               textos={historia.textos}
               mudou={historia.mudou}
@@ -185,7 +219,34 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
                 })
                 if (aceitar && estado.blocos.historia.estado !== 'revisado_medico') fazer('editar', 'historia')
               }}
-              onSalvar={() => fazer('oficializar', 'historia')}
+              onSalvar={salvarHistoria}
+            />
+          </div>
+        ) : etapa === 'diagnosticos' && dd && situacaoDaEtapa(estado, 'diagnosticos') !== 'bloqueado' ? (
+          <div className="flex flex-1 flex-col [&>section]:flex-1">
+            {situacaoDaEtapa(estado, 'diagnosticos') === 'desatualizado' && !podeOficializar(estado, 'diagnosticos') && (
+              <p className="mb-2 text-[14px] font-semibold">A história clínica mudou. Salve a história de novo e a IA atualiza só o que mudou nas hipóteses.</p>
+            )}
+            <PaginaDiagnosticos
+              key={dd.versao}
+              itens={dd.itens}
+              naoPerder={dd.naoPerder}
+              naoPerderAvaliado={dd.naoPerderAvaliado}
+              primeira={dd.versao === 1}
+              animar={escrita.diagnosticos < dd.versao}
+              onEscrito={() => escreveu('diagnosticos', dd.versao)}
+              situacao={situacaoDaEtapa(estado, 'diagnosticos')}
+              podeSalvar={podeOficializar(estado, 'diagnosticos')}
+              pendencia={pendenciasDiagnosticos(dd.itens, dd.naoPerderAvaliado || !dd.naoPerder)}
+              onDecidir={(id, d) => nosItens((xs) => xs.flatMap((x) => (x.hip.id !== id ? [x] : x.propria && d === 'descartada' ? [] : [{ ...x, decisao: d }])))}
+              onAviso={(id, manter) => nosItens((xs) => xs.flatMap((x) => {
+                if (x.hip.id !== id || !x.aviso) return [x]
+                if (manter) return [{ ...x, aviso: null }]
+                return x.aviso.tipo === 'saiu' ? [] : [{ ...x, aviso: null, decisao: 'pendente' as const }]
+              }))}
+              onAdicionar={(nome, cid) => nosItens((xs) => [...xs, { hip: { id: `propria-${Date.now()}`, nome, cid, pct: null, evidencias: [] }, decisao: 'confirmada', propria: true, mudou: false, aviso: null }])}
+              onAvaliarNaoPerder={() => mexerDd((d) => ({ ...d, naoPerderAvaliado: !d.naoPerderAvaliado }))}
+              onSalvar={() => fazer('oficializar', 'diagnosticos')}
             />
           </div>
         ) : etapa !== 'anamnese-exame' && (

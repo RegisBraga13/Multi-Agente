@@ -116,3 +116,33 @@ Contrato do pedido à IA (Sonnet 5.5), quando sair da simulação:
 - **Política:** saída inválida → descartada, médico avisado, história atual intacta (REJECT). Toda mudança passa pelo médico (HUMAN_REVIEW); nada é AUTO_EXECUTE.
 - **Registro (auditoria):** id da decisão, modelo e versão, versão do contrato, seções alteradas/sugeridas, aceito/mantido pelo médico, data/hora. Sem prompt completo nem dados pessoais no log.
 - **A calibrar com uso real:** se a IA erra a seção afetada (falso positivo/negativo) e quanto o médico aceita das sugestões.
+
+## Página 3 — Diagnósticos diferenciais (proposta aprovada pelo autor, 16/11/2026)
+- **Quando aparece:** só depois de "Salvar história"; abre sozinha e a IA escreve as hipóteses no ritmo da história (3 letras / 33 ms).
+  Ao voltar a uma página já escrita, ela aparece pronta (não escreve de novo).
+- **Hipóteses:** até 3 da IA, com CID-10 e %, da mais à menos provável (como na landing). Toque na linha = confirmar; × = descartar.
+  "+ Adicionar outro diagnóstico": nome + CID opcional (nunca preenchido pela IA); entra confirmado, com a etiqueta "Seu".
+- **Embasamento:** cada hipótese com pontos a favor (+) e contra (−); cada ponto cita a seção da história e, ao tocar, o trecho exato.
+- **Não pode perder:** cartão escuro, só quando existe um (Carlos: melanoma; Antônio: carcinoma espinocelular; Luíza: lúpus; João Pedro:
+  artrite psoriásica). Nada inventado onde não há (acne, melasma...). Não é vermelho (vermelho só alergia).
+- **Salvar diagnósticos** (call meu): exige ao menos um diagnóstico confirmado, o "não pode perder" marcado como avaliado e nenhuma
+  sugestão pendente. O motivo só aparece depois de tentar salvar. Salvar libera a Conduta.
+- **História mudou e foi salva de novo** — por hipótese (chave = id estável, não a posição, porque a ordem muda com o %):
+  - igual → fica como está, com a decisão do médico;
+  - mudou e o médico não tinha decidido → a IA reescreve ("Atualizado");
+  - mudou e o médico tinha decidido → a decisão fica; sugestão ao lado ("46% → 38%": Manter / Rever);
+  - a IA não sugere mais → some se ninguém decidiu; se o médico decidiu, fica com sugestão (Manter / Retirar);
+  - diagnóstico do próprio médico → a IA nunca toca.
+- **Simulação (calls meus):** hipóteses de exemplo por paciente em `diagnosticos-exemplo.ts` (13 de Dermatologia). Cada pista só vale se o termo
+  estiver na história salva (o trecho citado é literal); sem nenhuma pista a favor a hipótese não é sugerida; o % cai quando somem pistas a favor
+  e sobe quando somem pistas contra. Outras especialidades: sem hipóteses (só "Adicionar").
+
+Contrato do pedido à IA (Sonnet 5.5), quando sair da simulação — NÃO ESQUECER:
+- **Entrada:** só a história clínica salva (por seção) + na atualização, as hipóteses atuais com a decisão do médico. Nada fora da história (Constituição).
+- **Saída tipada, validada em runtime antes de usar:** `{ hipoteses: [{ id, nome, cid10, pct: 0–100, evidencias: [{ lado: 'favor'|'contra', texto, secao: <uma das 6>, trecho }] }], naoPerder: { nome, cid10, porque, como } | null }`.
+  Regras determinísticas no app, não confiança na IA: todo `trecho` tem de existir literalmente na seção citada; hipótese sem evidência a favor é
+  descartada; CID-10 conferido contra a tabela oficial; decisão do médico e diagnóstico do médico nunca mudam pela IA.
+- **Política:** saída inválida → descartada, médico avisado, hipóteses atuais intactas (REJECT). Toda hipótese é sugestão (HUMAN_REVIEW); nada é AUTO_EXECUTE.
+- **Registro (auditoria):** id da decisão, modelo e versão, versão do contrato, hipóteses sugeridas/atualizadas, confirmadas/descartadas pelo médico, data/hora. Sem prompt nem dados pessoais.
+- **A calibrar com uso real:** o % é sinal operacional para ordenar, não probabilidade de acerto; medir quanto o médico confirma a 1ª hipótese,
+  quantas vezes acrescenta a sua, e se o "não pode perder" aparece quando devia (falso negativo é o erro caro).

@@ -17,17 +17,18 @@ export function EtiquetaSituacao({ s }: { s: Situacao }) {
 
 /** Cartão branco de um bloco: título + etiqueta em cima, conteúdo, rodapé com a ação. */
 /** `legenda`: significado dos ícones usados no cartão, à esquerda do rodapé. `cabecalho` ocupa o lugar do título (que segue como nome acessível). */
-export function Cartao({ titulo, cabecalho, situacao, extra, rodape, legenda, children }: { titulo: string; cabecalho?: ReactNode; situacao?: Situacao; extra?: ReactNode; rodape?: ReactNode; legenda?: ReactNode; children: ReactNode }) {
+/** `fundo` e `linha`: cores do cartão (padrão: branco com linhas claras; a história usa o verde-acinzentado da landing). */
+export function Cartao({ titulo, cabecalho, situacao, extra, rodape, legenda, children, fundo = 'bg-branco', linha = 'border-linha' }: { titulo: string; cabecalho?: ReactNode; situacao?: Situacao; extra?: ReactNode; rodape?: ReactNode; legenda?: ReactNode; children: ReactNode; fundo?: string; linha?: string }) {
   return (
-    <section className="flex min-w-0 flex-col border border-linha bg-branco" aria-label={titulo}>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-linha px-5 py-2">
+    <section className={`flex min-w-0 flex-col border ${linha} ${fundo}`} aria-label={titulo}>
+      <div className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b ${linha} px-5 py-2`}>
         {cabecalho ?? <h2 className="text-[21px] font-semibold">{titulo}</h2>}
         {situacao && <EtiquetaSituacao s={situacao} />}
         <div className="ml-auto">{extra}</div>
       </div>
       <div className="flex min-h-0 flex-1 flex-col px-5 py-3">{children}</div>
       {rodape && (
-        <div className="flex items-center justify-end gap-3 border-t border-linha px-5 py-2.5">
+        <div className={`flex items-center justify-end gap-3 border-t ${linha} px-5 py-2.5`}>
           {legenda && <span className="mr-auto text-[12.5px] whitespace-nowrap text-apagado">{legenda}</span>}
           {rodape}
         </div>

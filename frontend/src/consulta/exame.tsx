@@ -1,6 +1,6 @@
 // Página 1, coluna da direita: exame físico (fotos + campos da especialidade); exames complementares num painel por cima.
 import { useCallback, useRef, useState } from 'react'
-import { CampoLinha } from './campo-linha'
+import { CampoLinha, SEM_CORRETOR } from './campo-linha'
 import type { CampoExame, Complementar } from './exemplo'
 import type { Situacao } from './tipos'
 import { BotaoOficializar, Cartao, Gaveta, ROTULO } from './ui'
@@ -35,7 +35,14 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, situ
   const [observacoes, setObservacoes] = useState('')
   /** Enter encerra o campo e pula para o de baixo (o último só encerra) */
   const caixas = useRef<(HTMLInputElement | null)[]>([])
-  const proximo = (i: number) => { const el = caixas.current[i + 1]; if (el) el.focus(); else caixas.current[i]?.blur() }
+  /** campo aberto no editor de baixo (o último índice = Observações); null = nenhum (todos os campos à vista) */
+  const [ativo, setAtivo] = useState<number | null>(null)
+  const editor = useRef<HTMLTextAreaElement>(null)
+  /** Enter: guarda o que foi escrito e fecha o editor (todos os campos voltam); o próximo só abre se for clicado */
+  const fechar = () => { setAtivo(null); (document.activeElement as HTMLElement | null)?.blur() }
+  const nomes = [...campos.map((c) => c.rotulo), 'Observações']
+  const valorDe = (i: number) => (i === campos.length ? observacoes : valores[i])
+  const mudarObs = (v: string) => { setObservacoes(v); if (situacao !== 'revisado_medico') onEditar() }
 
   const mudar = (i: number, v: string) => {
     setValores((xs) => xs.map((x, j) => (j === i ? v : x)))
@@ -59,80 +66,71 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, situ
       rodape={<BotaoOficializar rotulo="Salvar exame físico" oficializado={oficializado} onClick={() => onOficializar([...campos.map((c, i) => ({ rotulo: c.rotulo, valor: valores[i] })), { rotulo: 'Observações', valor: observacoes }])} />}
     >
       <>
-          {fotoExemplo ? (
-            // com foto: a foto 1 grande, com as lesões marcadas pela IA; as demais ao lado
-            <div className="flex gap-2">
-              <div className="relative aspect-[2.8/1] min-w-0 flex-1 overflow-hidden bg-suave">
-                <div className="absolute inset-x-0 top-0 aspect-[1000/650] -translate-y-[12.6%]">
-                  <img src={fotoExemplo} alt="Foto 1 do exame" className="block size-full object-cover" />
-                  {marcas.map(([x, y], i) => (
-                    <i key={i} style={{ left: `${x}%`, top: `${y}%` }} title={`Lesão ${i + 1}`}
-                      className="absolute -mt-[10px] -ml-[10px] size-[20px] rounded-full! border-2 border-(--esp) bg-branco text-center text-[11px] leading-[16px] font-bold text-tinta not-italic">
-                      {i + 1}
-                    </i>
-                  ))}
-                </div>
-                <span className="absolute top-1 right-1 bg-tinta/80 px-1.5 py-0.5 text-[11px] font-semibold text-papel">Foto 1 · {marcas.length} lesões marcadas pela IA</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                {Array.from({ length: fotos - 1 }, (_, i) => (
-                  <span key={i} className="flex size-[36px] items-center justify-center bg-suave font-titulo text-[15px] font-semibold text-apagado" aria-label={`Foto ${i + 2}`}>{i + 2}</span>
-                ))}
-                <button type="button" onClick={() => onAviso('Fotos e câmera chegam numa próxima etapa.')} aria-label="Adicionar foto" className="flex size-[36px] items-center justify-center border-[1.5px] border-dashed border-(--esp-medio) text-[20px] text-apagado hover:border-tinta hover:text-tinta">+</button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {Array.from({ length: fotos }, (_, i) =>
-                i === 0 && fotoExemplo ? (
-                  <img key={i} src={fotoExemplo} alt="Foto 1 do exame" className="size-[58px] object-cover" />
-                ) : (
-                  <span key={i} className="flex size-[58px] items-center justify-center bg-suave font-titulo text-[20px] font-semibold text-apagado" aria-label={`Foto ${i + 1}`}>{i + 1}</span>
-                ),
-              )}
-              <button type="button" onClick={() => onAviso('Fotos e câmera chegam numa próxima etapa.')} className="flex size-[58px] flex-col items-center justify-center border-[1.5px] border-dashed border-(--esp-medio) text-[12px] font-semibold text-apagado hover:border-tinta hover:text-tinta">
-                <span className="text-[20px] leading-none">+</span>Foto
-              </button>
-            </div>
-          )}
+          <Fotos fotos={fotos} fotoExemplo={fotoExemplo} marcas={marcas} onAdicionar={() => onAviso('Fotos e câmera chegam numa próxima etapa.')} />
+          {/* editando um campo, os outros se recolhem; ao sair (clicar fora), todos voltam */}
+          <div className="flex min-h-0 flex-1 flex-col" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setAtivo(null) }}>
           <dl className="mt-2 space-y-[3px]">
             {campos.map((c, i) => {
               const ia = !mexidos[i] && !oficializado && !!c.valor
               return (
-                <div key={c.rotulo} className="grid grid-cols-[minmax(0,136px)_minmax(0,1fr)] items-start gap-3">
+                <div key={c.rotulo} className={`grid grid-cols-[minmax(0,136px)_minmax(0,1fr)] items-start gap-3 ${ativo !== null && ativo !== i ? 'hidden' : ''}`}>
                   <dt className="pt-[5px] text-[13px] font-semibold text-apagado">{c.rotulo}</dt>
                   <dd>
                     <CampoLinha
                       ref={(el) => { caixas.current[i] = el }}
                       value={valores[i]}
                       onChange={(e) => mudar(i, e.target.value)}
-                      onEnter={() => proximo(i)}
+                      onEnter={fechar}
+                      onFocus={() => setAtivo(i)}
                       aria-label={c.rotulo}
                       placeholder="Descreva"
                       caixa={CAIXA}
-                      className={`bg-branco focus:border-tinta focus:outline-none ${ia ? 'border-dashed border-(--esp-medio)' : 'border-linha'}`}
+                      className={`bg-branco focus:border-tinta focus:outline-none ${ativo === i ? 'border-tinta' : ia ? 'border-dashed border-(--esp-medio)' : 'border-linha'}`}
                     />
                   </dd>
                 </div>
               )
             })}
             {/* campo livre: acrescentar, observar, descrever sem depender da IA */}
-            <div className="grid grid-cols-[minmax(0,136px)_minmax(0,1fr)] items-start gap-3">
+            <div className={`grid grid-cols-[minmax(0,136px)_minmax(0,1fr)] items-start gap-3 ${ativo !== null && ativo !== campos.length ? 'hidden' : ''}`}>
               <dt className="pt-[5px] text-[13px] font-semibold text-apagado">Observações</dt>
               <dd>
                 <CampoLinha
                   ref={(el) => { caixas.current[campos.length] = el }}
                   value={observacoes}
-                  onChange={(e) => { setObservacoes(e.target.value); if (situacao !== 'revisado_medico') onEditar() }}
-                  onEnter={() => proximo(campos.length)}
+                  onChange={(e) => mudarObs(e.target.value)}
+                  onEnter={fechar}
+                  onFocus={() => setAtivo(campos.length)}
                   aria-label="Observações"
                   placeholder={temRascunho ? 'Acrescente o que quiser, com suas palavras' : 'Sem fotos ainda: descreva o exame aqui'}
                   caixa={CAIXA}
-                  className="border-linha bg-branco focus:border-tinta focus:outline-none"
+                  className={`bg-branco focus:border-tinta focus:outline-none ${ativo === campos.length ? 'border-tinta' : 'border-linha'}`}
                 />
               </dd>
             </div>
           </dl>
+          {/* editor: ao clicar num campo, o texto inteiro dele aparece aqui (quebrando linha) para editar sem perder a visão */}
+          {ativo !== null && (
+            <div className="mt-3 flex min-h-0 flex-1 flex-col">
+              <p className={ROTULO}>{nomes[ativo]}</p>
+              <textarea
+                ref={editor}
+                {...SEM_CORRETOR}
+                value={valorDe(ativo)}
+                onChange={(e) => (ativo === campos.length ? mudarObs(e.target.value) : mudar(ativo, e.target.value))}
+                onKeyDown={(e) => {
+                  // Enter guarda e fecha o editor
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  fechar()
+                }}
+                aria-label={`Editor: ${nomes[ativo]}`}
+                placeholder={ativo === campos.length ? 'Acrescente o que quiser, com suas palavras' : 'Descreva'}
+                className="mt-1 block min-h-[72px] w-full flex-1 resize-none border-[1.5px] border-tinta bg-branco px-3 py-2 text-[14.5px] leading-snug focus:outline-none"
+              />
+            </div>
+          )}
+          </div>
       </>
       {laudos && (
         <Gaveta titulo="Prints, arquivos, laudos" onFechar={fecharLaudos}>
@@ -140,6 +138,77 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, situ
         </Gaveta>
       )}
     </Cartao>
+  )
+}
+
+/**
+ * Fotos do exame: todas juntas no mesmo espaço (quanto mais fotos, menores). Um clique abre a foto para analisar
+ * (a 1 com as lesões marcadas pela IA); as outras ficam pequenas ao lado para trocar. Nada abre ao passar o mouse.
+ */
+function Fotos({ fotos, fotoExemplo, marcas, onAdicionar }: { fotos: number; fotoExemplo: string | null; marcas: [number, number][]; onAdicionar: () => void }) {
+  const [aberta, setAberta] = useState<number | null>(null)
+  const real = (i: number) => (i === 0 ? fotoExemplo : null)
+  const mais = (classe: string, comNome = true) => (
+    <button type="button" onClick={onAdicionar} aria-label="Adicionar foto"
+      className={`flex flex-col items-center justify-center border-[1.5px] border-dashed border-(--esp-medio) text-[12px] font-semibold text-apagado hover:border-tinta hover:text-tinta ${classe}`}>
+      <span className="text-[20px] leading-none">+</span>{comNome && 'Foto'}
+    </button>
+  )
+  if (fotos === 0) return <div className="flex">{mais('size-[58px]')}</div>
+
+  if (aberta === null) {
+    // todas juntas: a grade se ajusta ao número de fotos (+ o botão de adicionar) sem sair do espaço
+    const n = fotos + 1
+    const linhas = n <= 4 ? 1 : n <= 10 ? 2 : 3
+    const colunas = Math.ceil(n / linhas)
+    return (
+      // o quadro tem tamanho fixo (proporção da foto, no máximo 170 px de altura); a grade se encaixa dentro
+      <div className="relative aspect-[2.8/1] max-h-[170px]">
+      <div className="absolute inset-0 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${colunas}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${linhas}, minmax(0, 1fr))` }}>
+        {Array.from({ length: fotos }, (_, i) => (
+          <button key={i} type="button" onClick={() => setAberta(i)} aria-label={`Abrir foto ${i + 1}`} className="relative min-h-0 overflow-hidden bg-suave">
+            {real(i) ? <img src={real(i)!} alt="" className="block size-full object-cover" />
+              : <span className="flex size-full items-center justify-center font-titulo text-[20px] font-semibold text-apagado">{i + 1}</span>}
+            {real(i) && <span className="absolute top-1 left-1 bg-tinta/80 px-1.5 text-[11px] font-semibold text-papel">{i + 1}</span>}
+          </button>
+        ))}
+        {mais('min-h-0')}
+      </div>
+      </div>
+    )
+  }
+
+  const img = real(aberta)
+  return (
+    <div className="flex gap-2">
+      <div className="relative aspect-[2.8/1] max-h-[170px] min-w-0 flex-1 overflow-hidden bg-suave">
+        {img ? (
+          <div className="absolute inset-x-0 top-0 aspect-[1000/650] -translate-y-[12.6%]">
+            <img src={img} alt={`Foto ${aberta + 1} do exame`} className="block size-full object-cover" />
+            {marcas.map(([x, y], i) => (
+              <i key={i} style={{ left: `${x}%`, top: `${y}%` }} title={`Lesão ${i + 1}`}
+                className="absolute -mt-[10px] -ml-[10px] size-[20px] rounded-full! border-2 border-(--esp) bg-branco text-center text-[11px] leading-[16px] font-bold text-tinta not-italic">
+                {i + 1}
+              </i>
+            ))}
+          </div>
+        ) : (
+          <span className="flex size-full items-center justify-center font-titulo text-[28px] font-semibold text-apagado">Foto {aberta + 1}</span>
+        )}
+        <button type="button" onClick={() => setAberta(null)} className="absolute top-1 left-1 bg-tinta/80 px-1.5 py-0.5 text-[11px] font-semibold text-papel hover:bg-tinta">× Todas as fotos</button>
+        {img && marcas.length > 0 && <span className="absolute top-1 right-1 bg-tinta/80 px-1.5 py-0.5 text-[11px] font-semibold text-papel">Foto {aberta + 1} · {marcas.length} lesões marcadas pela IA</span>}
+      </div>
+      {/* as outras, pequenas ao lado: um clique troca a foto aberta */}
+      <div className="flex flex-col flex-wrap content-start gap-1">
+        {Array.from({ length: fotos }, (_, i) => i).filter((i) => i !== aberta).map((i) => (
+          <button key={i} type="button" onClick={() => setAberta(i)} aria-label={`Abrir foto ${i + 1}`}
+            className="flex size-[36px] items-center justify-center overflow-hidden bg-suave font-titulo text-[15px] font-semibold text-apagado hover:outline-[1.5px] hover:outline-tinta">
+            {real(i) ? <img src={real(i)!} alt="" className="block size-full object-cover" /> : i + 1}
+          </button>
+        ))}
+        {mais('size-[36px]', false)}
+      </div>
+    </div>
   )
 }
 

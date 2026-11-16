@@ -1,4 +1,6 @@
-// Página 1, coluna da esquerda: anamnese (gravar e escrever na mesma caixa), faltou perguntar e sinais de alerta.
+// Página 1, coluna da esquerda: anamnese (gravar e escrever na mesma caixa), perguntas e sinais de alerta.
+// Na anamnese só entra o que é transcrito ou escrito. Pergunta clicada = o médico vai perguntar (grava ou escreve a resposta).
+// Sinal de alerta: o médico pergunta e marca V ou F; V vai para a história clínica (não para a anamnese).
 import { useEffect, useRef, useState } from 'react'
 import type { Alerta, Fala } from './exemplo'
 import type { EstadoConsulta, RespostaAlerta, Situacao } from './tipos'
@@ -8,10 +10,10 @@ import { BotaoOficializar, Cartao, ROTULO } from './ui'
 /** Simulação: uma fala nova a cada 3 s de gravação. */
 const SEGUNDOS_POR_FALA = 3
 
-/** Respostas aos sinais de alerta: ícone no botão, significado na legenda do rodapé. */
+/** Respostas aos sinais de alerta: letra no botão, significado na legenda do rodapé. */
 const RESPOSTAS = [
-  { id: 'avaliado', icone: '☑', nome: 'Avaliado' },
-  { id: 'nao-se-aplica', icone: '⊘', nome: 'Não se aplica' },
+  { id: 'v', icone: 'V', nome: 'Sim' },
+  { id: 'f', icone: 'F', nome: 'Não' },
 ] as const
 
 type Props = {
@@ -87,7 +89,7 @@ export function Anamnese({ falas, faltouPerguntar, alertas, respostas, situacao,
           </button>
         </div>
       }
-      legenda={alertas.length > 0 && RESPOSTAS.map((x) => `${x.icone} ${x.nome}`).join(' · ')}
+      legenda={alertas.length > 0 && RESPOSTAS.map((x) => `${x.icone} = ${x.nome.toLowerCase()}`).join(" · ")}
       rodape={
         <BotaoOficializar
           rotulo="Salvar anamnese"
@@ -117,7 +119,7 @@ export function Anamnese({ falas, faltouPerguntar, alertas, respostas, situacao,
 
       {faltouPerguntar.length > 0 && (
         <div className="mt-3">
-          <p className={ROTULO}>Faltou perguntar</p>
+          <p className={ROTULO}>Perguntas</p>
           <div className="mt-1 flex flex-col items-start gap-1">
             {faltouPerguntar.map((q) => {
               const feito = perguntado.includes(q)
@@ -145,7 +147,7 @@ export function Anamnese({ falas, faltouPerguntar, alertas, respostas, situacao,
                 <span className="flex shrink-0 gap-1">
                   {RESPOSTAS.map((op) => (
                     <button key={op.id} type="button" onClick={() => { if (r !== op.id) { onResponder(a.id, op.id); mudou() } }} aria-pressed={r === op.id} aria-label={op.nome} title={op.nome}
-                      className={`size-7 text-[17px] leading-none ${r === op.id ? 'bg-tinta text-papel' : 'hover:bg-suave'}`}>
+                      className={`size-7 text-[15px] font-bold leading-none ${r === op.id ? 'bg-tinta text-papel' : 'text-tinta hover:bg-suave'}`}>
                       {op.icone}
                     </button>
                   ))}

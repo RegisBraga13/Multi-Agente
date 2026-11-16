@@ -47,9 +47,9 @@ describe('etapas da consulta', () => {
   it('conta os sinais de alerta sem resposta', () => {
     let e = inicial(['a', 'b'])
     expect(pendenciasAnamnese(e)).toBe(2)
-    e = responderAlerta(e, 'a', 'nao-se-aplica')
+    e = responderAlerta(e, 'a', 'f')
     expect(pendenciasAnamnese(e)).toBe(1)
-    e = responderAlerta(e, 'b', 'avaliado')
+    e = responderAlerta(e, 'b', 'v')
     expect(pendenciasAnamnese(e)).toBe(0)
   })
 })

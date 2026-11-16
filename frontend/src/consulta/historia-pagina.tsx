@@ -1,18 +1,20 @@
 // Página 2: história clínica. A IA "escreve ao vivo" o rascunho, seção por seção, no ritmo da landing
 // (3 letras a cada 33 ms, cursor piscando). Numa atualização, só as seções que mudaram são reescritas.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { TextoCrescente } from '../medico/texto-crescente'
 import type { SecaoHistoria } from './historia'
 import type { Situacao } from './tipos'
 import { SEM_CORRETOR } from './campo-linha'
+import { useEscrita } from './escrita'
 import { BotaoOficializar, Cartao } from './ui'
 
-/** Ritmo da landing (index.html, iniciaHist): 3 caracteres a cada 33 ms. */
-const LETRAS_POR_PASSO = 3
-const MS_POR_PASSO = 33
+// cores e medidas do cartão da história na landing (fundo verde-acinzentado, rótulos escuros, texto corrido)
+const ROTULO_SECAO = 'text-[10.5px] font-bold tracking-[0.14em] text-historia-rotulo uppercase'
+const TEXTO = 'text-[14.5px] leading-[1.4] text-tinta'
 
-const ROTULO_SECAO = 'text-[11px] font-bold tracking-[0.14em] text-(--esp) uppercase'
-const CAIXA = 'block w-full border-[1.5px] bg-branco px-2.5 py-1 text-[14.5px] leading-snug'
+/** Simulação do ditado: uma frase nova a cada 3 s, no fim da seção onde está o cursor. */
+const FRASES_DITADAS = ['Nega outras queixas.', 'Orientado sobre os achados do exame.', 'Sem outras alterações relatadas.']
+const SEGUNDOS_POR_FRASE = 3
 
 type Props = {
   /** o que a IA gerou nesta versão (rótulo + texto) */
@@ -25,6 +27,9 @@ type Props = {
   sugestoes: (string | null)[]
   /** primeira montagem (tudo novo) ou atualização */
   primeira: boolean
+  /** falso quando esta versão já foi escrita (voltando de outra etapa): mostra pronta */
+  animar: boolean
+  onEscrito: () => void
   situacao: Situacao
   podeSalvar: boolean
   onMudar: (i: number, texto: string) => void
@@ -33,31 +38,37 @@ type Props = {
   onSalvar: () => void
 }
 
-export function PaginaHistoria({ secoes, textos, mudou, sugestoes, primeira, situacao, podeSalvar, onMudar, onDecidir, onSalvar }: Props) {
-  const reduz = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+export function PaginaHistoria({ secoes, textos, mudou, sugestoes, primeira, animar, onEscrito, situacao, podeSalvar, onMudar, onDecidir, onSalvar }: Props) {
   // só as seções que mudaram são escritas, na ordem; k = posição na fila, n = letras já escritas
   const [fila] = useState(() => secoes.map((_, i) => i).filter((i) => mudou[i]))
-  const [pos, setPos] = useState(() => ({ k: reduz ? fila.length : 0, n: 0 }))
-  const [mexidos, setMexidos] = useState<boolean[]>(() => secoes.map(() => false))
-  const escrevendo = pos.k < fila.length
+  const [textosFila] = useState(() => fila.map((i) => secoes[i].texto))
+  const pos = useEscrita(textosFila, animar, onEscrito)
+  const { escrevendo } = pos
   const atual = escrevendo ? fila[pos.k] : -1
+  /** o médico mexeu no texto que a IA escreveu */
+  const mexidos = textos.map((t, i) => t !== secoes[i].texto)
   const salvo = situacao === 'oficializado'
   const pendentes = sugestoes.filter(Boolean).length
   /** o aviso de sugestões pendentes só aparece depois de tentar salvar */
   const [tentou, setTentou] = useState(false)
 
-  useEffect(() => {
-    if (!escrevendo) return
-    const t = setTimeout(() => {
-      setPos(({ k, n }) => (n + LETRAS_POR_PASSO >= secoes[fila[k]].texto.length ? { k: k + 1, n: 0 } : { k, n: n + LETRAS_POR_PASSO }))
-    }, MS_POR_PASSO)
-    return () => clearTimeout(t)
-  }, [pos, escrevendo, secoes, fila])
+  const mudar = (i: number, v: string) => onMudar(i, v)
 
-  const mudar = (i: number, v: string) => {
-    setMexidos((xs) => xs.map((x, j) => (j === i ? true : x)))
-    onMudar(i, v)
-  }
+  // o médico acrescenta por voz: o ditado entra no fim da seção onde ele clicou por último (começa na HDA)
+  const [ditando, setDitando] = useState(false)
+  const [onde, setOnde] = useState(2)
+  const proximaFrase = useRef(0)
+  const ultimo = useRef({ textos, onde, onMudar })
+  useEffect(() => { ultimo.current = { textos, onde, onMudar } })
+  useEffect(() => {
+    if (!ditando) return
+    const t = setInterval(() => {
+      if (proximaFrase.current >= FRASES_DITADAS.length) { setDitando(false); return }
+      const { textos: xs, onde: i, onMudar: mudarSecao } = ultimo.current
+      mudarSecao(i, `${xs[i].trimEnd()} ${FRASES_DITADAS[proximaFrase.current++]}`)
+    }, SEGUNDOS_POR_FRASE * 1000)
+    return () => clearInterval(t)
+  }, [ditando])
 
   const atualizadas = mudou.filter(Boolean).length
   const aviso = escrevendo
@@ -69,7 +80,19 @@ export function PaginaHistoria({ secoes, textos, mudou, sugestoes, primeira, sit
   return (
     <Cartao
       titulo="História clínica"
-      cabecalho={<p className="flex-1 text-center text-[13.5px] text-apagado">{aviso}</p>}
+      fundo="bg-historia"
+      linha="border-historia-borda"
+      cabecalho={
+        <div className="flex flex-1 items-center gap-3">
+          <button type="button" disabled={escrevendo} onClick={() => setDitando((d) => !d)} aria-pressed={ditando}
+            className="flex items-center gap-2 bg-tinta px-3 py-1.5 text-[14px] font-bold text-papel disabled:opacity-40">
+            <span className={`text-[11px] ${ditando ? 'animate-pulse text-alerta-clinico' : ''}`}>●</span>
+            {ditando ? 'Pausar' : 'Ditar'}
+          </button>
+          <p className="flex-1 text-center text-[13.5px] text-tinta">{ditando ? `Ditando em ${secoes[onde].rotulo}…` : aviso}</p>
+        </div>
+      }
+      legenda="Parte só da anamnese e do exame físico salvos"
       rodape={
         <BotaoOficializar
           rotulo="Salvar história"
@@ -80,39 +103,41 @@ export function PaginaHistoria({ secoes, textos, mudou, sugestoes, primeira, sit
         />
       }
     >
-      <div className="grid gap-x-5 gap-y-2.5 lg:grid-cols-2" aria-busy={escrevendo}>
+      {/* como na landing: um quadro só, texto corrido, seções uma embaixo da outra (editor; sem tracejado) */}
+      <div className="flex flex-col gap-1.5 border-[1.5px] border-historia-borda px-4 py-2.5" aria-busy={escrevendo}>
         {secoes.map((s, i) => {
           const naFila = fila.indexOf(i)
           const esperando = escrevendo && naFila > pos.k // ainda vai ser escrita
           const digitando = i === atual
-          const novo = mudou[i] && !mexidos[i] && !salvo
           return (
             <div key={s.rotulo} className={esperando && primeira ? 'invisible' : ''}>
               <p className={ROTULO_SECAO}>
                 {s.rotulo}
-                {!primeira && mudou[i] && !mexidos[i] && !digitando && !esperando && <span className="ml-2 border border-(--esp) px-1 py-px text-[10px] tracking-[0.08em]">Atualizado</span>}
+                {!primeira && mudou[i] && !mexidos[i] && !digitando && !esperando && <span className="ml-2 border border-historia-rotulo px-1 py-px text-[9.5px] tracking-[0.08em]">Atualizado</span>}
               </p>
               {digitando || esperando ? (
                 // durante a escrita: o resto do texto fica invisível, reservando o espaço (nada "pula")
-                <p className={`${CAIXA} mt-0.5 border-dashed border-(--esp-medio) whitespace-pre-line`} aria-hidden>
+                <p className={`${TEXTO} whitespace-pre-line`} aria-hidden>
                   <span>{digitando ? s.texto.slice(0, pos.n) : ''}</span>
-                  {digitando && <span className="ml-px inline-block h-[1em] w-0.5 animate-pulse bg-(--esp) align-[-2px]" />}
+                  {digitando && <span className="ml-px inline-block h-[1em] w-0.5 animate-pulse bg-tinta align-[-2px]" />}
                   <span className="invisible">{digitando ? s.texto.slice(pos.n) : s.texto}</span>
                 </p>
               ) : (
-                <div className={sugestoes[i] ? 'mt-0.5 grid grid-cols-2 gap-2' : 'mt-0.5'}>
+                <div className={sugestoes[i] ? 'grid grid-cols-2 gap-3' : ''}>
+                  {/* o texto é editável ali mesmo, como um documento */}
                   <TextoCrescente
                     {...SEM_CORRETOR}
                     value={textos[i]}
                     onChange={(e) => mudar(i, e.target.value)}
                     aria-label={s.rotulo}
-                    className={`${CAIXA} focus:border-tinta focus:outline-none ${novo ? 'border-dashed border-(--esp-medio)' : 'border-linha'}`}
+                    onFocus={() => setOnde(i)}
+                    className={`${TEXTO} -mx-1 block w-[calc(100%+0.5rem)] bg-transparent px-1 hover:bg-branco/35 focus:bg-branco/60 focus:outline-none`}
                   />
                   {sugestoes[i] && (
                     // seção que você tinha editado: a IA não sobrescreve, sugere ao lado
-                    <div className="flex flex-col border-[1.5px] border-dashed border-(--esp-medio) bg-(--esp-claro) px-2.5 py-1 text-[14px] leading-snug" aria-label={`Sugestão da IA para ${s.rotulo}`}>
-                      <p className="text-[10px] font-bold tracking-[0.12em] text-(--esp) uppercase">Sugestão da IA</p>
-                      <p className="flex-1">{sugestoes[i]}</p>
+                    <div className="flex flex-col border-[1.5px] border-historia-borda bg-branco/60 px-2.5 py-1 text-[14px] leading-snug" aria-label={`Sugestão da IA para ${s.rotulo}`}>
+                      <p className="text-[10px] font-bold tracking-[0.12em] text-historia-rotulo uppercase">Sugestão da IA</p>
+                      <p className="flex-1 whitespace-pre-line">{sugestoes[i]}</p>
                       <p className="mt-1 flex gap-1.5">
                         <button type="button" onClick={() => onDecidir(i, true)} className="bg-tinta px-2 py-0.5 text-[12.5px] font-bold text-papel">Aceitar</button>
                         <button type="button" onClick={() => onDecidir(i, false)} className="border border-tinta px-2 py-0.5 text-[12.5px] font-bold hover:bg-branco">Manter o meu</button>

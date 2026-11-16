@@ -18,6 +18,10 @@
   --color-alerta: #C2301C;
   /* alergias e sinais de alerta clínicos: o mesmo --alerta da landing, em bloco cheio com texto branco */
   --color-alerta-clinico: #A34634;
+  /* cartão da história clínica (landing: #7F9C9B a 50% no branco; borda e rótulos) */
+  --color-historia: #BFCECD;
+  --color-historia-borda: #6F8E8D;
+  --color-historia-rotulo: #0E2423;
 
   /* as 10 cores do logo, na ordem das letras */
   --color-l1: #8E3B5C;

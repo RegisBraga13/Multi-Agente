@@ -21,7 +21,8 @@ export type Extraido<T> =
   | { status: 'INFERRED'; valor: T; origem: string; aviso: string }
   | { status: 'MISSING'; valor: null }
 
-export type RespostaAlerta = 'avaliado' | 'nao-se-aplica'
+/** o médico pergunta e marca: V = sim (entra na história clínica), F = não */
+export type RespostaAlerta = 'v' | 'f'
 
 export type EstadoConsulta = {
   blocos: Record<Bloco, { estado: Estado; desatualizado: boolean }>

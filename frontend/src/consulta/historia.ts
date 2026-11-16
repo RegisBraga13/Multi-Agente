@@ -2,7 +2,8 @@
 // Simulação da IA: organiza o que foi salvo em seções, como na landing.
 import { idade } from '../modulo/dia'
 import type { Atendimento } from '../modulo/tipos'
-import type { Complementar } from './exemplo'
+import { minuscula, type Complementar, type Fala } from './exemplo'
+import type { RespostaAlerta } from './tipos'
 
 export type SecaoHistoria = { rotulo: string; texto: string }
 
@@ -26,42 +27,87 @@ export function atualizarHistoria(
   }
 }
 
+/** O que a IA sabe da anamnese salva além do texto: como escrever cada fala e os sinais de alerta respondidos. */
+export type ContextoHistoria = { falas: Fala[]; sinais: { texto: string; resposta: RespostaAlerta | null }[] }
+
+const ponto = (x: string) => (/[.!?:]$/.test(x.trim()) ? x.trim() : `${x.trim()}.`)
+const maiuscula = (x: string) => x.charAt(0).toUpperCase() + x.slice(1)
+/** ['a','b','c'] → 'a, b e c' */
+const lista = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} e ${xs[xs.length - 1]}`)
+
+/** História da doença atual, em linguagem médica corrida (como na landing), a partir das falas do paciente. */
+function hda(anamnese: string, idadeAnos: number, falas: Fala[]): string {
+  const linhas = anamnese.split('\n').map((l) => l.trim()).filter(Boolean)
+  // anamnese escrita à mão (sem falas): o texto do médico entra inteiro
+  if (!linhas.some((l) => /^(Médico|Paciente):/.test(l))) return linhas.join(' ') || 'Não registrada.'
+  const comoEscrever = new Map(falas.filter((f) => f.quem === 'Paciente' && f.clinico !== undefined).map((f) => [f.texto, f.clinico!]))
+  const partes = linhas
+    .filter((l) => l.startsWith('Paciente:'))
+    .map((l) => l.slice('Paciente:'.length).trim())
+    // fala conhecida → como a IA escreve; fala nova (fora do roteiro) → entra como relato
+    .map((t) => (comoEscrever.has(t) ? comoEscrever.get(t)! : `Relata: ${t}`))
+    .filter(Boolean)
+  if (!partes.length) return 'Não registrada.'
+  const [primeira, ...resto] = partes
+  const inicio = primeira.startsWith('refere ') ? ponto(`Paciente de ${idadeAnos} anos ${primeira}`) : `Paciente de ${idadeAnos} anos. ${ponto(maiuscula(primeira))}`
+  return [inicio, ...resto.map((x) => ponto(maiuscula(x)))].join(' ')
+}
+
+/** Exame físico em texto corrido: "Morfologia em localização. Extensão. Achados. Gravidade estimada: x." + observações. */
+function exameFisico(exame: { rotulo: string; valor: string }[]): string {
+  const v = (r: string) => exame.find((x) => x.rotulo === r)?.valor.trim().replace(/\.$/, '') ?? ''
+  const conhecidos = ['Morfologia', 'Localização', 'Extensão', 'Gravidade estimada', 'Achados associados', 'Observações']
+  const [morf, loc, ext, grav, ach, obs] = conhecidos.map(v)
+  const frases = [
+    morf ? `${morf}${loc ? ` em ${minuscula(loc)}` : ''}` : loc ? `Localização: ${minuscula(loc)}` : '',
+    ext,
+    ach,
+    grav ? `Gravidade estimada: ${minuscula(grav)}` : '',
+    ...exame.filter((x) => !conhecidos.includes(x.rotulo) && x.valor.trim()).map((x) => `${x.rotulo}: ${x.valor.trim()}`),
+    obs,
+  ].filter(Boolean)
+  return frases.length ? frases.map(ponto).join(' ') : 'Não registrado.'
+}
+
 export function montarHistoria(
   at: Atendimento,
   agora: Date,
   anamnese: string,
   exame: { rotulo: string; valor: string }[],
   complementares: Complementar[],
+  contexto: ContextoHistoria = { falas: [], sinais: [] },
 ): SecaoHistoria[] {
   const f = at.ficha
   const pronta = f.situacao === 'pronta' ? f : null
+  const anos = idade(at.paciente.nascimento, agora)
 
-  // história atual: as falas do paciente; anamnese escrita à mão (sem falas) entra inteira
-  const linhas = anamnese.split('\n').map((l) => l.trim()).filter(Boolean)
-  const falasPaciente = linhas.filter((l) => l.startsWith('Paciente:')).map((l) => l.slice('Paciente:'.length).trim())
-  const temFalas = linhas.some((l) => /^(Médico|Paciente):/.test(l))
-  const hda = (temFalas ? falasPaciente.join(' ') : linhas.join(' ')) || 'Não registrada.'
+  // sinal de alerta marcado V entra na história; F (ou sem resposta) não entra
+  const sinais = contexto.sinais.filter((x) => x.resposta === 'v').map((x) => `Alerta: ${minuscula(x.texto)}.`)
+  const antecedentes = (pronta
+    ? [
+        !pronta.antecedentes.length && !pronta.emUso.length ? 'Nega comorbidades e uso contínuo de medicações.'
+          : [
+              pronta.antecedentes.length ? ponto(maiuscula(lista(pronta.antecedentes.map((x) => x.toLowerCase())))) : 'Nega comorbidades.',
+              pronta.emUso.length ? `Em uso de ${lista(pronta.emUso.map(minuscula))}.` : 'Nega uso contínuo de medicações.',
+            ].join(' '),
+        pronta.alergias.length ? pronta.alergias.map((a) => `Alergia a ${a.substancia.toLowerCase()} (${a.reacao}).`).join(' ') : 'Nega alergias.',
+        ...sinais,
+      ]
+    : ['Ficha da pré-consulta não preenchida.', ...sinais]).join(' ')
 
-  const antecedentes = [
-    pronta?.antecedentes.length ? `Antecedentes: ${pronta.antecedentes.join(', ')}.` : '',
-    pronta?.emUso.length ? `Em uso: ${pronta.emUso.join(', ')}.` : '',
-    ...(pronta?.alergias ?? []).map((a) => `Alergia: ${a.substancia.toLowerCase()} (${a.reacao}).`),
-  ].filter(Boolean).join(' ') || 'Nada relatado.'
-
-  const ef = exame.filter((x) => x.valor.trim()).map((x) => `${x.rotulo}: ${x.valor.trim()}`).join('. ')
-
+  // como na landing: exame de laboratório, um resultado por linha; outro laudo (biópsia...) numa linha só
+  const item = (i: Complementar['itens'][number]) =>
+    `${i.nome}: ${i.v.status === 'MISSING' ? 'não encontrado no laudo' : `${i.v.valor}${i.v.status === 'INFERRED' ? ' (conferir no laudo)' : ''}`}`
   const exames = complementares.length
-    ? complementares.map((c) => `${c.exame}, ${c.data}: ` + c.itens.map((i) =>
-        i.v.status === 'MISSING' ? `${i.nome}: não encontrado no laudo` : `${i.nome}: ${i.v.valor}${i.v.status === 'INFERRED' ? ' (conferir no laudo)' : ''}`,
-      ).join('; ') + '.').join(' ')
+    ? complementares.flatMap((c) => (/laborat/i.test(c.exame) ? c.itens.map((i) => `${item(i)}.`) : [`${c.exame}: ${c.itens.map(item).join('; ')}.`])).join('\n')
     : 'Nenhum exame trazido.'
 
   return [
-    { rotulo: 'Identificação', texto: `${at.paciente.nome} · ${idade(at.paciente.nascimento, agora)} anos · ${at.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · ${at.modalidade === 'online' ? 'Online' : 'Presencial'}` },
+    { rotulo: 'Identificação', texto: `${at.paciente.nome}, ${anos} anos · ${at.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · ${at.modalidade === 'online' ? 'Online' : 'Presencial'}` },
     { rotulo: 'Queixa principal', texto: pronta?.queixa || 'Não registrada na ficha.' },
-    { rotulo: 'História da doença atual', texto: hda },
+    { rotulo: 'História da doença atual', texto: hda(anamnese, anos, contexto.falas) },
     { rotulo: 'Antecedentes e alertas', texto: antecedentes },
-    { rotulo: 'Exame físico', texto: ef ? `${ef}.` : 'Não registrado.' },
+    { rotulo: 'Exame físico', texto: exameFisico(exame) },
     { rotulo: 'Exames complementares', texto: exames },
   ]
 }
