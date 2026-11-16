@@ -4,9 +4,9 @@ import { buscarEspecialidade, type Especialidade } from '../especialidades'
 import { NomeModulo } from '../marca'
 import { NaoEncontrada } from '../nao-encontrada'
 import { dataLocal, MEDICO_EXEMPLO } from '../medico/exemplo'
-import { dataPorExtenso, idade, proximoPaciente, somarDias } from './dia'
-import { agendaDoDia } from './exemplo'
+import { dataPorExtenso, idade, somarDias } from './dia'
 import type { Atendimento } from './tipos'
+import { useAgora, vistaDoDia } from './vista'
 
 export function PaginaInicialModulo() {
   const { slug = '' } = useParams()
@@ -20,15 +20,12 @@ export function PaginaInicialModulo() {
 const COLUNAS = 'grid grid-cols-[50px_minmax(0,1fr)] items-baseline gap-x-3 md:grid-cols-[50px_minmax(0,1fr)_84px_82px_118px] md:items-center md:gap-y-0 lg:grid-cols-[64px_minmax(0,1fr)_96px_100px_132px] lg:gap-4'
 
 function Pagina({ esp }: { esp: Especialidade }) {
-  const agora = new Date()
-  const hoje = dataLocal(agora)
-  const [dia, setDia] = useState(hoje)
+  const agora = useAgora()
+  const [dia, setDia] = useState(() => dataLocal(new Date()))
   const [aviso, setAviso] = useState<string | null>(null)
   const medico = MEDICO_EXEMPLO
 
-  const lista = useMemo(() => agendaDoDia(dia, new Date()), [dia])
-  const proximo = proximoPaciente(lista, dia === hoje)
-  const atendidos = lista.filter((x) => x.atendido).length
+  const { hoje, lista, proximo, atendidos } = useMemo(() => vistaDoDia(dia, agora), [dia, agora])
 
   useEffect(() => {
     document.title = `${esp.raiz}IA · Agenda`
