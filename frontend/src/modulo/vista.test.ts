@@ -14,10 +14,14 @@ describe('vistaDoDia', () => {
     expect(v.atendidos).toBe(v.lista.length)
   })
 
-  it('conta as fichas prontas e as que faltam', () => {
-    const v = vistaDoDia('2026-11-16', new Date(2026, 10, 16, 8, 0))
-    expect(v.fichasProntas + v.semFicha).toBe(v.lista.length)
-    expect(v.fichasProntas).toBe(v.lista.filter((x) => x.ficha.situacao === 'pronta').length)
+  it('conta as fichas só de quem ainda vai ser atendido (muda a cada atendimento)', () => {
+    const cedo = vistaDoDia('2026-11-16', new Date(2026, 10, 16, 7, 0))
+    expect(cedo.fichasProntas + cedo.semFicha).toBe(cedo.lista.length)
+    const tarde = vistaDoDia('2026-11-16', new Date(2026, 10, 16, 14, 30))
+    const aSeguir = tarde.lista.filter((x) => !x.atendido)
+    expect(tarde.fichasProntas).toBe(aSeguir.filter((x) => x.ficha.situacao === 'pronta').length)
+    expect(tarde.fichasProntas + tarde.semFicha).toBe(aSeguir.length)
+    expect(tarde.fichasProntas).toBeLessThan(cedo.fichasProntas)
   })
 
   it('domingo vazio', () => {

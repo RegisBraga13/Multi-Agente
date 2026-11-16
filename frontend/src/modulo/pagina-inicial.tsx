@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
 import { buscarEspecialidade, type Especialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
@@ -10,6 +10,9 @@ import { useAgora, vistaDoDia } from './vista'
 
 /** Quantos pacientes o cartão "Hoje" mostra, para a página caber numa tela (~690 px). */
 const MAX_HOJE = 5
+
+/** Altura dos três cartões e do cartão de fichas (ficam iguais). */
+const ALTURA_CARTAO = 'h-[68px]'
 
 export function PaginaInicialModulo() {
   const { slug = '' } = useParams()
@@ -49,6 +52,28 @@ function Pagina({ esp }: { esp: Especialidade }) {
     return () => clearTimeout(t)
   }, [aviso])
 
+  // Conteúdo centralizado na altura. A posição é calculada com a ficha fechada e mantida ao abrir,
+  // para o bloco não "pular"; só sobe se a ficha aberta não couber.
+  const topo = useRef<HTMLElement>(null)
+  const rodape = useRef<HTMLElement>(null)
+  const bloco = useRef<HTMLDivElement>(null)
+  const guardado = useRef(0)
+  const [margem, setMargem] = useState(0)
+  const aberto = escolhido !== null
+  useLayoutEffect(() => {
+    const calcular = () => {
+      if (!topo.current || !rodape.current || !bloco.current) return
+      const livre = window.innerHeight - topo.current.offsetHeight - rodape.current.offsetHeight - bloco.current.offsetHeight - ESPACO_MAIN
+      if (!aberto) guardado.current = Math.max(0, livre / 2)
+      setMargem(aberto ? Math.max(0, Math.min(guardado.current, livre)) : guardado.current)
+    }
+    calcular()
+    const obs = new ResizeObserver(calcular)
+    if (bloco.current) obs.observe(bloco.current)
+    window.addEventListener('resize', calcular)
+    return () => { obs.disconnect(); window.removeEventListener('resize', calcular) }
+  }, [aberto, vista])
+
   const painel = escolhido ? (
     <PainelFicha at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => setAviso('O prontuário é uma das próximas etapas do módulo.')} />
   ) : (
@@ -56,18 +81,15 @@ function Pagina({ esp }: { esp: Especialidade }) {
   )
 
   return (
-    <div style={{ '--esp': esp.cor } as CSSProperties} className="min-h-screen bg-papel bg-[url(/papel.png)] bg-size-[512px]">
-      <header className="mx-auto flex max-w-6xl items-center gap-3 px-4 pt-3 sm:px-6">
-        <a href="#" className="flex items-baseline gap-2.5 no-underline" aria-label={`${esp.raiz}IA, início`}>
-          <Marca className="text-[20px]" />
-          <NomeModulo esp={esp} className="text-[24px]" />
+    <div style={{ '--esp': esp.cor } as CSSProperties} className="flex min-h-screen flex-col bg-papel bg-[url(/papel.png)] bg-size-[512px]">
+      <header ref={topo} className="mx-auto w-full max-w-6xl px-4 pt-2.5 sm:px-6">
+        <a href="#" className="no-underline" aria-label={`${esp.raiz}IA, início`}>
+          <NomeModulo esp={esp} className="text-[26px]" />
         </a>
-        <span className="ml-auto grid size-10 place-items-center bg-tinta text-[14px] font-bold text-papel" title={`${medico.tratamento} ${medico.nome}`} aria-hidden="true">
-          {iniciais(medico.nome)}
-        </span>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 pt-3 pb-8 sm:px-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-3 sm:px-6">
+        <div ref={bloco} style={{ marginTop: margem }}>
         {vista === 'inicio' ? (
           <>
             <p className="text-[12px] font-bold tracking-[0.12em] text-apagado uppercase">
@@ -82,25 +104,31 @@ function Pagina({ esp }: { esp: Especialidade }) {
             </Grade>
           </>
         ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <a href="#" className="text-[15px] font-semibold underline decoration-linha underline-offset-4 hover:text-(--esp)">← Início</a>
-              <h1 className="text-[clamp(26px,3vw,34px)] leading-tight font-semibold">Agenda</h1>
-              <nav aria-label="Dia da agenda" className="ml-auto flex items-center gap-1">
-                {!doDia.ehHoje && (
-                  <button type="button" onClick={() => setDia(deHoje.hoje)} className="mr-2 border-[1.5px] border-linha bg-branco px-3 py-1.5 text-[14px] font-semibold hover:border-tinta">Hoje</button>
-                )}
-                <button type="button" onClick={() => setDia(somarDias(dia, -1))} aria-label="Dia anterior" className="px-2.5 py-1 text-[22px] leading-none hover:text-(--esp)">‹</button>
-                <span className="min-w-[200px] text-center text-[16px] font-semibold" aria-live="polite">{dataPorExtenso(dia)}</span>
-                <button type="button" onClick={() => setDia(somarDias(dia, 1))} aria-label="Dia seguinte" className="px-2.5 py-1 text-[22px] leading-none hover:text-(--esp)">›</button>
-              </nav>
-            </div>
-            <Grade lado={painel}>
-              <ListaDoDia vista={doDia} selecionado={selecionado} onSelecionar={setSelecionado} />
-            </Grade>
-          </>
+          // agenda do dia inteiro: a troca de dia fica no cabeçalho do próprio cartão (não sobra linha a mais)
+          <Grade lado={painel} semMargem>
+            <ListaDoDia
+              vista={doDia}
+              selecionado={selecionado}
+              onSelecionar={setSelecionado}
+              cabecalho={
+                <nav aria-label="Dia da agenda" className="flex items-center gap-1">
+                  <button type="button" onClick={() => setDia(somarDias(dia, -1))} aria-label="Dia anterior" className="-ml-2 px-2 py-1 text-[22px] leading-none hover:text-(--esp)">‹</button>
+                  <h1 className="min-w-[230px] text-center text-[20px] font-semibold" aria-live="polite">{dataPorExtenso(dia)}</h1>
+                  <button type="button" onClick={() => setDia(somarDias(dia, 1))} aria-label="Dia seguinte" className="px-2 py-1 text-[22px] leading-none hover:text-(--esp)">›</button>
+                  {!doDia.ehHoje && (
+                    <button type="button" onClick={() => setDia(deHoje.hoje)} className="ml-2 border-[1.5px] border-linha px-2.5 py-1 text-[13px] font-semibold hover:border-tinta">Hoje</button>
+                  )}
+                </nav>
+              }
+            />
+          </Grade>
         )}
+        </div>
       </main>
+
+      <footer ref={rodape} className="py-3 text-center">
+        <Marca className="text-[17px]" />
+      </footer>
 
       <div role="status" className="pointer-events-none fixed inset-x-0 bottom-6 flex justify-center px-4">
         {aviso && <p className="bg-tinta px-5 py-3 text-[15px] font-medium text-papel shadow-lg">{aviso}</p>}
@@ -109,15 +137,13 @@ function Pagina({ esp }: { esp: Especialidade }) {
   )
 }
 
-function iniciais(nome: string): string {
-  const partes = nome.trim().split(/\s+/)
-  return (partes[0][0] + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase()
-}
+/** py-3 do <main> (em cima e embaixo). */
+const ESPACO_MAIN = 24
 
 /** Lista à esquerda, painel à direita; os dois com a mesma altura (alinhados no topo e na base). */
-function Grade({ lado, children }: { lado: ReactNode; children: ReactNode }) {
+function Grade({ lado, children, semMargem = false }: { lado: ReactNode; children: ReactNode; semMargem?: boolean }) {
   return (
-    <div className="mt-4 grid gap-5 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className={`${semMargem ? '' : 'mt-4'} grid gap-5 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_300px]`}>
       {children}
       {lado}
     </div>
@@ -125,30 +151,29 @@ function Grade({ lado, children }: { lado: ReactNode; children: ReactNode }) {
 }
 
 const CARTOES = [
-  { n: '01', rotulo: 'Nova', titulo: 'Consulta', texto: 'Iniciar uma consulta nova', estilo: 'bg-petroleo text-papel' },
-  { n: '02', rotulo: 'Evolução', titulo: 'Retorno', texto: 'Evolução de uma consulta', estilo: 'bg-[color-mix(in_oklab,var(--esp)_55%,var(--color-papel))] text-tinta' },
-  { n: '03', rotulo: 'Histórico', titulo: 'Prontuário', texto: 'Abrir o histórico de um paciente', estilo: 'bg-(--esp) text-papel' },
+  { titulo: 'Consulta', estilo: 'bg-petroleo text-papel' },
+  { titulo: 'Retorno', estilo: 'bg-[color-mix(in_oklab,var(--esp)_55%,var(--color-papel))] text-tinta' },
+  { titulo: 'Prontuário', estilo: 'bg-(--esp) text-papel' },
 ] as const
 
 function Cartoes({ onEscolher }: { onEscolher: (titulo: string) => void }) {
   return (
     <div className="mt-4 grid gap-4 sm:grid-cols-3">
       {CARTOES.map((c) => (
-        <button key={c.n} type="button" onClick={() => onEscolher(c.titulo)} className={`flex flex-col px-5 py-3.5 text-left transition hover:-translate-y-0.5 ${c.estilo}`}>
-          <span className="text-[11px] font-bold tracking-[0.14em] uppercase opacity-85">{c.n} · {c.rotulo}</span>
-          <span className="mt-3 font-titulo text-[30px] leading-none font-semibold">{c.titulo}</span>
-          <span className="mt-1.5 text-[14px] opacity-90">{c.texto}</span>
+        <button key={c.titulo} type="button" onClick={() => onEscolher(c.titulo)} className={`flex items-center px-6 text-left font-titulo text-[30px] leading-none font-semibold transition hover:-translate-y-0.5 ${ALTURA_CARTAO} ${c.estilo}`}>
+          {c.titulo}
         </button>
       ))}
     </div>
   )
 }
 
-function CartaoLista({ titulo, extra, children }: { titulo: string; extra?: ReactNode; children: ReactNode }) {
+/** `cabecalho` substitui o título simples (ex.: a troca de dia da agenda). */
+function CartaoLista({ titulo, cabecalho, extra, children }: { titulo: string; cabecalho?: ReactNode; extra?: ReactNode; children: ReactNode }) {
   return (
     <section className="border border-linha bg-branco" aria-label={titulo}>
-      <div className="flex items-baseline justify-between gap-4 border-b border-linha px-5 py-3">
-        <h2 className="text-[22px] font-semibold">{titulo}</h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-linha px-5 py-2.5">
+        {cabecalho ?? <h2 className="text-[22px] font-semibold">{titulo}</h2>}
         {extra}
       </div>
       {children}
@@ -182,10 +207,19 @@ function ListaDeHoje({ vista, selecionado, onSelecionar }: PropsLista & { vista:
   )
 }
 
-function ListaDoDia({ vista, selecionado, onSelecionar }: PropsLista & { vista: ReturnType<typeof vistaDoDia> }) {
+function ListaDoDia({ vista, selecionado, onSelecionar, cabecalho }: PropsLista & { vista: ReturnType<typeof vistaDoDia>; cabecalho: ReactNode }) {
   const n = vista.lista.length
   return (
-    <CartaoLista titulo={vista.ehHoje ? 'Hoje' : 'Pacientes do dia'} extra={n > 0 && <span className="text-[14px] text-apagado">{n} {n === 1 ? 'paciente' : 'pacientes'}{vista.atendidos > 0 && ` · ${vista.atendidos} ${vista.atendidos === 1 ? 'atendido' : 'atendidos'}`}</span>}>
+    <CartaoLista
+      titulo="Agenda do dia"
+      cabecalho={cabecalho}
+      extra={
+        <span className="flex items-baseline gap-4 text-[14px]">
+          {n > 0 && <span className="text-apagado">{n} {n === 1 ? 'paciente' : 'pacientes'}{vista.atendidos > 0 && ` · ${vista.atendidos} ${vista.atendidos === 1 ? 'atendido' : 'atendidos'}`}</span>}
+          <a href="#" className="text-[12px] font-bold tracking-[0.1em] uppercase underline underline-offset-4 hover:text-(--esp)">Início</a>
+        </span>
+      }
+    >
       {n === 0 ? (
         <p className="px-5 py-8 text-center text-[16px] text-apagado">Nenhum paciente neste dia.</p>
       ) : (
@@ -238,12 +272,14 @@ function EtiquetaFicha({ situacao }: { situacao: Atendimento['ficha']['situacao'
 
 function CartaoFichas({ prontas, faltam }: { prontas: number; faltam: number }) {
   return (
-    <aside className="self-start bg-escuro px-5 py-5 text-sobre-escuro" aria-label="Fichas de pré-consulta">
-      <p className="text-[11px] font-bold tracking-[0.14em] uppercase">Fichas de pré-consulta</p>
-      <p className="mt-2 font-titulo text-[56px] leading-none font-semibold text-papel">{prontas}</p>
-      <p className="mt-2 text-[14px] text-escuro-apagado">
-        {prontas === 1 ? 'pronta' : 'prontas'} para o dia{faltam > 0 && ` · ${faltam} ainda sem ficha`}
-      </p>
+    <aside className={`flex items-center gap-4 self-start bg-escuro px-5 text-sobre-escuro ${ALTURA_CARTAO}`} aria-label="Fichas de pré-consulta">
+      <p className="font-titulo text-[44px] leading-none font-semibold text-papel">{prontas}</p>
+      <div>
+        <p className="text-[11px] font-bold tracking-[0.14em] uppercase">Fichas de pré-consulta</p>
+        <p className="mt-0.5 text-[13.5px] text-escuro-apagado">
+          {prontas === 1 ? 'pronta' : 'prontas'}{faltam > 0 && ` · ${faltam} sem ficha`}
+        </p>
+      </div>
     </aside>
   )
 }
@@ -265,7 +301,7 @@ function PainelFicha({ at, agora, onFechar, onProntuario }: { at: Atendimento; a
       <p className="mt-0.5 text-[14px] text-apagado">{idade(at.paciente.nascimento, agora)} anos · {at.pagamento}</p>
 
       {f.situacao === 'pronta' ? (
-        <div className="mt-3 space-y-2.5 text-[14.5px] leading-snug">
+        <div className="mt-2.5 space-y-2 text-[14.5px] leading-snug">
           {f.alergias.length > 0 ? (
             f.alergias.map((a) => (
               <div key={a.substancia} className="border-[1.5px] border-alerta px-3 py-1.5">

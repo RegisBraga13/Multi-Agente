@@ -15,10 +15,12 @@ export function vistaDoDia(dia: string, agora: Date): VistaDoDia {
   const hoje = dataLocal(agora)
   const ehHoje = dia === hoje
   const lista = agendaDoDia(dia, agora)
-  const fichasProntas = lista.filter((x) => x.ficha.situacao === 'pronta').length
+  // fichas de quem ainda vai ser atendido: o número muda a cada atendimento
+  const aSeguir = lista.filter((x) => !x.atendido)
+  const fichasProntas = aSeguir.filter((x) => x.ficha.situacao === 'pronta').length
   return {
-    hoje, ehHoje, lista, proximo: proximoPaciente(lista, ehHoje), atendidos: lista.filter((x) => x.atendido).length,
-    fichasProntas, semFicha: lista.length - fichasProntas,
+    hoje, ehHoje, lista, proximo: proximoPaciente(lista, ehHoje), atendidos: lista.length - aSeguir.length,
+    fichasProntas, semFicha: aSeguir.length - fichasProntas,
   }
 }
 
