@@ -48,6 +48,9 @@ function hda(anamnese: string, idadeAnos: number, falas: Fala[]): string {
     .map((t) => (comoEscrever.has(t) ? comoEscrever.get(t)! : `Relata: ${t}`))
     .filter(Boolean)
   if (!partes.length) return 'Não registrada.'
+  // a IA organiza: a queixa vem primeiro, mesmo que tenha sido dita depois (ex.: perguntas feitas no começo)
+  const q = partes.findIndex((x) => x.startsWith('refere '))
+  if (q > 0) partes.unshift(...partes.splice(q, 1))
   const [primeira, ...resto] = partes
   const inicio = primeira.startsWith('refere ') ? ponto(`Paciente de ${idadeAnos} anos ${primeira}`) : `Paciente de ${idadeAnos} anos. ${ponto(maiuscula(primeira))}`
   return [inicio, ...resto.map((x) => ponto(maiuscula(x)))].join(' ')

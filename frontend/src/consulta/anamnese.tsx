@@ -19,6 +19,8 @@ const RESPOSTAS = [
 type Props = {
   falas: Fala[]
   faltouPerguntar: string[]
+  /** resposta do paciente a cada pergunta (simulação da gravação) */
+  respostasPerguntas: Record<string, Fala>
   alertas: Alerta[]
   respostas: EstadoConsulta['alertas']
   situacao: Situacao
@@ -30,7 +32,7 @@ type Props = {
   onOficializar: (texto: string) => void
 }
 
-export function Anamnese({ falas, faltouPerguntar, alertas, respostas, situacao, pendencias, podeGravar, onEditar, onResponder, onOficializar }: Props) {
+export function Anamnese({ falas, faltouPerguntar, respostasPerguntas, alertas, respostas, situacao, pendencias, podeGravar, onEditar, onResponder, onOficializar }: Props) {
   const [gravando, setGravando] = useState(false)
   const [segundos, setSegundos] = useState(0)
   /** a anamnese numa caixa só: a transcrição entra no fim do texto, e o médico escreve e corrige ali mesmo */
@@ -42,9 +44,19 @@ export function Anamnese({ falas, faltouPerguntar, alertas, respostas, situacao,
   const caixa = useRef<HTMLTextAreaElement>(null)
   const oficializado = situacao === 'oficializado'
 
+  /** perguntas clicadas que ainda não entraram na gravação: pergunta do médico + resposta do paciente */
+  const aPerguntar = useRef<{ pergunta: string; fala: Pick<Fala, 'quem' | 'texto'> }[]>([])
+  const marcarPergunta = (q: string, feito: boolean) => {
+    setPerguntado((p) => (feito ? p.filter((x) => x !== q) : [...p, q]))
+    if (feito) { aPerguntar.current = aPerguntar.current.filter((x) => x.pergunta !== q); return }
+    const r = respostasPerguntas[q]
+    aPerguntar.current.push({ pergunta: q, fala: { quem: 'Médico', texto: q } }, ...(r ? [{ pergunta: q, fala: r }] : []))
+  }
+
+  /** simulação: a próxima fala da gravação — primeiro as perguntas clicadas, depois o roteiro */
   const transcrever = () => {
-    if (proxima.current >= falas.length) return
-    const f = falas[proxima.current++]
+    const f = aPerguntar.current.shift()?.fala ?? (proxima.current < falas.length ? falas[proxima.current++] : null)
+    if (!f) return
     setTexto((x) => `${x}${x && !x.endsWith('\n') ? '\n' : ''}${f.quem}: ${f.texto}\n`)
   }
 
@@ -124,7 +136,7 @@ export function Anamnese({ falas, faltouPerguntar, alertas, respostas, situacao,
             {faltouPerguntar.map((q) => {
               const feito = perguntado.includes(q)
               return (
-                <button key={q} type="button" onClick={() => setPerguntado((p) => (feito ? p.filter((x) => x !== q) : [...p, q]))} aria-pressed={feito}
+                <button key={q} type="button" onClick={() => marcarPergunta(q, feito)} aria-pressed={feito}
                   className={`border-[1.5px] px-2 py-0.5 text-left text-[13.5px] ${feito ? 'border-linha text-apagado line-through' : 'border-dashed border-(--esp-medio)'}`}>
                   {q}
                 </button>

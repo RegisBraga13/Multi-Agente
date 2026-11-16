@@ -68,7 +68,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
       const f = fontes.current
       // sinais de alerta da anamnese, com a resposta do médico, entram em "Antecedentes e alertas"
       const sinais = conteudo.alertas.filter((x) => x.tipo === 'sinal').map((x) => ({ texto: x.texto, resposta: novo.alertas[x.id] }))
-      const novas = montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais })
+      const novas = montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: [...conteudo.falas, ...Object.values(conteudo.respostas)], sinais })
       // primeira vez: tudo novo; depois: a IA mexe só no que mudou
       setHistoria((h) => h
         ? { versao: h.versao + 1, geradas: novas, ...atualizarHistoria(h.geradas, h.textos, novas) }
@@ -166,6 +166,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
             <Anamnese
               falas={conteudo.falas}
               faltouPerguntar={conteudo.faltouPerguntar}
+              respostasPerguntas={conteudo.respostas}
               alertas={conteudo.alertas}
               respostas={estado.alertas}
               situacao={estado.blocos.anamnese.estado}

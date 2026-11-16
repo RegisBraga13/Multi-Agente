@@ -21,6 +21,10 @@ describe('montarHistoria', () => {
     expect(hda.startsWith('Paciente de 73 anos refere ferida no nariz que não cicatriza há 3 meses.')).toBe(true)
     expect(hda).not.toContain('Me conta')
   })
+  it('a queixa abre a HDA mesmo quando foi dita depois de outras falas', () => {
+    const fora = ['Médico: Toma anticoagulante?', 'Paciente: AAS 100 mg.', 'Médico: Me conta.', 'Paciente: Ferida no nariz que não cicatriza há 3 meses.'].join(String.fromCharCode(10))
+    expect(montarHistoria(antonio, agora, fora, exame, [], contexto)[2].texto.startsWith('Paciente de 73 anos refere ferida no nariz')).toBe(true)
+  })
   it('fala do paciente fora do roteiro entra como relato; remédios ficam nos antecedentes', () => {
     expect(h[2].texto).toContain('Relata: AAS 100 mg.')
     const roteiro = c.falas.map((f) => `${f.quem}: ${f.texto}`).join(String.fromCharCode(10))

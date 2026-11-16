@@ -14,6 +14,8 @@ export type Complementar = { exame: string; data: string; origem: string; itens:
 export type ConteudoConsulta = {
   falas: Fala[]
   faltouPerguntar: string[]
+  /** resposta do paciente a cada pergunta (só nos exemplos que têm): entra na gravação quando o médico clica na pergunta */
+  respostas: Record<string, Fala>
   alertas: Alerta[]
   /** fotos já anexadas ao exame físico */
   fotos: number
@@ -33,14 +35,22 @@ export function buscarAtendimento(id: string, agora: Date): Atendimento | undefi
 const CAMPOS_DERMATO = ['Morfologia', 'Localização', 'Extensão', 'Gravidade estimada', 'Achados associados']
 
 /** `relato`: o que o paciente conta além da queixa — [fala, como a IA escreve na história] */
-type Rascunho = { exame: [string, string, string, string, string]; fotos: number; fala: string; alertas?: string[]; faltou?: string[]; marcas?: [number, number][]; relato?: [string, string][] }
+/** `respostas`: pergunta → [fala do paciente, como a IA escreve na história] */
+type Rascunho = { exame: [string, string, string, string, string]; fotos: number; fala: string; alertas?: string[]; faltou?: string[]; respostas?: Record<string, [string, string]>; marcas?: [number, number][]; relato?: [string, string][] }
 
 // Rascunho da IA a partir das fotos, por paciente de exemplo.
 const RASCUNHOS: Record<string, Rascunho> = {
   'Mariana Costa': {
     relato: [['Fico mexendo nelas. Minha pele é muito oleosa.', 'Manipulação frequente das lesões; refere pele oleosa.'], ['Nunca tratei. Não tenho febre.', 'Sem tratamento prévio. Nega febre.']],
     exame: ['Pápulas, pústulas e comedões', 'Região mandibular e malar; dorso', '7 lesões na face; dorso esparso', 'Moderada, a confirmar', 'Sem cicatrizes nas fotos'],
-    fotos: 4, fala: 'Vou olhar o rosto e as costas com a luz.', faltou: ['Planeja engravidar nos próximos meses?'],
+    fotos: 4, fala: 'Vou olhar o rosto e as costas com a luz.',
+    faltou: ['Planeja engravidar nos próximos meses?', 'Já usou algum remédio para acne, como antibiótico ou isotretinoína?', 'Sua menstruação é irregular ou tem excesso de pelos?'],
+    respostas: {
+      'Planeja engravidar nos próximos meses?': ['Não, uso anticoncepcional.', 'Não planeja gestação; em uso de anticoncepcional.'],
+      'Já usou algum remédio para acne, como antibiótico ou isotretinoína?': ['Só sabonete de farmácia.', 'Sem uso prévio de antibiótico ou isotretinoína; apenas sabonete de farmácia.'],
+      'Sua menstruação é irregular ou tem excesso de pelos?': ['É regular, sem pelos a mais.', 'Ciclos menstruais regulares; nega hirsutismo.'],
+    },
+    alertas: ['Nódulos dolorosos ou cicatrizes (acne grave)', 'Início súbito com sinais de virilização'],
     // as mesmas 7 lesões marcadas na foto da landing
     marcas: [[30.6, 16], [35.8, 32.1], [35.4, 44.2], [27.5, 50], [47.8, 60.3], [55.4, 63.5], [33.6, 64.7]],
   },
@@ -180,6 +190,7 @@ export function conteudoDaConsulta(at: Atendimento, slug: string): ConteudoConsu
   return {
     falas: falas.map((x, i) => ({ ...x, aos: tempo(8 + i * 26) })),
     faltouPerguntar: r.faltou ?? [],
+    respostas: Object.fromEntries(Object.entries(r.respostas ?? {}).map(([q, [texto, clinico]]) => [q, { quem: 'Paciente' as const, texto, clinico, aos: '' }])),
     alertas,
     fotos: r.fotos,
     marcas: r.marcas ?? [],
