@@ -4,6 +4,22 @@ import type { Modalidade } from '../medico/tipos'
 
 export type TipoAtendimento = 'consulta' | 'retorno'
 
+/** Ficha da pré-consulta enviada pelo paciente (página do médico). Só a "pronta" tem conteúdo. */
+export type Ficha =
+  | {
+      situacao: 'pronta'
+      /** 'HH:MM' em que chegou */
+      recebidaAs: string
+      queixa: string
+      emUso: string[]
+      antecedentes: string[]
+      alergias: { substancia: string; reacao: string }[]
+      /** consentimento da transcrição da consulta */
+      transcricao: 'aceita' | 'recusada'
+    }
+  | { situacao: 'link-enviado' }
+  | { situacao: 'sem-ficha' }
+
 export type Atendimento = {
   id: string
   /** 'HH:MM' */
@@ -11,9 +27,10 @@ export type Atendimento = {
   paciente: { nome: string; /** 'YYYY-MM-DD' */ nascimento: string }
   tipo: TipoAtendimento
   modalidade: Modalidade
-  /** formulário da consulta enviado pelo paciente (página do médico) */
-  formulario: 'preenchido' | 'pendente'
+  /** 'Particular' ou o nome do convênio */
+  pagamento: string
+  ficha: Ficha
   atendido: boolean
-  /** já tem prontuário: mostra o link "Prontuário" */
+  /** já tem prontuário: mostra o link "Prontuário" na ficha */
   temHistorico: boolean
 }

@@ -16,7 +16,12 @@ describe('agendaDoDia', () => {
     for (const x of dia) expect(x.atendido).toBe(x.inicio < '10:00')
     expect(dia.some((x) => x.tipo === 'retorno')).toBe(true)
     expect(dia.some((x) => x.modalidade === 'online')).toBe(true)
-    expect(dia.some((x) => x.formulario === 'pendente')).toBe(true)
+    expect(dia.some((x) => x.ficha.situacao === 'link-enviado')).toBe(true)
+    expect(dia.some((x) => x.ficha.situacao === 'sem-ficha')).toBe(true)
+    expect(dia.some((x) => x.pagamento === 'Particular')).toBe(true)
+    expect(dia.some((x) => x.pagamento !== 'Particular')).toBe(true)
+    for (const x of dia) if (x.ficha.situacao === 'pronta') expect(x.ficha.queixa.length).toBeGreaterThan(0)
+    expect(dia.some((x) => x.ficha.situacao === 'pronta' && x.ficha.alergias.length > 0)).toBe(true)
     expect(dia.filter((x) => x.tipo === 'retorno').every((x) => x.temHistorico)).toBe(true)
   })
 

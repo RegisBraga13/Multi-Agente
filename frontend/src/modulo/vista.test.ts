@@ -14,6 +14,12 @@ describe('vistaDoDia', () => {
     expect(v.atendidos).toBe(v.lista.length)
   })
 
+  it('conta as fichas prontas e as que faltam', () => {
+    const v = vistaDoDia('2026-11-16', new Date(2026, 10, 16, 8, 0))
+    expect(v.fichasProntas + v.semFicha).toBe(v.lista.length)
+    expect(v.fichasProntas).toBe(v.lista.filter((x) => x.ficha.situacao === 'pronta').length)
+  })
+
   it('domingo vazio', () => {
     const v = vistaDoDia('2026-11-22', new Date(2026, 10, 22, 9, 0))
     expect(v.lista).toEqual([])

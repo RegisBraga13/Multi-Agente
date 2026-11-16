@@ -38,3 +38,20 @@ export function somarDias(data: string, n: number): string {
   d.setDate(d.getDate() + n)
   return dataLocal(d)
 }
+
+export function saudacao(agora: Date): string {
+  const h = agora.getHours()
+  return h >= 5 && h < 12 ? 'Bom dia' : h >= 12 && h < 18 ? 'Boa tarde' : 'Boa noite'
+}
+
+/** Lista do cartão "Hoje": atendidos viram contagem; mostra até `max` a partir do próximo. */
+export function janelaDeHoje(lista: Atendimento[], max: number): { atendidos: number; visiveis: Atendimento[]; restantes: number } {
+  const aSeguir = lista.filter((x) => !x.atendido)
+  return { atendidos: lista.length - aSeguir.length, visiveis: aSeguir.slice(0, max), restantes: Math.max(0, aSeguir.length - max) }
+}
+
+/** "Página" do módulo à vista, pelo endereço (#agenda), para o Voltar do navegador funcionar. */
+export type VistaModulo = 'inicio' | 'agenda'
+export function vistaDoModulo(hash: string): VistaModulo {
+  return hash === '#agenda' ? 'agenda' : 'inicio'
+}

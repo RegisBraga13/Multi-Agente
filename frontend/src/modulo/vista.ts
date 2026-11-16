@@ -6,13 +6,20 @@ import { proximoPaciente } from './dia'
 import { agendaDoDia } from './exemplo'
 import type { Atendimento } from './tipos'
 
-export type VistaDoDia = { hoje: string; ehHoje: boolean; lista: Atendimento[]; proximo: string | null; atendidos: number }
+export type VistaDoDia = {
+  hoje: string; ehHoje: boolean; lista: Atendimento[]; proximo: string | null; atendidos: number
+  fichasProntas: number; semFicha: number
+}
 
 export function vistaDoDia(dia: string, agora: Date): VistaDoDia {
   const hoje = dataLocal(agora)
   const ehHoje = dia === hoje
   const lista = agendaDoDia(dia, agora)
-  return { hoje, ehHoje, lista, proximo: proximoPaciente(lista, ehHoje), atendidos: lista.filter((x) => x.atendido).length }
+  const fichasProntas = lista.filter((x) => x.ficha.situacao === 'pronta').length
+  return {
+    hoje, ehHoje, lista, proximo: proximoPaciente(lista, ehHoje), atendidos: lista.filter((x) => x.atendido).length,
+    fichasProntas, semFicha: lista.length - fichasProntas,
+  }
 }
 
 /** Hora atual, renovada a cada minuto (o "Próximo" e o "Atendido" avançam sozinhos). */
