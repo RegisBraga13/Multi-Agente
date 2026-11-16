@@ -142,7 +142,7 @@ export function Anamnese({ falas, faltouPerguntar, alertas, respostas, situacao,
                 <span title={a.texto} className={`min-w-0 flex-1 truncate ${a.tipo === 'alergia' ? 'font-semibold' : ''}`}>{a.texto}</span>
                 <span className="flex shrink-0 gap-1">
                   {RESPOSTAS.map((op) => (
-                    <button key={op.id} type="button" onClick={() => onResponder(a.id, op.id)} aria-pressed={r === op.id} aria-label={op.nome} title={op.nome}
+                    <button key={op.id} type="button" onClick={() => { if (r !== op.id) { onResponder(a.id, op.id); mudou() } }} aria-pressed={r === op.id} aria-label={op.nome} title={op.nome}
                       className={`size-7 text-[17px] leading-none ${r === op.id ? 'bg-tinta text-papel' : 'hover:bg-suave'}`}>
                       {op.icone}
                     </button>

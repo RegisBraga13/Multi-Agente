@@ -20,11 +20,13 @@ const NIVEL: Record<Bloco, number> = { anamnese: 0, exame: 0, historia: 1, diagn
 
 export function inicial(alertas: string[]): EstadoConsulta {
   const blocos = Object.fromEntries(BLOCOS.map((b) => [b, { estado: 'rascunho_ia', desatualizado: false }])) as EstadoConsulta['blocos']
-  return { blocos, alertas: Object.fromEntries(alertas.map((id) => [id, null])) }
+  return { blocos, alertas: Object.fromEntries(alertas.map((id) => [id, null])), alcancadas: [] }
 }
 
 export function oficializar(e: EstadoConsulta, bloco: Bloco): EstadoConsulta {
-  return { ...e, blocos: { ...e.blocos, [bloco]: { estado: 'oficializado', desatualizado: false } } }
+  const novo = { ...e, blocos: { ...e.blocos, [bloco]: { estado: 'oficializado' as const, desatualizado: false } } }
+  const liberadas = (['historia', 'diagnosticos', 'conduta'] as const).filter((b) => podeOficializar(novo, b) && !e.alcancadas.includes(b))
+  return liberadas.length ? { ...novo, alcancadas: [...e.alcancadas, ...liberadas] } : novo
 }
 
 /** O médico mudou o bloco. Se ele estava oficializado, o que foi feito a partir dele fica desatualizado. */
@@ -53,15 +55,17 @@ export function situacaoDaEtapa(e: EstadoConsulta, etapa: EtapaId): Situacao {
   const b = e.blocos
   const oficial = (x: Bloco) => b[x].estado === 'oficializado' && !b[x].desatualizado
   const de = (x: Bloco): Situacao => (b[x].desatualizado ? 'desatualizado' : b[x].estado)
+  // anterior não salva: fase já alcançada fica desatualizada; nunca alcançada fica bloqueada
+  const espera = (x: Bloco): Situacao => (e.alcancadas.includes(x) ? 'desatualizado' : 'bloqueado')
   switch (etapa) {
     case 'anamnese-exame':
       return ORDEM[b.anamnese.estado] <= ORDEM[b.exame.estado] ? b.anamnese.estado : b.exame.estado
     case 'historia':
-      return b.historia.desatualizado ? 'desatualizado' : oficial('anamnese') && oficial('exame') ? de('historia') : 'bloqueado'
+      return b.historia.desatualizado ? 'desatualizado' : oficial('anamnese') && oficial('exame') ? de('historia') : espera('historia')
     case 'diagnosticos':
-      return b.diagnosticos.desatualizado ? 'desatualizado' : oficial('historia') ? de('diagnosticos') : 'bloqueado'
+      return b.diagnosticos.desatualizado ? 'desatualizado' : oficial('historia') ? de('diagnosticos') : espera('diagnosticos')
     case 'conduta':
-      return b.conduta.desatualizado ? 'desatualizado' : oficial('diagnosticos') ? de('conduta') : 'bloqueado'
+      return b.conduta.desatualizado ? 'desatualizado' : oficial('diagnosticos') ? de('conduta') : espera('conduta')
   }
 }
 

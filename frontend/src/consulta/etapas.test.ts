@@ -54,6 +54,20 @@ describe('etapas da consulta', () => {
   })
 })
 
+describe('fase alcançada não some', () => {
+  it('história já liberada fica desatualizada (não bloqueada) quando a anamnese é editada', () => {
+    const pag1 = oficializar(oficializar(inicial([]), 'anamnese'), 'exame')
+    expect(situacaoDaEtapa(pag1, 'historia')).toBe('rascunho_ia')
+    const e = editar(pag1, 'anamnese')
+    expect(situacaoDaEtapa(e, 'historia')).toBe('desatualizado')
+    expect(podeOficializar(e, 'historia')).toBe(false)
+    expect(situacaoDaEtapa(oficializar(e, 'anamnese'), 'historia')).toBe('rascunho_ia')
+  })
+  it('fase nunca alcançada continua bloqueada', () => {
+    expect(situacaoDaEtapa(editar(inicial([]), 'anamnese'), 'historia')).toBe('bloqueado')
+  })
+})
+
 describe('podeOficializar', () => {
   it('etapa seguinte só com a anterior oficializada e em dia', () => {
     expect(podeOficializar(inicial([]), 'historia')).toBe(false)

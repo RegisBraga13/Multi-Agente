@@ -10,7 +10,7 @@ import type { Atendimento } from '../modulo/tipos'
 import { Anamnese } from './anamnese'
 import { ETAPAS, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
 import { Exame } from './exame'
-import { montarHistoria, type SecaoHistoria } from './historia'
+import { atualizarHistoria, montarHistoria, type SecaoHistoria } from './historia'
 import { PaginaHistoria } from './historia-pagina'
 import { buscarAtendimento, conteudoDaConsulta } from './exemplo'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
@@ -55,7 +55,8 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
 
   // o que foi salvo na página 1: a história é montada só com isso
   const fontes = useRef<{ anamnese: string; exame: { rotulo: string; valor: string }[] }>({ anamnese: '', exame: [] })
-  const [historia, setHistoria] = useState<{ versao: number; secoes: SecaoHistoria[] } | null>(null)
+  /** geradas = última versão da IA; textos = o que está na tela (com as edições do médico); mudou = seções que a IA reescreveu agora */
+  const [historia, setHistoria] = useState<{ versao: number; geradas: SecaoHistoria[]; textos: string[]; mudou: boolean[]; sugestoes: (string | null)[] } | null>(null)
 
   /** Salvar anamnese ou exame. Quando os dois ficam salvos, a história é montada e a página dela abre. */
   const salvarPagina1 = (bloco: 'anamnese' | 'exame') => {
@@ -63,7 +64,11 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
     despachar({ tipo: 'oficializar', bloco })
     if (!podeOficializar(estado, 'historia') && podeOficializar(novo, 'historia')) {
       const f = fontes.current
-      setHistoria((h) => ({ versao: (h?.versao ?? 0) + 1, secoes: montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares) }))
+      const novas = montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares)
+      // primeira vez: tudo novo; depois: a IA mexe só no que mudou
+      setHistoria((h) => h
+        ? { versao: h.versao + 1, geradas: novas, ...atualizarHistoria(h.geradas, h.textos, novas) }
+        : { versao: 1, geradas: novas, textos: novas.map((s) => s.texto), mudou: novas.map(() => true), sugestoes: novas.map(() => null) })
       navegar(`${base}/historia`)
     }
   }
@@ -156,13 +161,29 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
         {etapa === 'historia' && historia && situacaoDaEtapa(estado, 'historia') !== 'bloqueado' ? (
           <div className="flex flex-1 flex-col [&>section]:flex-1">
             {situacaoDaEtapa(estado, 'historia') === 'desatualizado' && !podeOficializar(estado, 'historia') && (
-              <p className="mb-2 text-[14px] font-semibold">A anamnese ou o exame físico mudou. Salve de novo para a IA refazer a história.</p>
+              <p className="mb-2 text-[14px] font-semibold">A anamnese ou o exame físico mudou. Salve de novo e a IA atualiza só o que mudou na história.</p>
             )}
             <PaginaHistoria
               key={historia.versao}
-              secoes={historia.secoes}
+              secoes={historia.geradas}
+              textos={historia.textos}
+              mudou={historia.mudou}
+              sugestoes={historia.sugestoes}
+              primeira={historia.versao === 1}
               situacao={situacaoDaEtapa(estado, 'historia')}
-              onEditar={() => fazer('editar', 'historia')}
+              podeSalvar={podeOficializar(estado, 'historia')}
+              onMudar={(i, texto) => {
+                setHistoria((h) => h && { ...h, textos: h.textos.map((x, j) => (j === i ? texto : x)) })
+                if (estado.blocos.historia.estado !== 'revisado_medico') fazer('editar', 'historia')
+              }}
+              onDecidir={(i, aceitar) => {
+                setHistoria((h) => h && {
+                  ...h,
+                  textos: aceitar ? h.textos.map((x, j) => (j === i ? h.sugestoes[i] ?? x : x)) : h.textos,
+                  sugestoes: h.sugestoes.map((x, j) => (j === i ? null : x)),
+                })
+                if (aceitar && estado.blocos.historia.estado !== 'revisado_medico') fazer('editar', 'historia')
+              }}
               onSalvar={() => fazer('oficializar', 'historia')}
             />
           </div>

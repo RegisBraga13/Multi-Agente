@@ -6,6 +6,26 @@ import type { Complementar } from './exemplo'
 
 export type SecaoHistoria = { rotulo: string; texto: string }
 
+/**
+ * A anamnese ou o exame mudou e foi salvo de novo: a IA não reescreve tudo.
+ * - origem da seção não mudou → fica como está (com as edições do médico);
+ * - mudou e o médico não tinha mexido → a IA reescreve (mudou = true);
+ * - mudou e o médico tinha editado → o texto dele fica; a IA SUGERE ao lado (ele aceita ou mantém o seu).
+ */
+export function atualizarHistoria(
+  geradasAntes: SecaoHistoria[],
+  atuais: string[],
+  novas: SecaoHistoria[],
+): { textos: string[]; mudou: boolean[]; sugestoes: (string | null)[] } {
+  const origemMudou = novas.map((s, i) => s.texto !== geradasAntes[i]?.texto)
+  const editada = atuais.map((t, i) => t !== geradasAntes[i]?.texto)
+  return {
+    textos: novas.map((s, i) => (origemMudou[i] && !editada[i] ? s.texto : atuais[i])),
+    mudou: novas.map((_, i) => origemMudou[i] && !editada[i]),
+    sugestoes: novas.map((s, i) => (origemMudou[i] && editada[i] ? s.texto : null)),
+  }
+}
+
 export function montarHistoria(
   at: Atendimento,
   agora: Date,

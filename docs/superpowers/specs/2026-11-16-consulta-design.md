@@ -100,3 +100,19 @@ especialidade como dado (campos do exame físico vêm de `especialidades`/pacote
 
 ## Para o construtor
 Valores visuais decididos na tela pronta, por print. Conteúdo exato das páginas 2–4 detalhado quando cada uma for construída.
+
+## Atualização da história pela IA (decidido pelo autor, 16/11/2026) — NÃO ESQUECER na ligação com a IA real
+Regras da tela (já na simulação):
+- "Salvar" não trava nada; só libera a fase seguinte. Tudo salvo continua editável. Imutável só no fim (Finalizar → prontuário; depois, adendo).
+- Fase já alcançada não some: se a anterior for editada, ela fica "Desatualizada" até salvar de novo.
+- Anamnese/exame salvos de novo → a IA **não reescreve a história inteira**. Por seção:
+  - origem não mudou → fica como está (com as edições do médico);
+  - origem mudou e o médico não tinha editado → a IA reescreve a seção (etiqueta "Atualizado");
+  - origem mudou e o médico tinha editado → o texto dele fica; a IA mostra **sugestão ao lado** (Aceitar / Manter o meu). Salvar só depois de decidir.
+
+Contrato do pedido à IA (Sonnet 5.5), quando sair da simulação:
+- **Entrada:** história salva atual (por seção, com marca de quais o médico editou) + **só o que mudou** na anamnese/exame (antes → depois) + lista fixa das seções. Nunca o prompt inteiro de novo; nada fora da anamnese e do exame salvos (Constituição).
+- **Saída tipada, validada em runtime antes de usar:** `{ secoes: [{ secao: <uma das 6>, acao: 'manter' | 'reescrever' | 'sugerir', texto?: string, motivo: string, origem: string /* trecho da anamnese/exame que justificou */ }] }`. Seção que o médico editou só aceita `manter` ou `sugerir` (nunca `reescrever`) — regra determinística no app, não confiança na IA.
+- **Política:** saída inválida → descartada, médico avisado, história atual intacta (REJECT). Toda mudança passa pelo médico (HUMAN_REVIEW); nada é AUTO_EXECUTE.
+- **Registro (auditoria):** id da decisão, modelo e versão, versão do contrato, seções alteradas/sugeridas, aceito/mantido pelo médico, data/hora. Sem prompt completo nem dados pessoais no log.
+- **A calibrar com uso real:** se a IA erra a seção afetada (falso positivo/negativo) e quanto o médico aceita das sugestões.

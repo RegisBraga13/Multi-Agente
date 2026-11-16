@@ -27,4 +27,6 @@ export type EstadoConsulta = {
   blocos: Record<Bloco, { estado: Estado; desatualizado: boolean }>
   /** id do sinal de alerta → resposta do médico (null = ainda sem resposta) */
   alertas: Record<string, RespostaAlerta | null>
+  /** etapas já liberadas alguma vez: não somem se a anterior for editada (ficam desatualizadas) */
+  alcancadas: Bloco[]
 }

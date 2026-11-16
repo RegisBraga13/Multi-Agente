@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { agendaDoDia } from '../modulo/exemplo'
 import { conteudoDaConsulta } from './exemplo'
-import { montarHistoria } from './historia'
+import { atualizarHistoria, montarHistoria } from './historia'
 
 const agora = new Date(2026, 10, 16, 7, 0)
 const antonio = agendaDoDia('2026-11-16', agora).find((x) => x.paciente.nome === 'Antônio Barbosa')!
@@ -35,5 +35,26 @@ describe('montarHistoria', () => {
   })
   it('alergia da ficha entra em antecedentes e alertas', () => {
     expect(h[3].texto).toContain('Alergia: sulfa')
+  })
+})
+
+describe('atualizarHistoria', () => {
+  const geradas = [{ rotulo: 'A', texto: 'a1' }, { rotulo: 'B', texto: 'b1' }, { rotulo: 'C', texto: 'c1' }]
+  const atuais = ['a1', 'b1 editado pelo médico', 'c1']
+  it('só reescreve as seções cuja origem mudou; mantém as edições do médico nas demais', () => {
+    const novas = [{ rotulo: 'A', texto: 'a2' }, { rotulo: 'B', texto: 'b1' }, { rotulo: 'C', texto: 'c1' }]
+    const r = atualizarHistoria(geradas, atuais, novas)
+    expect(r.textos).toEqual(['a2', 'b1 editado pelo médico', 'c1'])
+    expect(r.mudou).toEqual([true, false, false])
+  })
+  it('nada mudou: nada é reescrito', () => {
+    expect(atualizarHistoria(geradas, atuais, geradas).mudou).toEqual([false, false, false])
+  })
+  it('seção editada pelo médico cuja origem mudou: o texto dele fica, a IA sugere ao lado', () => {
+    const novas = [{ rotulo: 'A', texto: 'a1' }, { rotulo: 'B', texto: 'b2' }, { rotulo: 'C', texto: 'c1' }]
+    const r = atualizarHistoria(geradas, atuais, novas)
+    expect(r.textos[1]).toBe('b1 editado pelo médico')
+    expect(r.mudou[1]).toBe(false)
+    expect(r.sugestoes).toEqual([null, 'b2', null])
   })
 })
