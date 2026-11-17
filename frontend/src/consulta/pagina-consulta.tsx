@@ -16,6 +16,8 @@ import { PaginaHistoria } from './historia-pagina'
 import { atualizarComReserva, chamarMais, iniciarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, type Hipotese, type ItemDD, type NaoPerder } from './diagnosticos'
 import { atualizarResumo, marcarResumo, montarResumo, type ItemResumo } from './resumo'
 import { PaginaDiagnosticos } from './diagnosticos-pagina'
+import { atualizarConduta, editarTexto, escolherOpcao, escreverOutro, montarConduta, pendenciasConduta, revelar, type Conduta } from './conduta'
+import { PaginaConduta } from './conduta-pagina'
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
@@ -108,6 +110,26 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
     if (estado.blocos.diagnosticos.estado !== 'revisado_medico') fazer('editar', 'diagnosticos')
   }
   const nosItens = (f: (itens: ItemDD[]) => ItemDD[]) => mexerDd((d) => ({ ...d, itens: f(d.itens) }))
+
+  /** Conduta: sugerida só com os diagnósticos salvos (confirmados) + "Para relembrar". */
+  const [conduta, setConduta] = useState<{ versao: number; c: Conduta } | null>(null)
+
+  /** Salvar diagnósticos. Ao liberar a conduta, a IA sugere (ou atualiza só o que mudou) e a página dela abre. */
+  const salvarDiagnosticos = () => {
+    const novo = oficializar(estado, 'diagnosticos')
+    despachar({ tipo: 'oficializar', bloco: 'diagnosticos' })
+    if (!dd || podeOficializar(estado, 'conduta') || !podeOficializar(novo, 'conduta')) return
+    const nova = montarConduta(dd.itens, dd.resumo, at.id.slice(0, 10))
+    if (!nova) return
+    setConduta((x) => (x ? { versao: x.versao + 1, c: atualizarConduta(x.c, nova) } : { versao: 1, c: nova }))
+    navegar(`${base}/conduta`)
+  }
+
+  /** O médico mexeu na conduta: deixa de estar salva. */
+  const mexerConduta = (f: (c: Conduta) => Conduta) => {
+    setConduta((x) => x && { ...x, c: f(x.c) })
+    if (estado.blocos.conduta.estado !== 'revisado_medico') fazer('editar', 'conduta')
+  }
 
   // etapa atual como título (sem número) + atalhos para as etapas já liberadas
   const navegador = (
@@ -255,7 +277,29 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
               onMais={() => mexerDd((d) => ({ ...d, ...chamarMais(d) }))}
               onMarcar={(id, m) => mexerDd((d) => ({ ...d, resumo: marcarResumo(d.resumo, id, m) }))}
               onAvaliarNaoPerder={() => mexerDd((d) => ({ ...d, naoPerderAvaliado: !d.naoPerderAvaliado }))}
-              onSalvar={() => fazer('oficializar', 'diagnosticos')}
+              onSalvar={salvarDiagnosticos}
+            />
+          </div>
+        ) : etapa === 'conduta' && conduta && dd && situacaoDaEtapa(estado, 'conduta') !== 'bloqueado' ? (
+          <div className="flex flex-1 flex-col [&>section]:flex-1">
+            {situacaoDaEtapa(estado, 'conduta') === 'desatualizado' && !podeOficializar(estado, 'conduta') && (
+              <p className="mb-2 text-[14px] font-semibold">Os diagnósticos mudaram. Salve os diagnósticos de novo e a IA atualiza só o que mudou na conduta.</p>
+            )}
+            <PaginaConduta
+              key={conduta.versao}
+              conduta={conduta.c}
+              resumo={dd.resumo}
+              alergia={estiloAlergia(esp)}
+              especialidade={esp.nome}
+              primeira={conduta.versao === 1}
+              situacao={situacaoDaEtapa(estado, 'conduta')}
+              podeSalvar={podeOficializar(estado, 'conduta')}
+              pendencia={pendenciasConduta(conduta.c)}
+              onEscolher={(linha, opcao) => mexerConduta((c) => escolherOpcao(c, linha, opcao))}
+              onOutro={(linha, texto) => mexerConduta((c) => escreverOutro(c, linha, texto))}
+              onRevelar={(i) => setConduta((x) => x && { ...x, c: revelar(x.c, i) })}
+              onEditar={(i, texto) => mexerConduta((c) => editarTexto(c, i, texto))}
+              onSalvar={() => fazer('oficializar', 'conduta')}
             />
           </div>
         ) : etapa !== 'anamnese-exame' && (
