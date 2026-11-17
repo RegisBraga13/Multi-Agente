@@ -20,14 +20,19 @@ describe('montarAnexos (só da conduta salva)', () => {
   it('receita: cuidados e tópico em uso tópico, sistêmico em uso oral, numeração seguida', () => {
     const t = de(xs, 'receita').texto
     expect(t).toMatch(/^USO TÓPICO \(EXTERNO\)\n1\. Sabonete facial/)
-    expect(t).toContain('\n4. Adapaleno + peróxido de benzoíla 0,1% + 2,5% · gel\n')
-    expect(t).toContain('\n\nUSO ORAL\n5. Limeciclina 300 mg · cápsula\n')
+    expect(t).toContain('\n4. Adapaleno + peróxido de benzoíla 0,1% + 2,5% GEL (01 bisn. 30g)\n')
+    expect(t).toContain('\n\nUSO ORAL\n5. Limeciclina 300mg (56 CAP)\n')
   })
-  it('cada item tem nome (DCB), forma, concentração, quantidade em algarismos e por extenso, posologia com a via', () => {
+  it('cada item em 2 linhas: nome (DCB) + concentração [+ forma] (quantidade abreviada); posologia com a via abreviada', () => {
     const t = de(xs, 'receita').texto
-    expect(t).toContain('5. Limeciclina 300 mg · cápsula\n   Quantidade: 56 (cinquenta e seis) cápsulas\n   Tomar 1 cápsula por via oral, 1 vez ao dia, por 8 semanas.')
-    expect(t).toContain('   Quantidade: 1 (uma) bisnaga de 30 g')
-    expect(t).toContain('   Quantidade: 1 (um) frasco')
+    expect(t).toContain('5. Limeciclina 300mg (56 CAP)\n   Tomar 1 CAP VO, 1 vez ao dia, por 8 semanas.')
+    expect(t).toContain('1. Sabonete facial para pele oleosa/acneica GEL (01 fr.)\n')
+    expect(t).toContain('3. Protetor solar facial toque seco FPS 50 loção (01 fr.)\n')
+    expect(t).not.toContain('Quantidade')
+  })
+  it('controlado: quantidade também por extenso', () => {
+    const t = de(montarAnexos(escolher(conduta(), [['sistemico', 'limeciclina'], ['sistemico', 'isotretinoina']]), DADOS), 'receita').texto
+    expect(t).toContain('Isotretinoína 20mg (30 CAP — trinta)\n')
   })
   it('por extenso concorda com a unidade', () => {
     expect([extenso(1), extenso(1, true), extenso(2, true), extenso(21), extenso(56, true), extenso(100), extenso(120), extenso(200, true)])

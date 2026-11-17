@@ -20,6 +20,8 @@ export type ItemReceita = {
   nome: string; forma: string; concentracao: string
   quantidade: { n: number; unidade: string; feminino: boolean }
   via: 'topico' | 'oral'; posologia: string
+  /** controlado (ex.: isotretinoína): a quantidade vai também por extenso */
+  controlado?: boolean
 }
 /** `receita`: os itens que a opção põe na receita (só nos grupos de tratamento) */
 export type Opcao = { id: string; rotulo: string; texto: string; dias?: number; receita?: ItemReceita[] }
