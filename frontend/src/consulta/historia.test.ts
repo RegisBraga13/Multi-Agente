@@ -25,6 +25,16 @@ describe('montarHistoria', () => {
     const fora = ['Médico: Toma anticoagulante?', 'Paciente: AAS 100 mg.', 'Médico: Me conta.', 'Paciente: Ferida no nariz que não cicatriza há 3 meses.'].join(String.fromCharCode(10))
     expect(montarHistoria(antonio, agora, fora, exame, [], contexto)[2].texto.startsWith('Paciente de 73 anos refere ferida no nariz')).toBe(true)
   })
+  it('pergunta respondida entra contextualizada (HDA ou antecedentes); sem resposta não entra', () => {
+    const p = (texto: string, secao: 'hda' | 'ant') => ({ texto, sim: `${texto} sim.`, nao: `${texto} não.`, secao })
+    const h2 = montarHistoria(antonio, agora, texto, exame, [], { ...contexto, perguntas: [
+      { pergunta: p('Gravidez', 'hda'), resposta: 'nao' as const },
+      { pergunta: p('Anticoagulante', 'ant'), resposta: 'sim' as const },
+    ] })
+    expect(h2[2].texto.endsWith('Gravidez não.')).toBe(true)
+    expect(h2[3].texto).toContain('Anticoagulante sim.')
+    expect(h[2].texto).not.toContain('Gravidez')
+  })
   it('fala do paciente fora do roteiro entra como relato; remédios ficam nos antecedentes', () => {
     expect(h[2].texto).toContain('Relata: AAS 100 mg.')
     const roteiro = c.falas.map((f) => `${f.quem}: ${f.texto}`).join(String.fromCharCode(10))

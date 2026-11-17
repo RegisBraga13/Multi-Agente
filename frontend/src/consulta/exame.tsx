@@ -163,7 +163,7 @@ function Fotos({ fotos, fotoExemplo, marcas, onAdicionar }: { fotos: number; fot
     const colunas = Math.ceil(n / linhas)
     return (
       // o quadro tem tamanho fixo (proporção da foto, no máximo 170 px de altura); a grade se encaixa dentro
-      <div className="relative aspect-[2.8/1] max-h-[170px]">
+      <div className="relative aspect-[2.8/1] max-h-[138px] lg:max-h-[170px]">
       <div className="absolute inset-0 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${colunas}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${linhas}, minmax(0, 1fr))` }}>
         {Array.from({ length: fotos }, (_, i) => (
           <button key={i} type="button" onClick={() => setAberta(i)} aria-label={`Abrir foto ${i + 1}`} className="relative min-h-0 overflow-hidden bg-suave">
@@ -181,7 +181,7 @@ function Fotos({ fotos, fotoExemplo, marcas, onAdicionar }: { fotos: number; fot
   const img = real(aberta)
   return (
     <div className="flex gap-2">
-      <div className="relative aspect-[2.8/1] max-h-[170px] min-w-0 flex-1 overflow-hidden bg-suave">
+      <div className="relative aspect-[2.8/1] max-h-[138px] lg:max-h-[170px] min-w-0 flex-1 overflow-hidden bg-suave">
         {img ? (
           <div className="absolute inset-x-0 top-0 aspect-[1000/650] -translate-y-[12.6%]">
             <img src={img} alt={`Foto ${aberta + 1} do exame`} className="block size-full object-cover" />

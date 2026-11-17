@@ -14,7 +14,7 @@ import { atualizarHistoria, montarHistoria, type SecaoHistoria } from './histori
 import { PaginaHistoria } from './historia-pagina'
 import { atualizarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, primeirosItens, type ItemDD, type NaoPerder } from './diagnosticos'
 import { PaginaDiagnosticos } from './diagnosticos-pagina'
-import { buscarAtendimento, conteudoDaConsulta } from './exemplo'
+import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
 
@@ -56,7 +56,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
   const fazer = (tipo: 'oficializar' | 'editar', bloco: Bloco) => despachar({ tipo, bloco })
 
   // o que foi salvo na página 1: a história é montada só com isso
-  const fontes = useRef<{ anamnese: string; exame: { rotulo: string; valor: string }[] }>({ anamnese: '', exame: [] })
+  const fontes = useRef<{ anamnese: string; perguntas: RespostaPergunta[]; exame: { rotulo: string; valor: string }[] }>({ anamnese: '', perguntas: [], exame: [] })
   /** geradas = última versão da IA; textos = o que está na tela (com as edições do médico); mudou = seções que a IA reescreveu agora */
   const [historia, setHistoria] = useState<{ versao: number; geradas: SecaoHistoria[]; textos: string[]; mudou: boolean[]; sugestoes: (string | null)[] } | null>(null)
 
@@ -68,7 +68,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
       const f = fontes.current
       // sinais de alerta da anamnese, com a resposta do médico, entram em "Antecedentes e alertas"
       const sinais = conteudo.alertas.filter((x) => x.tipo === 'sinal').map((x) => ({ texto: x.texto, resposta: novo.alertas[x.id] }))
-      const novas = montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: [...conteudo.falas, ...Object.values(conteudo.respostas)], sinais })
+      const novas = montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais, perguntas: f.perguntas })
       // primeira vez: tudo novo; depois: a IA mexe só no que mudou
       setHistoria((h) => h
         ? { versao: h.versao + 1, geradas: novas, ...atualizarHistoria(h.geradas, h.textos, novas) }
@@ -165,8 +165,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
             {navegador}
             <Anamnese
               falas={conteudo.falas}
-              faltouPerguntar={conteudo.faltouPerguntar}
-              respostasPerguntas={conteudo.respostas}
+              perguntas={conteudo.perguntas}
               alertas={conteudo.alertas}
               respostas={estado.alertas}
               situacao={estado.blocos.anamnese.estado}
@@ -174,7 +173,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
               podeGravar={podeGravar(f)}
               onEditar={() => fazer('editar', 'anamnese')}
               onResponder={(id, r) => despachar({ tipo: 'alerta', id, r })}
-              onOficializar={(texto) => { fontes.current.anamnese = texto; salvarPagina1('anamnese') }}
+              onOficializar={(texto, perguntas) => { fontes.current.anamnese = texto; fontes.current.perguntas = perguntas; salvarPagina1('anamnese') }}
             />
           </div>
           <div className="flex min-w-0 flex-col gap-3 [&>section]:flex-1">

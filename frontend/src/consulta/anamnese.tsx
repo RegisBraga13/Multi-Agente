@@ -2,7 +2,7 @@
 // Na anamnese só entra o que é transcrito ou escrito. Pergunta clicada = o médico vai perguntar (grava ou escreve a resposta).
 // Sinal de alerta: o médico pergunta e marca V ou F; V vai para a história clínica (não para a anamnese).
 import { useEffect, useRef, useState } from 'react'
-import type { Alerta, Fala } from './exemplo'
+import type { Alerta, Fala, Pergunta, RespostaPergunta } from './exemplo'
 import type { EstadoConsulta, RespostaAlerta, Situacao } from './tipos'
 import { SEM_CORRETOR } from './campo-linha'
 import { BotaoOficializar, Cartao, ROTULO } from './ui'
@@ -18,9 +18,7 @@ const RESPOSTAS = [
 
 type Props = {
   falas: Fala[]
-  faltouPerguntar: string[]
-  /** resposta do paciente a cada pergunta (simulação da gravação) */
-  respostasPerguntas: Record<string, Fala>
+  perguntas: Pergunta[]
   alertas: Alerta[]
   respostas: EstadoConsulta['alertas']
   situacao: Situacao
@@ -29,34 +27,25 @@ type Props = {
   onEditar: () => void
   onResponder: (id: string, r: RespostaAlerta) => void
   /** salva com o texto atual (a história clínica é montada com ele) */
-  onOficializar: (texto: string) => void
+  onOficializar: (texto: string, perguntas: RespostaPergunta[]) => void
 }
 
-export function Anamnese({ falas, faltouPerguntar, respostasPerguntas, alertas, respostas, situacao, pendencias, podeGravar, onEditar, onResponder, onOficializar }: Props) {
+export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pendencias, podeGravar, onEditar, onResponder, onOficializar }: Props) {
   const [gravando, setGravando] = useState(false)
   const [segundos, setSegundos] = useState(0)
   /** a anamnese numa caixa só: a transcrição entra no fim do texto, e o médico escreve e corrige ali mesmo */
   const [texto, setTexto] = useState('')
-  const [perguntado, setPerguntado] = useState<string[]>([])
+  /** pergunta clicada (riscada = foi feita) → resposta do médico (null = ainda sem Sim/Não) */
+  const [perguntado, setPerguntado] = useState<Record<string, 'sim' | 'nao' | null>>({})
   /** o aviso de sinais pendentes só aparece depois de tentar salvar */
   const [tentou, setTentou] = useState(false)
   const proxima = useRef(0)
   const caixa = useRef<HTMLTextAreaElement>(null)
   const oficializado = situacao === 'oficializado'
 
-  /** perguntas clicadas que ainda não entraram na gravação: pergunta do médico + resposta do paciente */
-  const aPerguntar = useRef<{ pergunta: string; fala: Pick<Fala, 'quem' | 'texto'> }[]>([])
-  const marcarPergunta = (q: string, feito: boolean) => {
-    setPerguntado((p) => (feito ? p.filter((x) => x !== q) : [...p, q]))
-    if (feito) { aPerguntar.current = aPerguntar.current.filter((x) => x.pergunta !== q); return }
-    const r = respostasPerguntas[q]
-    aPerguntar.current.push({ pergunta: q, fala: { quem: 'Médico', texto: q } }, ...(r ? [{ pergunta: q, fala: r }] : []))
-  }
-
-  /** simulação: a próxima fala da gravação — primeiro as perguntas clicadas, depois o roteiro */
   const transcrever = () => {
-    const f = aPerguntar.current.shift()?.fala ?? (proxima.current < falas.length ? falas[proxima.current++] : null)
-    if (!f) return
+    if (proxima.current >= falas.length) return
+    const f = falas[proxima.current++]
     setTexto((x) => `${x}${x && !x.endsWith('\n') ? '\n' : ''}${f.quem}: ${f.texto}\n`)
   }
 
@@ -111,13 +100,14 @@ export function Anamnese({ falas, faltouPerguntar, respostasPerguntas, alertas, 
           onClick={() => {
             if (pendencias > 0 || gravando) return setTentou(true)
             setTentou(false)
-            onOficializar(texto)
+            // só as perguntas com Sim/Não vão para a história (riscada sem resposta = o médico não quis perguntar)
+            onOficializar(texto, perguntas.flatMap((p) => { const r = perguntado[p.texto]; return r ? [{ pergunta: p, resposta: r }] : [] }))
           }}
         />
       }
     >
       {/* a caixa ocupa a altura que sobra no cartão (o cartão desce até perto do rodapé) */}
-      <div className="flex min-h-[150px] flex-1 flex-col border-[1.5px] border-linha focus-within:border-tinta">
+      <div className="flex min-h-[118px] flex-1 flex-col border-[1.5px] border-linha focus-within:border-tinta lg:min-h-[150px]">
         <textarea
           ref={caixa}
           {...SEM_CORRETOR}
@@ -129,17 +119,32 @@ export function Anamnese({ falas, faltouPerguntar, respostasPerguntas, alertas, 
         />
       </div>
 
-      {faltouPerguntar.length > 0 && (
+      {perguntas.length > 0 && (
         <div className="mt-3">
           <p className={ROTULO}>Perguntas</p>
           <div className="mt-1 flex flex-col items-start gap-1">
-            {faltouPerguntar.map((q) => {
-              const feito = perguntado.includes(q)
+            {perguntas.map(({ texto: q }) => {
+              const feito = q in perguntado
+              const r = perguntado[q]
               return (
-                <button key={q} type="button" onClick={() => marcarPergunta(q, feito)} aria-pressed={feito}
-                  className={`border-[1.5px] px-2 py-0.5 text-left text-[13.5px] ${feito ? 'border-linha text-apagado line-through' : 'border-dashed border-(--esp-medio)'}`}>
-                  {q}
-                </button>
+                // clicar risca (a pergunta foi feita) e abre Sim/Não; a resposta vai para a história, não para a anamnese
+                <div key={q} className="flex max-w-full items-center gap-1.5">
+                  <button type="button" aria-pressed={feito}
+                    onClick={() => {
+                      setPerguntado((p) => { const n = { ...p }; if (feito) delete n[q]; else n[q] = null; return n })
+                      if (feito && r) mudou()
+                    }}
+                    className={`min-w-0 truncate border-[1.5px] px-2 py-0.5 text-left text-[13.5px] ${feito ? 'border-linha text-apagado line-through' : 'border-dashed border-(--esp-medio)'}`}>
+                    {q}
+                  </button>
+                  {feito && (['sim', 'nao'] as const).map((op) => (
+                    <button key={op} type="button" aria-pressed={r === op}
+                      onClick={() => { setPerguntado((p) => ({ ...p, [q]: r === op ? null : op })); mudou() }}
+                      className={`shrink-0 border-[1.5px] px-2 py-0.5 text-[13px] font-bold ${r === op ? 'border-tinta bg-tinta text-papel' : 'border-linha hover:bg-suave'}`}>
+                      {op === 'sim' ? 'Sim' : 'Não'}
+                    </button>
+                  ))}
+                </div>
               )
             })}
           </div>
