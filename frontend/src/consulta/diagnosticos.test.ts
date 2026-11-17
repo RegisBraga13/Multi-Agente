@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { agendaDoDia } from '../modulo/exemplo'
 import { conteudoDaConsulta } from './exemplo'
 import { montarHistoria, type SecaoHistoria } from './historia'
-import { MODELOS } from './diagnosticos-exemplo'
-import { atualizarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, primeirosItens, type Hipotese, type ItemDD } from './diagnosticos'
+import { EXTRAS, MODELOS } from './diagnosticos-exemplo'
+import { atualizarComReserva, atualizarDiagnosticos, chamarMais, iniciarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, primeirosItens, type Hipotese, type ItemDD } from './diagnosticos'
 
 const agora = new Date(2026, 10, 16, 7, 0)
 // os pacientes giram de um dia para o outro: procura o paciente, com ficha pronta, em algum dia de novembro
@@ -21,14 +21,16 @@ describe('montarDiagnosticos', () => {
   const mariana = historiaDe('Mariana Costa')
   const dd = montarDiagnosticos('dermatologia', 'Mariana Costa', mariana)
 
-  it('3 hipóteses da IA com CID e %, da mais à menos provável (como na landing)', () => {
-    expect(dd.hipoteses.map((h) => [h.cid, h.pct])).toEqual([['L70.0', 64], ['L71.9', 21], ['L71.0', 9]])
+  it('3 hipóteses da IA com CID e %, da mais à menos provável (como na landing) + 3 na reserva do "+"', () => {
+    const { itens, reserva } = iniciarDiagnosticos(dd.hipoteses)
+    expect(itens.map((x) => [x.hip.cid, x.hip.pct])).toEqual([['L70.0', 64], ['L71.9', 21], ['L71.0', 9]])
+    expect(reserva.map((h) => [h.cid, h.pct])).toEqual([['E28.2', 4], ['B36.8', 3], ['L70.5', 2]])
   })
   it('todo trecho citado existe de verdade na seção salva da história', () => {
     for (const nome of ['Mariana Costa', 'Carlos Henrique Rocha', 'Antônio Barbosa', 'Luíza Fernandes', 'Juliana Teixeira']) {
       const h = historiaDe(nome)
       const r = montarDiagnosticos('dermatologia', nome, h)
-      expect(r.hipoteses.length).toBe(3)
+      expect(r.hipoteses.length).toBe(6)
       for (const hip of r.hipoteses) for (const ev of hip.evidencias) {
         expect(h.find((s) => s.rotulo === ev.secao)!.texto).toContain(ev.trecho)
       }
@@ -37,7 +39,9 @@ describe('montarDiagnosticos', () => {
   it('os 13 pacientes de exemplo: com a história completa, todas as pistas aparecem (% = o de base)', () => {
     for (const [nome, m] of Object.entries(MODELOS)) {
       const r = montarDiagnosticos('dermatologia', nome, historiaDe(nome))
-      expect([nome, r.hipoteses.map((h) => h.pct)]).toEqual([nome, m.hipoteses.map((x) => x.base).sort((p, q) => q - p)])
+      expect([nome, r.hipoteses.map((h) => h.pct)]).toEqual([nome, [...m.hipoteses, ...EXTRAS[nome]].map((x) => x.base).sort((p, q) => q - p)])
+      // as extras são sempre menos prováveis que as 3 primeiras
+      expect(Math.max(...EXTRAS[nome].map((x) => x.base))).toBeLessThan(Math.min(...m.hipoteses.map((x) => x.base)))
     }
   })
   it('"não pode perder" só quando há um (melanoma no Carlos; nada inventado na acne)', () => {
@@ -93,6 +97,29 @@ describe('atualizarDiagnosticos', () => {
   it('nada mudou: nada é reescrito nem sugerido', () => {
     const iguais = atualizarDiagnosticos(itens, [hip('a', 60), hip('b', 30), hip('c', 10), hip('d', 5)])
     expect(iguais.every((x) => !x.mudou && !x.aviso)).toBe(true)
+  })
+})
+
+describe('"+": mais uma hipótese da IA, uma por vez (até 3 a mais)', () => {
+  const todas = [hip('a', 60), hip('b', 30), hip('c', 10), hip('d', 5), hip('e', 3), hip('f', 2)]
+  const propria: ItemDD = { hip: { id: 'propria-1', nome: 'Meu', cid: '', pct: null, evidencias: [] }, decisao: 'confirmada', propria: true, mudou: false, aviso: null }
+  it('cada toque traz a próxima, antes das do médico; acabou a reserva, nada muda', () => {
+    const ini = iniciarDiagnosticos(todas)
+    let d = { ...ini, itens: [...ini.itens, propria] }
+    d = chamarMais(d)
+    expect(d.itens.map((x) => x.hip.id)).toEqual(['a', 'b', 'c', 'd', 'propria-1'])
+    d = chamarMais(chamarMais(d))
+    expect(d.itens.filter((x) => !x.propria)).toHaveLength(6)
+    expect(chamarMais(d)).toEqual(d)
+  })
+  it('nunca mais que 3 a mais, mesmo que a IA tenha mais', () => {
+    expect(iniciarDiagnosticos([...todas, hip('g', 1)]).reserva.map((h) => h.id)).toEqual(['d', 'e', 'f'])
+  })
+  it('história nova: as que estavam à mostra seguem; completa até 3; o resto volta para a reserva', () => {
+    const d = chamarMais(iniciarDiagnosticos(todas)) // a b c d à mostra
+    const r = atualizarComReserva(d.itens, [hip('a', 50), hip('x', 40), hip('d', 8), hip('e', 3), hip('f', 2)]) // b e c saíram, x nova
+    expect(r.itens.map((x) => x.hip.id)).toEqual(['a', 'x', 'd'])
+    expect(r.reserva.map((h) => h.id)).toEqual(['e', 'f'])
   })
 })
 

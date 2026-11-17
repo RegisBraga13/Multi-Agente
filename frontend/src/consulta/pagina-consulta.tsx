@@ -2,6 +2,7 @@
 // Anexos — e a página da etapa atual. Só visual, dados de exemplo; o estado vive na memória da página.
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { estiloAlergia } from '../alergia'
 import { buscarEspecialidade, type Especialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
 import { NaoEncontrada } from '../nao-encontrada'
@@ -12,7 +13,8 @@ import { ETAPAS, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, pode
 import { Exame } from './exame'
 import { atualizarHistoria, montarHistoria, type SecaoHistoria } from './historia'
 import { PaginaHistoria } from './historia-pagina'
-import { atualizarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, primeirosItens, type ItemDD, type NaoPerder } from './diagnosticos'
+import { atualizarComReserva, chamarMais, iniciarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, type Hipotese, type ItemDD, type NaoPerder } from './diagnosticos'
+import { atualizarResumo, marcarResumo, montarResumo, type ItemResumo } from './resumo'
 import { PaginaDiagnosticos } from './diagnosticos-pagina'
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
@@ -77,8 +79,9 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
     }
   }
 
-  /** Diagnósticos: itens = hipóteses da IA + as do médico, cada uma com a decisão dele */
-  const [dd, setDd] = useState<{ versao: number; itens: ItemDD[]; naoPerder: NaoPerder | null; naoPerderAvaliado: boolean } | null>(null)
+  /** Diagnósticos: itens = hipóteses da IA à mostra + as do médico, cada uma com a decisão dele; reserva = as que o "+" traz.
+   *  resumo = o que pesa na conduta, da história salva (vai para a conduta com V/F). */
+  const [dd, setDd] = useState<{ versao: number; itens: ItemDD[]; reserva: Hipotese[]; resumo: ItemResumo[]; naoPerder: NaoPerder | null; naoPerderAvaliado: boolean } | null>(null)
   /** última versão já escrita "ao vivo" de cada página: ao voltar, aparece pronta (não escreve de novo) */
   const [escrita, setEscrita] = useState({ historia: 0, diagnosticos: 0 })
   const escreveu = (pagina: 'historia' | 'diagnosticos', versao: number) =>
@@ -92,9 +95,10 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
     // a IA usa só a história salva: o texto que está na tela, com as edições do médico
     const salva = historia.geradas.map((s, i) => ({ rotulo: s.rotulo, texto: historia.textos[i] }))
     const r = montarDiagnosticos(esp.slug, at.paciente.nome, salva)
+    const resumo = montarResumo(salva)
     setDd((d) => d
-      ? { versao: d.versao + 1, itens: atualizarDiagnosticos(d.itens, r.hipoteses), naoPerder: r.naoPerder, naoPerderAvaliado: d.naoPerderAvaliado && d.naoPerder?.cid === r.naoPerder?.cid }
-      : { versao: 1, itens: primeirosItens(r.hipoteses), naoPerder: r.naoPerder, naoPerderAvaliado: false })
+      ? { versao: d.versao + 1, ...atualizarComReserva(d.itens, r.hipoteses), resumo: atualizarResumo(d.resumo, resumo), naoPerder: r.naoPerder, naoPerderAvaliado: d.naoPerderAvaliado && d.naoPerder?.cid === r.naoPerder?.cid }
+      : { versao: 1, ...iniciarDiagnosticos(r.hipoteses), resumo, naoPerder: r.naoPerder, naoPerderAvaliado: false })
     navegar(`${base}/diagnosticos`)
   }
 
@@ -230,6 +234,9 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
             <PaginaDiagnosticos
               key={dd.versao}
               itens={dd.itens}
+              naReserva={dd.reserva.length}
+              resumo={dd.resumo}
+              alergia={estiloAlergia(esp)}
               naoPerder={dd.naoPerder}
               naoPerderAvaliado={dd.naoPerderAvaliado}
               primeira={dd.versao === 1}
@@ -245,6 +252,8 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
                 return x.aviso.tipo === 'saiu' ? [] : [{ ...x, aviso: null, decisao: 'pendente' as const }]
               }))}
               onAdicionar={(nome, cid) => nosItens((xs) => [...xs, { hip: { id: `propria-${Date.now()}`, nome, cid, pct: null, evidencias: [] }, decisao: 'confirmada', propria: true, mudou: false, aviso: null }])}
+              onMais={() => mexerDd((d) => ({ ...d, ...chamarMais(d) }))}
+              onMarcar={(id, m) => mexerDd((d) => ({ ...d, resumo: marcarResumo(d.resumo, id, m) }))}
               onAvaliarNaoPerder={() => mexerDd((d) => ({ ...d, naoPerderAvaliado: !d.naoPerderAvaliado }))}
               onSalvar={() => fazer('oficializar', 'diagnosticos')}
             />

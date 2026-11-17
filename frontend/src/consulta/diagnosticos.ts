@@ -2,7 +2,7 @@
 // Simulação da IA: cada hipótese de exemplo tem pistas; a pista só vale se estiver na história salva,
 // citando o trecho. Sem nenhuma pista a favor, a hipótese não é sugerida (evidência obrigatória).
 import type { SecaoHistoria } from './historia'
-import { MODELOS } from './diagnosticos-exemplo'
+import { EXTRAS, MODELOS } from './diagnosticos-exemplo'
 
 export type Evidencia = { lado: 'favor' | 'contra'; texto: string; /** rótulo da seção da história */ secao: string; /** frase da história que justifica */ trecho: string }
 /** `pct` = sinal da IA para ordenar (a calibrar com uso real); null no diagnóstico do médico */
@@ -23,7 +23,7 @@ export function montarDiagnosticos(slug: string, paciente: string, historia: Sec
   if (!modelo) return { hipoteses: [], naoPerder: null }
   const textoDe = (secao: string) => historia.find((s) => s.rotulo === secao)?.texto ?? ''
 
-  const hipoteses = modelo.hipoteses.flatMap((m): Hipotese[] => {
+  const hipoteses = [...modelo.hipoteses, ...(EXTRAS[paciente] ?? [])].flatMap((m): Hipotese[] => {
     const evidencias = m.pistas.flatMap((p): Evidencia[] => {
       const trecho = trechoCom(textoDe(p.secao), p.termo)
       return trecho ? [{ lado: p.lado, texto: p.texto, secao: p.secao, trecho }] : []
@@ -41,6 +41,37 @@ export function montarDiagnosticos(slug: string, paciente: string, historia: Sec
 
 export function primeirosItens(hipoteses: Hipotese[]): ItemDD[] {
   return hipoteses.map((hip) => ({ hip, decisao: 'pendente', propria: false, mudou: true, aviso: null }))
+}
+
+/** Aparecem logo 3 hipóteses; o médico chama mais, uma por vez, pelo "+" (até 3 a mais). */
+export const INICIAIS = 3
+export const MAX_EXTRAS = 3
+/** `reserva`: hipóteses que a IA já tem e que o "+" mostra, na ordem */
+export type Diferenciais = { itens: ItemDD[]; reserva: Hipotese[] }
+
+export function iniciarDiagnosticos(hipoteses: Hipotese[]): Diferenciais {
+  return { itens: primeirosItens(hipoteses.slice(0, INICIAIS)), reserva: hipoteses.slice(INICIAIS, INICIAIS + MAX_EXTRAS) }
+}
+
+/** "+": a próxima hipótese da reserva entra depois das da IA (as do médico ficam no fim). */
+export function chamarMais({ itens, reserva }: Diferenciais): Diferenciais {
+  const [hip, ...resto] = reserva
+  if (!hip) return { itens, reserva }
+  const nova: ItemDD = { hip, decisao: 'pendente', propria: false, mudou: false, aviso: null }
+  return { itens: [...itens.filter((x) => !x.propria), nova, ...itens.filter((x) => x.propria)], reserva: resto }
+}
+
+/**
+ * História salva de novo: as hipóteses que já estavam à mostra seguem à mostra (atualizadas);
+ * se faltar, completa até 3 com as mais prováveis; o resto volta para a reserva do "+".
+ */
+export function atualizarComReserva(itens: ItemDD[], novas: Hipotese[]): Diferenciais {
+  const vistas = new Set(itens.filter((x) => !x.propria).map((x) => x.hip.id))
+  const ficam = novas.filter((h) => vistas.has(h.id))
+  const entram = novas.filter((h) => !vistas.has(h.id)).slice(0, Math.max(0, INICIAIS - ficam.length))
+  const mostrar = novas.filter((h) => ficam.includes(h) || entram.includes(h))
+  const reserva = novas.filter((h) => !mostrar.includes(h)).slice(0, Math.max(0, INICIAIS + MAX_EXTRAS - mostrar.length))
+  return { itens: atualizarDiagnosticos(itens, mostrar), reserva }
 }
 
 const igual = (a: Hipotese, b: Hipotese) => JSON.stringify([a.pct, a.evidencias]) === JSON.stringify([b.pct, b.evidencias])
