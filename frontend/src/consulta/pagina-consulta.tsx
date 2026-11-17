@@ -18,6 +18,8 @@ import { atualizarResumo, marcarResumo, montarResumo, type ItemResumo } from './
 import { PaginaDiagnosticos } from './diagnosticos-pagina'
 import { atualizarConduta, editarTexto, escolherOpcao, escreverOutro, montarConduta, pendenciasConduta, revelar, type Conduta } from './conduta'
 import { PaginaConduta } from './conduta-pagina'
+import { alternarEmitir, atualizarAnexos, avancar, editarAnexo, montarAnexos, pendenciasAnexos, type Anexo, type DadosConsulta } from './anexos'
+import { PaginaAnexos } from './anexos-pagina'
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
@@ -126,6 +128,31 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
   }
 
   /** O médico mexeu na conduta: deixa de estar salva. */
+  /** Receita e anexos: montados só com a conduta salva (dados do paciente e da consulta nos documentos). */
+  const [docs, setDocs] = useState<{ versao: number; itens: Anexo[] } | null>(null)
+  const dados: DadosConsulta = {
+    paciente: at.paciente.nome,
+    idade: idade(at.paciente.nascimento, new Date()),
+    data: at.id.slice(0, 10).split('-').reverse().join('/'),
+    hora: at.inicio,
+  }
+
+  /** Salvar conduta. Ao liberar os anexos, a IA monta (ou refaz só o que mudou) e a página deles abre. */
+  const salvarConduta = () => {
+    const novo = oficializar(estado, 'conduta')
+    despachar({ tipo: 'oficializar', bloco: 'conduta' })
+    if (!conduta || podeOficializar(estado, 'anexos') || !podeOficializar(novo, 'anexos')) return
+    const novos = montarAnexos(conduta.c, dados)
+    setDocs((x) => (x ? { versao: x.versao + 1, itens: atualizarAnexos(x.itens, novos) } : { versao: 1, itens: novos }))
+    navegar(`${base}/anexos`)
+  }
+
+  /** O médico mexeu nos anexos: a página deixa de estar finalizada. */
+  const mexerDocs = (f: (xs: Anexo[]) => Anexo[]) => {
+    setDocs((x) => x && { ...x, itens: f(x.itens) })
+    if (estado.blocos.anexos.estado !== 'revisado_medico') fazer('editar', 'anexos')
+  }
+
   const mexerConduta = (f: (c: Conduta) => Conduta) => {
     setConduta((x) => x && { ...x, c: f(x.c) })
     if (estado.blocos.conduta.estado !== 'revisado_medico') fazer('editar', 'conduta')
@@ -299,7 +326,29 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
               onOutro={(linha, texto) => mexerConduta((c) => escreverOutro(c, linha, texto))}
               onRevelar={(i) => setConduta((x) => x && { ...x, c: revelar(x.c, i) })}
               onEditar={(i, texto) => mexerConduta((c) => editarTexto(c, i, texto))}
-              onSalvar={() => fazer('oficializar', 'conduta')}
+              onSalvar={salvarConduta}
+            />
+          </div>
+        ) : etapa === 'anexos' && docs && situacaoDaEtapa(estado, 'anexos') !== 'bloqueado' ? (
+          <div className="flex flex-1 flex-col [&>section]:flex-1">
+            {situacaoDaEtapa(estado, 'anexos') === 'desatualizado' && !podeOficializar(estado, 'anexos') && (
+              <p className="mb-2 text-[14px] font-semibold">A conduta mudou. Salve a conduta de novo e a IA refaz só os anexos que mudaram.</p>
+            )}
+            <PaginaAnexos
+              key={docs.versao}
+              anexos={docs.itens}
+              dados={dados}
+              situacao={situacaoDaEtapa(estado, 'anexos')}
+              podeFinalizar={podeOficializar(estado, 'anexos')}
+              pendencia={pendenciasAnexos(docs.itens)}
+              onEmitir={(tipo) => mexerDocs((xs) => alternarEmitir(xs, tipo))}
+              onEditar={(tipo, texto) => mexerDocs((xs) => editarAnexo(xs, tipo, texto))}
+              onAvancar={(tipo) => {
+                const antes = docs.itens.find((x) => x.tipo === tipo)
+                mexerDocs((xs) => avancar(xs, tipo))
+                if (antes && (antes.estado === 'assinado' || (antes.estado === 'revisado' && !antes.assinatura))) setAviso(`${antes.titulo} enviado ao paciente (simulação).`)
+              }}
+              onFinalizar={() => { fazer('oficializar', 'anexos'); setAviso('Consulta finalizada. O Prontuário chega na próxima etapa.') }}
             />
           </div>
         ) : etapa !== 'anamnese-exame' && (
@@ -309,7 +358,8 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
 
       <footer className="py-3 text-center"><Marca className="text-[17px]" /></footer>
 
-      {anexos && <PainelAnexos condutaPronta={estado.blocos.conduta.estado === 'oficializado' && situacaoDaEtapa(estado, 'conduta') === 'oficializado'} onFechar={fecharAnexos} onAviso={setAviso} />}
+      {anexos && <PainelAnexos condutaPronta={docs !== null && situacaoDaEtapa(estado, 'anexos') !== 'bloqueado'} onFechar={fecharAnexos} onAviso={setAviso}
+        onAbrir={() => { setAnexos(false); navegar(`${base}/anexos`) }} />}
 
       <div role="status" className="pointer-events-none fixed inset-x-0 bottom-6 z-[60] flex justify-center px-4">
         {aviso && <p className="bg-tinta px-5 py-3 text-[15px] font-medium text-papel shadow-lg">{aviso}</p>}
@@ -321,7 +371,8 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
 const TEXTO_ETAPA: Record<Exclude<EtapaId, 'anamnese-exame'>, { bloco: Bloco; antes: EtapaId; bloqueio: string; ia: string }> = {
   historia: { bloco: 'historia', antes: 'anamnese-exame', bloqueio: 'Salve a anamnese e o exame físico para a IA montar a história clínica.', ia: 'A IA monta a história só com a anamnese e o exame físico salvos. Você revisa, edita e salva.' },
   diagnosticos: { bloco: 'diagnosticos', antes: 'historia', bloqueio: 'Salve a história clínica para a IA sugerir os diagnósticos diferenciais.', ia: 'A IA sugere hipóteses só a partir da história salva. Você decide o diagnóstico.' },
-  conduta: { bloco: 'conduta', antes: 'diagnosticos', bloqueio: 'Salve os diagnósticos para a IA sugerir conduta e tratamento.', ia: 'A IA sugere a conduta só a partir dos diagnósticos salvos, com a fonte de cada item. Ao fim, Finalizar consulta.' },
+  conduta: { bloco: 'conduta', antes: 'diagnosticos', bloqueio: 'Salve os diagnósticos para a IA sugerir conduta e tratamento.', ia: 'A IA sugere a conduta só a partir dos diagnósticos salvos, com a fonte de cada item.' },
+  anexos: { bloco: 'anexos', antes: 'conduta', bloqueio: 'Salve a conduta para a IA montar a receita e os anexos.', ia: 'A IA monta a receita e os anexos só com a conduta salva. Ao fim, Finalizar consulta.' },
 }
 
 /** Páginas 2–4: ainda não construídas. Mostram a regra da etapa e permitem simular a oficialização. */
@@ -366,7 +417,7 @@ function EtapaSeguinte({ etapa, estado, onOficializar, onIr }: { etapa: Exclude<
 
 const DOCUMENTOS = ['Receita', 'Orientações', 'Atestado', 'Pedido de exames', 'Encaminhamento', 'Laudo']
 
-function PainelAnexos({ condutaPronta, onFechar, onAviso }: { condutaPronta: boolean; onFechar: () => void; onAviso: (t: string) => void }) {
+function PainelAnexos({ condutaPronta, onFechar, onAviso, onAbrir }: { condutaPronta: boolean; onFechar: () => void; onAviso: (t: string) => void; onAbrir: () => void }) {
   return (
     <Gaveta titulo="Anexos" onFechar={onFechar}>
       <p className="text-[14.5px] text-apagado">
@@ -379,7 +430,7 @@ function PainelAnexos({ condutaPronta, onFechar, onAviso }: { condutaPronta: boo
             <li key={d} className="flex items-center justify-between px-4 py-2.5">
               <span className="text-[16px] font-semibold">{d}</span>
               {livre ? (
-                <button type="button" onClick={() => onAviso('Os anexos chegam numa próxima etapa.')} className="border-[1.5px] border-tinta px-3 py-1 text-[13.5px] font-semibold hover:bg-tinta hover:text-papel">Abrir</button>
+                <button type="button" onClick={() => (condutaPronta ? onAbrir() : onAviso('O atestado avulso chega numa próxima etapa.'))} className="border-[1.5px] border-tinta px-3 py-1 text-[13.5px] font-semibold hover:bg-tinta hover:text-papel">Abrir</button>
               ) : (
                 <span className="text-[13px] text-apagado">depois da conduta</span>
               )}

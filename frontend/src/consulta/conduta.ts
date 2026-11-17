@@ -11,7 +11,18 @@ import type { ItemResumo } from './resumo'
 
 /** `texto`: a frase que entra na conduta quando a opção está marcada ('' = não escreve nada) */
 /** `dias`: retorno — a data (dia da consulta + dias) entra no fim da frase */
-export type Opcao = { id: string; rotulo: string; texto: string; dias?: number }
+/**
+ * Item da receita — o que a receita exige: nome pela DCB (genérico), forma farmacêutica, concentração/dosagem,
+ * quantidade (algarismos e por extenso: `feminino` concorda o número com a unidade) e posologia com a via.
+ * `via` decide a seção da receita (uso tópico/externo ou oral). Concentração '' = não se aplica (dermocosmético).
+ */
+export type ItemReceita = {
+  nome: string; forma: string; concentracao: string
+  quantidade: { n: number; unidade: string; feminino: boolean }
+  via: 'topico' | 'oral'; posologia: string
+}
+/** `receita`: os itens que a opção põe na receita (só nos grupos de tratamento) */
+export type Opcao = { id: string; rotulo: string; texto: string; dias?: number; receita?: ItemReceita[] }
 /**
  * Uma escolha dentro do grupo. `rotulo` null = o grupo tem uma linha só (como na landing).
  * `prefixo`: as opções marcadas viram uma frase só ("Encaminho para" + "ginecologia e cardiologia.").
