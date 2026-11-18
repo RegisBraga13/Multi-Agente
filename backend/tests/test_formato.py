@@ -1,8 +1,8 @@
 import pytest
-from conftest import caso_minimo
 from pydantic import ValidationError
 
 from casos_de_teste.formato import Caso, Diagnostico
+from tests.conftest import caso_minimo
 
 
 def test_caso_minimo_e_valido():

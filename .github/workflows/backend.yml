@@ -20,5 +20,5 @@ jobs:
       - run: python -m pip install -e ".[dev]"
       - run: ruff check .
       - run: ruff format --check .
-      - run: mypy app casos_de_teste
+      - run: mypy app casos_de_teste banco_local
       - run: pytest -q  # os testes "banco" usam o Docker do runner

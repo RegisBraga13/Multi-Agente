@@ -1,9 +1,8 @@
-from conftest import caso_minimo, sinal
-
 from casos_de_teste import carregar
 from casos_de_teste.__main__ import main
 from casos_de_teste.folha import montar_folha
 from casos_de_teste.formato import Caso
+from tests.conftest import caso_minimo, sinal
 
 SINAIS = [
     sinal("angioedema", "Inchaço de lábios/língua ou falta de ar"),

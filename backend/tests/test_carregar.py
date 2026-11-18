@@ -1,7 +1,7 @@
 import pytest
-from conftest import caso_minimo, sinal
 
 from casos_de_teste.carregar import validar_pasta
+from tests.conftest import caso_minimo, sinal
 
 SINAIS = [
     sinal("angioedema", "Inchaço de lábios/língua ou falta de ar"),
