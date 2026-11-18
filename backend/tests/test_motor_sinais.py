@@ -108,3 +108,17 @@ def test_ordem_por_tipo():
 def test_extras_da_ia_passam_marcados():
     r, _, _ = rodar(entrada(), ia(extras=["Febre com lesões em alvo"]))
     assert r.extras_ia == ["Febre com lesões em alvo"]
+
+
+def test_privacidade_bloqueada_mantem_a_lista_respondida():
+    falso = ProvedorIAFalso({"sinais": ia()})
+    e = entrada([sim("angioedema")], falas=("Sou a Mariana e meus lábios incharam.",))
+    r = motor_sinais(falso, e, LISTA, RelogioFixo(QUANDO), lambda x: None, termos_proibidos=["Mariana"])
+    assert [d.id for d in r.disparados] == ["angioedema"] and falso.pedidos == []
+    assert any("privacidade" in a for a in r.avisos) and r.ia_falhou
+
+
+def test_urgencia_imediata_negada_mas_encontrada_vira_conflito():
+    r, _, _ = rodar(entrada([nao("angioedema")]), ia([("angioedema", "Lábios edemaciados")]))
+    assert r.disparados == [] and [c.id for c in r.conflitos] == ["angioedema"]
+    assert r.conflitos[0].trecho == "Lábios edemaciados" and not r.ia_falhou

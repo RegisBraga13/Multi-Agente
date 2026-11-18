@@ -25,7 +25,7 @@ from app.motores.historia import HistoriaClinica, motor_historia
 from app.motores.sinais import motor_sinais
 from app.provedores.ia import PedidoIA, ProvedorIA, RespostaIA
 from app.provedores.relogio import Relogio
-from casos_de_teste.avaliadora import Criterio, TipoCriterio, Veredito, avaliar
+from casos_de_teste.avaliadora import Criterio, TipoCriterio, avaliar_detalhado
 from casos_de_teste.entrada import entrada_do_caso
 from casos_de_teste.formato import Caso, Diagnostico
 
@@ -63,12 +63,16 @@ class ResultadoCaso(ModeloApi):
     tokens_entrada: int
     tokens_saida: int
     custo_usd: float
+    modelos: list[str]
     segundos: float
     erro: str | None
 
 
 class RelatorioMedicao(ModeloApi):
+    """`falso`: rodada de demonstração (provedor falso) — nada clínico foi medido."""
+
     quando: datetime
+    falso: bool
     modelo: str
     versoes_prompt: dict[str, str]
     casos: list[ResultadoCaso]
@@ -110,9 +114,12 @@ def _pela_avaliadora(
     itens: list[tuple[TipoCriterio, str]],
     relogio: Relogio,
     registrar: Callable[[RegistroDecisao], None],
+    rejeitados: list[str],
 ) -> list[ResultadoCriterio]:
     criterios = [Criterio(n=i, tipo=t, texto=x) for i, (t, x) in enumerate(itens, 1)]
-    vereditos: list[Veredito] = avaliar(provedor, texto, criterios, relogio, registrar)
+    vereditos, rejeitada = avaliar_detalhado(provedor, texto, criterios, relogio, registrar)
+    if rejeitada and "avaliadora" not in rejeitados:
+        rejeitados.append("avaliadora")
     return [
         ResultadoCriterio(
             etapa=etapa,
@@ -143,7 +150,12 @@ def _casa_cid(esperados: list[Diagnostico], hipoteses: list[tuple[str, str]]) ->
 
 
 def _criterios_historia(
-    caso: Caso, h: HistoriaClinica, provedor: ProvedorIA, relogio: Relogio, reg: Callable[[RegistroDecisao], None]
+    caso: Caso,
+    h: HistoriaClinica,
+    provedor: ProvedorIA,
+    relogio: Relogio,
+    reg: Callable[[RegistroDecisao], None],
+    rejeitados: list[str],
 ) -> list[ResultadoCriterio]:
     e = caso.esperado.historia
     texto = "\n".join(f"{rotulo}: {getattr(h, chave)}" for chave, rotulo in SECOES.items())
@@ -153,7 +165,7 @@ def _criterios_historia(
         + [("sem_resposta", x) for x in e.sem_resposta]
         + [("desconhecido", x) for x in e.desconhecidos]
     )
-    resultados = _pela_avaliadora("historia", provedor, texto, itens, relogio, reg)
+    resultados = _pela_avaliadora("historia", provedor, texto, itens, relogio, reg, rejeitados)
     for secao in e.vazias:
         chave = "exames_texto" if secao == "exames" else secao
         valor = getattr(h, chave).strip()
@@ -162,7 +174,12 @@ def _criterios_historia(
 
 
 def _criterios_diagnosticos(
-    caso: Caso, dd: DiagnosticosIA, provedor: ProvedorIA, relogio: Relogio, reg: Callable[[RegistroDecisao], None]
+    caso: Caso,
+    dd: DiagnosticosIA,
+    provedor: ProvedorIA,
+    relogio: Relogio,
+    reg: Callable[[RegistroDecisao], None],
+    rejeitados: list[str],
 ) -> tuple[list[ResultadoCriterio], bool]:
     e = caso.esperado.diagnosticos
     top: list[HipoteseIA] = dd.hipoteses[:3]
@@ -187,9 +204,21 @@ def _criterios_diagnosticos(
     if e.rastrear:
         texto = "Rastrear: " + "; ".join(dd.rastrear) + "\nHipóteses: " + vistos
         resultados += _pela_avaliadora(
-            "diagnosticos", provedor, texto, [("obrigatorio", x) for x in e.rastrear], relogio, reg
+            "diagnosticos", provedor, texto, [("obrigatorio", x) for x in e.rastrear], relogio, reg, rejeitados
         )
     return resultados, ok is True
+
+
+def _criterios_esperados(caso: Caso) -> dict[Etapa, list[str]]:
+    e = caso.esperado
+    h, d, c = e.historia, e.diagnosticos, e.conduta
+    return {
+        "sinais": [f"sinal: {s}" for s in e.sinais.disparados],
+        "historia": h.fatos + h.negativas + h.sem_resposta + h.desconhecidos + [f"vazia: {x}" for x in h.vazias],
+        "diagnosticos": [f"principal entre os 3: {d.principal.nome}", f"certeza: {d.principal.certeza}"],
+        "conduta": [f"protocolo: {c.protocolo}", f"urgência: {c.urgencia}", *c.obrigatorios, *c.proibidos]
+        + [f"remédio proibido: {x}" for x in c.remedios_proibidos],
+    }
 
 
 def medir_caso(
@@ -206,7 +235,7 @@ def medir_caso(
     try:
         entrada = entrada_do_caso(caso, {s.id: s for s in lista})
         sinais = motor_sinais(provedor, entrada, lista, relogio, reg)
-        if any("falhou" in a for a in sinais.avisos):
+        if sinais.ia_falhou:
             rejeitados.append("sinais")
         pegos = {d.id for d in sinais.disparados}
         esperados = caso.esperado.sinais.disparados
@@ -214,6 +243,7 @@ def medir_caso(
             _regra("sinais", f"sinal: {s}", s in pegos, "" if s in pegos else "SINAL PERDIDO") for s in esperados
         ]
         notas += [f"sinal a mais (não esperado): {s}" for s in sorted(pegos - set(esperados))]
+        notas += [f"CONFLITO: {c.id} respondido não pelo médico, IA encontrou {c.trecho!r}" for c in sinais.conflitos]
         notas += [f"aviso dos sinais: {a}" for a in sinais.avisos]
 
         hist = motor_historia(provedor, entrada, relogio, reg)
@@ -226,7 +256,7 @@ def medir_caso(
                 "diagnosticos", [f"principal entre os 3: {e.diagnosticos.principal.nome}"], "sem história"
             )
         else:
-            criterios += _criterios_historia(caso, hist.resultado, provedor, relogio, reg)
+            criterios += _criterios_historia(caso, hist.resultado, provedor, relogio, reg, rejeitados)
             seg = seguranca_de(entrada, sinais)
             dd = motor_diagnosticos(provedor, hist.resultado, seg, relogio, reg)
             if dd.resultado is None:
@@ -235,15 +265,19 @@ def medir_caso(
                     "diagnosticos", [f"principal entre os 3: {e.diagnosticos.principal.nome}"], "; ".join(dd.motivos)
                 )
             else:
-                ddc, principal_ok = _criterios_diagnosticos(caso, dd.resultado, provedor, relogio, reg)
+                ddc, principal_ok = _criterios_diagnosticos(caso, dd.resultado, provedor, relogio, reg, rejeitados)
                 criterios += ddc
 
         seg = seguranca_de(entrada, sinais)
         p = e.diagnosticos.principal
         dx = DiagnosticoConfirmado(nome=p.nome, cid=p.cid, certeza=p.certeza)
         conduta = motor_conduta(provedor, dx, seg, protocolos, relogio, reg)
-        if conduta.acao == "REJECT":
+        sem_conduta = conduta.acao == "REJECT"
+        if sem_conduta:
             rejeitados.append("conduta")
+            criterios.append(_regra("conduta", "conduta produzida", False, "; ".join(conduta.avisos)))
+        elif conduta.ia_falhou:
+            rejeitados.append("conduta-complemento")
         usada = conduta.tabela.chave if conduta.tabela else None
         da_tabela = usada is not None
         ec = e.conduta
@@ -256,13 +290,23 @@ def medir_caso(
         remedios = remedios_da_conduta(conduta)
         for proibido in ec.remedios_proibidos:
             achados = [r for r in remedios if _contem_palavra(r, proibido)]
-            criterios.append(_regra("conduta", f"remédio proibido: {proibido}", not achados, ", ".join(achados)))
-        itens_c: list[tuple[TipoCriterio, str]] = [("obrigatorio", x) for x in ec.obrigatorios] + [
-            ("proibido", x) for x in ec.proibidos
-        ]
-        criterios += _pela_avaliadora("conduta", provedor, texto_da_conduta(conduta), itens_c, relogio, reg)
+            # conduta vazia não "passa" um proibido de graça
+            ok = None if sem_conduta else not achados
+            nota = "sem conduta para conferir" if sem_conduta else ", ".join(achados)
+            criterios.append(_regra("conduta", f"remédio proibido: {proibido}", ok, nota))
+        itens_c: list[tuple[TipoCriterio, str]] = [("obrigatorio", x) for x in ec.obrigatorios]
+        if sem_conduta:
+            criterios += [_regra("conduta", f"proibido: {x}", None, "sem conduta para conferir") for x in ec.proibidos]
+        else:
+            itens_c += [("proibido", x) for x in ec.proibidos]
+        criterios += _pela_avaliadora("conduta", provedor, texto_da_conduta(conduta), itens_c, relogio, reg, rejeitados)
     except Exception as falha:  # um caso que quebra não para os outros
         erro = f"{type(falha).__name__}: {falha}"
+        # o que não chegou a ser medido conta como falha (não encolhe o denominador)
+        medidas = {c.etapa for c in criterios}
+        for etapa, nomes in _criterios_esperados(caso).items():
+            if etapa not in medidas:
+                criterios += _falhou_tudo(etapa, nomes, f"não medido: {erro}")
 
     custo, notas_custo = custo_usd(registros)
     return ResultadoCaso(
@@ -275,6 +319,7 @@ def medir_caso(
         tokens_entrada=sum(r.tokens_entrada for r in registros),
         tokens_saida=sum(r.tokens_saida for r in registros),
         custo_usd=round(custo, 4),
+        modelos=sorted({r.modelo for r in registros}),
         segundos=round(time.perf_counter() - inicio, 2),
         erro=erro,
     )
@@ -312,14 +357,16 @@ def medir(
     lista: list[SinalAlerta],
     protocolos: dict[str, Protocolo],
     relogio: Relogio,
-    modelo: str = "claude-opus-5-5",
     so_aprovados: bool = True,
+    falso: bool = False,
 ) -> RelatorioMedicao:
     escolhidos = [c for c in casos if c.revisao.situacao == "aprovado" or not so_aprovados]
     resultados = [medir_caso(provedor, c, lista, protocolos, relogio) for c in escolhidos]
     return RelatorioMedicao(
         quando=relogio.agora(),
-        modelo=modelo,
+        falso=falso,
+        # o modelo que de fato respondeu (inclui o de fallback, se houve)
+        modelo=", ".join(sorted({m for r in resultados for m in r.modelos})) or "—",
         versoes_prompt={m: carregar_prompt("dermatologia", m).versao for m in MOTORES},
         casos=resultados,
         resumo=resumir(resultados),
@@ -358,7 +405,9 @@ class ProvedorDemonstracao:
 
 def texto_do_resumo(r: RelatorioMedicao) -> str:
     s = r.resumo
-    linhas = [
+    sem_preco = sorted({n for c in r.casos for n in c.notas if n.startswith("preço desconhecido")})
+    linhas = ["DEMONSTRAÇÃO (provedor falso): nada clínico foi medido"] if r.falso else []
+    linhas += [
         f"casos: {int(s['casos'])} (com erro: {int(s['casos_com_erro'])}) · modelo {r.modelo}",
         f"história: {s['historia_pct']}% dos critérios · diagnósticos: {s['diagnosticos_pct']}% · "
         f"conduta: {s['conduta_pct']}%",
@@ -368,6 +417,10 @@ def texto_do_resumo(r: RelatorioMedicao) -> str:
         f"custo: US$ {s['custo_total_usd']:.2f} (média US$ {s['custo_medio_usd']:.2f}/caso) · "
         f"tempo médio: {s['segundos_medio']}s/caso",
     ]
+    if sem_preco:
+        linhas.append(f"custo parcial: modelo sem preço na tabela ({'; '.join(sem_preco)})")
+    for c in r.casos:
+        linhas += [f"  {c.id}: {n}" for n in c.notas if n.startswith("CONFLITO")]
     for c in r.casos:
         falhas = [x for x in c.criterios if x.resultado != "passou"]
         if c.erro:

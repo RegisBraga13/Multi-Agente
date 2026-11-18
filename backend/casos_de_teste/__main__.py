@@ -82,9 +82,12 @@ def main(argv: list[str] | None = None) -> int:
         provedor = _provedor(args.falso)
         if provedor is None:
             return 1
-        resultado = medir(provedor, casos, sinais, carregar_protocolos("dermatologia"), RelogioSistema())
+        resultado = medir(
+            provedor, casos, sinais, carregar_protocolos("dermatologia"), RelogioSistema(), falso=args.falso
+        )
         args.pasta.mkdir(parents=True, exist_ok=True)
-        destino = args.pasta / f"{datetime.now():%Y-%m-%d-%H%M%S}.json"
+        sufixo = "-demonstracao" if args.falso else ""
+        destino = args.pasta / f"{datetime.now():%Y-%m-%d-%H%M%S}{sufixo}.json"
         destino.write_text(resultado.model_dump_json(by_alias=True, indent=2), encoding="utf-8")
         print(texto_do_resumo(resultado))
         print(f"relatório gravado em {destino}")

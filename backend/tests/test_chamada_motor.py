@@ -27,7 +27,7 @@ def pedido(dados: dict | None = None) -> PedidoIA:
         motor="dd",
         versao_prompt="v1",
         instrucoes="INSTRUCOES-SECRETAS",
-        dados=dados or {"historia": "Paciente, 34 anos"},
+        dados=dados or {"historia": "Paciente, 34 anos, pústulas na face"},
     )
 
 
@@ -148,3 +148,10 @@ def test_termo_vazio_e_ignorado():
 
 def test_pedido_tem_esforco_medio_por_padrao():
     assert pedido().esforco == "medium"
+
+
+def test_evidencia_do_meta_inventada_e_descartada():
+    meta = {**META, "evidencias": [{"trecho": "Paciente, 34", "origem": "x"}, {"trecho": "inventado", "origem": "x"}]}
+    proposta, _, _ = chamar({"resultado": {"nomes": ["Acne"]}, "meta": meta})
+    assert [e.trecho for e in proposta.evidencias] == ["Paciente, 34"]
+    assert any("inventado" in a for a in proposta.avisos)

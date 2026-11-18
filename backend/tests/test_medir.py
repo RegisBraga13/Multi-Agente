@@ -216,3 +216,56 @@ def test_medir_falso_grava_relatorio(tmp_path, capsys):
 
 def test_caso_inexistente_sai_1(capsys):
     assert main(["medir", "--falso", "--caso", "derm-999-nada"]) == 1
+
+
+def test_caso_que_quebra_cedo_conta_os_criterios_que_faltam_como_falhou():
+    class QuebraNosSinais(Roteiro):
+        def gerar(self, pedido, esquema):
+            raise RuntimeError("falha de rede")
+
+    r = medir1(caso(), QuebraNosSinais())
+    assert "falha de rede" in r.erro
+    etapas = {c.etapa for c in r.criterios}
+    assert {"historia", "diagnosticos", "conduta"} <= etapas
+    assert all(c.resultado == "falhou" for c in r.criterios)
+
+
+def test_conduta_rejeitada_nao_passa_proibidos_de_graca():
+    c = Caso.model_validate(caso_minimo())
+    dados = caso_minimo()
+    dados["esperado"]["diagnosticos"]["principal"] = {"nome": "Urticária aguda", "cid": "L50.0", "certeza": "hipotese"}
+    dados["esperado"]["conduta"] |= {"protocolo": None, "proibidos": ["Corticoide"], "remedios_proibidos": ["dipirona"]}
+    c = Caso.model_validate(dados)
+    r = medir1(c, Roteiro(conduta=lambda p: "timeout"))
+    assert "conduta" in r.rejeitados
+    for x in r.criterios:
+        if x.criterio.startswith(("remédio proibido", "proibido")):
+            assert x.resultado == "duvida", x
+    assert any(x.criterio == "conduta produzida" and x.resultado == "falhou" for x in r.criterios)
+
+
+def test_complemento_e_avaliadora_rejeitados_entram_em_rejeitados():
+    r = medir1(caso(), Roteiro(**{"conduta-complemento": lambda p: "timeout", "avaliadora": lambda p: "timeout"}))
+    assert "conduta-complemento" in r.rejeitados and "avaliadora" in r.rejeitados
+
+
+def test_modelo_do_relatorio_vem_das_chamadas_e_demo_e_marcada(tmp_path, capsys):
+    rel = medir(Roteiro(), [caso()], LISTA, PROTOCOLOS, RelogioFixo(QUANDO), so_aprovados=False)
+    assert rel.modelo == "claude-opus-5-5" and rel.falso is False
+    assert main(["medir", "--falso", "--caso", "derm-001-acne-papulopustulosa", "--pasta", str(tmp_path)]) == 0
+    [arquivo] = list(tmp_path.glob("*.json"))
+    assert "demonstracao" in arquivo.name
+    saida = capsys.readouterr().out
+    assert "DEMONSTRAÇÃO" in saida and "custo parcial" in saida
+
+
+def test_conflito_de_sinal_vai_para_as_notas():
+    dados = caso_minimo()
+    dados["entrada"]["sinais"] = [{"sinal": "angioedema", "resposta": "f"}]
+    dados["entrada"]["exame"]["achados"] = "Lábios edemaciados"
+    det = {
+        "resultado": {"detectados": [{"id": "angioedema", "trecho": "Lábios edemaciados"}], "extras": []},
+        "meta": META,
+    }
+    r = medir1(Caso.model_validate(dados), Roteiro(sinais=lambda p: det))
+    assert any("CONFLITO" in n and "angioedema" in n for n in r.notas)

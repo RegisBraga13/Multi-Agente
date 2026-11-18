@@ -60,8 +60,19 @@ def avaliar(
     relogio: Relogio,
     registrar: Callable[[RegistroDecisao], None],
 ) -> list[Veredito]:
+    return avaliar_detalhado(provedor, texto, criterios, relogio, registrar)[0]
+
+
+def avaliar_detalhado(
+    provedor: ProvedorIA,
+    texto: str,
+    criterios: list[Criterio],
+    relogio: Relogio,
+    registrar: Callable[[RegistroDecisao], None],
+) -> tuple[list[Veredito], bool]:
+    """(vereditos, a avaliadora foi rejeitada)."""
     if not criterios:
-        return []
+        return [], False
     prompt = carregar_prompt("dermatologia", "avaliadora")
     pedido = PedidoIA(
         motor="avaliadora",
@@ -85,7 +96,7 @@ def avaliar(
         if v.veredito == _PRECISA_TRECHO[c.tipo] and not (v.trecho and v.trecho.strip() and v.trecho.strip() in texto):
             v = v.model_copy(update={"veredito": "duvida", "justificativa": f"sem trecho do texto: {v.justificativa}"})
         saida.append(v)
-    return saida
+    return saida, proposta.resultado is None
 
 
 class _Modelo(BaseModel):

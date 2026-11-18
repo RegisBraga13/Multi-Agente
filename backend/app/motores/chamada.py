@@ -93,6 +93,15 @@ def chamar_motor[T: ModeloApi](
             resultado, meta = None, None
 
     valida = resultado is not None and meta is not None
+    avisos_evidencia: list[str] = []
+    if meta is not None:
+        # evidência do meta só passa se o trecho estiver, literalmente, no que foi enviado à IA
+        fontes = [t for t in _textos(pedido.dados) if t]
+        boas = [e for e in meta.evidencias if e.trecho.strip() and any(e.trecho.strip() in f for f in fontes)]
+        avisos_evidencia = [
+            f"evidência sem trecho da entrada descartada ({e.trecho!r})" for e in meta.evidencias if e not in boas
+        ]
+        meta = meta.model_copy(update={"evidencias": boas})
     avisos_regra: list[str] = []
     rejeitada_pela_regra = False
     if valida and regra is not None and resultado is not None:
@@ -124,7 +133,11 @@ def chamar_motor[T: ModeloApi](
         resultado=resultado if valida else None,
         confianca=meta.confianca if meta else 0.0,
         evidencias=meta.evidencias if meta else [],
-        avisos=[*(meta.avisos if meta else []), *([] if rejeitada_pela_regra else avisos_regra)],
+        avisos=[
+            *(meta.avisos if meta else []),
+            *avisos_evidencia,
+            *([] if rejeitada_pela_regra else avisos_regra),
+        ],
         origem=meta.origem if meta else "",
         acao=acao,
         motivos=motivos,

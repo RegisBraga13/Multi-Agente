@@ -15,7 +15,7 @@ from app.contratos.consulta import EntradaConsulta
 from app.contratos.motor import RegistroDecisao
 from app.especialidades.pacote import Prazo, SinalAlerta, TipoSinal
 from app.especialidades.prompts import carregar_prompt
-from app.motores.chamada import chamar_motor
+from app.motores.chamada import ErroPrivacidade, chamar_motor
 from app.provedores.ia import PedidoIA, ProvedorIA
 from app.provedores.relogio import Relogio
 
@@ -44,9 +44,14 @@ class SinalDisparado(ModeloApi):
 
 
 class SinaisConsulta(ModeloApi):
+    """`conflitos`: sinais que o médico respondeu "não" mas a IA encontrou com trecho — não disparam (a resposta
+    dele vale), mas a tela tem de mostrá-los em destaque. `ia_falhou`: só a lista respondida foi checada."""
+
     disparados: list[SinalDisparado]
+    conflitos: list[SinalDisparado]
     extras_ia: list[str]
     avisos: list[str]
+    ia_falhou: bool
 
 
 def _disparado(s: SinalAlerta, origem: Literal["respondido", "ia"], trecho: str | None) -> SinalDisparado:
@@ -89,17 +94,22 @@ def motor_sinais(
         },
         esforco="low",
     )
-    proposta = chamar_motor(provedor, pedido, SinaisIA, VERSAO_ESQUEMA_SINAIS, relogio, registrar, termos_proibidos)
+    try:
+        proposta = chamar_motor(provedor, pedido, SinaisIA, VERSAO_ESQUEMA_SINAIS, relogio, registrar, termos_proibidos)
+    except ErroPrivacidade as erro:
+        # a regra fixa não depende da IA: a lista respondida continua valendo
+        aviso = f"pedido à IA bloqueado por privacidade ({erro}); só a lista respondida foi checada"
+        return SinaisConsulta(disparados=disparados, conflitos=[], extras_ia=[], avisos=[aviso], ia_falhou=True)
     if proposta.resultado is None:
-        return SinaisConsulta(
-            disparados=disparados, extras_ia=[], avisos=["IA dos sinais falhou; só a lista respondida foi checada"]
-        )
+        aviso = "IA dos sinais falhou; só a lista respondida foi checada"
+        return SinaisConsulta(disparados=disparados, conflitos=[], extras_ia=[], avisos=[aviso], ia_falhou=True)
 
     por_id = {s.id: s for s in lista}
     negados = {r.id for r in entrada.sinais if r.resposta == "nao"}
     ja = {d.id for d in disparados}
     textos = _textos_da_entrada(entrada)
     avisos: list[str] = []
+    conflitos: list[SinalDisparado] = []
     for d in proposta.resultado.detectados:
         if d.id in ja:
             continue
@@ -109,7 +119,15 @@ def motor_sinais(
             avisos.append(f"IA citou {d.id!r} sem trecho da consulta ({d.trecho!r}); conferir")
         elif d.id in negados:
             avisos.append(f"{d.id!r} foi respondido não pelo médico, mas a IA encontrou: {d.trecho!r}; conferir")
+            if d.id not in {c.id for c in conflitos}:
+                conflitos.append(_disparado(por_id[d.id], "ia", d.trecho.strip()))
         else:
             disparados.append(_disparado(por_id[d.id], "ia", d.trecho.strip()))
             ja.add(d.id)
-    return SinaisConsulta(disparados=_ordenar(disparados), extras_ia=proposta.resultado.extras, avisos=avisos)
+    return SinaisConsulta(
+        disparados=_ordenar(disparados),
+        conflitos=_ordenar(conflitos),
+        extras_ia=proposta.resultado.extras,
+        avisos=avisos,
+        ia_falhou=False,
+    )

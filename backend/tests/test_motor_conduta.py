@@ -111,3 +111,18 @@ def test_pedido_nao_leva_historia():
     _, falso, _ = rodar(URTICARIA, seguranca("angioedema"), {"conduta": CONDUTA_IA})
     [p] = falso.pedidos
     assert sorted(p.dados) == ["diagnostico", "emergencia", "seguranca"]
+
+
+def test_privacidade_bloqueada_mantem_emergencia_e_urgencia():
+    falso = ProvedorIAFalso({"conduta": CONDUTA_IA})
+    seg = DadosSeguranca(alergias=[], em_uso=["Remédio da Mariana"], sinais=[sinal("angioedema")])
+    c = motor_conduta(
+        falso, URTICARIA, seg, PROTOCOLOS, RelogioFixo(QUANDO), lambda r: None, termos_proibidos=["Mariana"]
+    )
+    assert falso.pedidos == [] and c.urgencia == "imediata" and c.emergencia == LISTA["angioedema"].acao
+    assert c.acao == "REJECT" and any("privacidade" in a for a in c.avisos) and c.ia_falhou
+
+
+def test_complemento_falho_marca_ia_falhou():
+    c, _, _ = rodar(ACNE, seguranca(), {"conduta-complemento": "timeout"})
+    assert c.ia_falhou and c.acao == "HUMAN_REVIEW"

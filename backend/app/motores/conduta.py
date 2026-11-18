@@ -24,7 +24,7 @@ from app.especialidades.condutas import (
     urgencia_por_sinais,
 )
 from app.especialidades.prompts import carregar_prompt
-from app.motores.chamada import chamar_motor
+from app.motores.chamada import ErroPrivacidade, chamar_motor
 from app.motores.diagnosticos import Certeza, DadosSeguranca
 from app.provedores.ia import PedidoIA, ProvedorIA
 from app.provedores.relogio import Relogio
@@ -76,6 +76,7 @@ class CondutaProposta(ModeloApi):
     origem: str
     avisos: list[str]
     acao: Acao
+    ia_falhou: bool
 
 
 def motor_conduta(
@@ -102,41 +103,45 @@ def motor_conduta(
             motor=motor, versao_prompt=prompt.versao, instrucoes=prompt.texto, dados=dados | extra, esforco="medium"
         )
 
-    if protocolo is not None:
-        tabela = aplicar_protocolo(protocolo, seguranca.sinais)
-        p = chamar_motor(
-            provedor,
-            pedido("conduta-complemento", {"tabela": tabela.model_dump(by_alias=True, mode="json")}),
-            ComplementoConduta,
-            VERSAO_ESQUEMA_CONDUTA,
-            relogio,
-            registrar,
-            termos_proibidos,
-        )
-        avisos = p.avisos if p.resultado else [AVISO_FALHOU]
-        return CondutaProposta(
-            urgencia=urgencia,
-            emergencia=emergencia,
-            tabela=tabela,
-            ia=None,
-            complemento=p.resultado,
-            origem=tabela.origem,
-            avisos=avisos,
-            acao="HUMAN_REVIEW",
-        )
-
-    q = chamar_motor(
-        provedor, pedido("conduta", {}), CondutaIA, VERSAO_ESQUEMA_CONDUTA, relogio, registrar, termos_proibidos
-    )
+    tabela = aplicar_protocolo(protocolo, seguranca.sinais) if protocolo is not None else None
+    avisos: list[str] = []
+    complemento: ComplementoConduta | None = None
+    ia: CondutaIA | None = None
+    try:
+        if tabela is not None:
+            extra: dict[str, object] = {"tabela": tabela.model_dump(by_alias=True, mode="json")}
+            p = chamar_motor(
+                provedor,
+                pedido("conduta-complemento", extra),
+                ComplementoConduta,
+                VERSAO_ESQUEMA_CONDUTA,
+                relogio,
+                registrar,
+                termos_proibidos,
+            )
+            complemento, avisos = p.resultado, p.avisos
+        else:
+            q = chamar_motor(
+                provedor, pedido("conduta", {}), CondutaIA, VERSAO_ESQUEMA_CONDUTA, relogio, registrar, termos_proibidos
+            )
+            ia, avisos = q.resultado, q.avisos
+    except ErroPrivacidade as erro:
+        # urgência, emergência e tabela são regra fixa: continuam valendo sem a IA
+        avisos = [f"pedido à IA bloqueado por privacidade ({erro})"]
+    ia_falhou = complemento is None and ia is None
+    if ia_falhou:
+        avisos = [*avisos, AVISO_FALHOU]
     return CondutaProposta(
         urgencia=urgencia,
         emergencia=emergencia,
-        tabela=None,
-        ia=q.resultado,
-        complemento=None,
-        origem=ORIGEM_IA,
-        avisos=q.avisos if q.resultado else [AVISO_FALHOU],
-        acao=q.acao,
+        tabela=tabela,
+        ia=ia,
+        complemento=complemento,
+        origem=tabela.origem if tabela is not None else ORIGEM_IA,
+        avisos=avisos,
+        # com tabela, a proposta vale mesmo sem a IA; sem tabela e sem IA, não há conduta a revisar
+        acao="HUMAN_REVIEW" if tabela is not None or ia is not None else "REJECT",
+        ia_falhou=ia_falhou,
     )
 
 
