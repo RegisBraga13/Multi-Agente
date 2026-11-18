@@ -1,10 +1,14 @@
+from conftest import caso_minimo, sinal
+
 from casos_de_teste import carregar
 from casos_de_teste.__main__ import main
 from casos_de_teste.folha import montar_folha
 from casos_de_teste.formato import Caso
-from conftest import caso_minimo, sinal
 
-SINAIS = [sinal("angioedema", "Inchaço de lábios/língua ou falta de ar"), sinal("gestacao-ou-plano", "Gestante", "muda_tratamento")]
+SINAIS = [
+    sinal("angioedema", "Inchaço de lábios/língua ou falta de ar"),
+    sinal("gestacao-ou-plano", "Gestante", "muda_tratamento"),
+]
 
 
 def folha(d: dict) -> str:
@@ -81,7 +85,9 @@ def test_certeza_aparece_no_diagnostico():
 
 def test_conduta_mostra_urgencia_criterios_e_receita_proibida():
     d = caso_minimo()
-    d["esperado"]["conduta"].update(urgencia="imediata", proibidos=["Tratar em ambulatório"], remedios_proibidos=["isotretinoína"])
+    d["esperado"]["conduta"].update(
+        urgencia="imediata", proibidos=["Tratar em ambulatório"], remedios_proibidos=["isotretinoína"]
+    )
     html = folha(d)
     assert "Urgência: imediata" in html
     assert "Tratamento tópico para acne" in html and "Tratar em ambulatório" in html

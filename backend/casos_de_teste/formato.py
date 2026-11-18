@@ -4,6 +4,7 @@ Cada caso é um arquivo YAML em `casos_de_teste/<especialidade>/`. Campo com nom
 (`extra="forbid"`): um erro de digitação nunca é ignorado em silêncio. O script que roda os motores
 sobre os casos (marco 3) compara a saída de cada motor com `esperado`.
 """
+
 import re
 from datetime import date
 from typing import Literal
@@ -23,6 +24,7 @@ class Modelo(BaseModel):
 
 class Revisao(Modelo):
     """Só o autor aprova. `corrigir` vem com a `nota` do que ele pediu."""
+
     situacao: Literal["pendente", "aprovado", "corrigir"]
     nota: str = ""
     em: date | None = None
@@ -35,6 +37,7 @@ class Alergia(Modelo):
 
 class Paciente(Modelo):
     """Desidentificado: sem nome, CPF, telefone, e-mail ou endereço."""
+
     idade: int = Field(ge=0, le=120)
     sexo: Literal["F", "M"]
     estado_civil: str | None = None
@@ -51,12 +54,14 @@ class Fala(Modelo):
 
 class RespostaSinal(Modelo):
     """Sinal de alerta perguntado pelo médico: v = sim, f = não."""
+
     sinal: str
     resposta: Literal["v", "f"]
 
 
 class ExameFisico(Modelo):
     """Os 5 campos do exame da Dermatologia. None = não examinado."""
+
     morfologia: str | None
     localizacao: str | None
     extensao: str | None
@@ -109,6 +114,7 @@ class EsperadoHistoria(Modelo):
     `desconhecidos`: o que não foi perguntado nem examinado — não pode virar afirmação nem "nega".
     `vazias`: seções sem nenhuma fonte na entrada (nada inventado).
     """
+
     fatos: list[str] = Field(min_length=1)
     negativas: list[str] = []
     sem_resposta: list[str] = []
@@ -118,6 +124,7 @@ class EsperadoHistoria(Modelo):
 
 class DiagnosticoPrincipal(Diagnostico):
     """`certeza`: suspeita (ex. câncer antes da histopatologia), hipotese ou clinico."""
+
     certeza: Literal["suspeita", "hipotese", "clinico"]
 
 
@@ -126,6 +133,7 @@ class EsperadoDiagnosticos(Modelo):
 
     `rastrear`: o que investigar e registrar a negativa, sem diagnosticar (ex. artrite psoriásica).
     """
+
     principal: DiagnosticoPrincipal
     aceitos: list[Diagnostico] = []
     nao_pode_perder: Diagnostico | None = None
@@ -134,6 +142,7 @@ class EsperadoDiagnosticos(Modelo):
 
 class EsperadoSinais(Modelo):
     """Ids da lista fixa da especialidade que a IA tem de pegar."""
+
     disparados: list[str] = []
 
 
@@ -145,6 +154,7 @@ class EsperadoConduta(Modelo):
     `obrigatorios` / `proibidos`: frases clínicas; citar um item para contraindicá-lo NÃO viola `proibidos`.
     `remedios_proibidos`: nomes (DCB) que não podem estar na receita — conferidos por regra nos itens estruturados.
     """
+
     protocolo: str | None
     urgencia: Literal["rotina", "prioritaria", "imediata"]
     obrigatorios: list[str] = Field(min_length=1)

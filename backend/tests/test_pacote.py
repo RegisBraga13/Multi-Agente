@@ -11,7 +11,14 @@ def test_dermatologia_tem_os_sinais_obrigatorios():
 
 def test_id_repetido_e_recusado(tmp_path):
     (tmp_path / "x").mkdir()
-    sinal = {"id": "angioedema", "texto": "Inchaço", "porque": "Risco de vida.", "tipo": "urgencia_imediata", "acao": ["Avaliar via aérea"], "prazo": "imediato"}
+    sinal = {
+        "id": "angioedema",
+        "texto": "Inchaço",
+        "porque": "Risco de vida.",
+        "tipo": "urgencia_imediata",
+        "acao": ["Avaliar via aérea"],
+        "prazo": "imediato",
+    }
     dados = {"revisao": {"situacao": "pendente"}, "sinais": [sinal, sinal]}
     (tmp_path / "x" / "sinais_alerta.yaml").write_text(yaml.safe_dump(dados, allow_unicode=True), encoding="utf-8")
     with pytest.raises(PacoteInvalido, match="repetido"):
@@ -37,7 +44,14 @@ def test_gravidez_muda_o_tratamento():
 
 def test_sinal_sem_acao_e_recusado(tmp_path):
     (tmp_path / "x").mkdir()
-    sinal = {"id": "angioedema", "texto": "Inchaço", "porque": "Via aérea.", "tipo": "urgencia_imediata", "acao": [], "prazo": "imediato"}
+    sinal = {
+        "id": "angioedema",
+        "texto": "Inchaço",
+        "porque": "Via aérea.",
+        "tipo": "urgencia_imediata",
+        "acao": [],
+        "prazo": "imediato",
+    }
     dados = {"revisao": {"situacao": "pendente"}, "sinais": [sinal]}
     (tmp_path / "x" / "sinais_alerta.yaml").write_text(yaml.safe_dump(dados, allow_unicode=True), encoding="utf-8")
     with pytest.raises(PacoteInvalido):

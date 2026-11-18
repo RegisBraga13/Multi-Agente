@@ -10,13 +10,16 @@ requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.9",
     "pyyaml>=6",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "psycopg[binary]>=3.2",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "ruff>=0.8", "mypy>=1.13", "httpx>=0.28", "types-PyYAML"]
 
 [tool.setuptools.packages.find]
-include = ["app*", "casos_de_teste*"]
+include = ["app*", "casos_de_teste*", "banco_local*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
@@ -24,3 +27,16 @@ include = ["app*", "casos_de_teste*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = ["banco: precisa de Docker (Postgres local)"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N"]
+ignore = ["N818", "E501"]  # exceções com nome de domínio ("PacoteInvalido"); comprimento fica com o formatador
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]

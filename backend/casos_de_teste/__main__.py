@@ -1,8 +1,9 @@
 """Linha de comando dos casos de teste.
 
-    python -m casos_de_teste validar          confere todos os casos (sai 1 se houver erro)
-    python -m casos_de_teste folha [--abrir]  gera a folha de revisão (revisao.html) e, com --abrir, abre no navegador
+python -m casos_de_teste validar          confere todos os casos (sai 1 se houver erro)
+python -m casos_de_teste folha [--abrir]  gera a folha de revisão (revisao.html) e, com --abrir, abre no navegador
 """
+
 import argparse
 import sys
 import webbrowser

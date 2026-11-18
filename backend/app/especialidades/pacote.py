@@ -7,6 +7,7 @@ Cada sinal tem tipo, ação e prazo. A ação de um sinal de `urgencia_imediata`
 (revisada pelo autor): quando o sinal dispara, ela entra na conduta por regra, sem depender da IA e mesmo sem
 protocolo na tabela (decisão do autor, 18/11/2026).
 """
+
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -33,6 +34,7 @@ Prazo = Literal["imediato", "em dias", "em semanas", "antes de prescrever"]
 class SinalAlerta(_Modelo):
     """`tipo`: urgência imediata (risco de vida/órgão), prioridade (ex. suspeita de câncer) ou muda o tratamento
     (ex. gravidez). `acao`: o que fazer, item a item. `prazo`: em quanto tempo."""
+
     id: str = Field(pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$")
     texto: str = Field(min_length=1)
     porque: str = Field(min_length=1)

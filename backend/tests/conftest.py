@@ -1,4 +1,5 @@
 """Ajudantes dos testes: um caso mínimo válido e um gravador de YAML."""
+
 from pathlib import Path
 
 import pytest
@@ -44,11 +45,15 @@ def escrever_caso(tmp_path: Path):
         caminho = tmp_path / f"{nome}.yaml"
         caminho.write_text(yaml.safe_dump(dados, allow_unicode=True, sort_keys=False), encoding="utf-8")
         return caminho
+
     return escrever
 
 
 def sinal(id_: str, texto: str = "Texto do sinal", tipo: str = "urgencia_imediata"):
     """SinalAlerta para testes (prazo coerente com o tipo)."""
     from app.especialidades.pacote import SinalAlerta
-    prazo = {"urgencia_imediata": "imediato", "prioridade": "em semanas", "muda_tratamento": "antes de prescrever"}[tipo]
+
+    prazo = {"urgencia_imediata": "imediato", "prioridade": "em semanas", "muda_tratamento": "antes de prescrever"}[
+        tipo
+    ]
     return SinalAlerta(id=id_, texto=texto, porque="Motivo.", tipo=tipo, acao=["Agir"], prazo=prazo)

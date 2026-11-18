@@ -4,6 +4,7 @@ Além do formato (formato.py), confere o que um caso sozinho não sabe: id igual
 sinais de alerta existentes na lista fixa da especialidade e nenhum dado de identidade no texto.
 Um arquivo ruim não esconde os outros: todos os erros aparecem de uma vez.
 """
+
 import re
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -11,6 +12,7 @@ from pathlib import Path
 
 import yaml
 from pydantic import ValidationError
+from pydantic_core import ErrorDetails
 
 from app.especialidades.pacote import SinalAlerta
 from casos_de_teste.formato import Caso
@@ -45,8 +47,8 @@ class Relatorio:
 class _SemChaveRepetida(yaml.SafeLoader):
     """SafeLoader que recusa chave repetida (o YAML padrão fica com a última, em silêncio)."""
 
-    def construct_mapping(self, node, deep=False):
-        vistas = set()
+    def construct_mapping(self, node: yaml.MappingNode, deep: bool = False) -> dict[object, object]:
+        vistas: set[object] = set()
         for chave_no, _ in node.value:
             chave = self.construct_object(chave_no, deep=deep)
             if chave in vistas:
@@ -66,7 +68,7 @@ def carregar_caso(caminho: Path) -> Caso:
         raise CasoInvalido(caminho, [_mensagem(e) for e in erro.errors()]) from erro
 
 
-def _mensagem(e: dict) -> str:
+def _mensagem(e: ErrorDetails) -> str:
     campo = ".".join(str(p) for p in e["loc"])
     return f"{campo}: {e['msg']}" if campo else e["msg"]
 
@@ -90,12 +92,16 @@ def _conferir(caso: Caso, caminho: Path, sinais: dict[str, SinalAlerta]) -> list
     citados = [s.sinal for s in caso.entrada.sinais] + disparados
     erros += [f"sinal de alerta inexistente na lista: {s!r}" for s in citados if s not in sinais]
     negados = {s.sinal for s in caso.entrada.sinais if s.resposta == "f"}
-    erros += [f"sinal {s!r} foi negado na consulta e não pode ser esperado como disparado" for s in disparados if s in negados]
+    erros += [
+        f"sinal {s!r} foi negado na consulta e não pode ser esperado como disparado" for s in disparados if s in negados
+    ]
     imediatos = [s for s in disparados if s in sinais and sinais[s].tipo == "urgencia_imediata"]
     if imediatos and caso.esperado.conduta.urgencia != "imediata":
         erros.append(f"sinal de urgência imediata ({', '.join(imediatos)}) exige conduta com urgência imediata")
     for texto in _textos(caso.model_dump(mode="json")):
-        erros += [f"dado de identidade ({tipo}) no texto: {texto!r}" for tipo, p in IDENTIDADE.items() if p.search(texto)]
+        erros += [
+            f"dado de identidade ({tipo}) no texto: {texto!r}" for tipo, p in IDENTIDADE.items() if p.search(texto)
+        ]
     return erros
 
 

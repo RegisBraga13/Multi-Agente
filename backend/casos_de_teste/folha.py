@@ -2,15 +2,34 @@
 
 HTML autocontido (sem script nem recurso externo). Todo texto vindo dos casos é escapado.
 """
+
 from html import escape
 
 from app.especialidades.pacote import SinalAlerta
 from casos_de_teste.formato import Caso, Diagnostico, Paciente
 
-SECOES = {"qp": "QP", "hda": "HDA", "ap": "AP", "hp": "HP", "hf": "HF", "exame_fisico": "Exame físico", "exames": "Exames"}
-CAMPOS_EXAME = {"morfologia": "Morfologia", "localizacao": "Localização", "extensao": "Extensão", "gravidade": "Gravidade estimada", "achados": "Achados associados"}
+SECOES = {
+    "qp": "QP",
+    "hda": "HDA",
+    "ap": "AP",
+    "hp": "HP",
+    "hf": "HF",
+    "exame_fisico": "Exame físico",
+    "exames": "Exames",
+}
+CAMPOS_EXAME = {
+    "morfologia": "Morfologia",
+    "localizacao": "Localização",
+    "extensao": "Extensão",
+    "gravidade": "Gravidade estimada",
+    "achados": "Achados associados",
+}
 SITUACAO = {"pendente": "Pendente", "aprovado": "Aprovado", "corrigir": "Corrigir"}
-TIPO_SINAL = {"urgencia_imediata": "Urgência imediata", "prioridade": "Prioridade", "muda_tratamento": "Muda o tratamento"}
+TIPO_SINAL = {
+    "urgencia_imediata": "Urgência imediata",
+    "prioridade": "Prioridade",
+    "muda_tratamento": "Muda o tratamento",
+}
 CERTEZA = {"suspeita": "suspeita de ", "hipotese": "hipótese de ", "clinico": ""}
 URGENCIA = {"rotina": "rotina", "prioritaria": "prioritária", "imediata": "imediata"}
 
@@ -55,8 +74,10 @@ def _plural(n: int, singular: str, plural: str) -> str:
 def contagem(casos: list[Caso]) -> str:
     """'20 casos válidos — 0 aprovados, 20 pendentes, 0 a corrigir'"""
     por = {s: sum(c.revisao.situacao == s for c in casos) for s in SITUACAO}
-    return (f"{_plural(len(casos), 'caso válido', 'casos válidos')} — {_plural(por['aprovado'], 'aprovado', 'aprovados')}, "
-            f"{_plural(por['pendente'], 'pendente', 'pendentes')}, {por['corrigir']} a corrigir")
+    return (
+        f"{_plural(len(casos), 'caso válido', 'casos válidos')} — {_plural(por['aprovado'], 'aprovado', 'aprovados')}, "
+        f"{_plural(por['pendente'], 'pendente', 'pendentes')}, {por['corrigir']} a corrigir"
+    )
 
 
 def _paciente(p: Paciente) -> str:
@@ -89,11 +110,17 @@ def _caso(c: Caso, textos_sinais: dict[str, str]) -> str:
     nota = f'<p class="nota">Correção pedida: {_e(c.revisao.nota)}</p>' if c.revisao.nota else ""
     conversa = "".join(f'<p><span class="quem">{_e(f.quem)}:</span> {_e(f.texto)}</p>' for f in ent.falas)
     perguntados = {s.sinal for s in ent.sinais}
-    sinais = "".join(f"<li>{_e(textos_sinais.get(s.sinal, s.sinal))} — {'Sim' if s.resposta == 'v' else 'Não'}</li>" for s in ent.sinais)
+    sinais = "".join(
+        f"<li>{_e(textos_sinais.get(s.sinal, s.sinal))} — {'Sim' if s.resposta == 'v' else 'Não'}</li>"
+        for s in ent.sinais
+    )
     nao_perguntados = [t for i, t in textos_sinais.items() if i not in perguntados]
     if nao_perguntados:
         sinais += f"<li>Não perguntados: {_e('; '.join(nao_perguntados))}</li>"
-    exame = "".join(f"<li>{rotulo}: {_e(getattr(ent.exame, campo) or 'não examinado')}</li>" for campo, rotulo in CAMPOS_EXAME.items())
+    exame = "".join(
+        f"<li>{rotulo}: {_e(getattr(ent.exame, campo) or 'não examinado')}</li>"
+        for campo, rotulo in CAMPOS_EXAME.items()
+    )
     complementares = "".join(
         f"<li>{_e(x.exame)} ({x.data:%d/%m/%Y}): {_e('; '.join(f'{i.nome} {i.valor or chr(8212)}' for i in x.itens))}</li>"
         for x in ent.complementares
@@ -106,7 +133,9 @@ def _caso(c: Caso, textos_sinais: dict[str, str]) -> str:
         f"<p>Tem de conter:</p>{_itens(h.fatos)}",
         f"<p>Tem de constar como negado: {_e('; '.join(h.negativas))}</p>" if h.negativas else "",
         f"<p>Perguntado, mas o paciente não soube: {_e('; '.join(h.sem_resposta))}</p>" if h.sem_resposta else "",
-        f"<p>Não perguntado ou não examinado (não pode virar afirmação nem “nega”): {_e('; '.join(h.desconhecidos))}</p>" if h.desconhecidos else "",
+        f"<p>Não perguntado ou não examinado (não pode virar afirmação nem “nega”): {_e('; '.join(h.desconhecidos))}</p>"
+        if h.desconhecidos
+        else "",
         f"<p>Devem ficar vazias (nada inventado): {_e(', '.join(SECOES[s] for s in h.vazias))}</p>" if h.vazias else "",
         "<h4>Diagnósticos</h4>",
         f"<p>Entre os 3 diagnósticos: {_e(principal)}</p>",
@@ -118,8 +147,12 @@ def _caso(c: Caso, textos_sinais: dict[str, str]) -> str:
         "<h4>Conduta</h4>",
         f"<p>Urgência: {URGENCIA[conduta.urgencia]} · {protocolo}</p>",
         f"<p>Tem de fazer:</p>{_itens(conduta.obrigatorios)}",
-        f"<p>Não pode recomendar nem fazer (citar para contraindicar é certo):</p>{_itens(conduta.proibidos)}" if conduta.proibidos else "",
-        f"<p>Não pode estar na receita: {_e(', '.join(conduta.remedios_proibidos))}</p>" if conduta.remedios_proibidos else "",
+        f"<p>Não pode recomendar nem fazer (citar para contraindicar é certo):</p>{_itens(conduta.proibidos)}"
+        if conduta.proibidos
+        else "",
+        f"<p>Não pode estar na receita: {_e(', '.join(conduta.remedios_proibidos))}</p>"
+        if conduta.remedios_proibidos
+        else "",
     ]
     return f"""<section id="{_e(c.id)}">
 <div class="topo"><h2>{_e(c.titulo)}</h2><span class="selo {situacao}">{SITUACAO[situacao]}</span></div>
@@ -129,15 +162,15 @@ def _caso(c: Caso, textos_sinais: dict[str, str]) -> str:
 <h3>Conversa</h3><div class="conversa">{conversa}</div>
 <h3>Sinais de alerta</h3><ul>{sinais}</ul>
 <h3>Exame físico</h3><ul>{exame}</ul>
-{f'<h3>Exames complementares</h3><ul>{complementares}</ul>' if complementares else ''}
-<h3>Resposta esperada</h3><div class="esperado">{''.join(esperado)}</div>
+{f"<h3>Exames complementares</h3><ul>{complementares}</ul>" if complementares else ""}
+<h3>Resposta esperada</h3><div class="esperado">{"".join(esperado)}</div>
 </section>"""
 
 
 def montar_folha(casos: list[Caso], sinais: list[SinalAlerta]) -> str:
     textos_sinais = {s.id: s.texto for s in sinais}
     tabela = "".join(
-        f"<tr><td>{_e(s.texto)}<br><span class=\"tipo\">{TIPO_SINAL[s.tipo]} · {_e(s.prazo)}</span></td>"
+        f'<tr><td>{_e(s.texto)}<br><span class="tipo">{TIPO_SINAL[s.tipo]} · {_e(s.prazo)}</span></td>'
         f"<td>{_e(s.porque)}{_itens(s.acao)}</td></tr>"
         for s in sinais
     )

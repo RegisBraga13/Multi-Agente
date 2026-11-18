@@ -1,9 +1,12 @@
 import pytest
-
-from casos_de_teste.carregar import validar_pasta
 from conftest import caso_minimo, sinal
 
-SINAIS = [sinal("angioedema", "Inchaço de lábios/língua ou falta de ar"), sinal("gestacao-ou-plano", "Gestante", "muda_tratamento")]
+from casos_de_teste.carregar import validar_pasta
+
+SINAIS = [
+    sinal("angioedema", "Inchaço de lábios/língua ou falta de ar"),
+    sinal("gestacao-ou-plano", "Gestante", "muda_tratamento"),
+]
 
 
 def test_pasta_valida(escrever_caso, tmp_path):
@@ -44,7 +47,9 @@ def test_sinal_perguntado_inexistente(escrever_caso, tmp_path):
     assert any("febre" in e for e in validar_pasta(tmp_path, SINAIS).erros)
 
 
-@pytest.mark.parametrize("texto", ["Meu CPF é 123.456.789-09.", "Liga no (11) 98765-4321.", "Manda para ana@email.com."])
+@pytest.mark.parametrize(
+    "texto", ["Meu CPF é 123.456.789-09.", "Liga no (11) 98765-4321.", "Manda para ana@email.com."]
+)
 def test_dado_de_identidade_e_recusado(escrever_caso, tmp_path, texto):
     d = caso_minimo()
     d["entrada"]["falas"][1]["texto"] = texto
@@ -84,7 +89,9 @@ def test_pasta_vazia(tmp_path):
     assert validar_pasta(tmp_path, SINAIS).erros == ["nenhum caso encontrado"]
 
 
-@pytest.mark.parametrize("texto", ["Meu zap é 98765-4321.", "Liga no (11) 98765 4321.", "Liga no 11 98765 4321.", "É 9 8765 4321."])
+@pytest.mark.parametrize(
+    "texto", ["Meu zap é 98765-4321.", "Liga no (11) 98765 4321.", "Liga no 11 98765 4321.", "É 9 8765 4321."]
+)
 def test_telefone_com_espacos_e_recusado(escrever_caso, tmp_path, texto):
     d = caso_minimo()
     d["entrada"]["falas"][1]["texto"] = texto
@@ -92,7 +99,9 @@ def test_telefone_com_espacos_e_recusado(escrever_caso, tmp_path, texto):
     assert any("identidade" in e for e in validar_pasta(tmp_path, SINAIS).erros)
 
 
-@pytest.mark.parametrize("texto", ["Plaquetas 250.000-300.000.", "Biópsia em 15/03/2024.", "Lesão de 120x80 mm.", "Infarto em 2019."])
+@pytest.mark.parametrize(
+    "texto", ["Plaquetas 250.000-300.000.", "Biópsia em 15/03/2024.", "Lesão de 120x80 mm.", "Infarto em 2019."]
+)
 def test_numeros_clinicos_nao_sao_telefone(escrever_caso, tmp_path, texto):
     d = caso_minimo()
     d["entrada"]["falas"][1]["texto"] = texto
