@@ -1,0 +1,91 @@
+from datetime import UTC, datetime
+
+import pytest
+
+from app.contratos.base import ModeloApi
+from app.motores.chamada import ErroPrivacidade, chamar_motor
+from app.provedores.ia import PedidoIA
+from app.provedores.ia_falso import ProvedorIAFalso
+from app.provedores.relogio import RelogioFixo
+
+QUANDO = datetime(2026, 11, 18, 12, 0, tzinfo=UTC)
+META = {
+    "confianca": 0.8,
+    "evidencias": [{"trecho": "pústulas", "origem": "exame"}],
+    "avisos": [],
+    "origem": "sugestão da IA",
+}
+BRUTO_VALIDO = {"resultado": {"nomes": ["Acne"]}, "meta": META}
+
+
+class Hipoteses(ModeloApi):
+    nomes: list[str]
+
+
+def pedido(dados: dict | None = None) -> PedidoIA:
+    return PedidoIA(
+        motor="dd",
+        versao_prompt="v1",
+        instrucoes="INSTRUCOES-SECRETAS",
+        dados=dados or {"historia": "Paciente, 34 anos"},
+    )
+
+
+def chamar(resposta, dados=None):
+    falso = ProvedorIAFalso({"dd": resposta})
+    registros: list = []
+    proposta = chamar_motor(falso, pedido(dados), Hipoteses, 3, RelogioFixo(QUANDO), registros.append)
+    return proposta, registros, falso
+
+
+def test_saida_valida_vai_ao_medico_e_e_registrada():
+    proposta, registros, _ = chamar(BRUTO_VALIDO)
+    assert proposta.acao == "HUMAN_REVIEW" and proposta.resultado is not None
+    assert proposta.resultado.nomes == ["Acne"] and proposta.confianca == 0.8
+    assert proposta.evidencias[0].trecho == "pústulas"
+    [r] = registros
+    assert (r.motor, r.modelo, r.versao_modelo, r.versao_esquema, r.versao_prompt) == ("dd", "falso", "0", 3, "v1")
+    assert r.acao == "HUMAN_REVIEW" and r.confianca == 0.8 and r.quando == QUANDO
+
+
+@pytest.mark.parametrize(
+    "bruto",
+    [
+        {"resultado": {"nomes": ["Acne"], "x": 1}, "meta": META},  # campo a mais
+        {"resultado": {"nomes": "Acne"}, "meta": META},  # tipo errado
+        {"resultado": {"nomes": ["Acne"]}, "meta": {**META, "confianca": 1.5}},  # meta inválido
+        {"resultado": {"nomes": ["Acne"]}},  # sem meta
+    ],
+)
+def test_saida_invalida_e_rejeitada_sem_uso_parcial(bruto):
+    proposta, registros, _ = chamar(bruto)
+    assert proposta.acao == "REJECT" and proposta.resultado is None
+    assert registros[0].acao == "REJECT" and registros[0].confianca is None
+
+
+def test_erro_do_provedor_e_rejeitado():
+    proposta, registros, _ = chamar("timeout")
+    assert proposta.acao == "REJECT" and proposta.resultado is None and len(registros) == 1
+
+
+def test_identidade_nos_dados_bloqueia_antes_do_provedor():
+    falso = ProvedorIAFalso({"dd": BRUTO_VALIDO})
+    registros: list = []
+    dados = {"falas": [{"quem": "Paciente", "texto": "Meu CPF é 123.456.789-09"}]}
+    with pytest.raises(ErroPrivacidade, match="CPF"):
+        chamar_motor(falso, pedido(dados), Hipoteses, 3, RelogioFixo(QUANDO), registros.append)
+    assert falso.pedidos == [] and registros == []
+
+
+def test_identidade_nas_instrucoes_tambem_bloqueia():
+    falso = ProvedorIAFalso({"dd": BRUTO_VALIDO})
+    p = PedidoIA(motor="dd", versao_prompt="v1", instrucoes="ligue (11) 98765-4321", dados={})
+    with pytest.raises(ErroPrivacidade):
+        chamar_motor(falso, p, Hipoteses, 3, RelogioFixo(QUANDO), lambda r: None)
+    assert falso.pedidos == []
+
+
+def test_registro_nao_guarda_prompt_nem_dados():
+    _, registros, _ = chamar(BRUTO_VALIDO)
+    texto = registros[0].model_dump_json()
+    assert "INSTRUCOES-SECRETAS" not in texto and "Paciente, 34 anos" not in texto
