@@ -23,7 +23,7 @@ dev = ["pytest>=8", "ruff>=0.8", "mypy>=1.13", "httpx>=0.28", "types-PyYAML"]
 include = ["app*", "casos_de_teste*", "banco_local*"]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml"]
+"*" = ["*.yaml", "*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
