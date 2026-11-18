@@ -1,0 +1,91 @@
+{
+  "id": "0b7c2f0e-3f4d-4f43-9a51-1d7e3b0c9a10",
+  "pacienteId": "8715f152-846a-467d-a995-91ea384312b6",
+  "titulo": "Consulta 1",
+  "tipo": "consulta",
+  "modalidade": "presencial",
+  "data": "2026-09-18",
+  "hora": "09:00",
+  "dados": {
+    "qp": "Placas vermelhas com descamação nos cotovelos e joelhos.",
+    "hda": "Paciente, 52 anos, casado, comerciante, refere placas avermelhadas e descamativas nos cotovelos e joelhos há 2 anos, com piora no último inverno. Prurido leve. Nega dor articular.",
+    "ap": "Hipertensão arterial. Em uso de losartana 50 mg 1x/dia. Alergia a dipirona (inchaço no rosto).",
+    "hp": "",
+    "hf": "",
+    "exameFisico": "Placas eritematodescamativas bem delimitadas em cotovelos e joelhos; couro cabeludo e unhas sem alterações. BSA estimada em 4%.",
+    "examesTexto": "",
+    "exames": [],
+    "diagnosticos": [
+      {
+        "nome": "Psoríase vulgar",
+        "cid": "L40.0",
+        "pct": 85,
+        "situacao": "assinalado"
+      },
+      {
+        "nome": "Dermatite seborreica",
+        "cid": "L21",
+        "pct": 10,
+        "situacao": "sugerido"
+      },
+      {
+        "nome": "Eczema numular",
+        "cid": "L30.0",
+        "pct": 5,
+        "situacao": "sugerido"
+      }
+    ],
+    "receita": {
+      "itens": [
+        {
+          "nome": "Propionato de clobetasol",
+          "forma": "CREM",
+          "concentracao": "0,05%",
+          "quantidade": {
+            "n": 1,
+            "unidade": "bisn. 30g",
+            "feminino": true
+          },
+          "via": "topico",
+          "posologia": "Aplicar fina camada nas placas 1 vez ao dia, à noite.",
+          "duracao": "4sem"
+        },
+        {
+          "nome": "Hidratante corporal com ureia",
+          "forma": "CREM",
+          "concentracao": "10%",
+          "quantidade": {
+            "n": 1,
+            "unidade": "fr.",
+            "feminino": false
+          },
+          "via": "topico",
+          "posologia": "Aplicar no corpo 2 vezes ao dia (manhã e noite).",
+          "duracao": "uso contínuo"
+        }
+      ],
+      "livres": [],
+      "texto": "USO TÓPICO (EXTERNO)\n1. Propionato de clobetasol 0,05% CREM (01 bisn. 30g)\n   Aplicar fina camada nas placas 1 vez ao dia, à noite — 4sem\n2. Hidratante corporal com ureia 10% CREM (01 fr.)\n   Aplicar no corpo 2 vezes ao dia (manhã e noite) — uso contínuo"
+    },
+    "condutaTexto": "",
+    "solicitado": [
+      "exames de rotina"
+    ],
+    "encaminhado": [],
+    "orientacoes": "Evitar banhos quentes e prolongados. Não usar o corticoide no rosto.",
+    "retorno": "em 8 semanas, em 13/11/2026.",
+    "documentos": [],
+    "fotos": [
+      {
+        "n": 1,
+        "src": null
+      },
+      {
+        "n": 2,
+        "src": null
+      }
+    ]
+  },
+  "edicoes": {},
+  "adendos": []
+}
