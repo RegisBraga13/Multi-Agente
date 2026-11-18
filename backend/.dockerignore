@@ -1,0 +1,9 @@
+.venv
+tests
+**/__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+*.egg-info
+casos_de_teste/*/revisao.html
+openapi.json
