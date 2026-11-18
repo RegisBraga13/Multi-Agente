@@ -79,7 +79,7 @@ function Pagina({ esp }: { esp: Especialidade }) {
   }, [aberto, vista])
 
   const painel = escolhido ? (
-    <PainelFicha classeAlergia={estiloAlergia(esp)} at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => abrirJanelaProntuario(esp.slug, escolhido.paciente)} />
+    <PainelFicha classeAlergia={estiloAlergia(esp)} at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => abrirJanelaProntuario(esp.slug, escolhido.paciente.id)} />
   ) : (
     <CartaoFichas prontas={atual.fichasProntas} faltam={atual.semFicha} />
   )

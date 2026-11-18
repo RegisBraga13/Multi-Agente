@@ -5,7 +5,7 @@ import type { Atendimento } from './tipos'
 function at(id: string, inicio: string, atendido = false): Atendimento {
   return {
     id, inicio, atendido,
-    paciente: { nome: id, nascimento: '1990-01-01' },
+    paciente: { id, nome: id, nascimento: '1990-01-01' },
     tipo: 'consulta', modalidade: 'presencial', pagamento: 'Particular', ficha: { situacao: 'sem-ficha' }, temHistorico: false,
   }
 }

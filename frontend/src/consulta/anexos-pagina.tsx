@@ -4,7 +4,7 @@
 // Com todos os escolhidos enviados, "Salvar anexos": a IA escreve o prontuário (página 6).
 import { useState } from 'react'
 import { TextoCrescente } from '../medico/texto-crescente'
-import { proximoPasso, type Anexo, type DadosConsulta, type TipoAnexo } from './anexos'
+import { FINALIDADES, camposPendentes, proximoPasso, type Anexo, type DadosConsulta, type TipoAnexo } from './anexos'
 import { SEM_CORRETOR } from './campo-linha'
 import type { Situacao } from './tipos'
 import { Cartao, ROTULO } from './ui'
@@ -34,6 +34,8 @@ type Props = {
   onEmitir: (tipo: TipoAnexo) => void
   onEditar: (tipo: TipoAnexo, texto: string) => void
   onAvancar: (tipo: TipoAnexo) => void
+  /** período do atestado / finalidade do laudo */
+  onCampos: (tipo: TipoAnexo, campos: Pick<Anexo, 'periodo' | 'finalidade'>) => void
   onSalvar: () => void
 }
 
@@ -105,6 +107,7 @@ export function PaginaAnexos(p: Props) {
               <span>Paciente: <b>{p.dados.paciente}</b></span>
               <span>Data: <b>{p.dados.data}</b></span>
             </p>
+            <Campos a={a} onCampos={(c) => p.onCampos(a.tipo, c)} />
             <TextoCrescente
               {...SEM_CORRETOR}
               value={a.texto}
@@ -127,7 +130,8 @@ export function PaginaAnexos(p: Props) {
             ) : passo && (
               <>
                 {a.estado !== 'rascunho' && <span className="text-[13px] text-apagado">✓ Revisado{a.estado === 'assinado' ? ' · assinado' : ''}</span>}
-                <button type="button" disabled={!a.texto.trim()} onClick={() => p.onAvancar(a.tipo)}
+                {camposPendentes(a) && <span className="text-[13px] text-apagado">{camposPendentes(a)}</span>}
+                <button type="button" disabled={!a.texto.trim() || !!camposPendentes(a)} onClick={() => p.onAvancar(a.tipo)}
                   className="bg-(--esp) px-4 py-1.5 text-[14.5px] font-bold text-papel transition enabled:hover:-translate-y-0.5 disabled:opacity-40">
                   {PASSO[passo]}
                 </button>
@@ -138,4 +142,41 @@ export function PaginaAnexos(p: Props) {
       </div>
     </Cartao>
   )
+}
+
+const ENTRADA = 'border border-linha bg-branco px-1.5 py-0.5 text-[13.5px] text-tinta read-only:bg-transparent disabled:opacity-100'
+
+/** Atestado: período do afastamento (vazio = só comparecimento). Laudo: finalidade. Vão para o prontuário em uma linha. */
+function Campos({ a, onCampos }: { a: Anexo; onCampos: (c: Pick<Anexo, 'periodo' | 'finalidade'>) => void }) {
+  const fixo = a.estado === 'enviado'
+  if (a.tipo === 'atestado' && a.periodo) {
+    const per = a.periodo
+    return (
+      <p className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px]">
+        <span className="font-semibold">Afastamento:</span>
+        de <input type="date" aria-label="Afastamento de" value={per.de} readOnly={fixo} onChange={(e) => onCampos({ periodo: { ...per, de: e.target.value } })} className={ENTRADA} />
+        até <input type="date" aria-label="Afastamento até" value={per.ate} readOnly={fixo} onChange={(e) => onCampos({ periodo: { ...per, ate: e.target.value } })} className={ENTRADA} />
+        {!per.de && !per.ate && <span className="text-apagado">(vazio = só comparecimento)</span>}
+      </p>
+    )
+  }
+  if (a.tipo === 'laudo' && a.finalidade) {
+    const f = a.finalidade
+    return (
+      <div role="group" aria-label="Finalidade do laudo" className="mb-2 flex flex-wrap items-center gap-1.5 text-[13.5px]">
+        <span className="font-semibold">Finalidade:</span>
+        {FINALIDADES.map((x) => (
+          <button key={x.valor} type="button" disabled={fixo} aria-pressed={f.tipo === x.valor} onClick={() => onCampos({ finalidade: { ...f, tipo: x.valor } })}
+            className={`border-[1.5px] px-2 py-0.5 font-semibold ${f.tipo === x.valor ? 'border-(--esp) bg-(--esp) text-papel' : 'border-linha hover:border-tinta'}`}>
+            {x.rotulo}
+          </button>
+        ))}
+        {f.tipo === 'outra' && (
+          <input aria-label="Outra finalidade" placeholder="para…" value={f.outra} readOnly={fixo} onChange={(e) => onCampos({ finalidade: { ...f, outra: e.target.value } })}
+            className={`${ENTRADA} w-[14rem]`} />
+        )}
+      </div>
+    )
+  }
+  return null
 }

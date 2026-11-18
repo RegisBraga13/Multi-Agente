@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alternarEmitir, atualizarAnexos, avancar, editarAnexo, extenso, montarAnexos, pendenciasAnexos, proximoPasso, type Anexo } from './anexos'
+import { alternarEmitir, atualizarAnexos, avancar, camposPendentes, definirCampos, editarAnexo, extenso, montarAnexos, pendenciasAnexos, proximoPasso, type Anexo } from './anexos'
 import { escolherOpcao, escreverOutro, montarConduta, revelar, type Conduta } from './conduta'
 import type { ItemDD } from './diagnosticos'
 
@@ -94,5 +94,32 @@ describe('médico revisa, assina e envia (simulação)', () => {
     expect(de(zs, 'exames').texto).toBe('Meu pedido.')
     expect(de(zs, 'exames').estado).toBe('revisado')
     expect(de(zs, 'receita').texto).toContain('Ácido azelaico')
+  })
+})
+
+describe('atestado (período) e laudo (finalidade)', () => {
+  const D = { paciente: 'Mariana Costa', idade: 34, data: '13/11/2026', hora: '08:00' }
+  const base = () => montarAnexos(montarConduta([{ hip: { id: 'acne', nome: 'Acne', cid: 'L70.0', pct: 60, evidencias: [] }, decisao: 'confirmada', propria: false, mudou: false, aviso: null }], [], '2026-11-13')!, D)
+  const doc = (xs: Anexo[], t: string) => xs.find((a) => a.tipo === t)!
+  it('período entra no texto do atestado; vazio = só comparecimento', () => {
+    expect(doc(base(), 'atestado').texto).toMatch(/às 08:00\.$/)
+    const xs = definirCampos(base(), 'atestado', { periodo: { de: '2026-11-13', ate: '2026-11-15' } })
+    expect(doc(xs, 'atestado').texto).toMatch(/afastar-se de suas atividades de 13\/11\/2026 a 15\/11\/2026\.$/)
+  })
+  it('laudo sem finalidade não pode ser revisado; com finalidade, ela abre o texto', () => {
+    const xs = base().map((a) => (a.tipo === 'laudo' ? { ...a, emitir: true } : a))
+    expect(camposPendentes(doc(xs, 'laudo'))).toBe('Escolha a finalidade do laudo')
+    expect(doc(avancar(xs, 'laudo'), 'laudo').estado).toBe('rascunho')
+    const ok = definirCampos(xs, 'laudo', { finalidade: { tipo: 'outra', outra: 'perícia judicial' } })
+    expect(doc(ok, 'laudo').texto.split('\n')[0]).toBe('Laudo para perícia judicial.')
+    expect(doc(avancar(ok, 'laudo'), 'laudo').estado).toBe('revisado')
+  })
+  it('período incompleto ou invertido trava a revisão', () => {
+    expect(camposPendentes(doc(definirCampos(base(), 'atestado', { periodo: { de: '2026-11-13', ate: '' } }), 'atestado'))).toBe('Complete o período do afastamento')
+    expect(camposPendentes(doc(definirCampos(base(), 'atestado', { periodo: { de: '2026-11-15', ate: '2026-11-13' } }), 'atestado'))).toBe('O fim do afastamento vem antes do início')
+  })
+  it('texto editado pelo médico não é sobrescrito ao mudar o período', () => {
+    const editado = editarAnexo(base(), 'atestado', 'Meu texto.')
+    expect(doc(definirCampos(editado, 'atestado', { periodo: { de: '2026-11-13', ate: '2026-11-14' } }), 'atestado').texto).toBe('Meu texto.')
   })
 })

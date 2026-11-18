@@ -29,7 +29,8 @@ export type Atendimento = {
   id: string
   /** 'HH:MM' */
   inicio: string
-  paciente: { nome: string; /** 'YYYY-MM-DD' */ nascimento: string }
+  /** `id`: identificador do paciente (criado pelo sistema, nunca muda) */
+  paciente: { id: string; nome: string; /** 'YYYY-MM-DD' */ nascimento: string }
   tipo: TipoAtendimento
   modalidade: Modalidade
   /** 'Particular' ou o nome do convênio */

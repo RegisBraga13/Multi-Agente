@@ -18,11 +18,11 @@ import { atualizarResumo, marcarResumo, montarResumo, type ItemResumo } from './
 import { PaginaDiagnosticos } from './diagnosticos-pagina'
 import { atualizarConduta, editarTexto, escolherOpcao, escreverOutro, montarConduta, pendenciasConduta, revelar, type Conduta } from './conduta'
 import { PaginaConduta } from './conduta-pagina'
-import { alternarEmitir, atualizarAnexos, avancar, editarAnexo, montarAnexos, pendenciasAnexos, type Anexo, type DadosConsulta } from './anexos'
+import { alternarEmitir, atualizarAnexos, avancar, definirCampos, editarAnexo, montarAnexos, pendenciasAnexos, type Anexo, type DadosConsulta } from './anexos'
 import { PaginaAnexos } from './anexos-pagina'
-import { atualizarProntuario, cabecalhoProntuario, chave, montarProntuario, type SecaoProntuario } from './prontuario'
+import { aplicarEdicoes, atualizarProntuario, cabecalhoProntuario, chave, dadosDaConsulta, secoesDosDados, type SecaoProntuario } from './prontuario'
 import { PaginaProntuario } from './prontuario-pagina'
-import { abrirJanelaProntuario, chavePaciente, salvarEntrada } from '../prontuario/registro'
+import { abrirJanelaProntuario, salvarEntrada, tituloDaConsulta, type DadosEntrada } from '../prontuario/registro'
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
@@ -70,7 +70,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
   }, [janelaAberta])
   const alternarJanela = () => {
     if (janela.current && !janela.current.closed) { janela.current.close(); setJanelaAberta(false); return }
-    janela.current = abrirJanelaProntuario(esp.slug, at.paciente)
+    janela.current = abrirJanelaProntuario(esp.slug, at.paciente.id)
     setJanelaAberta(!!janela.current)
   }
 
@@ -170,8 +170,9 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
     if (estado.blocos.anexos.estado !== 'revisado_medico') fazer('editar', 'anexos')
   }
 
-  /** Prontuário (SOAP): escrito só com o que foi salvo (história, diagnósticos confirmados, conduta). */
-  const [prontuario, setProntuario] = useState<{ versao: number; geradas: SecaoProntuario[]; textos: Record<string, string>; mudou: Record<string, boolean> } | null>(null)
+  /** Prontuário: os dados organizados (o que fica gravado) e o texto na tela, escrito só com o que foi salvo. */
+  const [prontuario, setProntuario] = useState<{ versao: number; dados: DadosEntrada; geradas: SecaoProntuario[]; textos: Record<string, string>; mudou: Record<string, boolean> } | null>(null)
+  const fotoExemplo = at.paciente.nome === 'Mariana Costa' ? '/img/acne-exemplo.jpg' : null
 
   /** Salvar anexos. Ao liberar o prontuário, a IA escreve (ou atualiza só o que mudou) e a página dele abre. */
   const salvarAnexos = () => {
@@ -179,11 +180,12 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
     despachar({ tipo: 'oficializar', bloco: 'anexos' })
     if (!historia || !dd || !conduta || podeOficializar(estado, 'prontuario') || !podeOficializar(novo, 'prontuario')) return
     const salva = historia.geradas.map((s, i) => ({ rotulo: s.rotulo, texto: historia.textos[i] }))
-    const receita = docs?.itens.find((x) => x.tipo === 'receita' && x.emitir)?.texto
-    const novas = montarProntuario(salva, dd.itens, conduta.c, receita)
+    const fotos = Array.from({ length: conteudo.fotos }, (_, i) => ({ n: i + 1, src: i === 0 ? fotoExemplo : null }))
+    const dadosP = dadosDaConsulta({ historia: salva, itens: dd.itens, conduta: conduta.c, anexos: docs?.itens, complementares: conteudo.complementares, fotos })
+    const novas = secoesDosDados(dadosP)
     setProntuario((x) => x
-      ? { versao: x.versao + 1, geradas: novas, ...atualizarProntuario(x.geradas, x.textos, novas) }
-      : { versao: 1, geradas: novas, textos: Object.fromEntries(novas.flatMap((s) => s.linhas.map((l) => [chave(s, l), l.texto]))), mudou: Object.fromEntries(novas.flatMap((s) => s.linhas.map((l) => [chave(s, l), true]))) })
+      ? { versao: x.versao + 1, dados: dadosP, geradas: novas, ...atualizarProntuario(x.geradas, x.textos, novas) }
+      : { versao: 1, dados: dadosP, geradas: novas, textos: Object.fromEntries(novas.flatMap((s) => s.linhas.map((l) => [chave(s, l), l.texto]))), mudou: Object.fromEntries(novas.flatMap((s) => s.linhas.map((l) => [chave(s, l), true]))) })
     navegar(`${base}/prontuario`)
   }
 
@@ -191,10 +193,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
   const salvarProntuario = () => {
     fazer('oficializar', 'prontuario')
     // a entrada desta consulta vai para o prontuário do paciente (com as edições do médico)
-    if (prontuario) salvarEntrada(chavePaciente(at.paciente), {
-      tipo: at.tipo, data: at.id.slice(0, 10), hora: at.inicio,
-      secoes: prontuario.geradas.map((s) => ({ titulo: s.titulo, linhas: s.linhas.map((l) => ({ rotulo: l.rotulo, texto: prontuario.textos[chave(s, l)] ?? l.texto })) })),
-    })
+    if (prontuario) salvarEntrada(at.paciente.id, { tipo: at.tipo, modalidade: at.modalidade, data: at.id.slice(0, 10), hora: at.inicio, ...aplicarEdicoes(prontuario.dados, prontuario.textos) })
     navegar(`/modulo/${esp.slug}`, { state: { aviso: `Consulta finalizada. Prontuário de ${at.paciente.nome} salvo.` } })
   }
 
@@ -285,7 +284,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
             <Exame
               campos={conteudo.exame}
               fotos={conteudo.fotos}
-              fotoExemplo={at.paciente.nome === 'Mariana Costa' ? '/img/acne-exemplo.jpg' : null}
+              fotoExemplo={fotoExemplo}
               marcas={conteudo.marcas}
               complementares={conteudo.complementares}
               situacao={estado.blocos.exame.estado}
@@ -394,6 +393,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
               pendencia={pendenciasAnexos(docs.itens)}
               onEmitir={(tipo) => mexerDocs((xs) => alternarEmitir(xs, tipo))}
               onEditar={(tipo, texto) => mexerDocs((xs) => editarAnexo(xs, tipo, texto))}
+              onCampos={(tipo, campos) => mexerDocs((xs) => definirCampos(xs, tipo, campos))}
               onAvancar={(tipo) => {
                 const antes = docs.itens.find((x) => x.tipo === tipo)
                 mexerDocs((xs) => avancar(xs, tipo))
@@ -409,8 +409,8 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
             )}
             <PaginaProntuario
               key={prontuario.versao}
-              titulo={at.tipo === 'consulta' ? 'Consulta 1' : 'Consulta 1 — Retorno'}
-              cabecalho={cabecalhoProntuario(dados)}
+              titulo={tituloDaConsulta(at.paciente.id, at.tipo, at.id.slice(0, 10), at.inicio)}
+              cabecalho={cabecalhoProntuario(dados, at.modalidade)}
               secoes={prontuario.geradas}
               textos={prontuario.textos}
               mudou={prontuario.mudou}

@@ -8,11 +8,59 @@ export type TipoAnexo = 'receita' | 'exames' | 'encaminhamento' | 'orientacoes' 
 /** rascunho → revisado → assinado (só se exige) → enviado. Editar o texto volta a rascunho (a assinatura cai). */
 export type EstadoAnexo = 'rascunho' | 'revisado' | 'assinado' | 'enviado'
 
+/** Laudo: para que serve (vai para o prontuário como "Laudo: para o INSS"). */
+export type Finalidade = { tipo: 'inss' | 'outro-medico' | 'trabalho' | 'outra' | ''; outra: string }
+export const FINALIDADES: { valor: Exclude<Finalidade['tipo'], ''>; rotulo: string }[] = [
+  { valor: 'inss', rotulo: 'INSS' }, { valor: 'outro-medico', rotulo: 'Outro médico' }, { valor: 'trabalho', rotulo: 'Trabalho' }, { valor: 'outra', rotulo: 'Outra' },
+]
+
 /**
- * `textoIA`: o que a IA escreveu (para saber se mudou numa nova versão da conduta); `texto`: o que vale.
+ * `base`: o que a IA escreveu só com a conduta (para saber se mudou numa nova versão da conduta); `textoIA`: a base com
+ * os campos do médico (período do atestado, finalidade do laudo); `texto`: o que vale (com a edição do médico).
  * `emitir`: o médico escolheu emitir (os montados da conduta vêm escolhidos; atestado e laudo, não).
+ * `periodo` (atestado, datas 'YYYY-MM-DD'; vazio = só comparecimento) e `finalidade` (laudo).
  */
-export type Anexo = { tipo: TipoAnexo; titulo: string; texto: string; textoIA: string; emitir: boolean; assinatura: boolean; estado: EstadoAnexo }
+export type Anexo = {
+  tipo: TipoAnexo; titulo: string; texto: string; base: string; textoIA: string; emitir: boolean; assinatura: boolean; estado: EstadoAnexo
+  periodo?: { de: string; ate: string }
+  finalidade?: Finalidade
+}
+
+export const dataBr = (iso: string) => iso.split('-').reverse().join('/')
+
+/** Finalidade no texto: "para o INSS", "para outro médico", "para o trabalho", "para <outra>". */
+export function textoFinalidade(f?: Finalidade): string {
+  if (!f?.tipo) return ''
+  if (f.tipo === 'outra') return f.outra.trim() ? `para ${f.outra.trim().replace(/^para\s+/i, '')}` : ''
+  return { inss: 'para o INSS', 'outro-medico': 'para outro médico', trabalho: 'para o trabalho' }[f.tipo]
+}
+
+/** O texto da IA com os campos do médico. */
+function comCampos(a: Pick<Anexo, 'tipo' | 'base' | 'periodo' | 'finalidade'>): string {
+  if (a.tipo === 'atestado' && a.periodo?.de && a.periodo.ate)
+    return `${a.base.replace(/\.$/, '')}, devendo afastar-se de suas atividades de ${dataBr(a.periodo.de)} a ${dataBr(a.periodo.ate)}.`
+  if (a.tipo === 'laudo' && textoFinalidade(a.finalidade)) return `Laudo ${textoFinalidade(a.finalidade)}.
+${a.base}`
+  return a.base
+}
+
+/** O que falta nos campos para revisar o documento (null = nada). */
+export function camposPendentes(a: Anexo): string | null {
+  if (a.tipo === 'laudo' && !textoFinalidade(a.finalidade)) return 'Escolha a finalidade do laudo'
+  if (a.tipo === 'atestado' && a.periodo && (!!a.periodo.de !== !!a.periodo.ate)) return 'Complete o período do afastamento'
+  if (a.tipo === 'atestado' && a.periodo?.de && a.periodo.ate && a.periodo.ate < a.periodo.de) return 'O fim do afastamento vem antes do início'
+  return null
+}
+
+/** O médico preencheu o período (atestado) ou a finalidade (laudo): o texto se refaz se ele não o editou; volta a rascunho. */
+export function definirCampos(xs: Anexo[], tipo: TipoAnexo, campos: Pick<Anexo, 'periodo' | 'finalidade'>): Anexo[] {
+  return no(xs, tipo, (a) => {
+    if (a.estado === 'enviado') return a
+    const novo = { ...a, ...campos }
+    const textoIA = comCampos(novo)
+    return { ...novo, textoIA, texto: a.texto === a.textoIA ? textoIA : a.texto, estado: 'rascunho' }
+  })
+}
 
 /** PROVISÓRIO até as regras do CFM: documentos que pedem assinatura com certificado digital. */
 export const PRECISA_ASSINATURA: Record<TipoAnexo, boolean> = {
@@ -59,6 +107,20 @@ export function linhaReceita(n: number, x: ItemReceita): string {
  * Receita a partir das opções marcadas na conduta salva (cuidados e tópico = uso tópico; sistêmico = uso oral).
  * O "Outro" escrito pelo médico entra como item livre na seção do grupo. Numeração seguida.
  */
+/** Os itens da receita da conduta salva: estruturados (das opções marcadas) e livres (o "Outro" escrito pelo médico). */
+export function itensReceita(c: Conduta): { itens: ItemReceita[]; livres: string[] } {
+  const itens: ItemReceita[] = []
+  const livres: string[] = []
+  for (const linha of ['cuidados', 'topico', 'sistemico'] as const) {
+    const l = c.grupos?.flatMap((g) => g.linhas).find((x) => x.id === linha)
+    for (const o of l?.opcoes.filter((x) => c.escolha[linha]?.includes(x.id)) ?? []) {
+      if (o.id === OUTRO) { if (c.outros[linha]?.trim()) livres.push(c.outros[linha].trim()); continue }
+      itens.push(...(o.receita ?? []))
+    }
+  }
+  return { itens, livres }
+}
+
 function montarReceita(c: Conduta): string {
   const secoes: Record<ItemReceita['via'], string[]> = { topico: [], oral: [] }
   let n = 0
@@ -96,14 +158,22 @@ export function montarAnexos(c: Conduta, d: DadosConsulta): Anexo[] {
   docs.push(['atestado', `Atesto, para os devidos fins, que ${d.paciente} esteve em consulta médica em ${d.data}, às ${d.hora}.`, false])
   docs.push(['laudo', `Paciente de ${d.idade} anos, em acompanhamento por ${dx}.${t[1] || t[2] ? `\nConduta: ${[t[1], t[2]].filter(Boolean).join(' ')}` : ''}`, false])
 
-  return docs.map(([tipo, texto, emitir]) => ({ tipo, titulo: TITULO[tipo], texto, textoIA: texto, emitir, assinatura: PRECISA_ASSINATURA[tipo], estado: 'rascunho' }))
+  return docs.map(([tipo, texto, emitir]) => ({
+    tipo, titulo: TITULO[tipo], texto, base: texto, textoIA: texto, emitir, assinatura: PRECISA_ASSINATURA[tipo], estado: 'rascunho' as const,
+    ...(tipo === 'atestado' ? { periodo: { de: '', ate: '' } } : tipo === 'laudo' ? { finalidade: { tipo: '' as const, outra: '' } } : {}),
+  }))
 }
 
-/** Conduta salva de novo: o anexo cujo texto da IA não mudou fica como está (com a edição e o estado); o resto é refeito. */
+/** Conduta salva de novo: o anexo cujo texto da IA não mudou fica como está (com a edição e o estado); o resto é refeito
+ * (mantendo a escolha de emitir e os campos do médico). */
 export function atualizarAnexos(antes: Anexo[], novos: Anexo[]): Anexo[] {
   return novos.map((n) => {
     const a = antes.find((x) => x.tipo === n.tipo)
-    return a && a.textoIA === n.textoIA ? a : a ? { ...n, emitir: a.emitir } : n
+    if (!a) return n
+    if (a.base === n.base) return a
+    const refeito = { ...n, emitir: a.emitir, periodo: a.periodo, finalidade: a.finalidade }
+    const textoIA = comCampos(refeito)
+    return { ...refeito, textoIA, texto: textoIA }
   })
 }
 
@@ -129,7 +199,7 @@ export function avancar(xs: Anexo[], tipo: TipoAnexo): Anexo[] {
   return no(xs, tipo, (a) => {
     const p = proximoPasso(a)
     if (!p) return a
-    if (!a.texto.trim()) return a
+    if (!a.texto.trim() || camposPendentes(a)) return a
     return { ...a, estado: p === 'revisar' ? 'revisado' : p === 'assinar' ? 'assinado' : 'enviado' }
   })
 }
