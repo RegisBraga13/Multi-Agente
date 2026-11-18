@@ -1,0 +1,103 @@
+"""Carrega e valida os casos de teste de uma pasta.
+
+Além do formato (formato.py), confere o que um caso sozinho não sabe: id igual ao nome do arquivo e único,
+sinais de alerta existentes na lista fixa da especialidade e nenhum dado de identidade no texto.
+Um arquivo ruim não esconde os outros: todos os erros aparecem de uma vez.
+"""
+import re
+from collections.abc import Iterator
+from dataclasses import dataclass
+from pathlib import Path
+
+import yaml
+from pydantic import ValidationError
+
+from app.especialidades.pacote import SinalAlerta
+from casos_de_teste.formato import Caso
+
+PASTA_CASOS = Path(__file__).parent / "dermatologia"
+
+IDENTIDADE = {
+    "CPF": re.compile(r"\d{3}\.?\d{3}\.?\d{3}-?\d{2}"),
+    "telefone": re.compile(r"\(?\d{2}\)?\s?9?\d{4}-?\d{4}"),
+    "e-mail": re.compile(r"\S+@\S+\.\S+"),
+}
+
+
+class CasoInvalido(Exception):
+    def __init__(self, caminho: Path, mensagens: list[str]):
+        super().__init__(f"{caminho.name}: {'; '.join(mensagens)}")
+        self.caminho = caminho
+        self.mensagens = mensagens
+
+
+@dataclass
+class Relatorio:
+    casos: list[Caso]
+    erros: list[str]
+
+    @property
+    def ok(self) -> bool:
+        return not self.erros
+
+
+def carregar_caso(caminho: Path) -> Caso:
+    try:
+        dados = yaml.safe_load(caminho.read_text(encoding="utf-8"))
+    except yaml.YAMLError as erro:
+        raise CasoInvalido(caminho, [f"YAML inválido: {erro}".replace("\n", " ")]) from erro
+    try:
+        return Caso.model_validate(dados)
+    except ValidationError as erro:
+        raise CasoInvalido(caminho, [_mensagem(e) for e in erro.errors()]) from erro
+
+
+def _mensagem(e: dict) -> str:
+    campo = ".".join(str(p) for p in e["loc"])
+    return f"{campo}: {e['msg']}" if campo else e["msg"]
+
+
+def _textos(x: object) -> Iterator[str]:
+    if isinstance(x, str):
+        yield x
+    elif isinstance(x, dict):
+        for v in x.values():
+            yield from _textos(v)
+    elif isinstance(x, list):
+        for v in x:
+            yield from _textos(v)
+
+
+def _conferir(caso: Caso, caminho: Path, ids_sinais: set[str]) -> list[str]:
+    erros = []
+    if caso.id != caminho.stem:
+        erros.append(f"id {caso.id!r} diferente do nome do arquivo")
+    citados = [s.sinal for s in caso.entrada.sinais] + caso.esperado.sinais.disparados
+    erros += [f"sinal de alerta inexistente na lista: {s!r}" for s in citados if s not in ids_sinais]
+    for texto in _textos(caso.model_dump(mode="json")):
+        erros += [f"dado de identidade ({tipo}) no texto: {texto!r}" for tipo, p in IDENTIDADE.items() if p.search(texto)]
+    return erros
+
+
+def validar_pasta(pasta: Path, sinais: list[SinalAlerta]) -> Relatorio:
+    ids_sinais = {s.id for s in sinais}
+    arquivos = sorted(pasta.glob("*.yaml"))
+    if not arquivos:
+        return Relatorio(casos=[], erros=["nenhum caso encontrado"])
+    casos: list[Caso] = []
+    erros: list[str] = []
+    vistos: dict[str, str] = {}
+    for caminho in arquivos:
+        try:
+            caso = carregar_caso(caminho)
+        except CasoInvalido as erro:
+            erros += [f"{caminho.name}: {m}" for m in erro.mensagens]
+            continue
+        problemas = _conferir(caso, caminho, ids_sinais)
+        if caso.id in vistos:
+            problemas.append(f"id {caso.id!r} repetido (já usado em {vistos[caso.id]})")
+        vistos.setdefault(caso.id, caminho.name)
+        erros += [f"{caminho.name}: {p}" for p in problemas]
+        if not problemas:
+            casos.append(caso)
+    return Relatorio(casos=casos, erros=erros)
