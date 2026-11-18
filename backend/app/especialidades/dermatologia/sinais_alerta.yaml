@@ -1,0 +1,46 @@
+# Sinais de alerta da Dermatologia — lista FIXA, sempre checada (não depende só da IA).
+# `texto`: como aparece na tela (curto, uma linha). `porque`: a razão clínica.
+# Rascunho de 18/11/2026: só vale depois que o autor aprovar.
+revisao:
+  situacao: pendente
+
+sinais:
+  - id: lesao-pigmentada-abcde
+    texto: Pinta mudou cor, forma ou tamanho (ABCDE)
+    porque: Mudança em lesão pigmentada é o principal sinal de melanoma.
+  - id: ferida-nao-cicatriza
+    texto: Ferida não cicatriza há >4 sem
+    porque: Ferida persistente em pele com dano solar sugere carcinoma.
+  - id: lesao-sangra-facil
+    texto: Lesão que sangra ao toque leve
+    porque: Sangramento ao trauma mínimo é comum no carcinoma basocelular e no melanoma.
+  - id: acne-grave-nodulos-cicatrizes
+    texto: Nódulos dolorosos ou cicatrizes (acne grave)
+    porque: Acne nodular ou cicatricial pede tratamento sistêmico precoce para evitar sequela.
+  - id: virilizacao
+    texto: Início súbito com sinais de virilização
+    porque: Acne com virilização de início súbito pode indicar tumor produtor de androgênio.
+  - id: bolhas-mucosas
+    texto: Bolhas, pele descolando ou lesões em boca/olhos
+    porque: Sugere Stevens-Johnson/necrólise epidérmica tóxica, emergência com risco de vida.
+  - id: febre-erupcao-difusa
+    texto: Febre com manchas pelo corpo todo
+    porque: Pode ser farmacodermia grave (DRESS), infecção sistêmica ou doença exantemática.
+  - id: angioedema
+    texto: Inchaço de lábios/língua ou falta de ar
+    porque: Angioedema e anafilaxia podem obstruir a via aérea.
+  - id: zoster-oftalmico
+    texto: Vesículas na ponta do nariz ou perto do olho
+    porque: Zóster oftálmico ameaça a visão e pede avaliação oftalmológica urgente.
+  - id: celulite-progressiva
+    texto: Vermelhidão quente que se espalha, com febre
+    porque: Celulite ou erisipela em progressão pode evoluir para infecção grave.
+  - id: imunossupressao
+    texto: Imunossupressão (transplante, quimio, HIV, corticoide)
+    porque: Muda o risco de infecções e de câncer de pele e restringe tratamentos.
+  - id: gestacao-ou-plano
+    texto: Gestante, amamentando ou planeja engravidar
+    porque: Contraindica medicamentos teratogênicos (ex. isotretinoína, metotrexato).
+  - id: pe-diabetico
+    texto: Lesão no pé em diabético
+    porque: Risco de úlcera, infecção profunda e amputação.
