@@ -4,3 +4,4 @@ __pycache__/
 .pytest_cache/
 casos_de_teste/*/revisao.html
 openapi.json
+casos_de_teste/resultados/
