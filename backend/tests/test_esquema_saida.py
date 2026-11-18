@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from app.contratos.base import ModeloApi
 from app.motores.historia import HistoriaClinica
+from app.motores.sinais import SinaisIA
 from app.provedores.esquema_saida import esquema_envelope
 
 PROIBIDAS = {
@@ -36,7 +37,7 @@ class Exemplo(ModeloApi):
     nota: str = "x"
 
 
-ESQUEMAS: list[type[BaseModel]] = [Exemplo, HistoriaClinica]
+ESQUEMAS: list[type[BaseModel]] = [Exemplo, HistoriaClinica, SinaisIA]
 
 
 def chaves(x: Any) -> set[str]:
