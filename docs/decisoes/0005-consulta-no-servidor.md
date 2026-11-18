@@ -21,6 +21,7 @@ Constituição seja garantida no servidor e o prontuário fique no Postgres, sem
 7. **Toda chamada da IA em `ai_proposals`**, com a proposta validada; IA real só com `IA_PROVEDOR=anthropic`
    (padrão: demonstração, sem chave e sem custo).
 
-**Consequências.** O 3C troca a simulação das telas pelas rotas, página por página. Risco anotado: os termos
-proibidos são as partes do nome do paciente; um nome que também é palavra comum ("Clara", "Rosa") bloqueia o
-pedido à IA se a palavra aparecer no texto clínico — escolhido segurança; a revisar com o autor.
+**Consequências.** O 3C troca a simulação das telas pelas rotas, página por página. Nome do paciente no pedido
+à IA (autor, 18/11): parte do nome só bloqueia com inicial maiúscula, como nome escrito ("Clara relata…"); em
+minúscula é palavra comum e passa ("pele clara"); partículas (de, da, dos…) nunca contam; números (CPF,
+telefone) sempre bloqueiam. Datas que o médico lê saem em dia/mês/ano (autor, 18/11).

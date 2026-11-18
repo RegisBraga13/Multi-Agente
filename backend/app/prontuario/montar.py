@@ -16,6 +16,7 @@ from app.contratos.consulta_blocos import (
     ItemDD,
 )
 from app.contratos.prontuario import DadosEntrada, DiagnosticoRegistro, ExameRegistro, ReceitaRegistro
+from app.fuso import data_br
 
 # frase termina em ponto e a seguinte começa com maiúscula
 _FRASES = re.compile(r"(?<=\.)\s+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇ])")
@@ -73,7 +74,7 @@ def dados_da_consulta(
                 nome=i.nome,
                 valor=i.valor,
                 status=i.status,
-                data=c.data.isoformat(),
+                data=data_br(c.data),
                 origem=c.origem,
             )
             for c in exame.complementares

@@ -35,7 +35,7 @@ from app.contratos.consulta_blocos import (
 )
 from app.contratos.motor import RegistroDecisao
 from app.contratos.prontuario import SCHEMA_VERSION_PRONTUARIO, Adendo, DadosEntrada, EntradaProntuario
-from app.fuso import no_consultorio
+from app.fuso import data_hora_br
 from app.pacientes.repositorio_postgres import transacao_do_medico
 
 TABELA: dict[str, str] = {
@@ -281,7 +281,7 @@ class RepositorioConsultasPostgres:
                 ([x["id"] for x in linhas],),
             ).fetchall():
                 adendos.setdefault(a["encounter_id"], []).append(
-                    Adendo(quando=no_consultorio(a["created_at"]).isoformat(timespec="minutes"), texto=a["text"])
+                    Adendo(quando=data_hora_br(a["created_at"]), texto=a["text"])
                 )
         return montar_entradas(
             [

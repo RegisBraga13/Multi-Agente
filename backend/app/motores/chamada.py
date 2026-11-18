@@ -54,14 +54,25 @@ def _textos(x: Any) -> Iterator[str]:
         yield str(x)
 
 
-def _normalizar(texto: str) -> str:
-    """Sem acento e sem diferença de caixa ("Mariána" == "MARIANA")."""
-    return "".join(c for c in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(c)).casefold()
+def _sem_acento(texto: str) -> str:
+    """Tira os acentos e mantém a caixa ("Clára" → "Clara")."""
+    return "".join(c for c in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(c))
 
 
 def _tem_termo_proibido(textos: list[str], termos: Sequence[str]) -> bool:
-    padroes = [re.compile(rf"\b{re.escape(_normalizar(t.strip()))}\b") for t in termos if t.strip()]
-    return any(p.search(_normalizar(texto)) for texto in textos for p in padroes)
+    """Termo do paciente no texto, sem diferença de acento. Parte do nome só conta com inicial maiúscula, como
+    nome escrito ("Clara relata…"); em minúscula é palavra comum e passa ("pele clara") — decisão do autor,
+    18/11/2026. Termo de números (CPF, telefone) conta sempre."""
+    for termo in (t.strip() for t in termos):
+        if not termo:
+            continue
+        padrao = re.compile(rf"\b{re.escape(_sem_acento(termo))}\b", re.IGNORECASE)
+        so_maiuscula = termo[0].isalpha()
+        for texto in textos:
+            for achado in padrao.finditer(_sem_acento(texto)):
+                if not so_maiuscula or achado.group(0)[0].isupper():
+                    return True
+    return False
 
 
 def _parciais(ao_escrever: Callable[[dict[str, Any]], None]) -> Callable[[str], None]:

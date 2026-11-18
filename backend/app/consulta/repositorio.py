@@ -14,7 +14,7 @@ from app.contratos.base import ModeloApi
 from app.contratos.consulta_blocos import ETAPAS, Bloco, Consulta, Documento, EstadoBloco, Etapa, NovaConsulta
 from app.contratos.motor import RegistroDecisao
 from app.contratos.prontuario import Adendo, DadosEntrada, EntradaProntuario
-from app.fuso import no_consultorio
+from app.fuso import data_hora_br, no_consultorio
 from app.pacientes.repositorio import RepositorioPacientes
 from app.prontuario.titulo import titulo_nova_entrada
 
@@ -221,7 +221,7 @@ class RepositorioConsultasMemoria:
         r = self._achar(medico_id, consulta_id)
         if r.consulta.finalizada_em is None:
             raise ConsultaAberta
-        r.adendos.append(Adendo(quando=no_consultorio(quando).isoformat(timespec="minutes"), texto=texto))
+        r.adendos.append(Adendo(quando=data_hora_br(quando), texto=texto))
 
     def prontuario(self, medico_id: UUID, paciente_id: UUID) -> list[EntradaProntuario]:
         finalizadas = [

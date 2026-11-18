@@ -192,3 +192,16 @@ def test_termo_proibido_nao_e_procurado_nas_instrucoes():
     p = PedidoIA(motor="dd", versao_prompt="v1", instrucoes="Organize os dados dos santos", dados={"t": "x pústulas"})
     proposta = chamar_motor(falso, p, Hipoteses, 3, RelogioFixo(QUANDO), lambda r: None, termos_proibidos=["Santos"])
     assert proposta.acao in ("HUMAN_REVIEW", "REJECT") and len(falso.pedidos) == 1
+
+
+def test_nome_em_minuscula_passa_e_com_maiuscula_bloqueia():
+    proposta, _, falso = chamar(BRUTO_VALIDO, {"exame": "fototipo II, pele clara, pústulas"}, termos=["Clara"])
+    assert proposta.acao == "HUMAN_REVIEW" and len(falso.pedidos) == 1
+    for texto in ("Clara relata espinhas", "paciente CLARA", "Clára"):
+        with pytest.raises(ErroPrivacidade):
+            chamar(BRUTO_VALIDO, {"t": texto}, termos=["Clara"])
+
+
+def test_termo_de_numeros_sempre_bloqueia():
+    with pytest.raises(ErroPrivacidade):
+        chamar(BRUTO_VALIDO, {"t": "registro 778899"}, termos=["778899"])

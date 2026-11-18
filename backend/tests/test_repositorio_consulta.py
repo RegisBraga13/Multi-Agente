@@ -116,7 +116,7 @@ def test_adendo_so_depois_de_finalizar(ambiente):
     repo.finalizar(a, c.id, DADOS_MINIMOS, {}, QUANDO)
     repo.adicionar_adendo(a, c.id, "Biópsia: carcinoma basocelular.", "resultado de exame", QUANDO)
     [e] = repo.prontuario(a, paciente)
-    assert [x.texto for x in e.adendos] == ["Biópsia: carcinoma basocelular."]
+    assert [(x.quando, x.texto) for x in e.adendos] == [("13/11/2026 05:00", "Biópsia: carcinoma basocelular.")]
 
 
 def test_prontuario_mais_recente_no_topo_com_titulo(ambiente):

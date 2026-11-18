@@ -120,9 +120,9 @@ def test_exames_missing():
     )
     d = montar(exame=ex)
     assert [(e.nome, e.valor, e.status, e.data, e.origem) for e in d.exames] == [
-        ("TSH", "2,1", "PRESENT", "2026-11-01", "laudo-lab-0111.pdf"),
-        ("Ferritina", None, "MISSING", "2026-11-01", "laudo-lab-0111.pdf"),
-        ("Glicemia", "98", "INFERRED", "2026-11-01", "laudo-lab-0111.pdf"),
+        ("TSH", "2,1", "PRESENT", "01/11/2026", "laudo-lab-0111.pdf"),
+        ("Ferritina", None, "MISSING", "01/11/2026", "laudo-lab-0111.pdf"),
+        ("Glicemia", "98", "INFERRED", "01/11/2026", "laudo-lab-0111.pdf"),
     ]
     assert d.fotos == []
 
