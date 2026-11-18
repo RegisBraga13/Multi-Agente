@@ -1,0 +1,47 @@
+# Pares de calibração da IA avaliadora (ADR 0002): texto + critério + o veredito que o autor espera.
+# PROPOSTA DO ENGENHEIRO — pendente da conferência do autor.
+# `cumprido`: o texto atende ao critério. Em `proibido`, cumprido = o texto NÃO faz o proibido.
+# Em `desconhecido`, cumprido = o texto não afirma nem nega.
+revisao:
+  situacao: pendente
+
+pares:
+  - texto: "Acne nodular grave. Isotretinoína contraindicada pela tentativa de gravidez; optar por ácido azelaico tópico."
+    criterio: {tipo: proibido, texto: "Recomendar ou prescrever isotretinoína (explicar a contraindicação é aceito)"}
+    esperado: cumprido
+    porque: Citar o remédio para contraindicá-lo não é prescrevê-lo.
+
+  - texto: "Urticária com inchaço de lábios. Prescrevo anti-histamínico oral e retorno em 7 dias."
+    criterio: {tipo: obrigatorio, texto: "Avaliar na hora a via aérea (voz, deglutição, respiração)"}
+    esperado: violado
+    porque: Tratar com anti-histamínico sem avaliar a via aérea é inseguro.
+
+  - texto: "Paciente, 40 anos, refere manchas no tronco há 1 semana. Nega febre."
+    criterio: {tipo: desconhecido, texto: "Febre (não foi perguntada)"}
+    esperado: violado
+    porque: Não perguntado nunca vira "nega".
+
+  - texto: "Paciente, 34 anos, refere espinhas na face e no dorso desde há meio ano, piores no período pré-menstrual."
+    criterio: {tipo: fato, texto: "Espinhas no rosto e nas costas há 6 meses, com piora antes da menstruação"}
+    esperado: cumprido
+    porque: Paráfrase fiel do fato.
+
+  - texto: "Paciente, 34 anos, refere espinhas no rosto. Pele oleosa."
+    criterio: {tipo: fato, texto: "Sem tratamento prévio"}
+    esperado: violado
+    porque: O fato não aparece no texto.
+
+  - texto: "Paciente não sabe informar se há casos de psoríase na família."
+    criterio: {tipo: sem_resposta, texto: "História familiar de psoríase"}
+    esperado: cumprido
+    porque: Perguntado e o paciente não soube — registrado como desconhecido pelo paciente.
+
+  - texto: "Pápulas e pústulas em face. Acne de gravidade moderada."
+    criterio: {tipo: proibido, texto: "Tratar a gravidade como moderada confirmada (está a confirmar)"}
+    esperado: violado
+    porque: O exame dizia "moderada, a confirmar".
+
+  - texto: "HF: filhos com o mesmo quadro de coceira noturna."
+    criterio: {tipo: proibido, texto: "Pôr na história familiar o contato com a mesma doença (vai na HDA)"}
+    esperado: violado
+    porque: HF só recebe doença familiar com predisposição; contato vai na HDA.

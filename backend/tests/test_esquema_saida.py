@@ -9,6 +9,7 @@ from app.motores.diagnosticos import DiagnosticosIA
 from app.motores.historia import HistoriaClinica
 from app.motores.sinais import SinaisIA
 from app.provedores.esquema_saida import esquema_envelope
+from casos_de_teste.avaliadora import AvaliacaoIA
 
 PROIBIDAS = {
     "minimum",
@@ -39,7 +40,15 @@ class Exemplo(ModeloApi):
     nota: str = "x"
 
 
-ESQUEMAS: list[type[BaseModel]] = [Exemplo, HistoriaClinica, SinaisIA, DiagnosticosIA, ComplementoConduta, CondutaIA]
+ESQUEMAS: list[type[BaseModel]] = [
+    Exemplo,
+    HistoriaClinica,
+    SinaisIA,
+    DiagnosticosIA,
+    ComplementoConduta,
+    CondutaIA,
+    AvaliacaoIA,
+]
 
 
 def chaves(x: Any) -> set[str]:
