@@ -4,7 +4,7 @@ O provedor devolve o JSON bruto; quem valida contra o esquema é a chamada de mo
 """
 
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel
 
@@ -15,6 +15,7 @@ class PedidoIA:
     versao_prompt: str
     instrucoes: str
     dados: dict[str, Any]
+    esforco: Literal["low", "medium", "high"] = "medium"
 
 
 @dataclass(frozen=True)

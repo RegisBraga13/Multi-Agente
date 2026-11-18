@@ -31,10 +31,12 @@ def pedido(dados: dict | None = None) -> PedidoIA:
     )
 
 
-def chamar(resposta, dados=None):
+def chamar(resposta, dados=None, termos=()):
     falso = ProvedorIAFalso({"dd": resposta})
     registros: list = []
-    proposta = chamar_motor(falso, pedido(dados), Hipoteses, 3, RelogioFixo(QUANDO), registros.append)
+    proposta = chamar_motor(
+        falso, pedido(dados), Hipoteses, 3, RelogioFixo(QUANDO), registros.append, termos_proibidos=termos
+    )
     return proposta, registros, falso
 
 
@@ -116,3 +118,33 @@ def test_telefone_como_numero_nos_dados_bloqueia():
     with pytest.raises(ErroPrivacidade):
         chamar_motor(falso, pedido({"contato": 11987654321}), Hipoteses, 3, RelogioFixo(QUANDO), lambda r: None)
     assert falso.pedidos == []
+
+
+def test_termo_proibido_bloqueia_sem_diferenciar_acento_e_caixa():
+    falso = ProvedorIAFalso({"dd": BRUTO_VALIDO})
+    with pytest.raises(ErroPrivacidade) as erro:
+        chamar_motor(
+            falso,
+            pedido({"falas": ["Sou a MARIANA, tenho espinhas"]}),
+            Hipoteses,
+            3,
+            RelogioFixo(QUANDO),
+            lambda r: None,
+            termos_proibidos=["Mariána"],
+        )
+    assert falso.pedidos == []
+    assert "termo proibido do paciente" in str(erro.value) and "mari" not in str(erro.value).lower()
+
+
+def test_termo_proibido_e_palavra_inteira():
+    proposta, _, _ = chamar(BRUTO_VALIDO, {"t": "anamnese e banana"}, termos=["Ana"])
+    assert proposta.acao == "HUMAN_REVIEW"
+
+
+def test_termo_vazio_e_ignorado():
+    proposta, _, _ = chamar(BRUTO_VALIDO, termos=["", "  "])
+    assert proposta.acao == "HUMAN_REVIEW"
+
+
+def test_pedido_tem_esforco_medio_por_padrao():
+    assert pedido().esforco == "medium"

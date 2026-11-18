@@ -7,12 +7,14 @@ Ordem: (1) privacidade — dado de identidade no pedido bloqueia antes do proved
 O provedor devolve o envelope {"resultado": <esquema do motor>, "meta": {confianca, evidencias, avisos, origem}} —
 nada além disso. A validação é estrita (texto no lugar de número é erro) e feita como JSON.
 
-Limite conhecido: nomes de pessoas não são detectáveis por padrão; no marco 3 o pedido é montado só com
-campos desidentificados e com a lista de termos proibidos do paciente (nome, CPF, telefone).
+Nomes de pessoas não são detectáveis por padrão: o pedido é montado só com campos desidentificados e a
+chamada recebe os termos proibidos do paciente (nome, CPF, telefone), conferidos sem acento e sem caixa.
 """
 
 import json
-from collections.abc import Callable, Iterator
+import re
+import unicodedata
+from collections.abc import Callable, Iterator, Sequence
 from typing import Any
 from uuid import uuid4
 
@@ -57,6 +59,16 @@ def _textos(x: Any) -> Iterator[str]:
         yield str(x)
 
 
+def _normalizar(texto: str) -> str:
+    """Sem acento e sem diferença de caixa ("Mariána" == "MARIANA")."""
+    return "".join(c for c in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(c)).casefold()
+
+
+def _tem_termo_proibido(textos: list[str], termos: Sequence[str]) -> bool:
+    padroes = [re.compile(rf"\b{re.escape(_normalizar(t.strip()))}\b") for t in termos if t.strip()]
+    return any(p.search(_normalizar(texto)) for texto in textos for p in padroes)
+
+
 def chamar_motor[T: ModeloApi](
     provedor: ProvedorIA,
     pedido: PedidoIA,
@@ -64,12 +76,15 @@ def chamar_motor[T: ModeloApi](
     versao_esquema: int,
     relogio: Relogio,
     registrar: Callable[[RegistroDecisao], None],
+    termos_proibidos: Sequence[str] = (),
 ) -> PropostaIA[T]:
-    achados = sorted(
-        {tipo for texto in _textos([pedido.instrucoes, pedido.dados]) for tipo in encontrar_identidade(texto)}
-    )
+    textos = list(_textos([pedido.instrucoes, pedido.dados]))
+    achados = sorted({tipo for texto in textos for tipo in encontrar_identidade(texto)})
     if achados:
         raise ErroPrivacidade(f"dado de identidade no pedido ao motor {pedido.motor!r}: {', '.join(achados)}")
+    if _tem_termo_proibido(textos, termos_proibidos):
+        # a mensagem nunca repete o termo (ela pode ir para log)
+        raise ErroPrivacidade(f"termo proibido do paciente no pedido ao motor {pedido.motor!r}")
 
     resposta = provedor.gerar(pedido, esquema)
     resultado: T | None = None
