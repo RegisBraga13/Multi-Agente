@@ -20,6 +20,15 @@ class Evidencia(ModeloApi):
     origem: str
 
 
+class MetaProposta(ModeloApi):
+    """O que todo motor devolve junto do resultado: confiança (sinal operacional), evidências, avisos e origem."""
+
+    confianca: float = Field(ge=0, le=1)
+    evidencias: list[Evidencia]
+    avisos: list[str]
+    origem: str
+
+
 class PropostaIA[T](ModeloApi):
     resultado: T | None
     confianca: float = Field(ge=0, le=1)

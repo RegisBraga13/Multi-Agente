@@ -18,11 +18,11 @@ from collections.abc import Callable, Iterator, Sequence
 from typing import Any
 from uuid import uuid4
 
-from pydantic import Field, ValidationError
+from pydantic import ValidationError
 
 from app.consulta.politica import decidir
 from app.contratos.base import ModeloApi
-from app.contratos.motor import Evidencia, PropostaIA, RegistroDecisao
+from app.contratos.motor import MetaProposta, PropostaIA, RegistroDecisao
 from app.privacidade import encontrar_identidade
 from app.provedores.ia import PedidoIA, ProvedorIA
 from app.provedores.relogio import Relogio
@@ -30,13 +30,6 @@ from app.provedores.relogio import Relogio
 
 class ErroPrivacidade(Exception):
     """O pedido à IA contém dado de identidade; nada foi enviado."""
-
-
-class _Meta(ModeloApi):
-    confianca: float = Field(ge=0, le=1)
-    evidencias: list[Evidencia]
-    avisos: list[str]
-    origem: str
 
 
 class _Envelope(ModeloApi):
@@ -88,12 +81,12 @@ def chamar_motor[T: ModeloApi](
 
     resposta = provedor.gerar(pedido, esquema)
     resultado: T | None = None
-    meta: _Meta | None = None
+    meta: MetaProposta | None = None
     if resposta.erro is None and isinstance(resposta.bruto, dict):
         try:
             envelope = _Envelope.model_validate(resposta.bruto)
             resultado = esquema.model_validate_json(json.dumps(envelope.resultado), strict=True)
-            meta = _Meta.model_validate_json(json.dumps(envelope.meta), strict=True)
+            meta = MetaProposta.model_validate_json(json.dumps(envelope.meta), strict=True)
         except (ValidationError, TypeError, ValueError):
             resultado, meta = None, None
 
