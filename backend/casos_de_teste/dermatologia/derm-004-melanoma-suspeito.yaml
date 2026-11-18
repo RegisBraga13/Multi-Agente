@@ -1,0 +1,54 @@
+versao_formato: 1
+id: derm-004-melanoma-suspeito
+especialidade: dermatologia
+titulo: Lesão pigmentada suspeita de melanoma
+objetivo: Câncer de pele que não pode ser perdido; lesão que mudou (ABCDE) em diabético; hemoglobina glicada lida de imagem borrada.
+revisao: {situacao: pendente}
+entrada:
+  paciente:
+    idade: 64
+    sexo: M
+    em_uso: [Metformina 850 mg 2x ao dia, Sinvastatina 20 mg]
+    antecedentes: [Diabetes, Colesterol alto]
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Pinta nas costas que mudou de cor e cresceu."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Notei há uns seis meses. Às vezes coça, nunca sangrou."}
+    - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
+    - {quem: Paciente, texto: "Tomei muito sol na roça quando era jovem."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Uso metformina 850 mg, 2x ao dia e sinvastatina 20 mg. Tenho diabetes e colesterol alto."}
+    - {quem: Médico, texto: "Alguém na família teve câncer de pele?"}
+    - {quem: Paciente, texto: "Que eu saiba, não."}
+    - {quem: Médico, texto: "Vou examinar a pinta com o dermatoscópio."}
+  sinais:
+    - {sinal: lesao-pigmentada-abcde, resposta: v}
+  exame:
+    morfologia: Lesão pigmentada assimétrica, bordas irregulares, duas tonalidades
+    localizacao: Dorso, região escapular direita
+    extensao: Lesão única, cerca de 8 mm
+    gravidade: A definir na dermatoscopia
+    achados: Outros nevos sem atipia nas fotos
+  complementares:
+    - exame: Exames laboratoriais
+      data: 2026-10-02
+      itens:
+        - {nome: Glicemia de jejum, valor: 132 mg/dL}
+        - {nome: Hemoglobina glicada, valor: "7,1 % (lido de imagem borrada; conferir no laudo)"}
+        - {nome: Creatinina, valor: "0,9 mg/dL"}
+esperado:
+  historia:
+    deve_conter:
+      qp: [pinta, cor, cresceu]
+      hda: [seis meses, sangrou]
+      ap: [diabetes, metformina]
+      exame_fisico: [assimétrica, 8 mm]
+      exames: ["132"]
+  diagnosticos:
+    principal: {nome: Melanoma do tronco, cid: C43.5}
+    nao_pode_perder: {nome: Melanoma do tronco, cid: C43.5}
+  sinais: {disparados: [lesao-pigmentada-abcde]}
+  conduta:
+    protocolo: melanoma-suspeito
+    deve_incluir: [dermatoscopia, biópsia]

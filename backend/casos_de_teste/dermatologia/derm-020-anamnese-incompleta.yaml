@@ -1,0 +1,31 @@
+versao_formato: 1
+id: derm-020-anamnese-incompleta
+especialidade: dermatologia
+titulo: Anamnese incompleta (manchas claras no peito)
+objetivo: Dados incompletos — nada pode ser inventado (sem antecedentes, hábitos, família ou exames).
+revisao: {situacao: pendente}
+entrada:
+  paciente: {idade: 50, sexo: M}
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Tenho umas manchas claras no peito."}
+    - {quem: Médico, texto: "Desde quando?"}
+    - {quem: Paciente, texto: "Não sei dizer."}
+    - {quem: Médico, texto: "Vou olhar o peito."}
+  exame:
+    morfologia: Máculas hipocrômicas com descamação fina
+    localizacao: Tórax anterior
+    extensao: null
+    gravidade: null
+    achados: null
+esperado:
+  historia:
+    deve_conter:
+      qp: [manchas claras, peito]
+      exame_fisico: [hipocrômicas, tórax]
+    vazias: [ap, hp, hf, exames]
+  diagnosticos:
+    principal: {nome: Pitiríase versicolor, cid: B36.0}
+  sinais: {disparados: []}
+  conduta:
+    protocolo: micose-superficial

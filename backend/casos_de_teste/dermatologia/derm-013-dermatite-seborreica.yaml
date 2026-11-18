@@ -1,0 +1,36 @@
+versao_formato: 1
+id: derm-013-dermatite-seborreica
+especialidade: dermatologia
+titulo: Dermatite seborreica do couro cabeludo
+objetivo: Quadro típico com piora no estresse e no frio; xampu anticaspa com melhora parcial.
+revisao: {situacao: pendente}
+entrada:
+  paciente: {idade: 36, sexo: F}
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Caspa e coceira no couro cabeludo."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Piora quando estou estressada e no frio."}
+    - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
+    - {quem: Paciente, texto: "Uso xampu anticaspa, melhora pouco."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Não, nenhum."}
+    - {quem: Médico, texto: "Vou olhar o couro cabeludo."}
+  exame:
+    morfologia: Descamação fina e eritema leve
+    localizacao: Couro cabeludo e sulcos nasogenianos
+    extensao: Difusa no couro cabeludo
+    gravidade: Leve
+    achados: Sem queda de cabelo
+esperado:
+  historia:
+    deve_conter:
+      qp: [caspa, couro cabeludo]
+      hda: [frio, xampu]
+      exame_fisico: [descamação, nasogenianos]
+    vazias: [hf, exames]
+  diagnosticos:
+    principal: {nome: Dermatite seborreica do couro cabeludo, cid: L21.0}
+  sinais: {disparados: []}
+  conduta:
+    protocolo: dermatite-seborreica

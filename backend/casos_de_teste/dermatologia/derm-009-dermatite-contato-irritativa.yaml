@@ -1,0 +1,43 @@
+versao_formato: 1
+id: derm-009-dermatite-contato-irritativa
+especialidade: dermatologia
+titulo: Dermatite de contato irritativa das mãos
+objetivo: Quadro típico ocupacional (cozinheira) que melhora no afastamento; não usa luvas.
+revisao: {situacao: pendente}
+entrada:
+  paciente:
+    idade: 25
+    sexo: F
+    antecedentes: [Rinite]
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Coceira e bolinhas nas mãos, piora ao lavar louça."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Começou quando fui trabalhar de cozinheira, há quatro meses."}
+    - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
+    - {quem: Paciente, texto: "Melhora nas férias."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Não, nenhum. Tenho rinite."}
+    - {quem: Médico, texto: "Usa luvas para lavar louça?"}
+    - {quem: Paciente, texto: "Não uso."}
+    - {quem: Médico, texto: "Me mostra as duas mãos, por favor."}
+  exame:
+    morfologia: Vesículas e descamação com fissuras
+    localizacao: Dorso e palmas das mãos
+    extensao: Ambas as mãos
+    gravidade: Moderada
+    achados: Pele ressecada, sem sinais de infecção
+esperado:
+  historia:
+    deve_conter:
+      qp: [mãos, louça]
+      hda: [cozinheira, quatro meses, férias]
+      ap: [rinite]
+      exame_fisico: [fissuras, palmas]
+    vazias: [hf, exames]
+  diagnosticos:
+    principal: {nome: Dermatite de contato irritativa, cid: L24.9}
+  sinais: {disparados: []}
+  conduta:
+    protocolo: dermatite-contato
+    deve_incluir: [luvas]

@@ -1,0 +1,43 @@
+versao_formato: 1
+id: derm-014-acne-grave-planeja-gravidez
+especialidade: dermatologia
+titulo: Acne grave em quem planeja engravidar
+objetivo: Tratamento ideal (isotretinoína) proibido por plano de gravidez; dois sinais de alerta presentes.
+revisao: {situacao: pendente}
+entrada:
+  paciente: {idade: 27, sexo: F, estado_civil: casada}
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Espinhas grandes e doloridas no rosto e no peito há 2 anos, estão deixando marcas."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Foram piorando. Algumas ficam inchadas por semanas."}
+    - {quem: Médico, texto: "Já usou algum remédio para acne?"}
+    - {quem: Paciente, texto: "Tomei antibiótico por três meses no ano passado, melhorou pouco."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Não, nenhum. Parei o anticoncepcional porque estamos tentando engravidar."}
+    - {quem: Médico, texto: "Planeja engravidar nos próximos meses?"}
+    - {quem: Paciente, texto: "Sim, este ano ainda."}
+    - {quem: Médico, texto: "Vou olhar o rosto e o peito."}
+  sinais:
+    - {sinal: acne-grave-nodulos-cicatrizes, resposta: v}
+    - {sinal: gestacao-ou-plano, resposta: v}
+    - {sinal: virilizacao, resposta: f}
+  exame:
+    morfologia: Nódulos inflamatórios e cistos, com cicatrizes atróficas
+    localizacao: Face e região pré-esternal
+    extensao: Mais de 10 nódulos na face; tórax anterior
+    gravidade: Grave
+    achados: Cicatrizes atróficas e hipercromia residual
+esperado:
+  historia:
+    deve_conter:
+      qp: [doloridas, marcas]
+      hda: [antibiótico, engravidar]
+      exame_fisico: [nódulos, cicatrizes]
+    vazias: [hf, exames]
+  diagnosticos:
+    principal: {nome: Acne conglobata, cid: L70.1}
+  sinais: {disparados: [acne-grave-nodulos-cicatrizes, gestacao-ou-plano]}
+  conduta:
+    protocolo: acne
+    proibidos: [isotretinoína]

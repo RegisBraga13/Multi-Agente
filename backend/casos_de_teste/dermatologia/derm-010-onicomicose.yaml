@@ -1,0 +1,40 @@
+versao_formato: 1
+id: derm-010-onicomicose
+especialidade: dermatologia
+titulo: Onicomicose do hálux
+objetivo: Quadro típico; pergunta de diabetes respondida "não" (não dispara o sinal de pé diabético).
+revisao: {situacao: pendente}
+entrada:
+  paciente: {idade: 41, sexo: M}
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Unha do pé grossa e amarelada há 1 ano."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Jogo bola toda semana e uso o vestiário."}
+    - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
+    - {quem: Paciente, texto: "Não dói, só incomoda o aspecto."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Não, nenhum."}
+    - {quem: Médico, texto: "Tem diabetes ou problema de circulação?"}
+    - {quem: Paciente, texto: "Não tenho."}
+    - {quem: Médico, texto: "Vou olhar as unhas dos pés."}
+  sinais:
+    - {sinal: pe-diabetico, resposta: f}
+  exame:
+    morfologia: Espessamento e amarelamento da lâmina ungueal
+    localizacao: Hálux direito
+    extensao: Uma unha acometida
+    gravidade: Leve
+    achados: Descamação entre os dedos
+esperado:
+  historia:
+    deve_conter:
+      qp: [unha, amarelada, 1 ano]
+      hda: [vestiário]
+      exame_fisico: [espessamento, hálux]
+    vazias: [hf, exames]
+  diagnosticos:
+    principal: {nome: Onicomicose, cid: B35.1}
+  sinais: {disparados: []}
+  conduta:
+    protocolo: onicomicose

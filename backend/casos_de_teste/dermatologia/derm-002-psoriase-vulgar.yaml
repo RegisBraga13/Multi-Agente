@@ -1,0 +1,57 @@
+versao_formato: 1
+id: derm-002-psoriase-vulgar
+especialidade: dermatologia
+titulo: Psoríase vulgar
+objetivo: Quadro típico de psoríase em placas; alergia a dipirona e artrite psoriásica que não pode ser perdida.
+revisao: {situacao: pendente}
+entrada:
+  paciente:
+    idade: 52
+    sexo: M
+    estado_civil: casado
+    profissao: comerciante
+    em_uso: [Losartana 50 mg 1x ao dia]
+    antecedentes: [Pressão alta]
+    alergias: [{substancia: Dipirona, reacao: inchaço no rosto}]
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Placas vermelhas com descamação nos cotovelos e joelhos."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Começou há uns dois anos e melhora no verão. Coça um pouco."}
+    - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
+    - {quem: Paciente, texto: "Já passei pomada de cortisona, melhora e volta."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Uso losartana 50 mg, 1x ao dia. Tenho pressão alta."}
+    - {quem: Médico, texto: "E alergia a algum medicamento?"}
+    - {quem: Paciente, texto: "Dipirona, me deu inchaço no rosto."}
+    - {quem: Médico, texto: "Tem dor ou inchaço nas articulações?"}
+    - {quem: Paciente, texto: "Não, nenhum."}
+    - {quem: Médico, texto: "Deixa eu ver os cotovelos e os joelhos."}
+  exame:
+    morfologia: Placas eritematosas bem delimitadas com escamas prateadas
+    localizacao: Cotovelos e joelhos, simétricas
+    extensao: Cerca de 4% da superfície corporal
+    gravidade: Leve a moderada
+    achados: Unhas sem depressões nas fotos
+  complementares:
+    - exame: Exames laboratoriais
+      data: 2026-09-20
+      itens:
+        - {nome: TGO / TGP, valor: 28 / 31 U/L}
+        - {nome: Colesterol total, valor: 214 mg/dL}
+esperado:
+  historia:
+    deve_conter:
+      qp: [placas, cotovelos]
+      hda: [dois anos, verão, cortisona]
+      ap: [losartana, dipirona]
+      exame_fisico: [prateadas, 4%]
+      exames: ["214"]
+    vazias: [hf]
+  diagnosticos:
+    principal: {nome: Psoríase vulgar, cid: L40.0}
+    nao_pode_perder: {nome: Artrite psoriásica, cid: L40.5}
+  sinais: {disparados: []}
+  conduta:
+    protocolo: psoriase
+    proibidos: [dipirona]

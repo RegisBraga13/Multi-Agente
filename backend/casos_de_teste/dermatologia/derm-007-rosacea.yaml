@@ -1,0 +1,43 @@
+versao_formato: 1
+id: derm-007-rosacea
+especialidade: dermatologia
+titulo: Rosácea eritematotelangiectásica
+objetivo: Quadro típico de rosácea com gatilhos claros; pergunta de sintomas oculares respondida "não".
+revisao: {situacao: pendente}
+entrada:
+  paciente:
+    idade: 46
+    sexo: F
+    em_uso: [Levotiroxina 50 mcg]
+    antecedentes: [Hipotireoidismo]
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Vermelhidão e ardor no rosto, piora com sol e calor."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Fico vermelha com bebida quente e com o sol. Arde."}
+    - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
+    - {quem: Paciente, texto: "Isso já tem uns três anos."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Uso levotiroxina 50 mcg. Tenho hipotireoidismo."}
+    - {quem: Médico, texto: "Sente ardor ou areia nos olhos?"}
+    - {quem: Paciente, texto: "Não."}
+    - {quem: Médico, texto: "Vou olhar o rosto sem maquiagem."}
+  exame:
+    morfologia: Eritema persistente com telangiectasias
+    localizacao: Região centrofacial (bochechas e nariz)
+    extensao: Face, sem pápulas
+    gravidade: Leve a moderada
+    achados: Sem alterações oculares relatadas
+esperado:
+  historia:
+    deve_conter:
+      qp: [vermelhidão, ardor]
+      hda: [bebida quente, três anos]
+      ap: [hipotireoidismo, levotiroxina]
+      exame_fisico: [telangiectasias, centrofacial]
+    vazias: [hf, exames]
+  diagnosticos:
+    principal: {nome: Rosácea, cid: L71.9}
+  sinais: {disparados: []}
+  conduta:
+    protocolo: rosacea

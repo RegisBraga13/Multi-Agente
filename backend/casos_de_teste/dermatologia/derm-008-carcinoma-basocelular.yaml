@@ -1,0 +1,59 @@
+versao_formato: 1
+id: derm-008-carcinoma-basocelular
+especialidade: dermatologia
+titulo: Carcinoma basocelular na asa nasal
+objetivo: Câncer de pele que não pode ser perdido; usa AAS; alergia a sulfa; biópsia anterior com margens não encontradas no laudo.
+revisao: {situacao: pendente}
+entrada:
+  paciente:
+    idade: 73
+    sexo: M
+    em_uso: [AAS 100 mg, Atenolol 25 mg]
+    antecedentes: [Pressão alta, Infarto em 2019]
+    alergias: [{substancia: Sulfa, reacao: falta de ar}]
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Ferida no nariz que não cicatriza há 3 meses."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Sangra quando enxugo o rosto e faz casca."}
+    - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
+    - {quem: Paciente, texto: "Trabalhei a vida toda no sol, na lavoura."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Uso AAS 100 mg e atenolol 25 mg. Tenho pressão alta e tive infarto em 2019."}
+    - {quem: Médico, texto: "E alergia a algum medicamento?"}
+    - {quem: Paciente, texto: "Sulfa, me deu falta de ar."}
+    - {quem: Médico, texto: "Toma anticoagulante além do AAS?"}
+    - {quem: Paciente, texto: "Não, só o AAS."}
+    - {quem: Médico, texto: "Vou examinar a ferida do nariz de perto."}
+  sinais:
+    - {sinal: ferida-nao-cicatriza, resposta: v}
+  exame:
+    morfologia: Pápula perolada com ulceração central e telangiectasias
+    localizacao: Asa nasal esquerda
+    extensao: Lesão única, cerca de 6 mm
+    gravidade: A definir na biópsia
+    achados: Pele com dano solar crônico
+  complementares:
+    - exame: Biópsia anterior (2024)
+      data: 2024-03-15
+      itens:
+        - {nome: Diagnóstico, valor: Carcinoma basocelular nodular}
+        - {nome: Local, valor: Região malar esquerda}
+        - {nome: Margens, valor: null}
+esperado:
+  historia:
+    deve_conter:
+      qp: [ferida, nariz, 3 meses]
+      hda: [sangra, casca]
+      ap: [AAS, infarto, sulfa]
+      exame_fisico: [perolada, asa nasal]
+      exames: [basocelular]
+    vazias: [hf]
+  diagnosticos:
+    principal: {nome: Carcinoma basocelular, cid: C44.3}
+    nao_pode_perder: {nome: Carcinoma basocelular, cid: C44.3}
+  sinais: {disparados: [ferida-nao-cicatriza, lesao-sangra-facil]}
+  conduta:
+    protocolo: carcinoma-basocelular
+    deve_incluir: [biópsia]
+    proibidos: [sulfametoxazol]

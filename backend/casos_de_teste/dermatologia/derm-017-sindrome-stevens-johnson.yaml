@@ -1,0 +1,46 @@
+versao_formato: 1
+id: derm-017-sindrome-stevens-johnson
+especialidade: dermatologia
+titulo: Síndrome de Stevens-Johnson por alopurinol
+objetivo: Sinal de alerta grave que não pode ser perdido; sem protocolo ambulatorial, a IA sugere e marca como sugestão.
+revisao: {situacao: pendente}
+entrada:
+  paciente:
+    idade: 45
+    sexo: M
+    em_uso: [Alopurinol 300 mg há 2 semanas]
+    antecedentes: [Gota]
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Manchas pelo corpo e feridas na boca há 2 dias, com febre."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Começaram no peito e espalharam. Algumas viraram bolhas. Os olhos ardem."}
+    - {quem: Médico, texto: "Mediu a febre?"}
+    - {quem: Paciente, texto: "Deu 38,5 ontem à noite."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Comecei o alopurinol há duas semanas, para a gota."}
+    - {quem: Médico, texto: "Vou examinar a pele, a boca e os olhos."}
+  sinais:
+    - {sinal: bolhas-mucosas, resposta: v}
+    - {sinal: febre-erupcao-difusa, resposta: v}
+  exame:
+    morfologia: Máculas eritematovioláceas em alvo atípico, bolhas flácidas; erosões em mucosa oral
+    localizacao: Tronco, face e membros superiores; lábios e mucosa oral; conjuntivas
+    extensao: Descolamento em cerca de 5% da superfície corporal
+    gravidade: Grave
+    achados: Hiperemia conjuntival bilateral; Nikolsky positivo
+esperado:
+  historia:
+    deve_conter:
+      qp: [boca, febre]
+      hda: [bolhas, olhos, "38,5"]
+      ap: [alopurinol, gota]
+      exame_fisico: [bolhas, mucosa oral, Nikolsky]
+    vazias: [hf, exames]
+  diagnosticos:
+    principal: {nome: Síndrome de Stevens-Johnson, cid: L51.1}
+    nao_pode_perder: {nome: Síndrome de Stevens-Johnson, cid: L51.1}
+  sinais: {disparados: [bolhas-mucosas, febre-erupcao-difusa]}
+  conduta:
+    protocolo: null
+    deve_incluir: [suspender, emergência]

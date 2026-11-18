@@ -1,0 +1,48 @@
+versao_formato: 1
+id: derm-005-melasma
+especialidade: dermatologia
+titulo: Melasma
+objetivo: Quadro típico de melasma pós-gestação com fotoproteção irregular; alergia a penicilina.
+revisao: {situacao: pendente}
+entrada:
+  paciente:
+    idade: 38
+    sexo: F
+    alergias: [{substancia: Penicilina, reacao: placas pelo corpo}]
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Manchas escuras no rosto depois da gravidez."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Apareceu depois que minha filha nasceu, há dois anos. Piora no sol."}
+    - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
+    - {quem: Paciente, texto: "Uso protetor só às vezes."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Não, nenhum."}
+    - {quem: Médico, texto: "E alergia a algum medicamento?"}
+    - {quem: Paciente, texto: "Penicilina, me deu placas pelo corpo."}
+    - {quem: Médico, texto: "Está grávida, amamentando ou planeja engravidar?"}
+    - {quem: Paciente, texto: "Não."}
+    - {quem: Médico, texto: "Vou olhar as manchas com a lâmpada."}
+  sinais:
+    - {sinal: gestacao-ou-plano, resposta: f}
+  exame:
+    morfologia: Máculas acastanhadas de bordas irregulares
+    localizacao: Região malar e lábio superior, simétricas
+    extensao: Face, cerca de 3% da superfície
+    gravidade: Moderada
+    achados: Sem eritema ou descamação
+esperado:
+  historia:
+    deve_conter:
+      qp: [manchas, gravidez]
+      hda: [dois anos, sol, protetor]
+      ap: [penicilina]
+      exame_fisico: [acastanhadas, malar]
+    vazias: [hf, exames]
+  diagnosticos:
+    principal: {nome: Melasma, cid: L81.1}
+  sinais: {disparados: []}
+  conduta:
+    protocolo: melasma
+    deve_incluir: [fotoproteção]
+    proibidos: [amoxicilina]

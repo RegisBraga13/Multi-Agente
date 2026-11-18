@@ -1,0 +1,38 @@
+versao_formato: 1
+id: derm-012-verrugas-vulgares
+especialidade: dermatologia
+titulo: Verrugas vulgares nos dedos
+objetivo: Quadro típico em menor de idade (14 anos) que rói as unhas.
+revisao: {situacao: pendente}
+entrada:
+  paciente: {idade: 14, sexo: M}
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Verrugas nos dedos das mãos."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Apareceram há uns três meses e estão aumentando."}
+    - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
+    - {quem: Paciente, texto: "Minha mãe diz que eu roo a unha."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Não, nenhum."}
+    - {quem: Médico, texto: "Alguém em casa tem verrugas?"}
+    - {quem: Paciente, texto: "Não."}
+    - {quem: Médico, texto: "Vou olhar os dedos de perto."}
+  exame:
+    morfologia: Pápulas hiperceratósicas de superfície rugosa
+    localizacao: Dedos das mãos
+    extensao: 5 lesões
+    gravidade: Leve
+    achados: Pontos escuros na superfície
+esperado:
+  historia:
+    deve_conter:
+      qp: [verrugas, dedos]
+      hda: [três meses, unha]
+      exame_fisico: [hiperceratósicas, 5 lesões]
+    vazias: [hf, exames]
+  diagnosticos:
+    principal: {nome: Verruga vulgar, cid: B07}
+  sinais: {disparados: []}
+  conduta:
+    protocolo: verrugas

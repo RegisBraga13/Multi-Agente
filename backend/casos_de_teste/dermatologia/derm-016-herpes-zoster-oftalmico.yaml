@@ -1,0 +1,48 @@
+versao_formato: 1
+id: derm-016-herpes-zoster-oftalmico
+especialidade: dermatologia
+titulo: Herpes-zóster oftálmico
+objetivo: Sinal de alerta grave que não pode ser perdido (vesícula na ponta do nariz e olho vermelho).
+revisao: {situacao: pendente}
+entrada:
+  paciente:
+    idade: 68
+    sexo: F
+    em_uso: [Anlodipino 5 mg]
+    antecedentes: [Pressão alta]
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Bolhas na testa do lado direito que doem muito, há 2 dias."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Antes das bolhas, a testa queimava por uns três dias. Agora o olho direito está vermelho."}
+    - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
+    - {quem: Paciente, texto: "Apareceu uma bolhinha na ponta do nariz hoje."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Uso anlodipino 5 mg. Tenho pressão alta."}
+    - {quem: Médico, texto: "Faz algum tratamento que baixa a imunidade, como quimioterapia ou corticoide?"}
+    - {quem: Paciente, texto: "Não."}
+    - {quem: Médico, texto: "Vou olhar a testa, o nariz e o olho."}
+  sinais:
+    - {sinal: zoster-oftalmico, resposta: v}
+    - {sinal: imunossupressao, resposta: f}
+  exame:
+    morfologia: Vesículas agrupadas sobre base eritematosa
+    localizacao: Fronte direita e ponta do nariz, sem passar a linha média
+    extensao: Dermátomo V1 à direita
+    gravidade: Moderada
+    achados: Hiperemia conjuntival à direita
+esperado:
+  historia:
+    deve_conter:
+      qp: [bolhas, testa, 2 dias]
+      hda: [queimava, olho, nariz]
+      ap: [anlodipino]
+      exame_fisico: [vesículas, conjuntival]
+    vazias: [hf, exames]
+  diagnosticos:
+    principal: {nome: Herpes-zóster oftálmico, cid: B02.3}
+    nao_pode_perder: {nome: Herpes-zóster oftálmico, cid: B02.3}
+  sinais: {disparados: [zoster-oftalmico]}
+  conduta:
+    protocolo: herpes-zoster
+    deve_incluir: [oftalmologia]

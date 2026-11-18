@@ -1,0 +1,40 @@
+versao_formato: 1
+id: derm-015-urticaria-angioedema
+especialidade: dermatologia
+titulo: Urticária aguda com angioedema
+objetivo: Sinal de alerta grave que não pode ser perdido (inchaço dos lábios após alimento).
+revisao: {situacao: pendente}
+entrada:
+  paciente: {idade: 31, sexo: M}
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Placas vermelhas que coçam muito pelo corpo desde ontem, depois que comi camarão."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Elas somem e aparecem em outro lugar. Hoje cedo os lábios incharam."}
+    - {quem: Médico, texto: "Está com falta de ar ou a língua inchada?"}
+    - {quem: Paciente, texto: "Falta de ar não. A língua está normal."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Não, nenhum."}
+    - {quem: Médico, texto: "Vou olhar a pele e a boca."}
+  sinais:
+    - {sinal: angioedema, resposta: v}
+  exame:
+    morfologia: Urticas eritematoedematosas de tamanhos variados
+    localizacao: Tronco e membros; edema de lábios
+    extensao: Disseminada
+    gravidade: Moderada
+    achados: Edema labial, sem edema de língua; sem estridor
+esperado:
+  historia:
+    deve_conter:
+      qp: [coçam, camarão]
+      hda: [lábios, falta de ar]
+      exame_fisico: [urticas, lábios]
+    vazias: [hf, exames]
+  diagnosticos:
+    principal: {nome: Urticária alérgica, cid: L50.0}
+    nao_pode_perder: {nome: Angioedema, cid: T78.3}
+  sinais: {disparados: [angioedema]}
+  conduta:
+    protocolo: urticaria
+    deve_incluir: [anti-histamínico]

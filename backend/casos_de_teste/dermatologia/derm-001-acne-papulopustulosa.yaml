@@ -1,0 +1,43 @@
+versao_formato: 1
+id: derm-001-acne-papulopustulosa
+especialidade: dermatologia
+titulo: Acne papulopustulosa
+objetivo: Quadro típico de acne moderada em mulher que usa anticoncepcional, sem sinais de gravidade.
+revisao: {situacao: pendente}
+entrada:
+  paciente: {idade: 34, sexo: F, em_uso: [Anticoncepcional oral]}
+  falas:
+    - {quem: Médico, texto: "Bom dia! Me conta o que trouxe você aqui hoje."}
+    - {quem: Paciente, texto: "Espinhas no rosto e nas costas há 6 meses, piora antes da menstruação."}
+    - {quem: Médico, texto: "Desde quando? Piora com alguma coisa?"}
+    - {quem: Paciente, texto: "Fico mexendo nelas. Minha pele é muito oleosa."}
+    - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
+    - {quem: Paciente, texto: "Nunca tratei. Não tenho febre."}
+    - {quem: Médico, texto: "Está usando algum remédio?"}
+    - {quem: Paciente, texto: "Uso anticoncepcional oral."}
+    - {quem: Médico, texto: "Planeja engravidar nos próximos meses? Sua menstruação é irregular ou tem excesso de pelos?"}
+    - {quem: Paciente, texto: "Não planejo engravidar. A menstruação é regular e não tenho excesso de pelos."}
+    - {quem: Médico, texto: "Vou olhar o rosto e as costas com a luz."}
+  sinais:
+    - {sinal: acne-grave-nodulos-cicatrizes, resposta: f}
+    - {sinal: virilizacao, resposta: f}
+    - {sinal: gestacao-ou-plano, resposta: f}
+  exame:
+    morfologia: Pápulas, pústulas e comedões
+    localizacao: Região mandibular e malar; dorso
+    extensao: 7 lesões na face; dorso esparso
+    gravidade: Moderada, a confirmar
+    achados: Sem cicatrizes nas fotos
+esperado:
+  historia:
+    deve_conter:
+      qp: [espinhas, 6 meses]
+      hda: [menstruação, oleosa]
+      ap: [anticoncepcional]
+      exame_fisico: [pústulas, comedões, dorso]
+    vazias: [hf, exames]
+  diagnosticos:
+    principal: {nome: Acne vulgar, cid: L70.0}
+  sinais: {disparados: []}
+  conduta:
+    protocolo: acne
