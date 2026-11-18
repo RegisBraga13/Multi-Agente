@@ -19,7 +19,8 @@ PASTA_CASOS = Path(__file__).parent / "dermatologia"
 
 IDENTIDADE = {
     "CPF": re.compile(r"\d{3}\.?\d{3}\.?\d{3}-?\d{2}"),
-    "telefone": re.compile(r"\(?\d{2}\)?\s?9?\d{4}-?\d{4}"),
+    # com ou sem DDD; separadores comuns: espaço, ponto, hífen ("98765-4321", "(11) 98765 4321", "9 8765 4321")
+    "telefone": re.compile(r"(?<!\d)(?:\(?\d{2}\)?[\s.-]?)?(?:9[\s.-]?)?\d{4}[\s.-]?\d{4}(?!\d)"),
     "e-mail": re.compile(r"\S+@\S+\.\S+"),
 }
 
@@ -41,9 +42,22 @@ class Relatorio:
         return not self.erros
 
 
+class _SemChaveRepetida(yaml.SafeLoader):
+    """SafeLoader que recusa chave repetida (o YAML padrão fica com a última, em silêncio)."""
+
+    def construct_mapping(self, node, deep=False):
+        vistas = set()
+        for chave_no, _ in node.value:
+            chave = self.construct_object(chave_no, deep=deep)
+            if chave in vistas:
+                raise yaml.constructor.ConstructorError(None, None, f"chave repetida: {chave!r}", chave_no.start_mark)
+            vistas.add(chave)
+        return super().construct_mapping(node, deep=deep)
+
+
 def carregar_caso(caminho: Path) -> Caso:
     try:
-        dados = yaml.safe_load(caminho.read_text(encoding="utf-8"))
+        dados = yaml.load(caminho.read_text(encoding="utf-8"), Loader=_SemChaveRepetida)
     except yaml.YAMLError as erro:
         raise CasoInvalido(caminho, [f"YAML inválido: {erro}".replace("\n", " ")]) from erro
     try:

@@ -83,3 +83,26 @@ def test_erro_de_formato_diz_o_campo(escrever_caso, tmp_path):
 
 def test_pasta_vazia(tmp_path):
     assert validar_pasta(tmp_path, SINAIS).erros == ["nenhum caso encontrado"]
+
+
+@pytest.mark.parametrize("texto", ["Meu zap é 98765-4321.", "Liga no (11) 98765 4321.", "Liga no 11 98765 4321.", "É 9 8765 4321."])
+def test_telefone_com_espacos_e_recusado(escrever_caso, tmp_path, texto):
+    d = caso_minimo()
+    d["entrada"]["falas"][1]["texto"] = texto
+    escrever_caso("derm-001-teste", d)
+    assert any("identidade" in e for e in validar_pasta(tmp_path, SINAIS).erros)
+
+
+@pytest.mark.parametrize("texto", ["Plaquetas 250.000-300.000.", "Biópsia em 15/03/2024.", "Lesão de 120x80 mm.", "Infarto em 2019."])
+def test_numeros_clinicos_nao_sao_telefone(escrever_caso, tmp_path, texto):
+    d = caso_minimo()
+    d["entrada"]["falas"][1]["texto"] = texto
+    escrever_caso("derm-001-teste", d)
+    assert validar_pasta(tmp_path, SINAIS).ok
+
+
+def test_chave_repetida_no_yaml_e_recusada(escrever_caso, tmp_path):
+    caminho = escrever_caso("derm-001-teste", caso_minimo())
+    texto = caminho.read_text(encoding="utf-8").replace("      hda:\n", "      hda:\n      - meses\n      hda:\n", 1)
+    caminho.write_text(texto, encoding="utf-8")
+    assert any("repetida" in e for e in validar_pasta(tmp_path, SINAIS).erros)

@@ -127,7 +127,13 @@ class EsperadoSinais(Modelo):
 
 
 class EsperadoConduta(Modelo):
-    """`protocolo`: chave da tabela de condutas (None = sem protocolo; a IA sugere e marca)."""
+    """`protocolo`: chave da tabela de condutas (None = sem protocolo; a IA sugere e marca).
+
+    `deve_incluir`: termos que têm de aparecer na conduta (exame, encaminhamento, orientação).
+    `proibidos`: o que não pode ser RECOMENDADO nem PRESCRITO (itens da receita/opções marcadas).
+    Citar para contraindicar ("isotretinoína contraindicada") é certo: o comparador do marco 3
+    confere os itens recomendados, não procura o termo no texto inteiro.
+    """
     protocolo: str | None
     deve_incluir: list[str] = []
     proibidos: list[str] = []
