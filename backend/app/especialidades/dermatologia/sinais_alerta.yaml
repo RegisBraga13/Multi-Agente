@@ -24,7 +24,7 @@ sinais:
     prazo: imediato
     acao:
       - Avaliar sinais vitais e acometimento de mucosas
-      - Suspender medicamento iniciado recentemente, se houver
+      - Se, após a avaliação clínica, houver suspeita de reação medicamentosa grave, suspender o medicamento suspeito
       - Encaminhar para avaliação de emergência
   - id: angioedema
     texto: Inchaço de lábios/língua ou falta de ar
@@ -74,7 +74,8 @@ sinais:
     tipo: prioridade
     prazo: em semanas
     acao:
-      - Biópsia da lesão
+      - Avaliar a lesão
+      - Biópsia se houver suspeita de câncer
   - id: acne-grave-nodulos-cicatrizes
     texto: Nódulos dolorosos ou cicatrizes (acne grave)
     porque: Acne nodular ou cicatricial pede tratamento sistêmico precoce para evitar sequela.
