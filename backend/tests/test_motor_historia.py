@@ -65,3 +65,10 @@ def test_termos_proibidos_chegam_a_chamada():
 
     with pytest.raises(ErroPrivacidade):
         motor_historia(falso, ENTRADA, RelogioFixo(QUANDO), lambda r: None, termos_proibidos=["espinhas"])
+
+
+def test_historia_transmite_parciais():
+    falso = ProvedorIAFalso({"historia": {"resultado": HISTORIA, "meta": META}})
+    parciais: list = []
+    proposta = motor_historia(falso, ENTRADA, RelogioFixo(QUANDO), lambda r: None, ao_escrever=parciais.append)
+    assert proposta.acao == "HUMAN_REVIEW" and parciais[-1]["exameFisico"] == "Pápulas e pústulas em face."

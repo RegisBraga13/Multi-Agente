@@ -9,7 +9,7 @@ hipótese sem evidência a favor sai (aviso); sem nenhuma hipótese restante, a 
 """
 
 from collections.abc import Callable, Sequence
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -101,6 +101,7 @@ def motor_diagnosticos(
     relogio: Relogio,
     registrar: Callable[[RegistroDecisao], None],
     termos_proibidos: Sequence[str] = (),
+    ao_escrever: Callable[[dict[str, Any]], None] | None = None,
 ) -> PropostaIA[DiagnosticosIA]:
     prompt = carregar_prompt("dermatologia", "diagnosticos")
     pedido = PedidoIA(
@@ -122,4 +123,5 @@ def motor_diagnosticos(
         registrar,
         termos_proibidos,
         regra=_so_com_evidencia(historia),
+        ao_escrever=ao_escrever,
     )

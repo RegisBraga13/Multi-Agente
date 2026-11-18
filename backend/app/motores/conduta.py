@@ -9,6 +9,7 @@ Recebe SÓ o diagnóstico oficializado e os dados de segurança (Constituição)
 """
 
 from collections.abc import Callable, Sequence
+from typing import Any
 
 from app.contratos.base import ModeloApi
 from app.contratos.motor import Acao, RegistroDecisao
@@ -87,6 +88,7 @@ def motor_conduta(
     relogio: Relogio,
     registrar: Callable[[RegistroDecisao], None],
     termos_proibidos: Sequence[str] = (),
+    ao_escrever: Callable[[dict[str, Any]], None] | None = None,
 ) -> CondutaProposta:
     urgencia = urgencia_por_sinais(seguranca.sinais)
     emergencia = emergencia_por_sinais(seguranca.sinais)
@@ -118,11 +120,19 @@ def motor_conduta(
                 relogio,
                 registrar,
                 termos_proibidos,
+                ao_escrever=ao_escrever,
             )
             complemento, avisos = p.resultado, p.avisos
         else:
             q = chamar_motor(
-                provedor, pedido("conduta", {}), CondutaIA, VERSAO_ESQUEMA_CONDUTA, relogio, registrar, termos_proibidos
+                provedor,
+                pedido("conduta", {}),
+                CondutaIA,
+                VERSAO_ESQUEMA_CONDUTA,
+                relogio,
+                registrar,
+                termos_proibidos,
+                ao_escrever=ao_escrever,
             )
             ia, avisos = q.resultado, q.avisos
     except ErroPrivacidade as erro:

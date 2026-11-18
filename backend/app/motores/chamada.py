@@ -20,6 +20,7 @@ from typing import Any
 from uuid import uuid4
 
 from pydantic import ValidationError
+from pydantic_core import from_json
 
 from app.consulta.politica import decidir
 from app.contratos.base import ModeloApi
@@ -63,6 +64,23 @@ def _tem_termo_proibido(textos: list[str], termos: Sequence[str]) -> bool:
     return any(p.search(_normalizar(texto)) for texto in textos for p in padroes)
 
 
+def _parciais(ao_escrever: Callable[[dict[str, Any]], None]) -> Callable[[str], None]:
+    """Texto acumulado → resultado parcial (só para mostrar; nunca é validado, gravado ou usado adiante)."""
+    ultimo: list[dict[str, Any]] = []
+
+    def ao_texto(texto: str) -> None:
+        try:
+            parcial = from_json(texto, allow_partial="trailing-strings")
+        except ValueError:
+            return
+        resultado = parcial.get("resultado") if isinstance(parcial, dict) else None
+        if isinstance(resultado, dict) and (not ultimo or resultado != ultimo[-1]):
+            ultimo.append(resultado)
+            ao_escrever(resultado)
+
+    return ao_texto
+
+
 def chamar_motor[T: ModeloApi](
     provedor: ProvedorIA,
     pedido: PedidoIA,
@@ -72,6 +90,7 @@ def chamar_motor[T: ModeloApi](
     registrar: Callable[[RegistroDecisao], None],
     termos_proibidos: Sequence[str] = (),
     regra: Callable[[T], tuple[T | None, list[str]]] | None = None,
+    ao_escrever: Callable[[dict[str, Any]], None] | None = None,
 ) -> PropostaIA[T]:
     textos = list(_textos([pedido.instrucoes, pedido.dados]))
     achados = sorted({tipo for texto in textos for tipo in encontrar_identidade(texto)})
@@ -81,7 +100,10 @@ def chamar_motor[T: ModeloApi](
         # a mensagem nunca repete o termo (ela pode ir para log)
         raise ErroPrivacidade(f"termo proibido do paciente no pedido ao motor {pedido.motor!r}")
 
-    resposta = provedor.gerar(pedido, esquema)
+    if ao_escrever is None:
+        resposta = provedor.gerar(pedido, esquema)
+    else:
+        resposta = provedor.gerar(pedido, esquema, ao_escrever=_parciais(ao_escrever))
     resultado: T | None = None
     meta: MetaProposta | None = None
     if resposta.erro is None and isinstance(resposta.bruto, dict):

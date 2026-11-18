@@ -7,6 +7,7 @@ a política transforma em REJECT e o médico vê "a IA não conseguiu".
 """
 
 import json
+from collections.abc import Callable
 from typing import Any
 
 import anthropic
@@ -25,7 +26,9 @@ class ProvedorAnthropic:
         self.modelo = modelo
         self.max_tokens = max_tokens
 
-    def gerar(self, pedido: PedidoIA, esquema: type[BaseModel]) -> RespostaIA:
+    def gerar(
+        self, pedido: PedidoIA, esquema: type[BaseModel], ao_escrever: Callable[[str], None] | None = None
+    ) -> RespostaIA:
         try:
             with self.cliente.beta.messages.stream(
                 model=self.modelo,
@@ -39,6 +42,10 @@ class ProvedorAnthropic:
                 system=[{"type": "text", "text": pedido.instrucoes, "cache_control": {"type": "ephemeral"}}],
                 messages=[{"role": "user", "content": json.dumps(pedido.dados, ensure_ascii=False, sort_keys=True)}],
             ) as fluxo:
+                if ao_escrever is not None:
+                    for evento in fluxo:  # escrita ao vivo: o texto acumulado de cada pedaço
+                        if getattr(evento, "type", None) == "text":
+                            ao_escrever(evento.snapshot)
                 mensagem = fluxo.get_final_message()
         except (anthropic.APIStatusError, anthropic.APIConnectionError) as erro:
             return RespostaIA(None, self.modelo, self.modelo, 0, 0, type(erro).__name__)

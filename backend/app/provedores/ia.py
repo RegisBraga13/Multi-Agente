@@ -3,6 +3,7 @@
 O provedor devolve o JSON bruto; quem valida contra o esquema é a chamada de motor (app/motores/chamada.py).
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal, Protocol
 
@@ -29,4 +30,8 @@ class RespostaIA:
 
 
 class ProvedorIA(Protocol):
-    def gerar(self, pedido: PedidoIA, esquema: type[BaseModel]) -> RespostaIA: ...
+    def gerar(
+        self, pedido: PedidoIA, esquema: type[BaseModel], ao_escrever: Callable[[str], None] | None = None
+    ) -> RespostaIA:
+        """`ao_escrever` recebe o texto acumulado a cada pedaço que chega (escrita ao vivo)."""
+        ...

@@ -5,6 +5,7 @@ Recebe só a entrada desidentificada. As seções têm as mesmas chaves de `Dado
 """
 
 from collections.abc import Callable, Sequence
+from typing import Any
 
 from app.contratos.base import ModeloApi
 from app.contratos.consulta import EntradaConsulta
@@ -33,6 +34,7 @@ def motor_historia(
     relogio: Relogio,
     registrar: Callable[[RegistroDecisao], None],
     termos_proibidos: Sequence[str] = (),
+    ao_escrever: Callable[[dict[str, Any]], None] | None = None,
 ) -> PropostaIA[HistoriaClinica]:
     prompt = carregar_prompt("dermatologia", "historia")
     pedido = PedidoIA(
@@ -43,5 +45,12 @@ def motor_historia(
         esforco="medium",
     )
     return chamar_motor(
-        provedor, pedido, HistoriaClinica, VERSAO_ESQUEMA_HISTORIA, relogio, registrar, termos_proibidos
+        provedor,
+        pedido,
+        HistoriaClinica,
+        VERSAO_ESQUEMA_HISTORIA,
+        relogio,
+        registrar,
+        termos_proibidos,
+        ao_escrever=ao_escrever,
     )

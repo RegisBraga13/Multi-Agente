@@ -155,3 +155,33 @@ def test_evidencia_do_meta_inventada_e_descartada():
     proposta, _, _ = chamar({"resultado": {"nomes": ["Acne"]}, "meta": meta})
     assert [e.trecho for e in proposta.evidencias] == ["Paciente, 34"]
     assert any("inventado" in a for a in proposta.avisos)
+
+
+def test_parciais_do_resultado_chegam_em_ordem():
+    falso = ProvedorIAFalso({"dd": BRUTO_VALIDO})
+    parciais: list = []
+    proposta = chamar_motor(
+        falso, pedido(), Hipoteses, 3, RelogioFixo(QUANDO), lambda r: None, ao_escrever=parciais.append
+    )
+    assert proposta.acao == "HUMAN_REVIEW"
+    assert parciais and parciais[-1] == {"nomes": ["Acne"]}
+    assert all(isinstance(p, dict) for p in parciais)
+    assert all(a != b for a, b in zip(parciais, parciais[1:], strict=False))
+
+
+def test_parcial_nunca_vira_resultado():
+    falso = ProvedorIAFalso({"dd": {"resultado": {"nomes": "Acne"}, "meta": META}})
+    parciais: list = []
+    proposta = chamar_motor(
+        falso, pedido(), Hipoteses, 3, RelogioFixo(QUANDO), lambda r: None, ao_escrever=parciais.append
+    )
+    assert parciais and proposta.acao == "REJECT" and proposta.resultado is None
+
+
+def test_sem_ao_escrever_funciona_como_antes():
+    class SoDoisArgumentos:
+        def gerar(self, pedido, esquema):
+            return ProvedorIAFalso({"dd": BRUTO_VALIDO}).gerar(pedido, esquema)
+
+    proposta = chamar_motor(SoDoisArgumentos(), pedido(), Hipoteses, 3, RelogioFixo(QUANDO), lambda r: None)
+    assert proposta.acao == "HUMAN_REVIEW"

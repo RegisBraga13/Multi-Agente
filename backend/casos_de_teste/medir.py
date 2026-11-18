@@ -378,7 +378,9 @@ class ProvedorDemonstracao:
 
     HDA = "Quadro em avaliação."
 
-    def gerar(self, pedido: PedidoIA, esquema: type[BaseModel]) -> RespostaIA:
+    def gerar(
+        self, pedido: PedidoIA, esquema: type[BaseModel], ao_escrever: Callable[[str], None] | None = None
+    ) -> RespostaIA:
         meta = {"confianca": 0.5, "evidencias": [], "avisos": [], "origem": "demonstração"}
         resultado: dict[str, Any]
         if pedido.motor == "historia":

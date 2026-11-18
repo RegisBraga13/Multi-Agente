@@ -28,10 +28,22 @@ def mensagem(texto: str = json.dumps(BRUTO), stop_reason: str = "end_turn", mode
     )
 
 
+class Fluxo:
+    def __init__(self, resposta, eventos):
+        self.resposta, self.eventos = resposta, eventos
+
+    def __iter__(self):
+        return iter(self.eventos)
+
+    def get_final_message(self):
+        return self.resposta
+
+
 class ClienteFalso:
-    def __init__(self, resposta=None, erro: Exception | None = None):
+    def __init__(self, resposta=None, erro: Exception | None = None, eventos=()):
         self.resposta = resposta if resposta is not None else mensagem()
         self.erro = erro
+        self.eventos = list(eventos)
         self.ultima_chamada: dict = {}
         self.beta = SimpleNamespace(messages=SimpleNamespace(stream=self._stream))
 
@@ -40,7 +52,7 @@ class ClienteFalso:
         self.ultima_chamada = kw
         if self.erro:
             raise self.erro
-        yield SimpleNamespace(get_final_message=lambda: self.resposta)
+        yield Fluxo(self.resposta, self.eventos)
 
 
 def pedido(esforco="high") -> PedidoIA:
@@ -112,3 +124,19 @@ def test_esforco_vem_do_pedido(esforco):
     cliente = ClienteFalso()
     ProvedorAnthropic(cliente).gerar(pedido(esforco), Hipoteses)
     assert cliente.ultima_chamada["output_config"]["effort"] == esforco
+
+
+def test_ao_escrever_recebe_texto_acumulado():
+    eventos = [
+        SimpleNamespace(type="thinking", snapshot="pensando"),
+        SimpleNamespace(type="text", snapshot='{"resul'),
+        SimpleNamespace(type="text", snapshot='{"resultado": {"no'),
+    ]
+    recebidos: list[str] = []
+    r = ProvedorAnthropic(ClienteFalso(eventos=eventos)).gerar(pedido(), Hipoteses, ao_escrever=recebidos.append)
+    assert recebidos == ['{"resul', '{"resultado": {"no'] and r.bruto == BRUTO
+
+
+def test_sem_ao_escrever_nao_le_os_eventos():
+    r = gerar(ClienteFalso(eventos=[SimpleNamespace(type="text", snapshot="x")]))
+    assert r.bruto == BRUTO
