@@ -5,7 +5,6 @@ sinais de alerta existentes na lista fixa da especialidade e nenhum dado de iden
 Um arquivo ruim não esconde os outros: todos os erros aparecem de uma vez.
 """
 
-import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,16 +14,10 @@ from pydantic import ValidationError
 from pydantic_core import ErrorDetails
 
 from app.especialidades.pacote import SinalAlerta
+from app.privacidade import encontrar_identidade
 from casos_de_teste.formato import Caso
 
 PASTA_CASOS = Path(__file__).parent / "dermatologia"
-
-IDENTIDADE = {
-    "CPF": re.compile(r"\d{3}\.?\d{3}\.?\d{3}-?\d{2}"),
-    # com ou sem DDD; separadores comuns: espaço, ponto, hífen ("98765-4321", "(11) 98765 4321", "9 8765 4321")
-    "telefone": re.compile(r"(?<!\d)(?:\(?\d{2}\)?[\s.-]?)?(?:9[\s.-]?)?\d{4}[\s.-]?\d{4}(?!\d)"),
-    "e-mail": re.compile(r"\S+@\S+\.\S+"),
-}
 
 
 class CasoInvalido(Exception):
@@ -99,9 +92,7 @@ def _conferir(caso: Caso, caminho: Path, sinais: dict[str, SinalAlerta]) -> list
     if imediatos and caso.esperado.conduta.urgencia != "imediata":
         erros.append(f"sinal de urgência imediata ({', '.join(imediatos)}) exige conduta com urgência imediata")
     for texto in _textos(caso.model_dump(mode="json")):
-        erros += [
-            f"dado de identidade ({tipo}) no texto: {texto!r}" for tipo, p in IDENTIDADE.items() if p.search(texto)
-        ]
+        erros += [f"dado de identidade ({tipo}) no texto: {texto!r}" for tipo in encontrar_identidade(texto)]
     return erros
 
 
