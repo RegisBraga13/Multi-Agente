@@ -44,7 +44,7 @@ export function extenso(n: number, feminino = false): string {
 }
 
 /**
- * Um item da receita em 2 linhas: nome (DCB) + concentração [+ forma] (quantidade abreviada, 2 dígitos); posologia.
+ * Um item da receita em 2 linhas: nome (DCB) + concentração [+ forma] (quantidade abreviada, 2 dígitos); posologia — tempo.
  * A forma (sigla) só aparece fora dos parênteses quando a quantidade não a traz: "Limeciclina 300mg (56 CAP)",
  * "Adapaleno 0,1% GEL (01 bisn. 30g)". Por extenso só nos controlados: "(30 CAP — trinta)".
  */
@@ -52,7 +52,7 @@ export function linhaReceita(n: number, x: ItemReceita): string {
   const q = x.quantidade
   const forma = q.unidade.includes(x.forma) ? '' : ` ${x.forma}`
   const qtd = `${String(q.n).padStart(2, '0')} ${q.unidade}${x.controlado ? ` — ${extenso(q.n, q.feminino)}` : ''}`
-  return `${n}. ${x.nome}${x.concentracao ? ` ${x.concentracao}` : ''}${forma} (${qtd})\n   ${x.posologia}`
+  return `${n}. ${x.nome}${x.concentracao ? ` ${x.concentracao}` : ''}${forma} (${qtd})\n   ${x.posologia.replace(/\.$/, '')} — ${x.duracao}`
 }
 
 /**

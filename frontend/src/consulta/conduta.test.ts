@@ -60,7 +60,7 @@ describe('médico escolhe', () => {
     const a = escolherOpcao(escolherOpcao(c, 'sistemico', 'limeciclina'), 'sistemico', 'aco')
     expect(a.escolha.sistemico).toEqual(['limeciclina', 'aco'])
     // texto na ordem das opções, não dos cliques
-    expect(a.textos[2]).toBe('Limeciclina oral, associada ao tratamento tópico. Anticoncepcional combinado.')
+    expect(a.textos[2]).toBe('Limeciclina oral, associada ao tratamento tópico — 8sem. Anticoncepcional combinado — 8sem.')
     const b = escolherOpcao(escolherOpcao(a, 'sistemico', 'limeciclina'), 'sistemico', 'aco')
     expect(b.escolha.sistemico).toEqual([])
     expect(b.textos[2]).toBe('')
@@ -110,7 +110,7 @@ describe('médico escolhe', () => {
     expect(escreverOutro(escolherOpcao(c, 'orientacoes-outro', 'outro'), 'orientacoes-outro', 'solicito ferritina').textos[3]).toMatch(/Solicito ferritina\.$/)
     // sistêmico: "Outro" soma com os marcados
     const sis = escreverOutro(escolherOpcao(escolherOpcao(c, 'sistemico', 'limeciclina'), 'sistemico', 'outro'), 'sistemico', 'prednisona')
-    expect(sis.textos[2]).toBe('Limeciclina oral, associada ao tratamento tópico. Prednisona.')
+    expect(sis.textos[2]).toBe('Limeciclina oral, associada ao tratamento tópico — 8sem. Prednisona.')
   })
   it('data de retorno atravessa o ano', () => {
     expect(dataMais('2026-12-20', 28)).toBe('17/01/2027')

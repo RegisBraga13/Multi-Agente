@@ -6,11 +6,16 @@ import type { ItemReceita, ModeloConduta } from './conduta'
 
 // itens da receita: nome (DCB), forma (sigla oficial; sem sigla, por extenso), concentração (sem espaço: 300mg),
 // quantidade (n, unidade abreviada, feminino?, controlado?), posologia (via abreviada: VO). Valores de exemplo.
+// O tempo de tratamento sai do fim da posologia ("…, por 8 semanas." / "Uso contínuo.") e vai para o fim do item.
 type Q = [number, string, boolean, boolean?]
-const topico = (nome: string, forma: string, concentracao: string, [n, unidade, feminino, controlado]: Q, posologia: string): ItemReceita =>
-  ({ nome, forma, concentracao, quantidade: { n, unidade, feminino }, via: 'topico', posologia, ...(controlado ? { controlado } : {}) })
-const oral = (nome: string, forma: string, concentracao: string, [n, unidade, feminino, controlado]: Q, posologia: string): ItemReceita =>
-  ({ nome, forma, concentracao, quantidade: { n, unidade, feminino }, via: 'oral', posologia, ...(controlado ? { controlado } : {}) })
+function item(via: ItemReceita['via'], nome: string, forma: string, concentracao: string, [n, unidade, feminino, controlado]: Q, texto: string): ItemReceita {
+  const m = texto.match(/,? por (\d+) (semanas|dias)\.$/) ?? texto.match(/ (Uso contínuo)\.$/)
+  if (!m) throw new Error(`posologia sem tempo de tratamento: ${texto}`)
+  const duracao = m[2] === 'semanas' ? `${m[1]}sem` : m[2] === 'dias' ? `${m[1]} dias` : 'uso contínuo'
+  return { nome, forma, concentracao, quantidade: { n, unidade, feminino }, via, posologia: texto.slice(0, m.index).replace(/\.?$/, '.'), duracao, ...(controlado ? { controlado } : {}) }
+}
+const topico = (...a: [string, string, string, Q, string]) => item('topico', ...a)
+const oral = (...a: [string, string, string, Q, string]) => item('oral', ...a)
 const NOITE = 'à noite, sobre a pele limpa e seca, evitando olhos, cantos do nariz e lábios, por 8 semanas.'
 
 const ACNE: ModeloConduta = {
@@ -18,14 +23,14 @@ const ACNE: ModeloConduta = {
     {
       id: 'cuidados', rotulo: '1. Cuidados básicos', linhas: [{ id: 'cuidados', rotulo: null, opcoes: [
         { id: 'oleosa', rotulo: 'Rotina para pele oleosa/acneica', texto: 'Rotina para pele oleosa/acneica. Limpeza suave 2×/dia, hidratante não comedogênico e fotoproteção oil-free. Evitar espremer pápulas e pústulas.', receita: [
-          topico('Sabonete facial para pele oleosa/acneica', 'GEL', '', [1, 'fr.', false], 'Lavar o rosto 2 vezes ao dia (manhã e noite) e enxaguar bem.'),
-          topico('Hidratante facial não comedogênico', 'gel-creme', '', [1, 'bisn.', true], 'Aplicar fina camada no rosto pela manhã, após a limpeza.'),
-          topico('Protetor solar facial toque seco', 'loção', 'FPS 50', [1, 'fr.', false], 'Aplicar no rosto pela manhã; reaplicar a cada 2 - 3h se exposto ao sol.'),
+          topico('Sabonete facial para pele oleosa/acneica', 'GEL', '', [1, 'fr.', false], 'Lavar o rosto 2 vezes ao dia (manhã e noite) e enxaguar bem. Uso contínuo.'),
+          topico('Hidratante facial não comedogênico', 'gel-creme', '', [1, 'bisn.', true], 'Aplicar fina camada no rosto pela manhã, após a limpeza. Uso contínuo.'),
+          topico('Protetor solar facial toque seco', 'loção', 'FPS 50', [1, 'fr.', false], 'Aplicar no rosto pela manhã; reaplicar a cada 2 - 3h se exposto ao sol. Uso contínuo.'),
         ] },
         { id: 'sensivel', rotulo: 'Rotina para pele sensível', texto: 'Rotina para pele sensível. Limpeza suave 1×/dia, hidratante calmante não comedogênico e fotoproteção oil-free.', receita: [
-          topico('Sabonete facial para pele sensível', 'GEL', '', [1, 'fr.', false], 'Lavar o rosto 1 vez ao dia, à noite, com água fria ou morna.'),
-          topico('Hidratante facial calmante não comedogênico', 'CREM', '', [1, 'bisn.', true], 'Aplicar fina camada no rosto 2 vezes ao dia (manhã e noite), se houver ressecamento.'),
-          topico('Protetor solar facial mineral', 'loção', 'FPS 50', [1, 'fr.', false], 'Aplicar no rosto pela manhã; reaplicar a cada 2 - 3h se exposto ao sol.'),
+          topico('Sabonete facial para pele sensível', 'GEL', '', [1, 'fr.', false], 'Lavar o rosto 1 vez ao dia, à noite, com água fria ou morna. Uso contínuo.'),
+          topico('Hidratante facial calmante não comedogênico', 'CREM', '', [1, 'bisn.', true], 'Aplicar fina camada no rosto 2 vezes ao dia (manhã e noite), se houver ressecamento. Uso contínuo.'),
+          topico('Protetor solar facial mineral', 'loção', 'FPS 50', [1, 'fr.', false], 'Aplicar no rosto pela manhã; reaplicar a cada 2 - 3h se exposto ao sol. Uso contínuo.'),
         ] },
       ] }],
     },
@@ -40,7 +45,7 @@ const ACNE: ModeloConduta = {
         { id: 'azelaico', rotulo: 'Ácido azelaico', texto: 'Ácido azelaico. Uso 2×/dia, conforme tolerância; sem retinoide tópico.',
           receita: [topico('Ácido azelaico', 'GEL', '15%', [1, 'bisn. 30g', true], 'Aplicar camada fina no rosto 2 vezes ao dia (manhã e noite), sobre a pele limpa e seca, por 8 semanas.')] },
         { id: 'bpo', rotulo: 'Peróxido de benzoíla isolado', texto: 'Peróxido de benzoíla isolado. Uso noturno, conforme tolerância.',
-          receita: [topico('Peróxido de benzoíla', 'GEL', '5%', [1, 'bisn. 60g', true], `Aplicar camada fina nas áreas com lesões ${NOITE} Pode descolorir tecidos.`)] },
+          receita: [topico('Peróxido de benzoíla', 'GEL', '5%', [1, 'bisn. 60g', true], `Aplicar camada fina nas áreas com lesões (pode descolorir tecidos) ${NOITE}`)] },
         { id: 'adapaleno', rotulo: 'Adapaleno isolado', texto: 'Adapaleno isolado. Uso noturno, conforme tolerância.',
           receita: [topico('Adapaleno', 'GEL', '0,1%', [1, 'bisn. 30g', true], `Aplicar camada fina no rosto ${NOITE}`)] },
       ] }],
@@ -52,7 +57,7 @@ const ACNE: ModeloConduta = {
         { id: 'limeciclina', rotulo: 'Limeciclina oral', texto: 'Limeciclina oral, associada ao tratamento tópico.',
           receita: [oral('Limeciclina', 'CAP', '300mg', [56, 'CAP', true], 'Tomar 1 CAP VO, 1 vez ao dia, por 8 semanas.')] },
         { id: 'aco', rotulo: 'Anticoncepcional combinado', texto: 'Anticoncepcional combinado.',
-          receita: [oral('Etinilestradiol + drospirenona', 'COMP', '0,03mg + 3mg', [2, 'cart. com 21 COMP', true], 'Tomar 1 COMP VO ao dia, sempre no mesmo horário, por 21 dias; pausa de 7 dias entre as cartelas.')] },
+          receita: [oral('Etinilestradiol + drospirenona', 'COMP', '0,03mg + 3mg', [2, 'cart. com 21 COMP', true], 'Tomar 1 COMP VO ao dia, no mesmo horário, 21 dias com pausa de 7 dias entre as cartelas, por 8 semanas.')] },
         { id: 'espironolactona', rotulo: 'Espironolactona', texto: 'Espironolactona.',
           receita: [oral('Espironolactona', 'COMP', '100mg', [30, 'COMP', false], 'Tomar 1 COMP VO, 1 vez ao dia, pela manhã, por 30 dias.')] },
         { id: 'isotretinoina', rotulo: 'Isotretinoína oral', texto: 'Isotretinoína oral.',

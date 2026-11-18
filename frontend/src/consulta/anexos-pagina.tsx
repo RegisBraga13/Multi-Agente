@@ -1,7 +1,7 @@
 // Página 5: receita e anexos — o fim da consulta. À esquerda, os anexos que a IA montou só com a conduta
 // salva (o médico escolhe quais emitir); à direita, o documento aberto, como uma folha: editar e revisar,
 // assinar (só os que exigem; simulação) e enviar ao paciente (simulação). Enviado = bloco cheio.
-// Com todos os escolhidos enviados, "Finalizar consulta".
+// Com todos os escolhidos enviados, "Salvar anexos": a IA escreve o prontuário (página 6).
 import { useState } from 'react'
 import { TextoCrescente } from '../medico/texto-crescente'
 import { proximoPasso, type Anexo, type DadosConsulta, type TipoAnexo } from './anexos'
@@ -29,12 +29,12 @@ type Props = {
   anexos: Anexo[]
   dados: DadosConsulta
   situacao: Situacao
-  podeFinalizar: boolean
+  podeSalvar: boolean
   pendencia: string | null
   onEmitir: (tipo: TipoAnexo) => void
   onEditar: (tipo: TipoAnexo, texto: string) => void
   onAvancar: (tipo: TipoAnexo) => void
-  onFinalizar: () => void
+  onSalvar: () => void
 }
 
 export function PaginaAnexos(p: Props) {
@@ -47,19 +47,19 @@ export function PaginaAnexos(p: Props) {
   const enviados = escolhidos.filter((x) => x.estado === 'enviado').length
   const comAssinatura = escolhidos.filter((x) => x.assinatura)
   const assinados = comAssinatura.filter((x) => x.estado === 'assinado' || x.estado === 'enviado').length
-  const finalizada = p.situacao === 'oficializado'
+  const salvo = p.situacao === 'oficializado'
 
   return (
     <Cartao
       titulo="Receita e anexos"
       cabecalho={<p className="flex-1 text-center text-[13.5px] text-apagado">Montados só com a conduta salva. Escolha, revise, assine e envie.</p>}
       legenda={`☑ = emitir · ${ASSINA} = exige certificado digital · assinatura e envio: simulação`}
-      rodape={finalizada ? <span className="text-[14px] font-semibold text-petroleo">✓ Consulta finalizada</span> : (
+      rodape={salvo ? <span className="text-[14px] font-semibold text-petroleo">✓ Salvo</span> : (
         <>
           {tentou && p.pendencia && <span className="text-[13.5px] whitespace-nowrap text-apagado">{p.pendencia}</span>}
-          <button type="button" disabled={!p.podeFinalizar} onClick={() => (p.pendencia ? setTentou(true) : p.onFinalizar())}
+          <button type="button" disabled={!p.podeSalvar} onClick={() => (p.pendencia ? setTentou(true) : p.onSalvar())}
             className="bg-petroleo px-4 py-2 text-[15px] font-bold whitespace-nowrap text-papel transition enabled:hover:-translate-y-0.5 disabled:opacity-40">
-            Finalizar consulta
+            Salvar anexos
           </button>
         </>
       )}

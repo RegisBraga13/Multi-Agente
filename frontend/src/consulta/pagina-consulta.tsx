@@ -20,6 +20,8 @@ import { atualizarConduta, editarTexto, escolherOpcao, escreverOutro, montarCond
 import { PaginaConduta } from './conduta-pagina'
 import { alternarEmitir, atualizarAnexos, avancar, editarAnexo, montarAnexos, pendenciasAnexos, type Anexo, type DadosConsulta } from './anexos'
 import { PaginaAnexos } from './anexos-pagina'
+import { atualizarProntuario, cabecalhoProntuario, chave, montarProntuario, type SecaoProntuario } from './prontuario'
+import { PaginaProntuario } from './prontuario-pagina'
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
@@ -87,8 +89,8 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
    *  resumo = o que pesa na conduta, da história salva (vai para a conduta com V/F). */
   const [dd, setDd] = useState<{ versao: number; itens: ItemDD[]; reserva: Hipotese[]; resumo: ItemResumo[]; naoPerder: NaoPerder | null; naoPerderAvaliado: boolean } | null>(null)
   /** última versão já escrita "ao vivo" de cada página: ao voltar, aparece pronta (não escreve de novo) */
-  const [escrita, setEscrita] = useState({ historia: 0, diagnosticos: 0 })
-  const escreveu = (pagina: 'historia' | 'diagnosticos', versao: number) =>
+  const [escrita, setEscrita] = useState({ historia: 0, diagnosticos: 0, prontuario: 0 })
+  const escreveu = (pagina: 'historia' | 'diagnosticos' | 'prontuario', versao: number) =>
     setEscrita((e) => (e[pagina] === versao ? e : { ...e, [pagina]: versao }))
 
   /** Salvar história. Ao liberar os diagnósticos, a IA sugere (ou atualiza só o que mudou) e a página deles abre. */
@@ -153,12 +155,36 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
     if (estado.blocos.anexos.estado !== 'revisado_medico') fazer('editar', 'anexos')
   }
 
+  /** Prontuário (SOAP): escrito só com o que foi salvo (história, diagnósticos confirmados, conduta). */
+  const [prontuario, setProntuario] = useState<{ versao: number; geradas: SecaoProntuario[]; textos: Record<string, string>; mudou: Record<string, boolean> } | null>(null)
+
+  /** Salvar anexos. Ao liberar o prontuário, a IA escreve (ou atualiza só o que mudou) e a página dele abre. */
+  const salvarAnexos = () => {
+    const novo = oficializar(estado, 'anexos')
+    despachar({ tipo: 'oficializar', bloco: 'anexos' })
+    if (!historia || !dd || !conduta || podeOficializar(estado, 'prontuario') || !podeOficializar(novo, 'prontuario')) return
+    const salva = historia.geradas.map((s, i) => ({ rotulo: s.rotulo, texto: historia.textos[i] }))
+    const receita = docs?.itens.find((x) => x.tipo === 'receita' && x.emitir)?.texto
+    const novas = montarProntuario(salva, dd.itens, conduta.c, receita)
+    setProntuario((x) => x
+      ? { versao: x.versao + 1, geradas: novas, ...atualizarProntuario(x.geradas, x.textos, novas) }
+      : { versao: 1, geradas: novas, textos: Object.fromEntries(novas.flatMap((s) => s.linhas.map((l) => [chave(s, l), l.texto]))), mudou: Object.fromEntries(novas.flatMap((s) => s.linhas.map((l) => [chave(s, l), true]))) })
+    navegar(`${base}/prontuario`)
+  }
+
+  /** Salvar prontuário: a consulta fica finalizada e volta para a página inicial do módulo. */
+  const salvarProntuario = () => {
+    fazer('oficializar', 'prontuario')
+    navegar(`/modulo/${esp.slug}`, { state: { aviso: `Consulta finalizada. Prontuário de ${at.paciente.nome} salvo.` } })
+  }
+
   const mexerConduta = (f: (c: Conduta) => Conduta) => {
     setConduta((x) => x && { ...x, c: f(x.c) })
     if (estado.blocos.conduta.estado !== 'revisado_medico') fazer('editar', 'conduta')
   }
 
-  // etapa atual como título (sem número) + atalhos para as etapas já liberadas
+  // etapa atual como título (sem número) + atalhos para as etapas já liberadas (nomes curtos quando são as 6, para caber numa linha)
+  const curtos = ETAPAS.filter((x) => situacaoDaEtapa(estado, x.id) !== 'bloqueado').length > 5
   const navegador = (
     <nav aria-label="Etapas da consulta" className="flex flex-wrap items-center gap-1.5">
       {[...ETAPAS].sort((x, y) => Number(y.id === etapa) - Number(x.id === etapa)).map((x) => {
@@ -167,8 +193,9 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
         if (x.id !== etapa && s === 'bloqueado') return null
         const aqui = x.id === etapa
         const marca = (s === 'oficializado' || s === 'desatualizado') && (
-          <span className={`shrink-0 truncate text-[12px] ${s === 'desatualizado' ? 'font-bold' : 'text-apagado'}`}>
-            {s === 'oficializado' ? '✓ Salvo' : 'Desatualizado'}
+          // salvo = só o ✓ (visto); o nome fica para o leitor de tela
+          <span className={`shrink-0 truncate ${s === 'desatualizado' ? 'text-[12px] font-bold' : 'text-[14px] font-bold text-petroleo'}`} {...(s === 'oficializado' ? { 'aria-label': 'Salvo', title: 'Salvo' } : {})}>
+            {s === 'oficializado' ? '✓' : 'Desatualizado'}
           </span>
         )
         // a etapa atual é o título da página (sem número); as liberadas viram atalhos ao lado
@@ -179,7 +206,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
           <Link key={x.id} to={`${base}/${x.id}`}
             className="flex h-[38px] min-w-0 items-center gap-3 border border-linha bg-branco px-3 no-underline transition hover:bg-(--esp-claro)">
             <span className="flex min-w-0 items-baseline gap-3">
-              <span className="truncate text-[15px] font-semibold">{x.rotulo}</span>
+              <span className="truncate text-[15px] font-semibold">{curtos ? x.curto : x.rotulo}</span>
               {marca}
             </span>
           </Link>
@@ -339,7 +366,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
               anexos={docs.itens}
               dados={dados}
               situacao={situacaoDaEtapa(estado, 'anexos')}
-              podeFinalizar={podeOficializar(estado, 'anexos')}
+              podeSalvar={podeOficializar(estado, 'anexos')}
               pendencia={pendenciasAnexos(docs.itens)}
               onEmitir={(tipo) => mexerDocs((xs) => alternarEmitir(xs, tipo))}
               onEditar={(tipo, texto) => mexerDocs((xs) => editarAnexo(xs, tipo, texto))}
@@ -348,7 +375,31 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
                 mexerDocs((xs) => avancar(xs, tipo))
                 if (antes && (antes.estado === 'assinado' || (antes.estado === 'revisado' && !antes.assinatura))) setAviso(`${antes.titulo} enviado ao paciente (simulação).`)
               }}
-              onFinalizar={() => { fazer('oficializar', 'anexos'); setAviso('Consulta finalizada. O Prontuário chega na próxima etapa.') }}
+              onSalvar={salvarAnexos}
+            />
+          </div>
+        ) : etapa === 'prontuario' && prontuario && situacaoDaEtapa(estado, 'prontuario') !== 'bloqueado' ? (
+          <div className="flex flex-1 flex-col [&>section]:flex-1">
+            {situacaoDaEtapa(estado, 'prontuario') === 'desatualizado' && !podeOficializar(estado, 'prontuario') && (
+              <p className="mb-2 text-[14px] font-semibold">Os anexos mudaram. Salve os anexos de novo e a IA atualiza só o que mudou no prontuário.</p>
+            )}
+            <PaginaProntuario
+              key={prontuario.versao}
+              titulo={at.tipo === 'consulta' ? 'Consulta 1' : 'Consulta 1 — Retorno'}
+              cabecalho={cabecalhoProntuario(dados)}
+              secoes={prontuario.geradas}
+              textos={prontuario.textos}
+              mudou={prontuario.mudou}
+              primeira={prontuario.versao === 1}
+              animar={escrita.prontuario < prontuario.versao}
+              onEscrito={() => escreveu('prontuario', prontuario.versao)}
+              situacao={situacaoDaEtapa(estado, 'prontuario')}
+              podeSalvar={podeOficializar(estado, 'prontuario')}
+              onMudar={(k, texto) => {
+                setProntuario((x) => x && { ...x, textos: { ...x.textos, [k]: texto } })
+                if (estado.blocos.prontuario.estado !== 'revisado_medico') fazer('editar', 'prontuario')
+              }}
+              onSalvar={salvarProntuario}
             />
           </div>
         ) : etapa !== 'anamnese-exame' && (
@@ -372,7 +423,8 @@ const TEXTO_ETAPA: Record<Exclude<EtapaId, 'anamnese-exame'>, { bloco: Bloco; an
   historia: { bloco: 'historia', antes: 'anamnese-exame', bloqueio: 'Salve a anamnese e o exame físico para a IA montar a história clínica.', ia: 'A IA monta a história só com a anamnese e o exame físico salvos. Você revisa, edita e salva.' },
   diagnosticos: { bloco: 'diagnosticos', antes: 'historia', bloqueio: 'Salve a história clínica para a IA sugerir os diagnósticos diferenciais.', ia: 'A IA sugere hipóteses só a partir da história salva. Você decide o diagnóstico.' },
   conduta: { bloco: 'conduta', antes: 'diagnosticos', bloqueio: 'Salve os diagnósticos para a IA sugerir conduta e tratamento.', ia: 'A IA sugere a conduta só a partir dos diagnósticos salvos, com a fonte de cada item.' },
-  anexos: { bloco: 'anexos', antes: 'conduta', bloqueio: 'Salve a conduta para a IA montar a receita e os anexos.', ia: 'A IA monta a receita e os anexos só com a conduta salva. Ao fim, Finalizar consulta.' },
+  anexos: { bloco: 'anexos', antes: 'conduta', bloqueio: 'Salve a conduta para a IA montar a receita e os anexos.', ia: 'A IA monta a receita e os anexos só com a conduta salva. Ao salvar, a IA escreve o prontuário.' },
+  prontuario: { bloco: 'prontuario', antes: 'anexos', bloqueio: 'Salve os anexos para a IA escrever o prontuário.', ia: 'A IA escreve o prontuário (SOAP) só com o que foi colhido. Você edita ou salva; a consulta fica finalizada.' },
 }
 
 /** Páginas 2–4: ainda não construídas. Mostram a regra da etapa e permitem simular a oficialização. */

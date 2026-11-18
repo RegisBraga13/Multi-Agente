@@ -8,16 +8,17 @@ export const ETAPAS: { id: EtapaId; rotulo: string; curto: string }[] = [
   { id: 'diagnosticos', rotulo: 'Diagnósticos', curto: 'Diagnósticos' },
   { id: 'conduta', rotulo: 'Conduta e tratamento', curto: 'Conduta' },
   { id: 'anexos', rotulo: 'Receita e anexos', curto: 'Anexos' },
+  { id: 'prontuario', rotulo: 'Prontuário', curto: 'Prontuário' },
 ]
 
 export function ehEtapa(x: string | undefined): x is EtapaId {
   return ETAPAS.some((e) => e.id === x)
 }
 
-const BLOCOS: Bloco[] = ['anamnese', 'exame', 'historia', 'diagnosticos', 'conduta', 'anexos']
+const BLOCOS: Bloco[] = ['anamnese', 'exame', 'historia', 'diagnosticos', 'conduta', 'anexos', 'prontuario']
 
 /** Posição no fluxo: anamnese e exame juntos alimentam a história. */
-const NIVEL: Record<Bloco, number> = { anamnese: 0, exame: 0, historia: 1, diagnosticos: 2, conduta: 3, anexos: 4 }
+const NIVEL: Record<Bloco, number> = { anamnese: 0, exame: 0, historia: 1, diagnosticos: 2, conduta: 3, anexos: 4, prontuario: 5 }
 
 export function inicial(alertas: string[]): EstadoConsulta {
   const blocos = Object.fromEntries(BLOCOS.map((b) => [b, { estado: 'rascunho_ia', desatualizado: false }])) as EstadoConsulta['blocos']
@@ -26,7 +27,7 @@ export function inicial(alertas: string[]): EstadoConsulta {
 
 export function oficializar(e: EstadoConsulta, bloco: Bloco): EstadoConsulta {
   const novo = { ...e, blocos: { ...e.blocos, [bloco]: { estado: 'oficializado' as const, desatualizado: false } } }
-  const liberadas = (['historia', 'diagnosticos', 'conduta', 'anexos'] as const).filter((b) => podeOficializar(novo, b) && !e.alcancadas.includes(b))
+  const liberadas = (['historia', 'diagnosticos', 'conduta', 'anexos', 'prontuario'] as const).filter((b) => podeOficializar(novo, b) && !e.alcancadas.includes(b))
   return liberadas.length ? { ...novo, alcancadas: [...e.alcancadas, ...liberadas] } : novo
 }
 
@@ -69,6 +70,8 @@ export function situacaoDaEtapa(e: EstadoConsulta, etapa: EtapaId): Situacao {
       return b.conduta.desatualizado ? 'desatualizado' : oficial('diagnosticos') ? de('conduta') : espera('conduta')
     case 'anexos':
       return b.anexos.desatualizado ? 'desatualizado' : oficial('conduta') ? de('anexos') : espera('anexos')
+    case 'prontuario':
+      return b.prontuario.desatualizado ? 'desatualizado' : oficial('anexos') ? de('prontuario') : espera('prontuario')
   }
 }
 
@@ -87,6 +90,8 @@ export function podeOficializar(e: EstadoConsulta, bloco: Bloco): boolean {
       return ok('diagnosticos')
     case 'anexos':
       return ok('conduta')
+    case 'prontuario':
+      return ok('anexos')
   }
 }
 

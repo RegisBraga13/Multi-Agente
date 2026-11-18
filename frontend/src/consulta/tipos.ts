@@ -2,11 +2,11 @@
 // rascunho_ia → revisado_medico → oficializado, e só o oficializado alimenta a etapa seguinte.
 // Formato pensado para as tabelas da Fase 3/4 (encounters, transcripts, clinical_facts, ...).
 
-/** As 5 páginas da consulta, na ordem do fluxo (a última: receita e anexos, o fim da consulta). */
-export type EtapaId = 'anamnese-exame' | 'historia' | 'diagnosticos' | 'conduta' | 'anexos'
+/** As 6 páginas da consulta, na ordem do fluxo (a última: o prontuário, que finaliza a consulta). */
+export type EtapaId = 'anamnese-exame' | 'historia' | 'diagnosticos' | 'conduta' | 'anexos' | 'prontuario'
 
 /** O que é oficializado separadamente (a página 1 tem dois blocos: duas fases da Constituição). */
-export type Bloco = 'anamnese' | 'exame' | 'historia' | 'diagnosticos' | 'conduta' | 'anexos'
+export type Bloco = 'anamnese' | 'exame' | 'historia' | 'diagnosticos' | 'conduta' | 'anexos' | 'prontuario'
 
 export type Estado = 'rascunho_ia' | 'revisado_medico' | 'oficializado'
 

@@ -20,6 +20,8 @@ export type ItemReceita = {
   nome: string; forma: string; concentracao: string
   quantidade: { n: number; unidade: string; feminino: boolean }
   via: 'topico' | 'oral'; posologia: string
+  /** tempo de tratamento, no fim do item: '8sem', '30 dias', 'uso contínuo' */
+  duracao: string
   /** controlado (ex.: isotretinoína): a quantidade vai também por extenso */
   controlado?: boolean
 }
@@ -131,7 +133,9 @@ export function textoDoGrupo(g: Grupo, escolha: Escolha, dia: string, outros: Re
     const texto = (o: Opcao) => (o.id === OUTRO ? outro : o.texto)
     if (l.prefixo) return marcadas.length ? [`${l.prefixo} ${lista(marcadas.map(texto))}.`] : []
     return marcadas.map((o) => o.id === OUTRO ? (l.outro ?? '{}.').replace('{}', l.outro ? outro : maiuscula(outro))
-      : o.dias === undefined ? o.texto : `${o.texto.replace(/\.$/, '')}, em ${dataMais(dia, o.dias)}.`)
+      : o.dias !== undefined ? `${o.texto.replace(/\.$/, '')}, em ${dataMais(dia, o.dias)}.`
+      : o.receita?.length ? `${o.texto.replace(/\.$/, '')} — ${[...new Set(o.receita.map((x) => x.duracao))].join(' / ')}.`
+      : o.texto)
   })
   return frases.length ? [g.fixo ?? '', ...frases].filter(Boolean).join(' ') : ''
 }

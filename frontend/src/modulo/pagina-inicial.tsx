@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { estiloAlergia } from '../alergia'
 import { buscarEspecialidade, type Especialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
@@ -32,7 +32,8 @@ function Pagina({ esp }: { esp: Especialidade }) {
   const agora = useAgora()
   const [dia, setDia] = useState(() => dataLocal(new Date()))
   const [selecionado, setSelecionado] = useState<string | null>(null)
-  const [aviso, setAviso] = useState<string | null>(null)
+  // aviso trazido de outra página (ex.: "Consulta finalizada" ao salvar o prontuário)
+  const [aviso, setAviso] = useState<string | null>((useLocation().state as { aviso?: string } | null)?.aviso ?? null)
   const medico = MEDICO_EXEMPLO
   const navegar = useNavigate()
 
