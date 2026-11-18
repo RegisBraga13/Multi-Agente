@@ -4,9 +4,27 @@ Servidor da consulta (FastAPI + Postgres + Claude), começando pela Dermatologia
 Desenho: [docs/superpowers/specs/2026-11-18-servidor-dermatologia-design.md](../docs/superpowers/specs/2026-11-18-servidor-dermatologia-design.md) ·
 decisões: [docs/decisoes/](../docs/decisoes/).
 
-**Hoje (marco 2):** esqueleto sem IA real — contratos tipados, política de decisão, provedor de IA falso,
-privacidade antes da IA, banco da consulta (migration 0007, sob RLS) e cadastro de paciente com id próprio.
-Os casos de teste (marco 1) são a régua dos motores do marco 3.
+**Hoje (marco 3A):** motores de texto com Claude de verdade — história, sinais de alerta, diagnósticos e
+conduta (tabela primeiro) — medidos nos casos de teste por uma IA avaliadora + regras ([ADR 0004](../docs/decisoes/0004-motores-tabela-primeiro-e-medico-simulado.md)).
+Ainda sem rotas da consulta nem tela ligada (marcos 3B e 3C). Base do marco 2: contratos tipados, política,
+privacidade antes da IA, banco da consulta (0007/0008, sob RLS) e cadastro de paciente com id próprio.
+
+## Medir os motores (custa dinheiro)
+
+A chave da Anthropic fica em `backend/.env` (`ANTHROPIC_API_KEY=…`; o arquivo nunca vai para o git).
+
+```bash
+cd backend
+export ANTHROPIC_API_KEY=$(grep -o 'ANTHROPIC_API_KEY=.*' .env | cut -d= -f2- | tr -d '\r\n ')
+.venv/Scripts/python -m casos_de_teste medir --caso derm-001-acne-papulopustulosa   # um caso (~US$ 0,22)
+.venv/Scripts/python -m casos_de_teste medir       # todos os aprovados (~US$ 4,50, ~25 min)
+.venv/Scripts/python -m casos_de_teste calibrar    # a avaliadora nos pares de calibração
+.venv/Scripts/python -m casos_de_teste medir --falso   # só o fio, sem chave e sem gastar
+```
+
+Relatórios em `casos_de_teste/resultados/` (fora do git). Toda mudança de prompt, modelo ou esforço roda
+contra os casos antes de entrar. Prompts versionados em `app/especialidades/dermatologia/prompts/`; tabela
+de condutas em `app/especialidades/dermatologia/condutas/`.
 
 ## Subir tudo com Docker (Postgres + servidor)
 

@@ -171,3 +171,10 @@ nunca por palavra literal; (b) sinais de alerta com **tipo, ação e prazo**; a 
 imediata** entra na conduta **por regra fixa** do pacote, sem IA e mesmo sem protocolo (complementa §7.3);
 (c) **negado ≠ não perguntado ≠ não examinado**; (d) diagnóstico com **certeza** (câncer sem histopatologia =
 suspeita); (e) **HF** só recebe doença familiar com predisposição — contato com a mesma doença vai na HDA.
+
+## 13. Divisão do marco 3 (18/11/2026)
+
+O marco 3 foi dividido em três entregas: **3A** motores de texto com IA real + medição nos casos de teste
+(feito — [ADR 0004](../../decisoes/0004-motores-tabela-primeiro-e-medico-simulado.md)); **3B** rotas da
+consulta, blocos/estados/oficialização no Postgres, SSE, anexos e prontuário gravado; **3C** o frontend troca
+a simulação pelas chamadas, uma página por vez, com aprovação do autor.
