@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-004-melanoma-suspeito
 especialidade: dermatologia
 titulo: Lesão pigmentada suspeita de melanoma
-objetivo: Câncer de pele que não pode ser perdido; lesão que mudou (ABCDE) em diabético; hemoglobina glicada lida de imagem borrada.
+objetivo: Câncer de pele que não pode ser perdido nem dado como confirmado antes da histopatologia; dermatoscopia sem resultado; HbA1c não confirmada.
 revisao: {situacao: pendente}
 entrada:
   paciente:
@@ -29,7 +29,7 @@ entrada:
     localizacao: Dorso, região escapular direita
     extensao: Lesão única, cerca de 8 mm
     gravidade: A definir na dermatoscopia
-    achados: Outros nevos sem atipia nas fotos
+    achados: Outros nevos sem atipia
   complementares:
     - exame: Exames laboratoriais
       data: 2026-10-02
@@ -39,16 +39,24 @@ entrada:
         - {nome: Creatinina, valor: "0,9 mg/dL"}
 esperado:
   historia:
-    deve_conter:
-      qp: [pinta, cor, cresceu]
-      hda: [seis meses, sangrou]
-      ap: [diabetes, metformina]
-      exame_fisico: [assimétrica, 8 mm]
-      exames: ["132"]
+    fatos:
+      - Lesão pigmentada no dorso que mudou de cor e cresceu, percebida há cerca de seis meses, com prurido ocasional
+      - Exposição solar intensa na juventude
+      - Diabetes e colesterol alto, em uso de metformina e sinvastatina
+      - Hemoglobina glicada 7,1% registrada como valor não confirmado (imagem borrada)
+    negativas: [sangramento da lesão, história familiar de câncer de pele]
+    desconhecidos: [resultado da dermatoscopia]
+    vazias: [hf]
   diagnosticos:
-    principal: {nome: Melanoma do tronco, cid: C43.5}
+    principal: {nome: Melanoma do tronco, cid: C43.5, certeza: suspeita}
     nao_pode_perder: {nome: Melanoma do tronco, cid: C43.5}
   sinais: {disparados: [lesao-pigmentada-abcde]}
   conduta:
     protocolo: melanoma-suspeito
-    deve_incluir: [dermatoscopia, biópsia]
+    urgencia: prioritaria
+    obrigatorios:
+      - Biópsia apropriada da lesão (excisional), sem atrasar pela dermatoscopia
+      - Registrar como suspeita até a histopatologia
+    proibidos:
+      - Registrar melanoma como diagnóstico confirmado antes da histopatologia
+      - Atribuir achados dermatoscópicos (a dermatoscopia não tem resultado)

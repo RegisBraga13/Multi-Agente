@@ -2,6 +2,10 @@
 
 Hoje: a lista fixa de sinais de alerta. Sinal de alerta nunca depende só da IA (desenho §7.3): a lista
 fixa é sempre checada; a IA pode sugerir extras, marcados como sugestão.
+
+Cada sinal tem tipo, ação e prazo. A ação de um sinal de `urgencia_imediata` é a resposta de emergência FIXA
+(revisada pelo autor): quando o sinal dispara, ela entra na conduta por regra, sem depender da IA e mesmo sem
+protocolo na tabela (decisão do autor, 18/11/2026).
 """
 from collections import Counter
 from datetime import date
@@ -22,10 +26,19 @@ class _Modelo(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
 
+TipoSinal = Literal["urgencia_imediata", "prioridade", "muda_tratamento"]
+Prazo = Literal["imediato", "em dias", "em semanas", "antes de prescrever"]
+
+
 class SinalAlerta(_Modelo):
+    """`tipo`: urgência imediata (risco de vida/órgão), prioridade (ex. suspeita de câncer) ou muda o tratamento
+    (ex. gravidez). `acao`: o que fazer, item a item. `prazo`: em quanto tempo."""
     id: str = Field(pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$")
     texto: str = Field(min_length=1)
     porque: str = Field(min_length=1)
+    tipo: TipoSinal
+    acao: list[str] = Field(min_length=1)
+    prazo: Prazo
 
 
 class _Revisao(_Modelo):

@@ -162,3 +162,12 @@ Cada marco: testes passando, casos de teste medidos, commit e push, aprovação 
 - Enquadramento na Anvisa (software de apoio à decisão clínica).
 - Regras do CFM: prontuário eletrônico, assinatura digital ICP-Brasil, telemedicina.
 - Prazo de retenção na nuvem definido e espelho do prontuário entregue ao médico.
+
+## 12. Decisões de 18/11/2026 após a revisão dos casos de teste
+
+Ver [ADR 0002](../../decisoes/0002-avaliacao-por-criterios-clinicos.md). Em resumo: (a) casos no formato v2,
+avaliados por **critérios clínicos** (IA avaliadora com saída tipada + regras fixas no que é estruturado),
+nunca por palavra literal; (b) sinais de alerta com **tipo, ação e prazo**; a ação dos sinais de **urgência
+imediata** entra na conduta **por regra fixa** do pacote, sem IA e mesmo sem protocolo (complementa §7.3);
+(c) **negado ≠ não perguntado ≠ não examinado**; (d) diagnóstico com **certeza** (câncer sem histopatologia =
+suspeita); (e) **HF** só recebe doença familiar com predisposição — contato com a mesma doença vai na HDA.

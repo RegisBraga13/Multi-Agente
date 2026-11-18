@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-007-rosacea
 especialidade: dermatologia
 titulo: Rosácea eritematotelangiectásica
-objetivo: Quadro típico de rosácea com gatilhos claros; pergunta de sintomas oculares respondida "não".
+objetivo: Rosácea com gatilhos claros; sintomas oculares negados na anamnese, sem exame ocular; conduta para eritema e telangiectasias.
 revisao: {situacao: pendente}
 entrada:
   paciente:
@@ -27,17 +27,24 @@ entrada:
     localizacao: Região centrofacial (bochechas e nariz)
     extensao: Face, sem pápulas
     gravidade: Leve a moderada
-    achados: Sem alterações oculares relatadas
+    achados: null
 esperado:
   historia:
-    deve_conter:
-      qp: [vermelhidão, ardor]
-      hda: [bebida quente, três anos]
-      ap: [hipotireoidismo, levotiroxina]
-      exame_fisico: [telangiectasias, centrofacial]
+    fatos:
+      - Vermelhidão e ardor no rosto há cerca de três anos, desencadeados por sol, calor e bebidas quentes
+      - Hipotireoidismo em uso de levotiroxina
+    negativas: [ardor e sensação de areia nos olhos]
+    desconhecidos: [exame ocular (não realizado)]
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Rosácea, cid: L71.9}
+    principal: {nome: Rosácea, cid: L71.9, certeza: clinico}
   sinais: {disparados: []}
   conduta:
     protocolo: rosacea
+    urgencia: rotina
+    obrigatorios:
+      - Tratamento específico para eritema e telangiectasias
+      - Orientação sobre os gatilhos (sol, calor, bebidas quentes) e fotoproteção
+    proibidos:
+      - Tratar pápulas e pústulas que não existem
+      - Registrar exame ocular normal (não foi feito)

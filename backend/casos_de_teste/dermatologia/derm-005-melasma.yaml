@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-005-melasma
 especialidade: dermatologia
 titulo: Melasma
-objetivo: Quadro típico de melasma pós-gestação com fotoproteção irregular; alergia a penicilina.
+objetivo: Quadro típico de melasma pós-gestação; fotoproteção consistente com proteção contra luz visível; gravidez, amamentação e plano de gestação perguntados separadamente.
 revisao: {situacao: pendente}
 entrada:
   paciente:
@@ -20,7 +20,11 @@ entrada:
     - {quem: Paciente, texto: "Não, nenhum."}
     - {quem: Médico, texto: "E alergia a algum medicamento?"}
     - {quem: Paciente, texto: "Penicilina, me deu placas pelo corpo."}
-    - {quem: Médico, texto: "Está grávida, amamentando ou planeja engravidar?"}
+    - {quem: Médico, texto: "Está grávida?"}
+    - {quem: Paciente, texto: "Não."}
+    - {quem: Médico, texto: "Está amamentando?"}
+    - {quem: Paciente, texto: "Não, parei há mais de um ano."}
+    - {quem: Médico, texto: "Planeja engravidar?"}
     - {quem: Paciente, texto: "Não."}
     - {quem: Médico, texto: "Vou olhar as manchas com a lâmpada."}
   sinais:
@@ -33,16 +37,18 @@ entrada:
     achados: Sem eritema ou descamação
 esperado:
   historia:
-    deve_conter:
-      qp: [manchas, gravidez]
-      hda: [dois anos, sol, protetor]
-      ap: [penicilina]
-      exame_fisico: [acastanhadas, malar]
+    fatos:
+      - Manchas escuras no rosto surgidas após a gestação, há cerca de dois anos, com piora ao sol
+      - Uso irregular de protetor solar
+      - Alergia a penicilina (placas pelo corpo) registrada em campo próprio
+    negativas: [gravidez, amamentação, plano de engravidar, uso de medicamentos]
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Melasma, cid: L81.1}
+    principal: {nome: Melasma, cid: L81.1, certeza: clinico}
   sinais: {disparados: []}
   conduta:
     protocolo: melasma
-    deve_incluir: [fotoproteção]
-    proibidos: [amoxicilina]
+    urgencia: rotina
+    obrigatorios:
+      - Fotoproteção diária consistente, idealmente com proteção contra luz visível (filtro com cor)
+      - Tratamento clareador tópico conforme a tabela

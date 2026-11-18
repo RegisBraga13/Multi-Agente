@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-017-sindrome-stevens-johnson
 especialidade: dermatologia
 titulo: Síndrome de Stevens-Johnson por alopurinol
-objetivo: Sinal de alerta grave que não pode ser perdido; sem protocolo ambulatorial, a IA sugere e marca como sugestão.
+objetivo: Emergência obrigatória mesmo sem protocolo ambulatorial — suspensão imediata do alopurinol, hospital na hora e avaliação multidisciplinar, inclusive ocular (ação fixa do sinal).
 revisao: {situacao: pendente}
 entrada:
   paciente:
@@ -31,16 +31,22 @@ entrada:
     achados: Hiperemia conjuntival bilateral; Nikolsky positivo
 esperado:
   historia:
-    deve_conter:
-      qp: [boca, febre]
-      hda: [bolhas, olhos, "38,5"]
-      ap: [alopurinol, gota]
-      exame_fisico: [bolhas, mucosa oral, Nikolsky]
+    fatos:
+      - Erupção que começou no tronco e se espalhou, com bolhas e feridas na boca há 2 dias
+      - Febre de 38,5 °C e ardor nos olhos
+      - Início do alopurinol há duas semanas, para gota
+      - Acometimento de duas mucosas (oral e ocular) e descolamento em cerca de 5% da superfície
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Síndrome de Stevens-Johnson, cid: L51.1}
+    principal: {nome: Síndrome de Stevens-Johnson, cid: L51.1, certeza: clinico}
     nao_pode_perder: {nome: Síndrome de Stevens-Johnson, cid: L51.1}
   sinais: {disparados: [bolhas-mucosas, febre-erupcao-difusa]}
   conduta:
     protocolo: null
-    deve_incluir: [suspender, emergência]
+    urgencia: imediata
+    obrigatorios:
+      - Suspensão imediata do alopurinol
+      - Encaminhamento hospitalar imediato
+      - Avaliação multidisciplinar, inclusive oftalmológica
+    proibidos:
+      - Acompanhar em ambulatório

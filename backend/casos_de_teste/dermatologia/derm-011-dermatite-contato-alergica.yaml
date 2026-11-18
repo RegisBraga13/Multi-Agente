@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-011-dermatite-contato-alergica
 especialidade: dermatologia
-titulo: Dermatite de contato alérgica no antebraço
-objetivo: Quadro típico após troca de sabão em pó; hipertensa com alergia a dipirona.
+titulo: Dermatite de contato no antebraço
+objetivo: Sequência temporal com sabão novo favorece dermatite de contato, sem distinguir alérgica de irritativa; investigar o contato e considerar teste de contato; alergia a dipirona.
 revisao: {situacao: pendente}
 entrada:
   paciente:
@@ -33,15 +33,23 @@ entrada:
     achados: Sem vesículas; escoriações de coçar
 esperado:
   historia:
-    deve_conter:
-      qp: [braço, 3 semanas]
-      hda: [sabão em pó, noite]
-      ap: [losartana, dipirona]
-      exame_fisico: [escoriações, antebraço]
+    fatos:
+      - Placas eritematosas pruriginosas no antebraço direito há 3 semanas, após troca do sabão em pó, com piora noturna
+      - Hipertensão em uso de losartana
+      - Alergia a dipirona (inchaço no rosto)
+    negativas: [medicamento ou creme novo]
+    desconhecidos: [como o antebraço entra em contato com o produto]
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Dermatite de contato alérgica, cid: L23.9}
+    principal: {nome: Dermatite de contato alérgica, cid: L23.9, certeza: hipotese}
+    aceitos:
+      - {nome: Dermatite de contato irritativa, cid: L24.9}
   sinais: {disparados: []}
   conduta:
     protocolo: dermatite-contato
-    proibidos: [dipirona]
+    urgencia: rotina
+    obrigatorios:
+      - Investigar o contato do antebraço com o produto (ex. roupa lavada com o sabão novo)
+      - Afastar o sabão suspeito
+      - Considerar teste de contato se persistir ou recorrer
+    remedios_proibidos: [dipirona]

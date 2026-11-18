@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-006-alopecia-androgenetica
 especialidade: dermatologia
 titulo: Alopecia androgenética
-objetivo: Quadro típico de calvície de padrão masculino com história familiar.
+objetivo: Calvície de padrão masculino com história familiar; finasterida só com discussão de efeitos adversos e decisão médica.
 revisao: {situacao: pendente}
 entrada:
   paciente: {idade: 30, sexo: M}
@@ -19,19 +19,24 @@ entrada:
   exame:
     morfologia: Rarefação de fios com miniaturização
     localizacao: Regiões frontotemporais e vértice
-    extensao: Padrão masculino, grau III
+    extensao: Padrão masculino, Hamilton-Norwood III vértice
     gravidade: Moderada
     achados: Couro cabeludo sem descamação
 esperado:
   historia:
-    deve_conter:
-      qp: [queda, entradas]
-      hda: [2 anos, dieta]
-      hf: [pai]
-      exame_fisico: [miniaturização, vértice]
+    fatos:
+      - Queda de cabelo nas entradas há 2 anos, mais notada no banho
+      - Miniaturização em regiões frontotemporais e vértice (Hamilton-Norwood III vértice)
+    negativas: [doença ou dieta restritiva recentes, uso de medicamentos]
     vazias: [exames]
   diagnosticos:
-    principal: {nome: Alopecia androgenética, cid: L64.9}
+    principal: {nome: Alopecia androgenética, cid: L64.9, certeza: clinico}
+    rastrear:
+      - "Eflúvio telógeno: investigar se houver perda difusa importante (queda no banho)"
   sinais: {disparados: []}
   conduta:
     protocolo: alopecia-androgenetica
+    urgencia: rotina
+    obrigatorios:
+      - Tratamento para alopecia androgenética conforme a tabela
+      - Se sugerir finasterida, discutir efeitos adversos e deixar a decisão com o médico

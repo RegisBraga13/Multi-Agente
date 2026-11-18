@@ -1,10 +1,9 @@
 import pytest
 
-from app.especialidades.pacote import SinalAlerta
 from casos_de_teste.carregar import validar_pasta
-from conftest import caso_minimo
+from conftest import caso_minimo, sinal
 
-SINAIS = [SinalAlerta(id="angioedema", texto="Inchaço de lábios/língua ou falta de ar", porque="Via aérea.")]
+SINAIS = [sinal("angioedema", "Inchaço de lábios/língua ou falta de ar"), sinal("gestacao-ou-plano", "Gestante", "muda_tratamento")]
 
 
 def test_pasta_valida(escrever_caso, tmp_path):
@@ -103,6 +102,30 @@ def test_numeros_clinicos_nao_sao_telefone(escrever_caso, tmp_path, texto):
 
 def test_chave_repetida_no_yaml_e_recusada(escrever_caso, tmp_path):
     caminho = escrever_caso("derm-001-teste", caso_minimo())
-    texto = caminho.read_text(encoding="utf-8").replace("      hda:\n", "      hda:\n      - meses\n      hda:\n", 1)
+    texto = caminho.read_text(encoding="utf-8").replace("    fatos:\n", "    fatos:\n    - outro\n    fatos:\n", 1)
     caminho.write_text(texto, encoding="utf-8")
     assert any("repetida" in e for e in validar_pasta(tmp_path, SINAIS).erros)
+
+
+def test_sinal_negado_nao_pode_ser_esperado(escrever_caso, tmp_path):
+    d = caso_minimo()
+    d["entrada"]["sinais"] = [{"sinal": "gestacao-ou-plano", "resposta": "f"}]
+    d["esperado"]["sinais"]["disparados"] = ["gestacao-ou-plano"]
+    escrever_caso("derm-001-teste", d)
+    assert any("negado" in e for e in validar_pasta(tmp_path, SINAIS).erros)
+
+
+def test_urgencia_imediata_exige_conduta_imediata(escrever_caso, tmp_path):
+    d = caso_minimo()
+    d["esperado"]["sinais"]["disparados"] = ["angioedema"]
+    d["esperado"]["conduta"]["urgencia"] = "prioritaria"
+    escrever_caso("derm-001-teste", d)
+    assert any("imediata" in e for e in validar_pasta(tmp_path, SINAIS).erros)
+
+
+def test_urgencia_imediata_com_conduta_imediata_passa(escrever_caso, tmp_path):
+    d = caso_minimo()
+    d["esperado"]["sinais"]["disparados"] = ["angioedema"]
+    d["esperado"]["conduta"]["urgencia"] = "imediata"
+    escrever_caso("derm-001-teste", d)
+    assert validar_pasta(tmp_path, SINAIS).ok

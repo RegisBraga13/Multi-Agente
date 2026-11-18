@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-009-dermatite-contato-irritativa
 especialidade: dermatologia
 titulo: Dermatite de contato irritativa das mãos
-objetivo: Quadro típico ocupacional (cozinheira) que melhora no afastamento; não usa luvas.
+objetivo: Quadro ocupacional (cozinheira) que melhora no afastamento; proteção das mãos detalhada, não só "luvas"; alternativas se não melhorar.
 revisao: {situacao: pendente}
 entrada:
   paciente:
@@ -29,15 +29,22 @@ entrada:
     achados: Pele ressecada, sem sinais de infecção
 esperado:
   historia:
-    deve_conter:
-      qp: [mãos, louça]
-      hda: [cozinheira, quatro meses, férias]
-      ap: [rinite]
-      exame_fisico: [fissuras, palmas]
+    fatos:
+      - Prurido e vesículas nas mãos há quatro meses, desde que começou a trabalhar como cozinheira, com piora ao lavar louça
+      - Melhora no afastamento do trabalho (férias)
+      - Não usa luvas
+      - Rinite
+    negativas: [uso de medicamentos]
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Dermatite de contato irritativa, cid: L24.9}
+    principal: {nome: Dermatite de contato irritativa, cid: L24.9, certeza: clinico}
+    rastrear:
+      - "Dermatite de contato alérgica ou eczema das mãos: reavaliar (considerar teste de contato) se não houver melhora"
   sinais: {disparados: []}
   conduta:
     protocolo: dermatite-contato
-    deve_incluir: [luvas]
+    urgencia: rotina
+    obrigatorios:
+      - Reduzir o trabalho úmido
+      - Luva adequada ao agente de exposição, evitando umidade prolongada dentro dela (ex. forro de algodão)
+      - Hidratação frequente da pele das mãos

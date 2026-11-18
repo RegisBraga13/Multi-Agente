@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-013-dermatite-seborreica
 especialidade: dermatologia
-titulo: Dermatite seborreica do couro cabeludo
-objetivo: Quadro típico com piora no estresse e no frio; xampu anticaspa com melhora parcial.
+titulo: Dermatite seborreica do couro cabeludo e da face
+objetivo: Modo de uso do xampu antes de concluir falha terapêutica; tratamento também dos sulcos nasogenianos (face).
 revisao: {situacao: pendente}
 entrada:
   paciente: {idade: 36, sexo: F}
@@ -13,9 +13,11 @@ entrada:
     - {quem: Paciente, texto: "Piora quando estou estressada e no frio."}
     - {quem: Médico, texto: "Mais alguma coisa que eu deva saber?"}
     - {quem: Paciente, texto: "Uso xampu anticaspa, melhora pouco."}
+    - {quem: Médico, texto: "Qual xampu, com que frequência e como você usa?"}
+    - {quem: Paciente, texto: "Um anticaspa de farmácia, não lembro o nome. Uso duas vezes por semana e enxáguo logo."}
     - {quem: Médico, texto: "Está usando algum remédio?"}
     - {quem: Paciente, texto: "Não, nenhum."}
-    - {quem: Médico, texto: "Vou olhar o couro cabeludo."}
+    - {quem: Médico, texto: "Vou olhar o couro cabeludo e o rosto."}
   exame:
     morfologia: Descamação fina e eritema leve
     localizacao: Couro cabeludo e sulcos nasogenianos
@@ -24,13 +26,21 @@ entrada:
     achados: Sem queda de cabelo
 esperado:
   historia:
-    deve_conter:
-      qp: [caspa, couro cabeludo]
-      hda: [frio, xampu]
-      exame_fisico: [descamação, nasogenianos]
+    fatos:
+      - Caspa e prurido no couro cabeludo, com piora no estresse e no frio
+      - Xampu anticaspa (nome desconhecido) 2 vezes por semana, enxaguado logo, com melhora parcial
+      - Descamação e eritema também nos sulcos nasogenianos
+    negativas: [uso de medicamentos]
+    desconhecidos: [princípio ativo do xampu]
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Dermatite seborreica do couro cabeludo, cid: L21.0}
+    principal: {nome: Dermatite seborreica do couro cabeludo, cid: L21.0, certeza: clinico}
   sinais: {disparados: []}
   conduta:
     protocolo: dermatite-seborreica
+    urgencia: rotina
+    obrigatorios:
+      - Orientar o modo de uso do xampu (deixar agir alguns minutos antes de enxaguar) e a frequência
+      - Tratamento adequado à face para os sulcos nasogenianos
+    proibidos:
+      - Concluir falha terapêutica sem considerar o modo de uso do xampu

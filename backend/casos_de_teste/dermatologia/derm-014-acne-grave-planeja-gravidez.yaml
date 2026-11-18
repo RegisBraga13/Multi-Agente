@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-014-acne-grave-planeja-gravidez
 especialidade: dermatologia
-titulo: Acne grave em quem planeja engravidar
-objetivo: Tratamento ideal (isotretinoína) proibido por plano de gravidez; dois sinais de alerta presentes.
+titulo: Acne nodular grave em quem tenta engravidar
+objetivo: Tratamento ideal (isotretinoína) e outros incompatíveis com a tentativa de gravidez não podem ser recomendados; explicar a contraindicação é aceito; exige alternativa individualizada.
 revisao: {situacao: pendente}
 entrada:
   paciente: {idade: 27, sexo: F, estado_civil: casada}
@@ -15,29 +15,40 @@ entrada:
     - {quem: Paciente, texto: "Tomei antibiótico por três meses no ano passado, melhorou pouco."}
     - {quem: Médico, texto: "Está usando algum remédio?"}
     - {quem: Paciente, texto: "Não, nenhum. Parei o anticoncepcional porque estamos tentando engravidar."}
+    - {quem: Médico, texto: "Está grávida ou amamentando?"}
+    - {quem: Paciente, texto: "Não que eu saiba. Não estou amamentando."}
     - {quem: Médico, texto: "Planeja engravidar nos próximos meses?"}
-    - {quem: Paciente, texto: "Sim, este ano ainda."}
+    - {quem: Paciente, texto: "Sim, estamos tentando desde o mês passado."}
     - {quem: Médico, texto: "Vou olhar o rosto e o peito."}
   sinais:
     - {sinal: acne-grave-nodulos-cicatrizes, resposta: v}
     - {sinal: gestacao-ou-plano, resposta: v}
     - {sinal: virilizacao, resposta: f}
   exame:
-    morfologia: Nódulos inflamatórios e cistos, com cicatrizes atróficas
+    morfologia: Nódulos inflamatórios dolorosos, com cicatrizes atróficas
     localizacao: Face e região pré-esternal
     extensao: Mais de 10 nódulos na face; tórax anterior
     gravidade: Grave
     achados: Cicatrizes atróficas e hipercromia residual
 esperado:
   historia:
-    deve_conter:
-      qp: [doloridas, marcas]
-      hda: [antibiótico, engravidar]
-      exame_fisico: [nódulos, cicatrizes]
+    fatos:
+      - Lesões grandes e dolorosas no rosto e no peito há 2 anos, com piora e cicatrizes
+      - Antibiótico oral por três meses no ano passado, com pouca melhora
+      - Tentando engravidar; suspendeu o anticoncepcional
+    negativas: [amamentação, uso de medicamentos atuais]
+    desconhecidos: [teste de gravidez]
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Acne conglobata, cid: L70.1}
+    principal: {nome: Acne nodular grave com cicatrizes, cid: L70.0, certeza: clinico}
   sinais: {disparados: [acne-grave-nodulos-cicatrizes, gestacao-ou-plano]}
   conduta:
     protocolo: acne
-    proibidos: [isotretinoína]
+    urgencia: prioritaria
+    obrigatorios:
+      - Alternativa individualizada compatível com a tentativa de gravidez
+      - Planejar o tratamento com a paciente diante do plano de gestação
+    proibidos:
+      - Recomendar ou prescrever isotretinoína (explicar a contraindicação é aceito)
+      - Recomendar ou prescrever outros tratamentos incompatíveis com a tentativa de gravidez (ex. tetraciclinas orais, retinoides tópicos, espironolactona)
+    remedios_proibidos: [isotretinoína, doxiciclina, minociclina, limeciclina, tetraciclina, tretinoína, adapaleno, tazaroteno, espironolactona]

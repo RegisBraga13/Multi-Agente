@@ -1,46 +1,116 @@
 # Sinais de alerta da Dermatologia — lista FIXA, sempre checada (não depende só da IA).
 # `texto`: como aparece na tela (curto, uma linha). `porque`: a razão clínica.
-# Rascunho de 18/11/2026: só vale depois que o autor aprovar.
+# `tipo`: urgencia_imediata | prioridade | muda_tratamento. `acao`: o que fazer. `prazo`: em quanto tempo.
+# A ação dos sinais de urgência imediata é a resposta de emergência FIXA: entra na conduta por regra.
+# Rascunho v2 de 18/11/2026 (após a revisão do autor): só vale depois que o autor aprovar.
 revisao:
   situacao: pendente
 
 sinais:
-  - id: lesao-pigmentada-abcde
-    texto: Pinta mudou cor, forma ou tamanho (ABCDE)
-    porque: Mudança em lesão pigmentada é o principal sinal de melanoma.
-  - id: ferida-nao-cicatriza
-    texto: Ferida não cicatriza há >4 sem
-    porque: Ferida persistente em pele com dano solar sugere carcinoma.
-  - id: lesao-sangra-facil
-    texto: Lesão que sangra ao toque leve
-    porque: Sangramento ao trauma mínimo é comum no carcinoma basocelular e no melanoma.
-  - id: acne-grave-nodulos-cicatrizes
-    texto: Nódulos dolorosos ou cicatrizes (acne grave)
-    porque: Acne nodular ou cicatricial pede tratamento sistêmico precoce para evitar sequela.
-  - id: virilizacao
-    texto: Início súbito com sinais de virilização
-    porque: Acne com virilização de início súbito pode indicar tumor produtor de androgênio.
+  # --- Urgência imediata ---
   - id: bolhas-mucosas
     texto: Bolhas, pele descolando ou lesões em boca/olhos
     porque: Sugere Stevens-Johnson/necrólise epidérmica tóxica, emergência com risco de vida.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Suspender imediatamente o medicamento suspeito
+      - Encaminhar ao hospital imediatamente
+      - Avaliação multidisciplinar, inclusive oftalmológica
   - id: febre-erupcao-difusa
     texto: Febre com manchas pelo corpo todo
-    porque: Pode ser farmacodermia grave (DRESS), infecção sistêmica ou doença exantemática.
+    porque: Pode ser farmacodermia grave (DRESS, Stevens-Johnson), infecção sistêmica ou doença exantemática.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Avaliar sinais vitais e acometimento de mucosas
+      - Suspender medicamento iniciado recentemente, se houver
+      - Encaminhar para avaliação de emergência
   - id: angioedema
     texto: Inchaço de lábios/língua ou falta de ar
     porque: Angioedema e anafilaxia podem obstruir a via aérea.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Avaliar na hora via aérea, voz, deglutição, respiração, pressão arterial e sintomas gastrointestinais
+      - Se suspeita de anafilaxia, adrenalina intramuscular e emergência
   - id: zoster-oftalmico
     texto: Vesículas na ponta do nariz ou perto do olho
-    porque: Zóster oftálmico ameaça a visão e pede avaliação oftalmológica urgente.
+    porque: Zóster oftálmico ameaça a visão.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Iniciar antiviral sistêmico imediatamente
+      - Avaliação oftalmológica urgente, sem esperar perda visual
   - id: celulite-progressiva
     texto: Vermelhidão quente que se espalha, com febre
     porque: Celulite ou erisipela em progressão pode evoluir para infecção grave.
-  - id: imunossupressao
-    texto: Imunossupressão (transplante, quimio, HIV, corticoide)
-    porque: Muda o risco de infecções e de câncer de pele e restringe tratamentos.
-  - id: gestacao-ou-plano
-    texto: Gestante, amamentando ou planeja engravidar
-    porque: Contraindica medicamentos teratogênicos (ex. isotretinoína, metotrexato).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Avaliar sinais vitais e sinais de gravidade
+      - Antibiótico sistêmico; encaminhar para emergência se houver sinais de gravidade
+
+  # --- Prioridade ---
+  - id: lesao-pigmentada-abcde
+    texto: Pinta mudou cor, forma ou tamanho (ABCDE)
+    porque: Mudança em lesão pigmentada é o principal sinal de melanoma.
+    tipo: prioridade
+    prazo: em semanas
+    acao:
+      - Avaliação e biópsia apropriada, sem atrasar uma pela outra
+      - Registrar como suspeita até a histopatologia
+  - id: ferida-nao-cicatriza
+    texto: Ferida não cicatriza há >4 sem
+    porque: Ferida persistente em pele com dano solar sugere carcinoma.
+    tipo: prioridade
+    prazo: em semanas
+    acao:
+      - Biópsia da lesão
+      - Registrar como suspeita até a histopatologia
+  - id: lesao-sangra-facil
+    texto: Lesão que sangra ao toque leve
+    porque: Sangramento ao trauma mínimo é comum no carcinoma basocelular e no melanoma.
+    tipo: prioridade
+    prazo: em semanas
+    acao:
+      - Biópsia da lesão
+  - id: acne-grave-nodulos-cicatrizes
+    texto: Nódulos dolorosos ou cicatrizes (acne grave)
+    porque: Acne nodular ou cicatricial pede tratamento sistêmico precoce para evitar sequela.
+    tipo: prioridade
+    prazo: em semanas
+    acao:
+      - Tratamento eficaz precoce para evitar novas cicatrizes, compatível com gravidez e outros fatores
+  - id: virilizacao
+    texto: Início súbito com sinais de virilização
+    porque: Acne com virilização de início súbito pode indicar tumor produtor de androgênio.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Dosar androgênios e encaminhar para investigação endocrinológica
   - id: pe-diabetico
     texto: Lesão no pé em diabético
     porque: Risco de úlcera, infecção profunda e amputação.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Avaliar sensibilidade, perfusão e sinais de infecção
+
+  # --- Muda o tratamento ---
+  - id: gestacao-ou-plano
+    texto: Gestante, amamentando ou planeja engravidar
+    porque: Contraindica medicamentos teratogênicos (ex. isotretinoína, tetraciclinas, metotrexato).
+    tipo: muda_tratamento
+    prazo: antes de prescrever
+    acao:
+      - Perguntar separadamente gravidez, amamentação e plano de engravidar
+      - Não recomendar nem prescrever medicamento incompatível; oferecer alternativa individualizada
+  - id: imunossupressao
+    texto: Imunossupressão (transplante, quimio, HIV, corticoide)
+    porque: Muda o risco de infecções e de câncer de pele e restringe tratamentos.
+    tipo: muda_tratamento
+    prazo: antes de prescrever
+    acao:
+      - Perguntar o conjunto completo (transplante, quimioterapia, HIV, corticoide ou imunossupressor)
+      - Considerar no diagnóstico e na escolha do tratamento

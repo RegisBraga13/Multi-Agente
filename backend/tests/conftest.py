@@ -8,7 +8,7 @@ import yaml
 def caso_minimo() -> dict:
     """Dicionário válido para `Caso` — cada teste altera só o que quer provar."""
     return {
-        "versao_formato": 1,
+        "versao_formato": 2,
         "id": "derm-001-teste",
         "especialidade": "dermatologia",
         "titulo": "Caso de teste",
@@ -30,10 +30,10 @@ def caso_minimo() -> dict:
             },
         },
         "esperado": {
-            "historia": {"deve_conter": {"hda": ["6 meses"]}, "vazias": ["hf"]},
-            "diagnosticos": {"principal": {"nome": "Acne vulgar", "cid": "L70.0"}},
+            "historia": {"fatos": ["Espinhas no rosto há 6 meses"], "vazias": ["hf"]},
+            "diagnosticos": {"principal": {"nome": "Acne vulgar", "cid": "L70.0", "certeza": "clinico"}},
             "sinais": {"disparados": []},
-            "conduta": {"protocolo": "acne"},
+            "conduta": {"protocolo": "acne", "urgencia": "rotina", "obrigatorios": ["Tratamento tópico para acne"]},
         },
     }
 
@@ -45,3 +45,10 @@ def escrever_caso(tmp_path: Path):
         caminho.write_text(yaml.safe_dump(dados, allow_unicode=True, sort_keys=False), encoding="utf-8")
         return caminho
     return escrever
+
+
+def sinal(id_: str, texto: str = "Texto do sinal", tipo: str = "urgencia_imediata"):
+    """SinalAlerta para testes (prazo coerente com o tipo)."""
+    from app.especialidades.pacote import SinalAlerta
+    prazo = {"urgencia_imediata": "imediato", "prioridade": "em semanas", "muda_tratamento": "antes de prescrever"}[tipo]
+    return SinalAlerta(id=id_, texto=texto, porque="Motivo.", tipo=tipo, acao=["Agir"], prazo=prazo)

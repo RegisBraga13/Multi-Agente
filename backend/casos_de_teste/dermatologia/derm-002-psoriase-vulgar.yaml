@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-002-psoriase-vulgar
 especialidade: dermatologia
 titulo: Psoríase vulgar
-objetivo: Quadro típico de psoríase em placas; alergia a dipirona e artrite psoriásica que não pode ser perdida.
+objetivo: Quadro típico de psoríase em placas; rastrear artrite psoriásica e registrar a negativa, sem diagnosticá-la; alergia a dipirona.
 revisao: {situacao: pendente}
 entrada:
   paciente:
@@ -26,13 +26,13 @@ entrada:
     - {quem: Paciente, texto: "Dipirona, me deu inchaço no rosto."}
     - {quem: Médico, texto: "Tem dor ou inchaço nas articulações?"}
     - {quem: Paciente, texto: "Não, nenhum."}
-    - {quem: Médico, texto: "Deixa eu ver os cotovelos e os joelhos."}
+    - {quem: Médico, texto: "Deixa eu ver os cotovelos, os joelhos e as unhas."}
   exame:
     morfologia: Placas eritematosas bem delimitadas com escamas prateadas
     localizacao: Cotovelos e joelhos, simétricas
     extensao: Cerca de 4% da superfície corporal
     gravidade: Leve a moderada
-    achados: Unhas sem depressões nas fotos
+    achados: Unhas sem depressões
   complementares:
     - exame: Exames laboratoriais
       data: 2026-09-20
@@ -41,17 +41,25 @@ entrada:
         - {nome: Colesterol total, valor: 214 mg/dL}
 esperado:
   historia:
-    deve_conter:
-      qp: [placas, cotovelos]
-      hda: [dois anos, verão, cortisona]
-      ap: [losartana, dipirona]
-      exame_fisico: [prateadas, 4%]
-      exames: ["214"]
+    fatos:
+      - Placas descamativas em cotovelos e joelhos há cerca de dois anos, com melhora no verão e prurido leve
+      - Uso prévio de corticoide tópico com melhora parcial e recidiva
+      - Hipertensão em uso de losartana
+      - Alergia a dipirona (inchaço no rosto)
+      - Colesterol total 214 mg/dL e TGO/TGP normais
+    negativas: [dor ou inchaço articular]
+    desconhecidos: [rigidez matinal, dactilite, dor no calcanhar]
     vazias: [hf]
   diagnosticos:
-    principal: {nome: Psoríase vulgar, cid: L40.0}
-    nao_pode_perder: {nome: Artrite psoriásica, cid: L40.5}
+    principal: {nome: Psoríase vulgar, cid: L40.0, certeza: clinico}
+    rastrear:
+      - "Artrite psoriásica: perguntar também rigidez matinal, dactilite e dor no calcanhar; registrar a negativa atual de dor e inchaço articular"
   sinais: {disparados: []}
   conduta:
     protocolo: psoriase
-    proibidos: [dipirona]
+    urgencia: rotina
+    obrigatorios:
+      - Tratamento tópico para psoríase em placas com cerca de 4% da superfície, conforme a tabela
+    proibidos:
+      - Diagnosticar artrite psoriásica (o paciente negou dor e inchaço articular)
+    remedios_proibidos: [dipirona]

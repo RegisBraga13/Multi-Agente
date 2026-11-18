@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-016-herpes-zoster-oftalmico
 especialidade: dermatologia
 titulo: Herpes-zóster oftálmico
-objetivo: Sinal de alerta grave que não pode ser perdido (vesícula na ponta do nariz e olho vermelho).
+objetivo: Sinal de alerta grave; antiviral sistêmico imediato e avaliação oftalmológica urgente (olho vermelho já é achado ocular); imunossupressão perguntada por completo.
 revisao: {situacao: pendente}
 entrada:
   paciente:
@@ -19,8 +19,8 @@ entrada:
     - {quem: Paciente, texto: "Apareceu uma bolhinha na ponta do nariz hoje."}
     - {quem: Médico, texto: "Está usando algum remédio?"}
     - {quem: Paciente, texto: "Uso anlodipino 5 mg. Tenho pressão alta."}
-    - {quem: Médico, texto: "Faz algum tratamento que baixa a imunidade, como quimioterapia ou corticoide?"}
-    - {quem: Paciente, texto: "Não."}
+    - {quem: Médico, texto: "Fez transplante, quimioterapia, tem HIV ou usa corticoide ou outro remédio que baixa a imunidade?"}
+    - {quem: Paciente, texto: "Não, nada disso."}
     - {quem: Médico, texto: "Vou olhar a testa, o nariz e o olho."}
   sinais:
     - {sinal: zoster-oftalmico, resposta: v}
@@ -33,16 +33,22 @@ entrada:
     achados: Hiperemia conjuntival à direita
 esperado:
   historia:
-    deve_conter:
-      qp: [bolhas, testa, 2 dias]
-      hda: [queimava, olho, nariz]
-      ap: [anlodipino]
-      exame_fisico: [vesículas, conjuntival]
+    fatos:
+      - Vesículas dolorosas na fronte direita há 2 dias, precedidas de dor em queimação por três dias
+      - Vesícula na ponta do nariz e olho direito vermelho
+      - Hipertensão em uso de anlodipino
+    negativas: [transplante, quimioterapia, HIV, uso de corticoide ou imunossupressor]
+    desconhecidos: [acuidade visual, dor ocular, fotofobia]
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Herpes-zóster oftálmico, cid: B02.3}
+    principal: {nome: Herpes-zóster oftálmico, cid: B02.3, certeza: clinico}
     nao_pode_perder: {nome: Herpes-zóster oftálmico, cid: B02.3}
   sinais: {disparados: [zoster-oftalmico]}
   conduta:
     protocolo: herpes-zoster
-    deve_incluir: [oftalmologia]
+    urgencia: imediata
+    obrigatorios:
+      - Antiviral sistêmico iniciado imediatamente
+      - Avaliação oftalmológica urgente (olho vermelho já é achado ocular)
+    proibidos:
+      - Esperar perda visual para encaminhar ao oftalmologista

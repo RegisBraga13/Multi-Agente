@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-003-acne-comedoniana
 especialidade: dermatologia
 titulo: Acne comedoniana
-objetivo: Quadro típico de acne leve restrita à testa em adolescente que usa base todo dia.
+objetivo: Acne leve predominantemente comedoniana; antibiótico deve ser questionado e gravidez verificada antes de retinoide; base diária é exposição a investigar.
 revisao: {situacao: pendente}
 entrada:
   paciente: {idade: 18, sexo: F}
@@ -26,13 +26,21 @@ entrada:
     achados: Sem cicatrizes
 esperado:
   historia:
-    deve_conter:
-      qp: [cravos, testa]
-      hda: [prova, base]
-      exame_fisico: [comedões, fronte]
+    fatos:
+      - Cravos e espinhas na testa há 1 ano, com piora em época de provas e manipulação ocasional
+      - Uso diário de base e protetor solar (exposição a investigar)
+    negativas: [uso de medicamentos]
+    desconhecidos: [possibilidade de gravidez, história familiar]
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Acne vulgar, cid: L70.0}
+    principal: {nome: Acne vulgar, cid: L70.0, certeza: clinico}
   sinais: {disparados: []}
   conduta:
     protocolo: acne
+    urgencia: rotina
+    obrigatorios:
+      - Tratamento tópico para acne comedoniana leve
+      - Verificar possibilidade de gravidez antes de prescrever retinoide tópico
+    proibidos:
+      - Antibiótico (tópico isolado ou sistêmico) para acne predominantemente comedoniana leve
+      - Afirmar que a base é a causa da acne

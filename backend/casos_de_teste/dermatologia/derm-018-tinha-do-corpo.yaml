@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-018-tinha-do-corpo
 especialidade: dermatologia
 titulo: Tinha do corpo que piorou com corticoide
-objetivo: Erro clássico (corticoide em micose) não pode ser repetido na conduta.
+objetivo: Erro clássico — nenhum corticoide tópico, isolado ou com antifúngico; registrar a piora com corticoide; virilha examinada sem lesões.
 revisao: {situacao: pendente}
 entrada:
   paciente: {idade: 22, sexo: M}
@@ -15,23 +15,31 @@ entrada:
     - {quem: Paciente, texto: "Tenho um gato em casa e treino na academia."}
     - {quem: Médico, texto: "Está usando algum remédio?"}
     - {quem: Paciente, texto: "Só a pomada."}
-    - {quem: Médico, texto: "Vou olhar a coxa."}
+    - {quem: Médico, texto: "Vou olhar a coxa e a virilha."}
   exame:
     morfologia: Placa anular eritematosa com borda descamativa e centro mais claro
     localizacao: Face interna da coxa direita
     extensao: Uma placa de cerca de 6 cm
     gravidade: Leve
-    achados: Borda ativa com descamação
+    achados: Borda ativa com descamação; virilha examinada, sem lesões
 esperado:
   historia:
-    deve_conter:
-      qp: [coxa, 1 mês]
-      hda: [cortisona, cresceu]
-      exame_fisico: [anular, borda]
+    fatos:
+      - Placa pruriginosa na coxa há 1 mês
+      - Uso de pomada de corticoide caseira, com melhora do prurido e crescimento da lesão
+      - Gato em casa e academia
+      - Virilha sem lesões
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Tinha do corpo, cid: B35.4}
+    principal: {nome: Tinha do corpo, cid: B35.4, certeza: clinico}
   sinais: {disparados: []}
   conduta:
     protocolo: micose-superficial
-    proibidos: [clobetasol, betametasona]
+    urgencia: rotina
+    obrigatorios:
+      - Antifúngico tópico
+      - Suspender o corticoide tópico
+      - Considerar exame micológico se houver dúvida diagnóstica
+    proibidos:
+      - Qualquer corticoide tópico, isolado ou em combinação com antifúngico
+    remedios_proibidos: [clobetasol, betametasona, mometasona, hidrocortisona, dexametasona, desonida, triancinolona, prednicarbato, fluocinolona]

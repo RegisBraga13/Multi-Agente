@@ -102,23 +102,32 @@ class Diagnostico(Modelo):
 
 
 class EsperadoHistoria(Modelo):
-    """`deve_conter`: termos literais que a seção tem de ter. `vazias`: seções sem fonte (nada inventado)."""
-    deve_conter: dict[SecaoHistoria, list[str]]
+    """Critérios clínicos da história, avaliados pelo sentido (não por palavra literal).
+
+    `fatos`: o que tem de estar na história. `negativas`: o que o paciente negou e tem de constar como negado.
+    `desconhecidos`: o que não foi perguntado nem examinado — não pode virar afirmação nem "nega".
+    `vazias`: seções sem nenhuma fonte na entrada (nada inventado).
+    """
+    fatos: list[str] = Field(min_length=1)
+    negativas: list[str] = []
+    desconhecidos: list[str] = []
     vazias: list[SecaoHistoria] = []
 
-    @model_validator(mode="after")
-    def _coerente(self) -> "EsperadoHistoria":
-        if vazias := set(self.deve_conter) & set(self.vazias):
-            raise ValueError(f"seção esperada e vazia ao mesmo tempo: {sorted(vazias)}")
-        if sem_termo := [s for s, termos in self.deve_conter.items() if not termos]:
-            raise ValueError(f"seção sem nenhum termo esperado: {sem_termo}")
-        return self
+
+class DiagnosticoPrincipal(Diagnostico):
+    """`certeza`: suspeita (ex. câncer antes da histopatologia), hipotese ou clinico."""
+    certeza: Literal["suspeita", "hipotese", "clinico"]
 
 
 class EsperadoDiagnosticos(Modelo):
-    """`principal` tem de estar entre os 3; `nao_pode_perder` entre os 3 ou no aviso "não pode perder"."""
-    principal: Diagnostico
+    """`principal` (ou um dos `aceitos`) tem de estar entre os 3; `nao_pode_perder` entre os 3 ou no aviso.
+
+    `rastrear`: o que investigar e registrar a negativa, sem diagnosticar (ex. artrite psoriásica).
+    """
+    principal: DiagnosticoPrincipal
+    aceitos: list[Diagnostico] = []
     nao_pode_perder: Diagnostico | None = None
+    rastrear: list[str] = []
 
 
 class EsperadoSinais(Modelo):
@@ -127,16 +136,18 @@ class EsperadoSinais(Modelo):
 
 
 class EsperadoConduta(Modelo):
-    """`protocolo`: chave da tabela de condutas (None = sem protocolo; a IA sugere e marca).
+    """Critérios clínicos da conduta, avaliados pelo sentido (IA avaliadora) e por regra no que é estruturado.
 
-    `deve_incluir`: termos que têm de aparecer na conduta (exame, encaminhamento, orientação).
-    `proibidos`: o que não pode ser RECOMENDADO nem PRESCRITO (itens da receita/opções marcadas).
-    Citar para contraindicar ("isotretinoína contraindicada") é certo: o comparador do marco 3
-    confere os itens recomendados, não procura o termo no texto inteiro.
+    `protocolo`: chave da tabela de condutas (None = sem protocolo).
+    `urgencia`: rotina, prioritaria ou imediata (regra fixa).
+    `obrigatorios` / `proibidos`: frases clínicas; citar um item para contraindicá-lo NÃO viola `proibidos`.
+    `remedios_proibidos`: nomes (DCB) que não podem estar na receita — conferidos por regra nos itens estruturados.
     """
     protocolo: str | None
-    deve_incluir: list[str] = []
+    urgencia: Literal["rotina", "prioritaria", "imediata"]
+    obrigatorios: list[str] = Field(min_length=1)
     proibidos: list[str] = []
+    remedios_proibidos: list[str] = []
 
 
 class Esperado(Modelo):
@@ -147,7 +158,7 @@ class Esperado(Modelo):
 
 
 class Caso(Modelo):
-    versao_formato: Literal[1]
+    versao_formato: Literal[2]
     id: str
     especialidade: Literal["dermatologia"]
     titulo: str

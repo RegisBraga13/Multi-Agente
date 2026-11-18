@@ -42,15 +42,54 @@ def test_falas_precisam_de_ao_menos_uma_do_paciente():
         Caso.model_validate(dados)
 
 
-def test_secao_nao_pode_ser_esperada_e_vazia_ao_mesmo_tempo():
-    dados = caso_minimo()
-    dados["esperado"]["historia"] = {"deve_conter": {"hf": ["mãe"]}, "vazias": ["hf"]}
-    with pytest.raises(ValidationError):
-        Caso.model_validate(dados)
-
-
 def test_idade_fora_da_faixa():
     dados = caso_minimo()
     dados["entrada"]["paciente"]["idade"] = 121
     with pytest.raises(ValidationError):
         Caso.model_validate(dados)
+
+
+def test_versao_1_e_recusada():
+    dados = caso_minimo()
+    dados["versao_formato"] = 1
+    with pytest.raises(ValidationError):
+        Caso.model_validate(dados)
+
+
+def test_diagnostico_principal_exige_certeza():
+    dados = caso_minimo()
+    del dados["esperado"]["diagnosticos"]["principal"]["certeza"]
+    with pytest.raises(ValidationError):
+        Caso.model_validate(dados)
+
+
+def test_certeza_desconhecida_e_recusada():
+    dados = caso_minimo()
+    dados["esperado"]["diagnosticos"]["principal"]["certeza"] = "confirmado"
+    with pytest.raises(ValidationError):
+        Caso.model_validate(dados)
+
+
+def test_conduta_exige_urgencia():
+    dados = caso_minimo()
+    del dados["esperado"]["conduta"]["urgencia"]
+    with pytest.raises(ValidationError):
+        Caso.model_validate(dados)
+
+
+def test_historia_exige_ao_menos_um_fato():
+    dados = caso_minimo()
+    dados["esperado"]["historia"]["fatos"] = []
+    with pytest.raises(ValidationError):
+        Caso.model_validate(dados)
+
+
+def test_criterios_completos_sao_aceitos():
+    dados = caso_minimo()
+    dados["esperado"]["historia"].update(negativas=["febre"], desconhecidos=["história familiar"])
+    dados["esperado"]["diagnosticos"].update(
+        aceitos=[{"nome": "Rosácea", "cid": "L71.9"}], rastrear=["Hiperandrogenismo: perguntar"]
+    )
+    dados["esperado"]["conduta"].update(proibidos=["Recomendar isotretinoína"], remedios_proibidos=["isotretinoína"])
+    caso = Caso.model_validate(dados)
+    assert caso.esperado.conduta.remedios_proibidos == ["isotretinoína"]

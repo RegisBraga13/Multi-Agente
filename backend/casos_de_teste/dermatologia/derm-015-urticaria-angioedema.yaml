@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-015-urticaria-angioedema
 especialidade: dermatologia
-titulo: Urticária aguda com angioedema
-objetivo: Sinal de alerta grave que não pode ser perdido (inchaço dos lábios após alimento).
+titulo: Urticária aguda com edema labial
+objetivo: Sinal de alerta grave; não basta mencionar anti-histamínico — exige avaliação imediata de via aérea e sinais de anafilaxia; edema labial isolado não prova anafilaxia nem alergia a camarão.
 revisao: {situacao: pendente}
 entrada:
   paciente: {idade: 31, sexo: M}
@@ -26,15 +26,24 @@ entrada:
     achados: Edema labial, sem edema de língua; sem estridor
 esperado:
   historia:
-    deve_conter:
-      qp: [coçam, camarão]
-      hda: [lábios, falta de ar]
-      exame_fisico: [urticas, lábios]
+    fatos:
+      - Urticas pruriginosas fugazes pelo corpo desde ontem, após comer camarão
+      - Edema dos lábios hoje cedo
+    negativas: [falta de ar, edema de língua, uso de medicamentos]
+    desconhecidos: [intervalo entre o camarão e o início, rouquidão, dificuldade para engolir, sintomas gastrointestinais, pressão arterial]
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Urticária alérgica, cid: L50.0}
+    principal: {nome: Urticária aguda, cid: L50.0, certeza: hipotese}
     nao_pode_perder: {nome: Angioedema, cid: T78.3}
   sinais: {disparados: [angioedema]}
   conduta:
     protocolo: urticaria
-    deve_incluir: [anti-histamínico]
+    urgencia: imediata
+    obrigatorios:
+      - Avaliar na hora via aérea, voz, deglutição, respiração, pressão arterial e sintomas gastrointestinais
+      - Se suspeita de anafilaxia, adrenalina intramuscular e emergência
+      - Esclarecer o intervalo e a evolução após o camarão antes de afirmar alergia alimentar
+    proibidos:
+      - Conduta só com anti-histamínico, sem avaliar via aérea e sinais de anafilaxia
+      - Diagnosticar anafilaxia só pelo edema labial
+      - Afirmar alergia a camarão como confirmada

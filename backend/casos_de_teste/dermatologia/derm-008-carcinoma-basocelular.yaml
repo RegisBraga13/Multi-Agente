@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-008-carcinoma-basocelular
 especialidade: dermatologia
-titulo: Carcinoma basocelular na asa nasal
-objetivo: Câncer de pele que não pode ser perdido; usa AAS; alergia a sulfa; biópsia anterior com margens não encontradas no laudo.
+titulo: Suspeita de novo carcinoma basocelular na asa nasal
+objetivo: Câncer de pele que não pode ser perdido; biópsia de 2024 é de outro local e sem margens informadas; AAS após infarto sem suspensão automática; alergia a sulfa.
 revisao: {situacao: pendente}
 entrada:
   paciente:
@@ -42,18 +42,28 @@ entrada:
         - {nome: Margens, valor: null}
 esperado:
   historia:
-    deve_conter:
-      qp: [ferida, nariz, 3 meses]
-      hda: [sangra, casca]
-      ap: [AAS, infarto, sulfa]
-      exame_fisico: [perolada, asa nasal]
-      exames: [basocelular]
+    fatos:
+      - Ferida na asa nasal esquerda que não cicatriza há 3 meses, sangra ao enxugar e forma crosta
+      - Exposição solar ocupacional crônica
+      - Hipertensão e infarto em 2019, em uso de AAS e atenolol
+      - Alergia a sulfa (falta de ar)
+      - Biópsia de 2024 com carcinoma basocelular nodular na região malar esquerda (outro local)
+      - Margens da biópsia de 2024 não informadas no laudo
+    negativas: [uso de anticoagulante além do AAS]
     vazias: [hf]
   diagnosticos:
-    principal: {nome: Carcinoma basocelular, cid: C44.3}
+    principal: {nome: Carcinoma basocelular, cid: C44.3, certeza: suspeita}
     nao_pode_perder: {nome: Carcinoma basocelular, cid: C44.3}
   sinais: {disparados: [ferida-nao-cicatriza, lesao-sangra-facil]}
   conduta:
     protocolo: carcinoma-basocelular
-    deve_incluir: [biópsia]
-    proibidos: [sulfametoxazol]
+    urgencia: prioritaria
+    obrigatorios:
+      - Biópsia da lesão nasal
+      - Plano de tratamento definitivo apropriado para o nariz (área de alto risco)
+      - Avaliar o AAS no contexto do infarto prévio, sem suspensão automática
+    proibidos:
+      - Afirmar que a biópsia de 2024 confirma a lesão nasal
+      - Registrar margens livres na biópsia de 2024 (o laudo não informa)
+      - Suspender o AAS automaticamente
+    remedios_proibidos: [sulfametoxazol]

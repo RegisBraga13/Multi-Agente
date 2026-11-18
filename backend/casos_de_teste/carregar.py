@@ -82,19 +82,25 @@ def _textos(x: object) -> Iterator[str]:
             yield from _textos(v)
 
 
-def _conferir(caso: Caso, caminho: Path, ids_sinais: set[str]) -> list[str]:
+def _conferir(caso: Caso, caminho: Path, sinais: dict[str, SinalAlerta]) -> list[str]:
     erros = []
     if caso.id != caminho.stem:
         erros.append(f"id {caso.id!r} diferente do nome do arquivo")
-    citados = [s.sinal for s in caso.entrada.sinais] + caso.esperado.sinais.disparados
-    erros += [f"sinal de alerta inexistente na lista: {s!r}" for s in citados if s not in ids_sinais]
+    disparados = caso.esperado.sinais.disparados
+    citados = [s.sinal for s in caso.entrada.sinais] + disparados
+    erros += [f"sinal de alerta inexistente na lista: {s!r}" for s in citados if s not in sinais]
+    negados = {s.sinal for s in caso.entrada.sinais if s.resposta == "f"}
+    erros += [f"sinal {s!r} foi negado na consulta e não pode ser esperado como disparado" for s in disparados if s in negados]
+    imediatos = [s for s in disparados if s in sinais and sinais[s].tipo == "urgencia_imediata"]
+    if imediatos and caso.esperado.conduta.urgencia != "imediata":
+        erros.append(f"sinal de urgência imediata ({', '.join(imediatos)}) exige conduta com urgência imediata")
     for texto in _textos(caso.model_dump(mode="json")):
         erros += [f"dado de identidade ({tipo}) no texto: {texto!r}" for tipo, p in IDENTIDADE.items() if p.search(texto)]
     return erros
 
 
 def validar_pasta(pasta: Path, sinais: list[SinalAlerta]) -> Relatorio:
-    ids_sinais = {s.id for s in sinais}
+    por_id = {s.id: s for s in sinais}
     arquivos = sorted(pasta.glob("*.yaml"))
     if not arquivos:
         return Relatorio(casos=[], erros=["nenhum caso encontrado"])
@@ -107,7 +113,7 @@ def validar_pasta(pasta: Path, sinais: list[SinalAlerta]) -> Relatorio:
         except CasoInvalido as erro:
             erros += [f"{caminho.name}: {m}" for m in erro.mensagens]
             continue
-        problemas = _conferir(caso, caminho, ids_sinais)
+        problemas = _conferir(caso, caminho, por_id)
         if caso.id in vistos:
             problemas.append(f"id {caso.id!r} repetido (já usado em {vistos[caso.id]})")
         vistos.setdefault(caso.id, caminho.name)

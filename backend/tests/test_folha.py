@@ -1,11 +1,10 @@
-from app.especialidades.pacote import SinalAlerta
 from casos_de_teste import carregar
 from casos_de_teste.__main__ import main
 from casos_de_teste.folha import montar_folha
 from casos_de_teste.formato import Caso
-from conftest import caso_minimo
+from conftest import caso_minimo, sinal
 
-SINAIS = [SinalAlerta(id="angioedema", texto="Inchaço de lábios/língua ou falta de ar", porque="Via aérea.")]
+SINAIS = [sinal("angioedema", "Inchaço de lábios/língua ou falta de ar"), sinal("gestacao-ou-plano", "Gestante", "muda_tratamento")]
 
 
 def folha(d: dict) -> str:
@@ -72,3 +71,41 @@ def test_cli_folha_grava_o_arquivo(tmp_path, monkeypatch, escrever_caso):
     monkeypatch.setattr(carregar, "PASTA_CASOS", tmp_path)
     assert main(["folha"]) == 0
     assert "Casos de teste" in (tmp_path / "revisao.html").read_text(encoding="utf-8")
+
+
+def test_certeza_aparece_no_diagnostico():
+    d = caso_minimo()
+    d["esperado"]["diagnosticos"]["principal"].update(nome="Melanoma", cid="C43.5", certeza="suspeita")
+    assert "Entre os 3 diagnósticos: suspeita de Melanoma (C43.5)" in folha(d)
+
+
+def test_conduta_mostra_urgencia_criterios_e_receita_proibida():
+    d = caso_minimo()
+    d["esperado"]["conduta"].update(urgencia="imediata", proibidos=["Tratar em ambulatório"], remedios_proibidos=["isotretinoína"])
+    html = folha(d)
+    assert "Urgência: imediata" in html
+    assert "Tratamento tópico para acne" in html and "Tratar em ambulatório" in html
+    assert "Não pode estar na receita: isotretinoína" in html
+
+
+def test_historia_mostra_fatos_negativas_e_desconhecidos():
+    d = caso_minimo()
+    d["esperado"]["historia"].update(negativas=["febre"], desconhecidos=["história familiar"])
+    html = folha(d)
+    assert "Espinhas no rosto há 6 meses" in html
+    assert "Tem de constar como negado: febre" in html
+    assert "Não perguntado ou não examinado (não pode virar afirmação nem “nega”): história familiar" in html
+
+
+def test_sinais_nao_perguntados_sao_ditos():
+    d = caso_minimo()
+    d["entrada"]["sinais"] = [{"sinal": "angioedema", "resposta": "f"}]
+    html = folha(d)
+    assert "Inchaço de lábios/língua ou falta de ar — Não" in html
+    assert "Não perguntados: Gestante" in html
+
+
+def test_lista_de_sinais_mostra_tipo_prazo_e_acao():
+    html = folha(caso_minimo())
+    assert "Urgência imediata" in html and "Muda o tratamento" in html
+    assert "imediato" in html and "Agir" in html

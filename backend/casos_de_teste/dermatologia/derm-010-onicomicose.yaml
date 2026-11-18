@@ -1,8 +1,8 @@
-versao_formato: 1
+versao_formato: 2
 id: derm-010-onicomicose
 especialidade: dermatologia
-titulo: Onicomicose do hálux
-objetivo: Quadro típico; pergunta de diabetes respondida "não" (não dispara o sinal de pé diabético).
+titulo: Suspeita de onicomicose do hálux
+objetivo: Suspeita clínica que exige confirmação micológica antes de antifúngico oral; descamação interdigital como possível tinha dos pés; diabetes negado.
 revisao: {situacao: pendente}
 entrada:
   paciente: {idade: 41, sexo: M}
@@ -28,13 +28,23 @@ entrada:
     achados: Descamação entre os dedos
 esperado:
   historia:
-    deve_conter:
-      qp: [unha, amarelada, 1 ano]
-      hda: [vestiário]
-      exame_fisico: [espessamento, hálux]
+    fatos:
+      - Unha do hálux direito espessada e amarelada há 1 ano, sem dor
+      - Futebol semanal com uso de vestiário coletivo
+      - Descamação interdigital
+    negativas: [diabetes ou problema de circulação, uso de medicamentos]
     vazias: [hf, exames]
   diagnosticos:
-    principal: {nome: Onicomicose, cid: B35.1}
+    principal: {nome: Onicomicose, cid: B35.1, certeza: suspeita}
+    rastrear:
+      - "Tinha dos pés: avaliar a descamação interdigital"
   sinais: {disparados: []}
   conduta:
     protocolo: onicomicose
+    urgencia: rotina
+    obrigatorios:
+      - Confirmação micológica (exame micológico direto e/ou cultura) antes de antifúngico oral
+      - Avaliar e tratar a descamação interdigital como possível tinha dos pés
+    proibidos:
+      - Antifúngico oral sem confirmação micológica
+      - Registrar diabetes (o paciente negou)
