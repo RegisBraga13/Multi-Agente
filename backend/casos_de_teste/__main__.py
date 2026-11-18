@@ -19,11 +19,12 @@ from pathlib import Path
 from app.especialidades.condutas import carregar_protocolos
 from app.especialidades.pacote import carregar_sinais
 from app.provedores.ia import ProvedorIA
+from app.provedores.ia_demonstracao import ProvedorDemonstracao
 from app.provedores.relogio import RelogioSistema
 from casos_de_teste import carregar
 from casos_de_teste.avaliadora import calibrar
 from casos_de_teste.folha import contagem, montar_folha
-from casos_de_teste.medir import ProvedorDemonstracao, medir, texto_do_resumo
+from casos_de_teste.medir import medir, texto_do_resumo
 
 PASTA_RESULTADOS = Path(__file__).parent / "resultados"
 

@@ -35,3 +35,22 @@ def test_servidor_sem_configuracao_falha_na_partida(monkeypatch):
     sys.modules.pop("app.main", None)
     with pytest.raises(ErroConfiguracao):
         importlib.import_module("app.main")
+
+
+def test_ia_provedor_padrao_e_demonstracao():
+    c = carregar_configuracao({"DATABASE_URL": "x", "MEDICO_LOCAL_ID": ID})
+    assert c.ia_provedor == "demonstracao"
+
+
+def test_anthropic_sem_chave_falha_na_partida():
+    with pytest.raises(ErroConfiguracao, match="ANTHROPIC_API_KEY"):
+        carregar_configuracao({"DATABASE_URL": "x", "MEDICO_LOCAL_ID": ID, "IA_PROVEDOR": "anthropic"})
+    c = carregar_configuracao(
+        {"DATABASE_URL": "x", "MEDICO_LOCAL_ID": ID, "IA_PROVEDOR": "anthropic", "ANTHROPIC_API_KEY": "sk-ant-x"}
+    )
+    assert c.ia_provedor == "anthropic"
+
+
+def test_ia_provedor_desconhecido_falha():
+    with pytest.raises(ErroConfiguracao, match="IA_PROVEDOR"):
+        carregar_configuracao({"DATABASE_URL": "x", "MEDICO_LOCAL_ID": ID, "IA_PROVEDOR": "outro"})

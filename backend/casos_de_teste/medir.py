@@ -10,9 +10,7 @@ import time
 import unicodedata
 from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Literal
-
-from pydantic import BaseModel
+from typing import Literal
 
 from app.contratos.base import ModeloApi
 from app.contratos.motor import RegistroDecisao
@@ -23,7 +21,7 @@ from app.motores.conduta import DiagnosticoConfirmado, motor_conduta, remedios_d
 from app.motores.diagnosticos import DiagnosticosIA, HipoteseIA, motor_diagnosticos, seguranca_de
 from app.motores.historia import HistoriaClinica, motor_historia
 from app.motores.sinais import motor_sinais
-from app.provedores.ia import PedidoIA, ProvedorIA, RespostaIA
+from app.provedores.ia import ProvedorIA
 from app.provedores.relogio import Relogio
 from casos_de_teste.avaliadora import Criterio, TipoCriterio, avaliar_detalhado
 from casos_de_teste.entrada import entrada_do_caso
@@ -371,38 +369,6 @@ def medir(
         casos=resultados,
         resumo=resumir(resultados),
     )
-
-
-class ProvedorDemonstracao:
-    """Saídas fixas e válidas para testar o fio da medição sem gastar (`medir --falso`). Não mede nada clínico."""
-
-    HDA = "Quadro em avaliação."
-
-    def gerar(
-        self, pedido: PedidoIA, esquema: type[BaseModel], ao_escrever: Callable[[str], None] | None = None
-    ) -> RespostaIA:
-        meta = {"confianca": 0.5, "evidencias": [], "avisos": [], "origem": "demonstração"}
-        resultado: dict[str, Any]
-        if pedido.motor == "historia":
-            resultado = {k: "" for k in ["qp", "ap", "hp", "hf", "exameFisico", "examesTexto"]} | {"hda": self.HDA}
-        elif pedido.motor == "sinais":
-            resultado = {"detectados": [], "extras": []}
-        elif pedido.motor == "diagnosticos":
-            ev = {"lado": "favor", "texto": "demonstração", "secao": "hda", "trecho": self.HDA}
-            hip = {"nome": "Demonstração", "cid": "L98.9", "certeza": "hipotese", "pct": 50, "evidencias": [ev]}
-            resultado = {"hipoteses": [hip], "naoPodePerder": None, "rastrear": []}
-        elif pedido.motor == "conduta-complemento":
-            resultado = {"orientacoes": [], "alertas": []}
-        elif pedido.motor == "conduta":
-            resultado = {"grupos": [], "alertas": []}
-        else:  # avaliadora: tudo em dúvida
-            resultado = {
-                "vereditos": [
-                    {"n": c["n"], "veredito": "duvida", "trecho": None, "justificativa": "demonstração"}
-                    for c in pedido.dados["criterios"]
-                ]
-            }
-        return RespostaIA({"resultado": resultado, "meta": meta}, "demonstracao", "0", 0, 0, None)
 
 
 def texto_do_resumo(r: RelatorioMedicao) -> str:

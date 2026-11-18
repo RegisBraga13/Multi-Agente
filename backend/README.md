@@ -9,6 +9,21 @@ conduta (tabela primeiro) — medidos nos casos de teste por uma IA avaliadora +
 Ainda sem rotas da consulta nem tela ligada (marcos 3B e 3C). Base do marco 2: contratos tipados, política,
 privacidade antes da IA, banco da consulta (0007/0008, sob RLS) e cadastro de paciente com id próprio.
 
+## A consulta no servidor (marco 3B)
+
+Etapas `anamnese → exame → historia → diagnosticos → conduta`, cada uma um bloco que o médico revisa e
+oficializa; a IA de cada etapa só roda com a anterior oficializada (`POST /consultas/{id}/{etapa}/gerar`,
+escrita ao vivo por SSE); documentos em `/consultas/{id}/documentos/{tipo}`; prontuário proposto em
+`GET /consultas/{id}/prontuario`, gravado em `POST /consultas/{id}/finalizar`; adendos e histórico do paciente
+em `/consultas/{id}/adendos` e `GET /pacientes/{id}/prontuario` ([ADR 0005](../docs/decisoes/0005-consulta-no-servidor.md)).
+
+IA do servidor: `IA_PROVEDOR=demonstracao` (padrão, sem chave e sem custo) ou `IA_PROVEDOR=anthropic`
+(usa `ANTHROPIC_API_KEY` do `backend/.env`):
+
+```bash
+IA_PROVEDOR=anthropic docker compose up -d --build   # IA real (custa dinheiro a cada geração)
+```
+
 ## Medir os motores (custa dinheiro)
 
 A chave da Anthropic fica em `backend/.env` (`ANTHROPIC_API_KEY=…`; o arquivo nunca vai para o git).
