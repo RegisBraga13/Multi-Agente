@@ -6,7 +6,7 @@ import type { DadosPessoais } from './regras'
 const partes = partesPreConsulta('dermatologia')
 const dados: DadosPessoais = {
   nomeCompleto: 'Maria Lima', nascimento: '1990-05-02', sexo: 'M', whatsapp: '85912345678', email: '',
-  cidade: 'Fortaleza', uf: 'CE', profissao: '', trabalhoExposto: '',
+  cidade: 'Fortaleza', uf: 'CE', estadoCivil: '', profissao: '', trabalhoExposto: '',
 }
 const hoje = new Date(2026, 10, 16)
 
@@ -14,7 +14,7 @@ describe('blocosDoFormulario', () => {
   it('identificação obrigatória, trabalho e as partes da especialidade opcionais', () => {
     const b = blocosDoFormulario(partes)
     expect(b.map((x) => x.titulo)).toEqual([
-      'Identificação', 'Trabalho', 'Queixa principal', 'Fototipo e exposição ao sol',
+      'Identificação', 'Estado civil e trabalho', 'Queixa principal', 'Fototipo e exposição ao sol',
       'Rotina de cuidados', 'Saúde geral', 'Histórico familiar', 'Fotos',
     ])
     expect(b.map((x) => x.obrigatorio)).toEqual([true, false, false, false, false, false, false, false])

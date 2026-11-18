@@ -66,6 +66,19 @@ export function validarPedido(r: RascunhoPedido): ErrosPedido {
   return e
 }
 
+export type EstadoCivil = 'solteiro' | 'casado' | 'uniao-estavel' | 'separado' | 'divorciado' | 'viuvo'
+/** Opções do formulário (rótulo para o paciente escolher). */
+export const ESTADOS_CIVIS: { valor: EstadoCivil; rotulo: string }[] = [
+  { valor: 'solteiro', rotulo: 'Solteiro(a)' }, { valor: 'casado', rotulo: 'Casado(a)' }, { valor: 'uniao-estavel', rotulo: 'União estável' },
+  { valor: 'separado', rotulo: 'Separado(a)' }, { valor: 'divorciado', rotulo: 'Divorciado(a)' }, { valor: 'viuvo', rotulo: 'Viúvo(a)' },
+]
+/** Estado civil no texto clínico, concordando com o sexo ("casado"/"casada"; sexo "outro" → "casado(a)"). */
+export function estadoCivilNoTexto(e: EstadoCivil, sexo: 'F' | 'M' | 'outro' | ''): string {
+  if (e === 'uniao-estavel') return 'em união estável'
+  const m = { solteiro: 'solteiro', casado: 'casado', separado: 'separado', divorciado: 'divorciado', viuvo: 'viúvo' }[e]
+  return sexo === 'F' ? `${m.slice(0, -1)}a` : sexo === 'M' ? m : `${m}(a)`
+}
+
 export type DadosPessoais = {
   nomeCompleto: string
   nascimento: string // YYYY-MM-DD
@@ -74,6 +87,7 @@ export type DadosPessoais = {
   email: string
   cidade: string
   uf: string
+  estadoCivil: EstadoCivil | '' // opcional
   profissao: string // opcional
   trabalhoExposto: 'sim' | 'nao' | '' // ao ar livre, ao sol ou a produtos químicos; opcional
 }

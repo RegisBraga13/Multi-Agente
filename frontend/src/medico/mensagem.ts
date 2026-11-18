@@ -2,7 +2,7 @@
 // Enquanto não há envio automático, o paciente manda o formulário pelo próprio WhatsApp:
 // a página abre a conversa com esta mensagem pronta. Fotos não cabem no link; vão em seguida.
 import { perguntaVisivel, type Parte, type RespostasPreConsulta } from './pre-consulta'
-import { calcularIdade, formatarWhatsapp, normalizarWhatsapp, type DadosPessoais, type RascunhoPedido } from './regras'
+import { ESTADOS_CIVIS, calcularIdade, formatarWhatsapp, normalizarWhatsapp, type DadosPessoais, type RascunhoPedido } from './regras'
 import { NOME_MODALIDADE, rotuloDiaLongo } from './textos'
 import type { Medico } from './tipos'
 
@@ -46,12 +46,13 @@ export function mensagemFormulario({ medico, pedido, dados, partes, respostas, f
     ['Cidade', dados.cidade.trim() && `${dados.cidade.trim()}/${dados.uf}`],
   ]
   const trabalho: [string, string][] = [
+    ['Estado civil', ESTADOS_CIVIS.find((x) => x.valor === dados.estadoCivil)?.rotulo ?? ''],
     ['Profissão', dados.profissao.trim()],
     ['Trabalha ao ar livre, exposto ao sol ou a produtos químicos', SIM_NAO[dados.trabalhoExposto]],
   ]
   const comValor = (l: [string, string][]) => l.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`)
   linhas.push('', '*1. Identificação*', ...comValor(ident))
-  if (comValor(trabalho).length) linhas.push('', '*2. Trabalho*', ...comValor(trabalho))
+  if (comValor(trabalho).length) linhas.push('', '*2. Estado civil e trabalho*', ...comValor(trabalho))
 
   let respondeu = false
   partes.forEach((parte, i) => {

@@ -68,7 +68,7 @@ describe('validarDadosPessoais', () => {
     const d: DadosPessoais = {
       nomeCompleto: 'Maria Lima', nascimento: '1990-05-02', sexo: 'F',
       whatsapp: '85991018813', email: '', cidade: 'Fortaleza', uf: 'CE',
-      profissao: '', trabalhoExposto: '',
+      estadoCivil: '', profissao: '', trabalhoExposto: '',
     }
     expect(validarDadosPessoais(d, hoje)).toEqual({})
     // profissão e trabalho exposto são opcionais

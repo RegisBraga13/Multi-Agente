@@ -1,7 +1,8 @@
 // História clínica: montada SÓ com a anamnese e o exame físico salvos (Constituição, fase 2).
 // Simulação da IA: organiza o que foi salvo em seções, como na landing.
 import { idade } from '../modulo/dia'
-import type { Atendimento } from '../modulo/tipos'
+import type { Atendimento, Ficha } from '../modulo/tipos'
+import { estadoCivilNoTexto } from '../medico/regras'
 import { minuscula, type Complementar, type Fala, type RespostaPergunta } from './exemplo'
 import type { RespostaAlerta } from './tipos'
 
@@ -37,10 +38,15 @@ const maiuscula = (x: string) => x.charAt(0).toUpperCase() + x.slice(1)
 const lista = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} e ${xs[xs.length - 1]}`)
 
 /** História da doença atual, em linguagem médica corrida (como na landing), a partir das falas do paciente. */
-function hda(anamnese: string, idadeAnos: number, falas: Fala[], extras: string[]): string {
+/** `ident`: "Paciente, 52 anos, casado, comerciante" (estado civil e profissão da ficha; o que não foi respondido não entra) */
+function hda(anamnese: string, ident: string, falas: Fala[], extras: string[]): string {
   const linhas = anamnese.split('\n').map((l) => l.trim()).filter(Boolean)
   // anamnese escrita à mão (sem falas): o texto do médico entra inteiro
-  if (!linhas.some((l) => /^(Médico|Paciente):/.test(l))) return [linhas.join(' '), ...extras].filter(Boolean).join(' ') || 'Não registrada.'
+  // (a identificação abre a HDA, a menos que o médico já tenha começado por "Paciente…")
+  if (!linhas.some((l) => /^(Médico|Paciente):/.test(l))) {
+    const escrito = [linhas.join(' '), ...extras].filter(Boolean).join(' ')
+    return !escrito ? 'Não registrada.' : /^paciente\b/i.test(escrito) ? escrito : `${ident}. ${escrito}`
+  }
   const comoEscrever = new Map(falas.filter((f) => f.quem === 'Paciente' && f.clinico !== undefined).map((f) => [f.texto, f.clinico!]))
   const partes = linhas
     .filter((l) => l.startsWith('Paciente:'))
@@ -48,12 +54,12 @@ function hda(anamnese: string, idadeAnos: number, falas: Fala[], extras: string[
     // fala conhecida → como a IA escreve; fala nova (fora do roteiro) → entra como relato
     .map((t) => (comoEscrever.has(t) ? comoEscrever.get(t)! : `Relata: ${t}`))
     .filter(Boolean)
-  if (!partes.length) return extras.length ? `Paciente de ${idadeAnos} anos. ${extras.join(' ')}` : 'Não registrada.'
+  if (!partes.length) return extras.length ? `${ident}. ${extras.join(' ')}` : 'Não registrada.'
   // a IA organiza: a queixa vem primeiro, mesmo que tenha sido dita depois (ex.: perguntas feitas no começo)
   const q = partes.findIndex((x) => x.startsWith('refere '))
   if (q > 0) partes.unshift(...partes.splice(q, 1))
   const [primeira, ...resto] = partes
-  const inicio = primeira.startsWith('refere ') ? ponto(`Paciente de ${idadeAnos} anos ${primeira}`) : `Paciente de ${idadeAnos} anos. ${ponto(maiuscula(primeira))}`
+  const inicio = primeira.startsWith('refere ') ? ponto(`${ident}, ${primeira}`) : `${ident}. ${ponto(maiuscula(primeira))}`
   return [inicio, ...resto.map((x) => ponto(maiuscula(x))), ...extras].join(' ')
 }
 
@@ -71,6 +77,11 @@ function exameFisico(exame: { rotulo: string; valor: string }[]): string {
     obs,
   ].filter(Boolean)
   return frases.length ? frases.map(ponto).join(' ') : 'Não registrado.'
+}
+
+/** "Paciente, 52 anos, casado, comerciante": idade de hoje + estado civil e profissão da ficha desta consulta (mudou na ficha, muda aqui). */
+export function identificacaoHda(anos: number, f: Pick<Extract<Ficha, { situacao: 'pronta' }>, 'sexo' | 'estadoCivil' | 'profissao'> | null): string {
+  return ['Paciente', `${anos} anos`, f?.estadoCivil ? estadoCivilNoTexto(f.estadoCivil, f.sexo) : '', minuscula(f?.profissao.trim() ?? '')].filter(Boolean).join(', ')
 }
 
 export function montarHistoria(
@@ -111,7 +122,7 @@ export function montarHistoria(
   return [
     { rotulo: 'Identificação', texto: `${at.paciente.nome}, ${anos} anos · ${at.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · ${at.modalidade === 'online' ? 'Online' : 'Presencial'}` },
     { rotulo: 'Queixa principal', texto: pronta?.queixa || 'Não registrada na ficha.' },
-    { rotulo: 'História da doença atual', texto: hda(anamnese, anos, contexto.falas, respostas('hda')) },
+    { rotulo: 'História da doença atual', texto: hda(anamnese, identificacaoHda(anos, pronta), contexto.falas, respostas('hda')) },
     { rotulo: 'Antecedentes e alertas', texto: antecedentes },
     { rotulo: 'Exame físico', texto: exameFisico(exame) },
     { rotulo: 'Exames complementares', texto: exames },

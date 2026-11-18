@@ -1,5 +1,6 @@
 // Tipos da página inicial do módulo. Já no formato da futura tabela `appointments`,
 // para a ligação ao Supabase não exigir refazer a tela.
+import type { EstadoCivil } from '../medico/regras'
 import type { Modalidade } from '../medico/tipos'
 
 export type TipoAtendimento = 'consulta' | 'retorno'
@@ -10,6 +11,10 @@ export type Ficha =
       situacao: 'pronta'
       /** 'HH:MM' em que chegou */
       recebidaAs: string
+      /** da identificação do formulário (sexo é obrigatório; estado civil e profissão, opcionais: '' = não respondeu) */
+      sexo: 'F' | 'M' | 'outro'
+      estadoCivil: EstadoCivil | ''
+      profissao: string
       queixa: string
       emUso: string[]
       antecedentes: string[]

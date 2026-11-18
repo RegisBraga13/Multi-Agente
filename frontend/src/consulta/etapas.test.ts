@@ -87,7 +87,7 @@ describe('podeOficializar', () => {
 })
 
 describe('podeGravar', () => {
-  const pronta = { situacao: 'pronta' as const, recebidaAs: '07:00', queixa: '', emUso: [], antecedentes: [], alergias: [] }
+  const pronta = { situacao: 'pronta' as const, recebidaAs: '07:00', sexo: 'F' as const, estadoCivil: '' as const, profissao: '', queixa: '', emUso: [], antecedentes: [], alergias: [] }
   it('só com ficha pronta e transcrição aceita', () => {
     expect(podeGravar({ ...pronta, transcricao: 'aceita' })).toBe(true)
     expect(podeGravar({ ...pronta, transcricao: 'recusada' })).toBe(false)

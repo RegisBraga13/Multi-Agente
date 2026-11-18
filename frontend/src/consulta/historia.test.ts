@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { agendaDoDia } from '../modulo/exemplo'
 import { conteudoDaConsulta } from './exemplo'
-import { atualizarHistoria, montarHistoria } from './historia'
+import { atualizarHistoria, identificacaoHda, montarHistoria } from './historia'
 
 const agora = new Date(2026, 10, 16, 7, 0)
 const antonio = agendaDoDia('2026-11-16', agora).find((x) => x.paciente.nome === 'Antônio Barbosa')!
@@ -18,12 +18,12 @@ describe('montarHistoria', () => {
   })
   it('a história atual vem só das falas do paciente, em linguagem médica corrida (como na landing)', () => {
     const hda = h[2].texto
-    expect(hda.startsWith('Paciente de 73 anos refere ferida no nariz que não cicatriza há 3 meses.')).toBe(true)
+    expect(hda.startsWith('Paciente, 73 anos, refere ferida no nariz que não cicatriza há 3 meses.')).toBe(true)
     expect(hda).not.toContain('Me conta')
   })
   it('a queixa abre a HDA mesmo quando foi dita depois de outras falas', () => {
     const fora = ['Médico: Toma anticoagulante?', 'Paciente: AAS 100 mg.', 'Médico: Me conta.', 'Paciente: Ferida no nariz que não cicatriza há 3 meses.'].join(String.fromCharCode(10))
-    expect(montarHistoria(antonio, agora, fora, exame, [], contexto)[2].texto.startsWith('Paciente de 73 anos refere ferida no nariz')).toBe(true)
+    expect(montarHistoria(antonio, agora, fora, exame, [], contexto)[2].texto.startsWith('Paciente, 73 anos, refere ferida no nariz')).toBe(true)
   })
   it('pergunta respondida entra contextualizada (HDA ou antecedentes); sem resposta não entra', () => {
     const p = (texto: string, secao: 'hda' | 'ant') => ({ texto, sim: `${texto} sim.`, nao: `${texto} não.`, secao })
@@ -42,8 +42,9 @@ describe('montarHistoria', () => {
     expect(hda).toContain('Sangramento ao trauma leve, com formação de crosta.')
     expect(hda).not.toMatch(/AAS|Atenolol|Sulfa/i)
   })
-  it('anamnese escrita à mão (sem falas) entra inteira', () => {
-    expect(montarHistoria(antonio, agora, 'Lesão no nariz há 3 meses.', exame, [])[2].texto).toBe('Lesão no nariz há 3 meses.')
+  it('anamnese escrita à mão (sem falas) entra inteira, depois da identificação (se o médico não começou por "Paciente")', () => {
+    expect(montarHistoria(antonio, agora, 'Lesão no nariz há 3 meses.', exame, [])[2].texto).toBe('Paciente, 73 anos. Lesão no nariz há 3 meses.')
+    expect(montarHistoria(antonio, agora, 'Paciente refere lesão no nariz.', exame, [])[2].texto).toBe('Paciente refere lesão no nariz.')
   })
   it('o exame físico usa os valores salvos (inclusive editados) e pula campos vazios', () => {
     const editado = exame.map((x) => (x.rotulo === 'Localização' ? { ...x, valor: 'Asa nasal direita' } : x.rotulo === 'Extensão' ? { ...x, valor: '' } : x))
@@ -86,5 +87,23 @@ describe('atualizarHistoria', () => {
     expect(r.textos[1]).toBe('b1 editado pelo médico')
     expect(r.mudou[1]).toBe(false)
     expect(r.sugestoes).toEqual([null, 'b2', null])
+  })
+})
+
+describe('identificação na HDA (dados da ficha)', () => {
+  it('idade + estado civil + profissão; o que não foi respondido não entra', () => {
+    expect(identificacaoHda(52, { sexo: 'M', estadoCivil: 'casado', profissao: 'Comerciante' })).toBe('Paciente, 52 anos, casado, comerciante')
+    expect(identificacaoHda(54, { sexo: 'M', estadoCivil: 'divorciado', profissao: 'Desempregado' })).toBe('Paciente, 54 anos, divorciado, desempregado')
+    expect(identificacaoHda(34, { sexo: 'F', estadoCivil: 'viuvo', profissao: '' })).toBe('Paciente, 34 anos, viúva')
+    expect(identificacaoHda(30, { sexo: 'outro', estadoCivil: 'uniao-estavel', profissao: 'Professor' })).toBe('Paciente, 30 anos, em união estável, professor')
+    expect(identificacaoHda(30, { sexo: 'outro', estadoCivil: 'solteiro', profissao: '' })).toBe('Paciente, 30 anos, solteiro(a)')
+    expect(identificacaoHda(73, { sexo: 'M', estadoCivil: '', profissao: '' })).toBe('Paciente, 73 anos')
+    expect(identificacaoHda(40, null)).toBe('Paciente, 40 anos')
+  })
+  it('o João (ficha: casado, comerciante) abre a HDA assim', () => {
+    const joao = agendaDoDia('2026-11-13', agora).find((x) => x.paciente.nome === 'João Pedro Lima')!
+    const cj = conteudoDaConsulta(joao, 'dermatologia')
+    const fala = 'Paciente: Placas vermelhas com descamação nos cotovelos e joelhos.'
+    expect(montarHistoria(joao, agora, fala, [], [], { falas: cj.falas, sinais: [] })[2].texto).toMatch(/^Paciente, 52 anos, casado, comerciante, refere /)
   })
 })

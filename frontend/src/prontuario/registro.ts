@@ -69,7 +69,7 @@ const EXEMPLOS: Record<string, EntradaProntuario[]> = {
     secoes: [
       { titulo: '', linhas: [
         { rotulo: 'QP', texto: 'Placas vermelhas com descamação nos cotovelos e joelhos.' },
-        { rotulo: 'HDA', texto: 'Paciente de 52 anos refere placas avermelhadas e descamativas nos cotovelos e joelhos há 2 anos, com piora no último inverno. Prurido leve. Nega dor articular.' },
+        { rotulo: 'HDA', texto: 'Paciente, 52 anos, casado, comerciante, refere placas avermelhadas e descamativas nos cotovelos e joelhos há 2 anos, com piora no último inverno. Prurido leve. Nega dor articular.' },
         { rotulo: 'AP', texto: 'Hipertensão arterial. Em uso de losartana 50 mg 1x/dia. Alergia a dipirona (inchaço no rosto).' },
       ] },
       { titulo: '', linhas: [

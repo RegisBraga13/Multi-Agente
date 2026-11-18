@@ -10,7 +10,7 @@ const pedido: RascunhoPedido = {
 }
 const dados: DadosPessoais = {
   nomeCompleto: 'Maria Lima', nascimento: '1990-05-02', sexo: 'F', whatsapp: '85912345678', email: '',
-  cidade: 'Fortaleza', uf: 'CE', profissao: '', trabalhoExposto: 'sim',
+  cidade: 'Fortaleza', uf: 'CE', estadoCivil: '', profissao: '', trabalhoExposto: 'sim',
 }
 const hoje = new Date(2026, 10, 15)
 const base = { medico: MEDICO_EXEMPLO, pedido, dados, partes: partesPreConsulta('dermatologia'), fotos: 0, hoje }
@@ -31,7 +31,7 @@ describe('mensagemFormulario', () => {
     expect(m).toContain('Sexo: Feminino')
     expect(m).toContain('WhatsApp: (85) 91234-5678')
     expect(m).toContain('Cidade: Fortaleza/CE')
-    expect(m).toContain('*2. Trabalho*\nTrabalha ao ar livre, exposto ao sol ou a produtos químicos: Sim')
+    expect(m).toContain('*2. Estado civil e trabalho*\nTrabalha ao ar livre, exposto ao sol ou a produtos químicos: Sim')
     expect(m).not.toContain('E-mail')
     expect(m).not.toContain('Profissão')
   })
@@ -45,7 +45,7 @@ describe('mensagemFormulario', () => {
 
   it('sem trabalho preenchido, o bloco não aparece; particular aparece como particular', () => {
     const m = mensagemFormulario({ ...base, pedido: { ...pedido, atendimento: 'particular' }, dados: { ...dados, trabalhoExposto: '' }, respostas: {} })
-    expect(m).not.toContain('Trabalho')
+    expect(m).not.toContain('Estado civil e trabalho')
     expect(m).toContain('Atendimento: Particular')
   })
 

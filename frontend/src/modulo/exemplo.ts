@@ -1,26 +1,27 @@
 // Agenda de exemplo da página inicial do módulo (Dra. Ana Souza, dermatologia).
 // Pacientes fictícios; nada vem do banco ainda. Determinística: mesma data, mesma lista.
 import { dataLocal } from '../medico/exemplo'
+import type { EstadoCivil } from '../medico/regras'
 import type { Modalidade } from '../medico/tipos'
 import { ordenarPorHorario, paraData } from './dia'
 import type { Atendimento, Ficha, TipoAtendimento } from './tipos'
 
 // Pacientes fictícios com o que cada um escreveria na ficha da pré-consulta.
-type Conteudo = { queixa: string; emUso: string[]; antecedentes: string[]; alergias: { substancia: string; reacao: string }[] }
+type Conteudo = { sexo: 'F' | 'M'; estadoCivil: EstadoCivil | ''; profissao: string; queixa: string; emUso: string[]; antecedentes: string[]; alergias: { substancia: string; reacao: string }[] }
 const PACIENTES: { nome: string; nascimento: string; ficha: Conteudo }[] = [
-  { nome: 'Mariana Costa', nascimento: '1992-03-14', ficha: { queixa: 'Espinhas no rosto e nas costas há 6 meses, piora antes da menstruação.', emUso: ['Anticoncepcional oral'], antecedentes: [], alergias: [] } },
-  { nome: 'João Pedro Lima', nascimento: '1974-08-02', ficha: { queixa: 'Placas vermelhas com descamação nos cotovelos e joelhos.', emUso: ['Losartana 50 mg, 1x ao dia'], antecedentes: ['Pressão alta'], alergias: [{ substancia: 'Dipirona', reacao: 'inchaço no rosto' }] } },
-  { nome: 'Beatriz Almeida', nascimento: '2008-05-21', ficha: { queixa: 'Cravos e espinhas na testa há 1 ano.', emUso: [], antecedentes: [], alergias: [] } },
-  { nome: 'Carlos Henrique Rocha', nascimento: '1961-11-30', ficha: { queixa: 'Pinta nas costas que mudou de cor e cresceu.', emUso: ['Metformina 850 mg, 2x ao dia', 'Sinvastatina 20 mg'], antecedentes: ['Diabetes', 'Colesterol alto'], alergias: [] } },
-  { nome: 'Fernanda Oliveira', nascimento: '1988-01-09', ficha: { queixa: 'Manchas escuras no rosto depois da gravidez.', emUso: [], antecedentes: [], alergias: [{ substancia: 'Penicilina', reacao: 'placas pelo corpo' }] } },
-  { nome: 'Rafael Monteiro', nascimento: '1996-07-17', ficha: { queixa: 'Queda de cabelo nas entradas há 2 anos.', emUso: [], antecedentes: [], alergias: [] } },
-  { nome: 'Luíza Fernandes', nascimento: '1979-12-03', ficha: { queixa: 'Vermelhidão e ardor no rosto, piora com sol e calor.', emUso: ['Levotiroxina 50 mcg'], antecedentes: ['Hipotireoidismo'], alergias: [] } },
-  { nome: 'Antônio Barbosa', nascimento: '1953-04-26', ficha: { queixa: 'Ferida no nariz que não cicatriza há 3 meses.', emUso: ['AAS 100 mg', 'Atenolol 25 mg'], antecedentes: ['Pressão alta', 'Infarto em 2019'], alergias: [{ substancia: 'Sulfa', reacao: 'falta de ar' }] } },
-  { nome: 'Camila Sampaio', nascimento: '2001-09-12', ficha: { queixa: 'Coceira e bolinhas nas mãos, piora ao lavar louça.', emUso: [], antecedentes: ['Rinite'], alergias: [] } },
-  { nome: 'Gustavo Nogueira', nascimento: '1985-06-05', ficha: { queixa: 'Unha do pé grossa e amarelada há 1 ano.', emUso: [], antecedentes: [], alergias: [] } },
-  { nome: 'Helena Martins', nascimento: '1969-02-19', ficha: { queixa: 'Manchas vermelhas no braço que coçam, há 3 semanas.', emUso: ['Losartana 50 mg, 1x ao dia'], antecedentes: ['Pressão alta'], alergias: [{ substancia: 'Dipirona', reacao: 'inchaço no rosto' }] } },
-  { nome: 'Pedro Cavalcante', nascimento: '2012-10-08', ficha: { queixa: 'Verrugas nos dedos das mãos.', emUso: [], antecedentes: [], alergias: [] } },
-  { nome: 'Juliana Teixeira', nascimento: '1990-08-27', ficha: { queixa: 'Caspa e coceira no couro cabeludo.', emUso: [], antecedentes: [], alergias: [] } },
+  { nome: 'Mariana Costa', nascimento: '1992-03-14', ficha: { sexo: 'F', estadoCivil: '', profissao: '', queixa: 'Espinhas no rosto e nas costas há 6 meses, piora antes da menstruação.', emUso: ['Anticoncepcional oral'], antecedentes: [], alergias: [] } },
+  { nome: 'João Pedro Lima', nascimento: '1974-08-02', ficha: { sexo: 'M', estadoCivil: 'casado', profissao: 'Comerciante', queixa: 'Placas vermelhas com descamação nos cotovelos e joelhos.', emUso: ['Losartana 50 mg, 1x ao dia'], antecedentes: ['Pressão alta'], alergias: [{ substancia: 'Dipirona', reacao: 'inchaço no rosto' }] } },
+  { nome: 'Beatriz Almeida', nascimento: '2008-05-21', ficha: { sexo: 'F', estadoCivil: '', profissao: '', queixa: 'Cravos e espinhas na testa há 1 ano.', emUso: [], antecedentes: [], alergias: [] } },
+  { nome: 'Carlos Henrique Rocha', nascimento: '1961-11-30', ficha: { sexo: 'M', estadoCivil: '', profissao: '', queixa: 'Pinta nas costas que mudou de cor e cresceu.', emUso: ['Metformina 850 mg, 2x ao dia', 'Sinvastatina 20 mg'], antecedentes: ['Diabetes', 'Colesterol alto'], alergias: [] } },
+  { nome: 'Fernanda Oliveira', nascimento: '1988-01-09', ficha: { sexo: 'F', estadoCivil: '', profissao: '', queixa: 'Manchas escuras no rosto depois da gravidez.', emUso: [], antecedentes: [], alergias: [{ substancia: 'Penicilina', reacao: 'placas pelo corpo' }] } },
+  { nome: 'Rafael Monteiro', nascimento: '1996-07-17', ficha: { sexo: 'M', estadoCivil: '', profissao: '', queixa: 'Queda de cabelo nas entradas há 2 anos.', emUso: [], antecedentes: [], alergias: [] } },
+  { nome: 'Luíza Fernandes', nascimento: '1979-12-03', ficha: { sexo: 'F', estadoCivil: '', profissao: '', queixa: 'Vermelhidão e ardor no rosto, piora com sol e calor.', emUso: ['Levotiroxina 50 mcg'], antecedentes: ['Hipotireoidismo'], alergias: [] } },
+  { nome: 'Antônio Barbosa', nascimento: '1953-04-26', ficha: { sexo: 'M', estadoCivil: '', profissao: '', queixa: 'Ferida no nariz que não cicatriza há 3 meses.', emUso: ['AAS 100 mg', 'Atenolol 25 mg'], antecedentes: ['Pressão alta', 'Infarto em 2019'], alergias: [{ substancia: 'Sulfa', reacao: 'falta de ar' }] } },
+  { nome: 'Camila Sampaio', nascimento: '2001-09-12', ficha: { sexo: 'F', estadoCivil: '', profissao: '', queixa: 'Coceira e bolinhas nas mãos, piora ao lavar louça.', emUso: [], antecedentes: ['Rinite'], alergias: [] } },
+  { nome: 'Gustavo Nogueira', nascimento: '1985-06-05', ficha: { sexo: 'M', estadoCivil: '', profissao: '', queixa: 'Unha do pé grossa e amarelada há 1 ano.', emUso: [], antecedentes: [], alergias: [] } },
+  { nome: 'Helena Martins', nascimento: '1969-02-19', ficha: { sexo: 'F', estadoCivil: '', profissao: '', queixa: 'Manchas vermelhas no braço que coçam, há 3 semanas.', emUso: ['Losartana 50 mg, 1x ao dia'], antecedentes: ['Pressão alta'], alergias: [{ substancia: 'Dipirona', reacao: 'inchaço no rosto' }] } },
+  { nome: 'Pedro Cavalcante', nascimento: '2012-10-08', ficha: { sexo: 'M', estadoCivil: '', profissao: '', queixa: 'Verrugas nos dedos das mãos.', emUso: [], antecedentes: [], alergias: [] } },
+  { nome: 'Juliana Teixeira', nascimento: '1990-08-27', ficha: { sexo: 'F', estadoCivil: '', profissao: '', queixa: 'Caspa e coceira no couro cabeludo.', emUso: [], antecedentes: [], alergias: [] } },
 ]
 
 // Cada horário do dia com o tipo, a modalidade, o pagamento, a situação da ficha e se já tem prontuário.

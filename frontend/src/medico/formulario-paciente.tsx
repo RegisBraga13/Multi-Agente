@@ -8,7 +8,7 @@ import { blocoRespondido, blocosDoFormulario, type Bloco } from './blocos'
 import { GrupoOpcoes } from './opcoes'
 import { TextoCrescente } from './texto-crescente'
 import { alternarOpcao, partesPreConsulta, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
-import { calcularIdade, formatarWhatsapp, normalizarWhatsapp, validarDadosPessoais, validarFoto, type DadosPessoais, type RascunhoPedido } from './regras'
+import { ESTADOS_CIVIS, calcularIdade, formatarWhatsapp, normalizarWhatsapp, validarDadosPessoais, validarFoto, type DadosPessoais, type RascunhoPedido } from './regras'
 import { diaComSemana, horaCurta, NOME_MODALIDADE } from './textos'
 import type { Medico } from './tipos'
 
@@ -27,7 +27,7 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
   const whatsapp = normalizarWhatsapp(pedido.whatsapp)
   const [dados, setDados] = useState<DadosPessoais>({
     nomeCompleto: pedido.nome, nascimento: '', sexo: '', whatsapp: pedido.whatsapp, email: '', cidade: '', uf: '',
-    profissao: '', trabalhoExposto: '',
+    estadoCivil: '', profissao: '', trabalhoExposto: '',
   })
   const partes = partesPreConsulta(medico.especialidade)
   const [pre, setPre] = useState<RespostasPreConsulta>({})
@@ -157,6 +157,16 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
     if (b.id === 'trabalho') {
       return (
         <div className="grid gap-5">
+          <div className="w-[12rem]">
+            <Campo rotulo="Estado civil">
+              {(p) => (
+                <select {...p} value={dados.estadoCivil} onChange={(e) => muda('estadoCivil', e.target.value as DadosPessoais['estadoCivil'])} className={classeEntrada(p)}>
+                  <option value="">Escolha</option>
+                  {ESTADOS_CIVIS.map((x) => <option key={x.valor} value={x.valor}>{x.rotulo}</option>)}
+                </select>
+              )}
+            </Campo>
+          </div>
           <Campo rotulo="Profissão">
             {(p) => <input {...p} autoComplete="organization-title" value={dados.profissao} onChange={(e) => muda('profissao', e.target.value)} className={classeEntrada(p)} />}
           </Campo>

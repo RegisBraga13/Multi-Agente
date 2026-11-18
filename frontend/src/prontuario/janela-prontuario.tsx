@@ -16,6 +16,8 @@ export function JanelaProntuario() {
   const [busca] = useSearchParams()
   const esp = buscarEspecialidade(slug)
   const nome = busca.get('nome') ?? ''
+  // nascimento: vem da chave do paciente (não muda)
+  const nascimento = /^\d{4}-\d{2}-\d{2}/.test(paciente) ? dataBr(paciente.slice(0, 10)) : ''
   const [lista, setLista] = useState(() => entradas(paciente))
 
   useEffect(() => { document.title = `Prontuário · ${nome}` }, [nome])
@@ -32,7 +34,7 @@ export function JanelaProntuario() {
     <div style={{ '--esp': esp.cor } as CSSProperties} className="cor-esp flex min-h-screen flex-col bg-papel bg-[url(/papel.png)] bg-size-[512px]">
       <header className="mx-auto flex w-full max-w-3xl flex-wrap items-baseline gap-x-4 gap-y-1 px-4 pt-3 sm:px-6">
         <NomeModulo esp={esp} className="text-[24px]" />
-        <h1 className="text-[22px] font-semibold">Prontuário · {nome}</h1>
+        <h1 className="text-[22px] font-semibold">Prontuário · {nome}{nascimento && <span className="font-normal"> · Nasc. {nascimento}</span>}</h1>
         <span className="ml-auto text-[13px] text-apagado">Só leitura</span>
       </header>
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-3 sm:px-6">
