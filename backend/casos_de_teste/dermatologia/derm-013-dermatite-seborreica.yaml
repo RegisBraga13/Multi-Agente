@@ -3,7 +3,7 @@ id: derm-013-dermatite-seborreica
 especialidade: dermatologia
 titulo: Dermatite seborreica do couro cabeludo e da face
 objetivo: Modo de uso do xampu antes de concluir falha terapêutica; tratamento também dos sulcos nasogenianos (face).
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente: {idade: 36, sexo: F}
   falas:

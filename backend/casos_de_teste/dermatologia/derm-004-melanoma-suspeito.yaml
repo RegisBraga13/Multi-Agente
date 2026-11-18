@@ -3,7 +3,7 @@ id: derm-004-melanoma-suspeito
 especialidade: dermatologia
 titulo: Lesão pigmentada suspeita de melanoma
 objetivo: Câncer de pele que não pode ser perdido nem dado como confirmado antes da histopatologia; dermatoscopia sem resultado; HbA1c não confirmada.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente:
     idade: 64
@@ -44,9 +44,9 @@ esperado:
       - Exposição solar intensa na juventude
       - Diabetes e colesterol alto, em uso de metformina e sinvastatina
       - Hemoglobina glicada 7,1% registrada como valor não confirmado (imagem borrada)
-    negativas: [sangramento da lesão, história familiar de câncer de pele]
+      - "HF: sem história familiar conhecida de câncer de pele"
+    negativas: [sangramento da lesão]
     desconhecidos: [resultado da dermatoscopia]
-    vazias: [hf]
   diagnosticos:
     principal: {nome: Melanoma do tronco, cid: C43.5, certeza: suspeita}
     nao_pode_perder: {nome: Melanoma do tronco, cid: C43.5}

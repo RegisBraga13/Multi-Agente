@@ -109,3 +109,9 @@ def test_lista_de_sinais_mostra_tipo_prazo_e_acao():
     html = folha(caso_minimo())
     assert "Urgência imediata" in html and "Muda o tratamento" in html
     assert "imediato" in html and "Agir" in html
+
+
+def test_folha_mostra_perguntado_sem_resposta():
+    d = caso_minimo()
+    d["esperado"]["historia"]["sem_resposta"] = ["duração"]
+    assert "Perguntado, mas o paciente não soube: duração" in folha(d)

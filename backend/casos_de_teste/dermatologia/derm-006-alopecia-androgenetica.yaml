@@ -3,7 +3,7 @@ id: derm-006-alopecia-androgenetica
 especialidade: dermatologia
 titulo: Alopecia androgenética
 objetivo: Calvície de padrão masculino com história familiar; finasterida só com discussão de efeitos adversos e decisão médica.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente: {idade: 30, sexo: M}
   falas:
@@ -27,6 +27,7 @@ esperado:
     fatos:
       - Queda de cabelo nas entradas há 2 anos, mais notada no banho
       - Miniaturização em regiões frontotemporais e vértice (Hamilton-Norwood III vértice)
+      - "HF: pai com calvície"
     negativas: [doença ou dieta restritiva recentes, uso de medicamentos]
     vazias: [exames]
   diagnosticos:

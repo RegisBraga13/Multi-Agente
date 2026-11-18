@@ -2,9 +2,10 @@
 # `texto`: como aparece na tela (curto, uma linha). `porque`: a razão clínica.
 # `tipo`: urgencia_imediata | prioridade | muda_tratamento. `acao`: o que fazer. `prazo`: em quanto tempo.
 # A ação dos sinais de urgência imediata é a resposta de emergência FIXA: entra na conduta por regra.
-# Rascunho v2 de 18/11/2026 (após a revisão do autor): só vale depois que o autor aprovar.
+# v2 aprovada pelo autor em 18/11/2026.
 revisao:
-  situacao: pendente
+  situacao: aprovado
+  em: 2026-11-18
 
 sinais:
   # --- Urgência imediata ---

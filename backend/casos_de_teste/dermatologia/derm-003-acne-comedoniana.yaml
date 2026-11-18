@@ -3,7 +3,7 @@ id: derm-003-acne-comedoniana
 especialidade: dermatologia
 titulo: Acne comedoniana
 objetivo: Acne leve predominantemente comedoniana; antibiótico deve ser questionado e gravidez verificada antes de retinoide; base diária é exposição a investigar.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente: {idade: 18, sexo: F}
   falas:

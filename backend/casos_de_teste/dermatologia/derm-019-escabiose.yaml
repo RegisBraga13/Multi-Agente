@@ -3,7 +3,7 @@ id: derm-019-escabiose
 especialidade: dermatologia
 titulo: Escabiose com contactantes em casa
 objetivo: Tratamento simultâneo dos conviventes, com esquema adequado à idade e ao peso das crianças; filhos com o mesmo quadro são história de contato (HDA), não HF.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente: {idade: 30, sexo: F}
   falas:

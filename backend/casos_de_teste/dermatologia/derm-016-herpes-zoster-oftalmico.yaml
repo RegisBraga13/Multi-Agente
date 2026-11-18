@@ -3,7 +3,7 @@ id: derm-016-herpes-zoster-oftalmico
 especialidade: dermatologia
 titulo: Herpes-zóster oftálmico
 objetivo: Sinal de alerta grave; antiviral sistêmico imediato e avaliação oftalmológica urgente (olho vermelho já é achado ocular); imunossupressão perguntada por completo.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente:
     idade: 68

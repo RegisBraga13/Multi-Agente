@@ -105,11 +105,13 @@ class EsperadoHistoria(Modelo):
     """Critérios clínicos da história, avaliados pelo sentido (não por palavra literal).
 
     `fatos`: o que tem de estar na história. `negativas`: o que o paciente negou e tem de constar como negado.
+    `sem_resposta`: perguntado, mas o paciente não soube responder — registrar como desconhecido pelo paciente.
     `desconhecidos`: o que não foi perguntado nem examinado — não pode virar afirmação nem "nega".
     `vazias`: seções sem nenhuma fonte na entrada (nada inventado).
     """
     fatos: list[str] = Field(min_length=1)
     negativas: list[str] = []
+    sem_resposta: list[str] = []
     desconhecidos: list[str] = []
     vazias: list[SecaoHistoria] = []
 

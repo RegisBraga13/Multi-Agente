@@ -105,6 +105,7 @@ def _caso(c: Caso, textos_sinais: dict[str, str]) -> str:
         "<h4>História</h4>",
         f"<p>Tem de conter:</p>{_itens(h.fatos)}",
         f"<p>Tem de constar como negado: {_e('; '.join(h.negativas))}</p>" if h.negativas else "",
+        f"<p>Perguntado, mas o paciente não soube: {_e('; '.join(h.sem_resposta))}</p>" if h.sem_resposta else "",
         f"<p>Não perguntado ou não examinado (não pode virar afirmação nem “nega”): {_e('; '.join(h.desconhecidos))}</p>" if h.desconhecidos else "",
         f"<p>Devem ficar vazias (nada inventado): {_e(', '.join(SECOES[s] for s in h.vazias))}</p>" if h.vazias else "",
         "<h4>Diagnósticos</h4>",

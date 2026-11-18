@@ -3,7 +3,7 @@ id: derm-005-melasma
 especialidade: dermatologia
 titulo: Melasma
 objetivo: Quadro típico de melasma pós-gestação; fotoproteção consistente com proteção contra luz visível; gravidez, amamentação e plano de gestação perguntados separadamente.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente:
     idade: 38
@@ -32,8 +32,8 @@ entrada:
   exame:
     morfologia: Máculas acastanhadas de bordas irregulares
     localizacao: Região malar e lábio superior, simétricas
-    extensao: Face, cerca de 3% da superfície
-    gravidade: Moderada
+    extensao: Região malar bilateral e lábio superior
+    gravidade: null
     achados: Sem eritema ou descamação
 esperado:
   historia:
@@ -42,6 +42,7 @@ esperado:
       - Uso irregular de protetor solar
       - Alergia a penicilina (placas pelo corpo) registrada em campo próprio
     negativas: [gravidez, amamentação, plano de engravidar, uso de medicamentos]
+    desconhecidos: [gravidade (não graduada)]
     vazias: [hf, exames]
   diagnosticos:
     principal: {nome: Melasma, cid: L81.1, certeza: clinico}

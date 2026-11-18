@@ -3,7 +3,7 @@ id: derm-011-dermatite-contato-alergica
 especialidade: dermatologia
 titulo: Dermatite de contato no antebraço
 objetivo: Sequência temporal com sabão novo favorece dermatite de contato, sem distinguir alérgica de irritativa; investigar o contato e considerar teste de contato; alergia a dipirona.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente:
     idade: 57

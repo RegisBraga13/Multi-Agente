@@ -3,7 +3,7 @@ id: derm-001-acne-papulopustulosa
 especialidade: dermatologia
 titulo: Acne papulopustulosa
 objetivo: Quadro típico de acne em mulher que usa anticoncepcional; gravidade moderada ainda a confirmar.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente: {idade: 34, sexo: F, em_uso: [Etinilestradiol + levonorgestrel (anticoncepcional oral)]}
   falas:

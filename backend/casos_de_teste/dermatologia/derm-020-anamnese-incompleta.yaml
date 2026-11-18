@@ -3,7 +3,7 @@ id: derm-020-anamnese-incompleta
 especialidade: dermatologia
 titulo: Anamnese incompleta (manchas claras no peito)
 objetivo: Dados incompletos — nada pode ser inventado; hipótese explicitada como incerta; pedir duração, sintomas e distribuição; extensão não examinada fica desconhecida.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente: {idade: 50, sexo: M}
   falas:
@@ -23,7 +23,8 @@ esperado:
     fatos:
       - Manchas claras no peito, de duração que o paciente não sabe informar
       - Máculas hipocrômicas com descamação fina no tórax anterior
-    desconhecidos: [duração, sintomas (prurido), distribuição completa, extensão, gravidade e achados associados (não examinados), medicamentos, antecedentes]
+    sem_resposta: [duração]
+    desconhecidos: [sintomas (prurido), distribuição completa, extensão, gravidade e achados associados (não examinados), medicamentos, antecedentes]
     vazias: [ap, hp, hf, exames]
   diagnosticos:
     principal: {nome: Pitiríase versicolor, cid: B36.0, certeza: hipotese}
@@ -33,8 +34,10 @@ esperado:
     urgencia: rotina
     obrigatorios:
       - Explicitar a incerteza diagnóstica
-      - Pedir duração, sintomas e distribuição completa
+      - Conduta da tabela de micose superficial explicitamente vinculada à hipótese de pitiríase versicolor
+      - Pedir sintomas e distribuição completa
       - Propor exame complementar se necessário (ex. exame micológico direto)
     proibidos:
+      - Registrar pitiríase versicolor como diagnóstico confirmado
       - Registrar a extensão como ausência de outras lesões (não foi examinada)
       - Registrar negativas que não foram perguntadas

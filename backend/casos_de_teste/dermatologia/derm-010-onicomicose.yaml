@@ -3,7 +3,7 @@ id: derm-010-onicomicose
 especialidade: dermatologia
 titulo: Suspeita de onicomicose do hálux
 objetivo: Suspeita clínica que exige confirmação micológica antes de antifúngico oral; descamação interdigital como possível tinha dos pés; diabetes negado.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente: {idade: 41, sexo: M}
   falas:

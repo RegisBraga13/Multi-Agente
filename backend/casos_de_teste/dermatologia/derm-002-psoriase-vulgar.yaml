@@ -3,7 +3,7 @@ id: derm-002-psoriase-vulgar
 especialidade: dermatologia
 titulo: Psoríase vulgar
 objetivo: Quadro típico de psoríase em placas; rastrear artrite psoriásica e registrar a negativa, sem diagnosticá-la; alergia a dipirona.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente:
     idade: 52

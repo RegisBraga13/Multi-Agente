@@ -93,3 +93,10 @@ def test_criterios_completos_sao_aceitos():
     dados["esperado"]["conduta"].update(proibidos=["Recomendar isotretinoína"], remedios_proibidos=["isotretinoína"])
     caso = Caso.model_validate(dados)
     assert caso.esperado.conduta.remedios_proibidos == ["isotretinoína"]
+
+
+def test_perguntado_sem_resposta_e_separado_de_nao_perguntado():
+    dados = caso_minimo()
+    dados["esperado"]["historia"].update(sem_resposta=["duração"], desconhecidos=["sintomas"])
+    h = Caso.model_validate(dados).esperado.historia
+    assert h.sem_resposta == ["duração"] and h.desconhecidos == ["sintomas"]

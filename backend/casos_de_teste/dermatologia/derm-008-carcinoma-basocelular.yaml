@@ -3,7 +3,7 @@ id: derm-008-carcinoma-basocelular
 especialidade: dermatologia
 titulo: Suspeita de novo carcinoma basocelular na asa nasal
 objetivo: Câncer de pele que não pode ser perdido; biópsia de 2024 é de outro local e sem margens informadas; AAS após infarto sem suspensão automática; alergia a sulfa.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente:
     idade: 73

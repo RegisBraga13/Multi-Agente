@@ -3,7 +3,7 @@ id: derm-015-urticaria-angioedema
 especialidade: dermatologia
 titulo: Urticária aguda com edema labial
 objetivo: Sinal de alerta grave; não basta mencionar anti-histamínico — exige avaliação imediata de via aérea e sinais de anafilaxia; edema labial isolado não prova anafilaxia nem alergia a camarão.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente: {idade: 31, sexo: M}
   falas:

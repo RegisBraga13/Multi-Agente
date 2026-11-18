@@ -3,7 +3,7 @@ id: derm-017-sindrome-stevens-johnson
 especialidade: dermatologia
 titulo: Síndrome de Stevens-Johnson por alopurinol
 objetivo: Emergência obrigatória mesmo sem protocolo ambulatorial — suspensão imediata do alopurinol, hospital na hora e avaliação multidisciplinar, inclusive ocular (ação fixa do sinal).
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente:
     idade: 45

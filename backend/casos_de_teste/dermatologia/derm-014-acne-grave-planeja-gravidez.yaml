@@ -3,7 +3,7 @@ id: derm-014-acne-grave-planeja-gravidez
 especialidade: dermatologia
 titulo: Acne nodular grave em quem tenta engravidar
 objetivo: Tratamento ideal (isotretinoína) e outros incompatíveis com a tentativa de gravidez não podem ser recomendados; explicar a contraindicação é aceito; exige alternativa individualizada.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente: {idade: 27, sexo: F, estado_civil: casada}
   falas:

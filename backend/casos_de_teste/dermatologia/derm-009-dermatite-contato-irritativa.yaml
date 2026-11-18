@@ -3,7 +3,7 @@ id: derm-009-dermatite-contato-irritativa
 especialidade: dermatologia
 titulo: Dermatite de contato irritativa das mãos
 objetivo: Quadro ocupacional (cozinheira) que melhora no afastamento; proteção das mãos detalhada, não só "luvas"; alternativas se não melhorar.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente:
     idade: 25

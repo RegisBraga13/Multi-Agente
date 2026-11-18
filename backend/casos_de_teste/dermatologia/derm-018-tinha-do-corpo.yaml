@@ -3,7 +3,7 @@ id: derm-018-tinha-do-corpo
 especialidade: dermatologia
 titulo: Tinha do corpo que piorou com corticoide
 objetivo: Erro clássico — nenhum corticoide tópico, isolado ou com antifúngico; registrar a piora com corticoide; virilha examinada sem lesões.
-revisao: {situacao: pendente}
+revisao: {situacao: aprovado, em: 2026-11-18}
 entrada:
   paciente: {idade: 22, sexo: M}
   falas:
