@@ -4,6 +4,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from app.contratos.base import ModeloApi
+from app.motores.conduta import ComplementoConduta, CondutaIA
 from app.motores.diagnosticos import DiagnosticosIA
 from app.motores.historia import HistoriaClinica
 from app.motores.sinais import SinaisIA
@@ -38,7 +39,7 @@ class Exemplo(ModeloApi):
     nota: str = "x"
 
 
-ESQUEMAS: list[type[BaseModel]] = [Exemplo, HistoriaClinica, SinaisIA, DiagnosticosIA]
+ESQUEMAS: list[type[BaseModel]] = [Exemplo, HistoriaClinica, SinaisIA, DiagnosticosIA, ComplementoConduta, CondutaIA]
 
 
 def chaves(x: Any) -> set[str]:

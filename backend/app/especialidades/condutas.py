@@ -74,6 +74,7 @@ class Protocolo(_Modelo):
 
 class OpcaoBloqueada(ModeloApi):
     opcao: str
+    rotulo: str
     motivo: str
 
 
@@ -137,8 +138,10 @@ def aplicar_protocolo(p: Protocolo, sinais: list[SinalDisparado]) -> PropostaTab
         )
 
     grupos = [g.model_copy(update={"linhas": [linha(lin) for lin in g.linhas]}) for g in p.grupos]
-    presentes = {o.id for g in p.grupos for lin in g.linhas for o in lin.opcoes}
-    bloqueadas = [OpcaoBloqueada(opcao=o, motivo=m) for o, m in motivo_bloqueio.items() if o in presentes]
+    rotulos = {o.id: o.rotulo for g in p.grupos for lin in g.linhas for o in lin.opcoes}
+    bloqueadas = [
+        OpcaoBloqueada(opcao=o, rotulo=rotulos[o], motivo=m) for o, m in motivo_bloqueio.items() if o in rotulos
+    ]
     return PropostaTabela(
         chave=p.chave,
         origem=f"protocolo {p.chave} v{p.versao}",
