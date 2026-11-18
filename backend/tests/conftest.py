@@ -57,3 +57,19 @@ def sinal(id_: str, texto: str = "Texto do sinal", tipo: str = "urgencia_imediat
         tipo
     ]
     return SinalAlerta(id=id_, texto=texto, porque="Motivo.", tipo=tipo, acao=["Agir"], prazo=prazo)
+
+
+@pytest.fixture
+def ambiente():
+    """(repositório da consulta em memória, médico A, médico B, paciente do médico A)."""
+    from datetime import date
+    from uuid import uuid4
+
+    from app.consulta.repositorio import RepositorioConsultasMemoria
+    from app.contratos.paciente import NovoPaciente
+    from app.pacientes.repositorio import RepositorioPacientesMemoria
+
+    pacientes = RepositorioPacientesMemoria()
+    a, b = uuid4(), uuid4()
+    paciente = pacientes.criar(a, NovoPaciente(nome="Paciente Teste", nascimento=date(1992, 3, 10), sexo="F"))
+    return RepositorioConsultasMemoria(pacientes), a, b, paciente.id
