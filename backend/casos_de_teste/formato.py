@@ -11,10 +11,12 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.contratos.base import PADRAO_CID as PADRAO_CID_TEXTO
+
 # Mesmas chaves de DadosEntrada (frontend/src/prontuario/registro.ts): exameFisico → exame_fisico, examesTexto → exames.
 SecaoHistoria = Literal["qp", "hda", "ap", "hp", "hf", "exame_fisico", "exames"]
 
-PADRAO_CID = re.compile(r"^[A-Z]\d{2}(\.\d{1,2})?$")
+PADRAO_CID = re.compile(PADRAO_CID_TEXTO)
 PADRAO_ID = re.compile(r"^derm-\d{3}-[a-z0-9]+(-[a-z0-9]+)*$")
 
 

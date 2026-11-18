@@ -1,7 +1,8 @@
 """Chamada de um motor de IA, igual para todos os motores (desenho §7.2 e §7.5).
 
 Ordem: (1) privacidade — dado de identidade no pedido bloqueia antes do provedor; (2) provedor;
-(3) estrutura inválida → REJECT, sem uso parcial; (4) válida → política (sempre HUMAN_REVIEW);
+(3) estrutura inválida → REJECT, sem uso parcial; (3b) regra fixa do motor, se houver, pode limpar a saída
+(com aviso) ou rejeitá-la; (4) válida → política (sempre HUMAN_REVIEW);
 (5) registro da decisão, sem prompt e sem dado.
 
 O provedor devolve o envelope {"resultado": <esquema do motor>, "meta": {confianca, evidencias, avisos, origem}} —
@@ -70,6 +71,7 @@ def chamar_motor[T: ModeloApi](
     relogio: Relogio,
     registrar: Callable[[RegistroDecisao], None],
     termos_proibidos: Sequence[str] = (),
+    regra: Callable[[T], tuple[T | None, list[str]]] | None = None,
 ) -> PropostaIA[T]:
     textos = list(_textos([pedido.instrucoes, pedido.dados]))
     achados = sorted({tipo for texto in textos for tipo in encontrar_identidade(texto)})
@@ -91,7 +93,16 @@ def chamar_motor[T: ModeloApi](
             resultado, meta = None, None
 
     valida = resultado is not None and meta is not None
+    avisos_regra: list[str] = []
+    rejeitada_pela_regra = False
+    if valida and regra is not None and resultado is not None:
+        # regra fixa do motor sobre a saída válida (ex.: evidência tem de estar na história)
+        resultado, avisos_regra = regra(resultado)
+        rejeitada_pela_regra = resultado is None
+        valida = not rejeitada_pela_regra
     acao, motivos = decidir(valida, meta.confianca if meta else None)
+    if rejeitada_pela_regra:
+        motivos = avisos_regra
     if resposta.erro:
         motivos = [*motivos, f"erro do provedor: {resposta.erro}"]
     registrar(
@@ -113,7 +124,7 @@ def chamar_motor[T: ModeloApi](
         resultado=resultado if valida else None,
         confianca=meta.confianca if meta else 0.0,
         evidencias=meta.evidencias if meta else [],
-        avisos=meta.avisos if meta else [],
+        avisos=[*(meta.avisos if meta else []), *([] if rejeitada_pela_regra else avisos_regra)],
         origem=meta.origem if meta else "",
         acao=acao,
         motivos=motivos,
