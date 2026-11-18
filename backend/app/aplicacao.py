@@ -3,7 +3,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from app.api import consultas, pacientes, saude
+from app.api import consultas, pacientes, prontuario, saude
 from app.api.dependencias import Dependencias
 from app.consulta.repositorio import ConsultaAberta, ConsultaFinalizada, ConsultaNaoEncontrada
 from app.consulta.servico import ErroEtapa
@@ -36,4 +36,5 @@ def criar_app(dep: Dependencias) -> FastAPI:
     app.include_router(saude.rotas)
     app.include_router(pacientes.rotas)
     app.include_router(consultas.rotas)
+    app.include_router(prontuario.rotas)
     return app

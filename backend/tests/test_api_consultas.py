@@ -1,25 +1,16 @@
 import json
 from uuid import UUID
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.aplicacao import Dependencias, criar_app
-from app.consulta.repositorio import RepositorioConsultasMemoria
 from app.identidade import MedicoLocal
-from app.pacientes.repositorio import RepositorioPacientesMemoria
 from tests.fabrica import ANAMNESE, DADOS_MINIMOS, EXAME, diagnosticos
 from tests.test_geracao_consulta import Roteiro
 
 MEDICO_A = UUID("00000000-0000-4000-8000-000000000001")
 MEDICO_B = UUID("00000000-0000-4000-8000-000000000002")
 PACIENTE = {"nome": "Mariana Souza", "nascimento": "1992-03-10", "sexo": "F", "cpf": "12345678909"}
-
-
-@pytest.fixture
-def mundo():
-    pacientes = RepositorioPacientesMemoria()
-    return pacientes, RepositorioConsultasMemoria(pacientes)
 
 
 def cliente(mundo, medico=MEDICO_A, provedor=None):

@@ -73,3 +73,13 @@ def ambiente():
     a, b = uuid4(), uuid4()
     paciente = pacientes.criar(a, NovoPaciente(nome="Paciente Teste", nascimento=date(1992, 3, 10), sexo="F"))
     return RepositorioConsultasMemoria(pacientes), a, b, paciente.id
+
+
+@pytest.fixture
+def mundo():
+    """(pacientes, consultas) em memória para os testes de API."""
+    from app.consulta.repositorio import RepositorioConsultasMemoria
+    from app.pacientes.repositorio import RepositorioPacientesMemoria
+
+    pacientes = RepositorioPacientesMemoria()
+    return pacientes, RepositorioConsultasMemoria(pacientes)
