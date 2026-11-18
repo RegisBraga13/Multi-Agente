@@ -7,6 +7,8 @@ não examinado (nunca "normal"). Sinal de alerta respondido leva o texto da list
 from datetime import date
 from typing import TYPE_CHECKING, Literal
 
+from pydantic import model_validator
+
 from app.contratos.base import ModeloApi
 from app.privacidade import descrever_paciente
 
@@ -42,13 +44,30 @@ class ExameDerm(ModeloApi):
 
 
 class ItemComplementar(ModeloApi):
+    """Valor de exame trazido: PRESENT (lido no laudo), INFERRED (deduzido — exige aviso e evidência) ou
+    MISSING (não encontrado — valor null). Nada é inventado."""
+
     nome: str
     valor: str | None
+    status: Literal["PRESENT", "INFERRED", "MISSING"]
+    aviso: str | None
+    evidencia: str | None
+
+    @model_validator(mode="after")
+    def _coerente(self) -> "ItemComplementar":
+        if (self.valor is None) != (self.status == "MISSING"):
+            raise ValueError("MISSING ⇔ valor null")
+        if self.status == "INFERRED" and not (self.aviso and self.evidencia):
+            raise ValueError("INFERRED exige aviso e evidência")
+        return self
 
 
 class ExameComplementar(ModeloApi):
+    """`origem`: o arquivo ou identificador do laudo (para conferir na revisão e na auditoria)."""
+
     exame: str
     data: date
+    origem: str
     itens: list[ItemComplementar]
 
 
@@ -81,7 +100,11 @@ def entrada_da_consulta(
     )
 
 
+# partículas de nome (não identificam e aparecem em qualquer texto: "lesões dos pés")
+_PARTICULAS = {"de", "da", "do", "das", "dos", "del", "della", "di", "du", "e", "van", "von", "der", "la", "le"}
+
+
 def termos_do_paciente(paciente: "Paciente") -> list[str]:
     """O que nunca pode chegar à IA: partes do nome (3+ letras), CPF e telefone."""
-    termos = [parte for parte in paciente.nome.split() if len(parte) >= 3]
+    termos = [p for p in paciente.nome.split() if len(p) >= 3 and p.casefold() not in _PARTICULAS]
     return termos + [x for x in (paciente.cpf, paciente.telefone) if x]

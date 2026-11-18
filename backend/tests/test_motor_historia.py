@@ -39,7 +39,7 @@ def rodar(resposta):
 def test_pedido_da_historia_e_desidentificado_e_versionado():
     _, registros, falso = rodar({"resultado": HISTORIA, "meta": META})
     [p] = falso.pedidos
-    assert (p.motor, p.versao_prompt, p.esforco) == ("historia", "historia-derm-1", "medium")
+    assert (p.motor, p.versao_prompt, p.esforco) == ("historia", "historia-derm-2", "medium")
     assert list(p.dados) == ["consulta"] and p.dados["consulta"]["paciente"] == "Paciente, 34 anos, feminino"
     assert p.dados["consulta"]["exame"]["extensao"] is None
     assert registros[0].versao_esquema == VERSAO_ESQUEMA_HISTORIA

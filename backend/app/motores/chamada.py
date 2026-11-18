@@ -96,7 +96,8 @@ def chamar_motor[T: ModeloApi](
     achados = sorted({tipo for texto in textos for tipo in encontrar_identidade(texto)})
     if achados:
         raise ErroPrivacidade(f"dado de identidade no pedido ao motor {pedido.motor!r}: {', '.join(achados)}")
-    if _tem_termo_proibido(textos, termos_proibidos):
+    # termos do paciente: só nos dados (as instruções fixas e as listas do pacote não vêm do paciente)
+    if _tem_termo_proibido(list(_textos(pedido.dados)), termos_proibidos):
         # a mensagem nunca repete o termo (ela pode ir para log)
         raise ErroPrivacidade(f"termo proibido do paciente no pedido ao motor {pedido.motor!r}")
 

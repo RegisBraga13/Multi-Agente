@@ -31,6 +31,7 @@ from app.contratos.motor import Acao, RegistroDecisao
 from app.contratos.paciente import Paciente
 from app.especialidades.condutas import Protocolo
 from app.especialidades.pacote import SinalAlerta
+from app.fuso import no_consultorio
 from app.motores.conduta import DiagnosticoConfirmado, motor_conduta
 from app.motores.diagnosticos import motor_diagnosticos, seguranca_de
 from app.motores.historia import motor_historia
@@ -42,6 +43,7 @@ from app.provedores.relogio import Relogio
 PRONTA = "Proposta da IA pronta para revisão"
 FALHOU = "A IA não conseguiu; escreva ou tente de novo"
 AO_LADO = "Sugestão da IA ao lado: o bloco já foi revisado pelo médico"
+MUDOU = "A etapa anterior mudou durante a geração; gere de novo"
 AoEscrever = Callable[[dict[str, Any]], None]
 
 
@@ -81,7 +83,7 @@ def _historia(
 ) -> tuple[ModeloApi | None, list[str]]:
     anamnese = AnamneseBloco.model_validate(_bloco(consulta, "anamnese"))
     exame = ExameBloco.model_validate(_bloco(consulta, "exame"))
-    entrada = entrada_da_consulta(paciente, anamnese, exame, consulta.agendada_para.date())
+    entrada = entrada_da_consulta(paciente, anamnese, exame, no_consultorio(consulta.agendada_para).date())
     sinais = motor_sinais(ctx.provedor, entrada, ctx.sinais, ctx.relogio, reg, termos)
     conteudos["sinais"] = sinais.model_dump(by_alias=True, mode="json")
     p = motor_historia(ctx.provedor, entrada, ctx.relogio, reg, termos, ao_escrever=ao_escrever)
@@ -108,7 +110,7 @@ def gerar(
     consulta = ctx.repo.buscar(medico_id, consulta_id)
     if consulta.finalizada_em is not None:
         raise ConsultaFinalizada
-    exigir_predecessor(consulta, etapa)
+    anterior = exigir_predecessor(consulta, etapa)
     paciente = _paciente(ctx, medico_id, consulta)
     termos = termos_do_paciente(paciente)
     registros: list[RegistroDecisao] = []
@@ -152,8 +154,11 @@ def gerar(
     if novo is None:
         return ResultadoGeracao(acao="REJECT", gravado=False, conteudo=None, avisos=avisos, mensagem=FALHOU)
     conteudo = novo.model_dump(by_alias=True, mode="json")
-    atual = consulta.bloco(etapa)
-    if atual is not None and atual.estado != "rascunho_ia":
-        return ResultadoGeracao(acao="HUMAN_REVIEW", gravado=False, conteudo=conteudo, avisos=avisos, mensagem=AO_LADO)
-    ctx.repo.gravar_bloco(medico_id, consulta_id, etapa, "rascunho_ia", novo, None)
-    return ResultadoGeracao(acao="HUMAN_REVIEW", gravado=True, conteudo=conteudo, avisos=avisos, mensagem=PRONTA)
+    # a IA levou segundos: grava só se a anterior continua como estava e a etapa não foi mexida (uma gravação só)
+    situacao = ctx.repo.gravar_rascunho_ia(
+        medico_id, consulta_id, etapa, novo, anterior.etapa, anterior.oficializado_em
+    )
+    mensagem = {"gravado": PRONTA, "revisado": AO_LADO, "mudou": MUDOU}[situacao]
+    return ResultadoGeracao(
+        acao="HUMAN_REVIEW", gravado=situacao == "gravado", conteudo=conteudo, avisos=avisos, mensagem=mensagem
+    )

@@ -50,9 +50,9 @@ def editar(
     repo: RepositorioConsultas, medico_id: UUID, consulta_id: UUID, etapa: Etapa, conteudo: ModeloApi
 ) -> Consulta:
     antes = repo.buscar(medico_id, consulta_id).bloco(etapa)
-    repo.gravar_bloco(medico_id, consulta_id, etapa, "revisado_medico", conteudo, None)
-    if antes is not None and antes.estado == "oficializado":
-        repo.desatualizar(medico_id, consulta_id, seguintes(etapa))
+    mexeu_no_oficial = antes is not None and antes.estado == "oficializado"
+    desatualizar = seguintes(etapa) if mexeu_no_oficial else []
+    repo.gravar_bloco(medico_id, consulta_id, etapa, "revisado_medico", conteudo, None, desatualizar=desatualizar)
     return repo.buscar(medico_id, consulta_id)
 
 
@@ -74,6 +74,5 @@ def oficializar(
         exigir_predecessor(consulta, etapa)
     conteudo = CONTEUDO[etapa].model_validate(bloco.conteudo)
     _conferir_conteudo(etapa, conteudo)
-    repo.gravar_bloco(medico_id, consulta_id, etapa, "oficializado", conteudo, quando)
-    repo.desatualizar(medico_id, consulta_id, seguintes(etapa))
+    repo.gravar_bloco(medico_id, consulta_id, etapa, "oficializado", conteudo, quando, desatualizar=seguintes(etapa))
     return repo.buscar(medico_id, consulta_id)

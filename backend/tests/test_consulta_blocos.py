@@ -93,3 +93,8 @@ def test_conduta_bloco_exige_4_textos():
     CondutaBloco.model_validate(base | {"textos": ["", "", "", ""]})
     with pytest.raises(ValidationError):
         CondutaBloco.model_validate(base | {"textos": ["", "", ""]})
+
+
+def test_particulas_do_nome_nao_viram_termo():
+    p = PACIENTE.model_copy(update={"nome": "José dos Santos de Souza e Silva", "cpf": None, "telefone": None})
+    assert termos_do_paciente(p) == ["José", "Santos", "Souza", "Silva"]

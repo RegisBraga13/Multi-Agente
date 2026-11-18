@@ -18,5 +18,5 @@ def test_prompt_inexistente_e_invalido(tmp_path):
 
 def test_prompt_da_historia_tem_versao_e_texto_sem_a_linha_da_versao():
     p = carregar_prompt("dermatologia", "historia")
-    assert p.versao == "historia-derm-1"
+    assert p.versao == "historia-derm-2"
     assert "versao:" not in p.texto and "não examinado" in p.texto

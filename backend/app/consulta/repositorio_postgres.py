@@ -6,7 +6,7 @@ As regras de consulta aberta/finalizada são conferidas aqui antes de escrever; 
 segunda barreira (e o erro deles também vira exceção de domínio).
 """
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Any
@@ -15,7 +15,13 @@ from uuid import UUID
 import psycopg
 from psycopg.types.json import Jsonb
 
-from app.consulta.repositorio import ConsultaAberta, ConsultaFinalizada, ConsultaNaoEncontrada, montar_entradas
+from app.consulta.repositorio import (
+    ConsultaAberta,
+    ConsultaFinalizada,
+    ConsultaNaoEncontrada,
+    ResultadoRascunho,
+    montar_entradas,
+)
 from app.contratos.base import ModeloApi
 from app.contratos.consulta_blocos import (
     ETAPAS,
@@ -29,6 +35,7 @@ from app.contratos.consulta_blocos import (
 )
 from app.contratos.motor import RegistroDecisao
 from app.contratos.prontuario import SCHEMA_VERSION_PRONTUARIO, Adendo, DadosEntrada, EntradaProntuario
+from app.fuso import no_consultorio
 from app.pacientes.repositorio_postgres import transacao_do_medico
 
 TABELA: dict[str, str] = {
@@ -120,24 +127,71 @@ class RepositorioConsultasPostgres:
         estado: EstadoBloco,
         conteudo: ModeloApi,
         oficializado_em: datetime | None,
+        desatualizar: Sequence[Etapa] = (),
     ) -> None:
         with self._transacao(medico_id) as conn:
             self._aberta(conn, consulta_id)
-            conn.execute(
-                f"insert into {TABELA[etapa]}"
-                " (doctor_id, encounter_id, status, content, schema_version, stale, officialized_at)"
-                " values (%s, %s, %s, %s, %s, false, %s)"
-                " on conflict (encounter_id) do update set status = excluded.status, content = excluded.content,"
-                " schema_version = excluded.schema_version, stale = false, officialized_at = excluded.officialized_at",
-                (
-                    medico_id,
-                    consulta_id,
-                    estado,
-                    Jsonb(conteudo.model_dump(by_alias=True, mode="json")),
-                    VERSAO_ESQUEMA_BLOCO,
-                    oficializado_em,
-                ),
-            )
+            self._upsert(conn, medico_id, consulta_id, etapa, estado, conteudo, oficializado_em)
+            for seguinte in desatualizar:
+                conn.execute(f"update {TABELA[seguinte]} set stale = true where encounter_id = %s", (consulta_id,))
+
+    def gravar_rascunho_ia(
+        self,
+        medico_id: UUID,
+        consulta_id: UUID,
+        etapa: Etapa,
+        conteudo: ModeloApi,
+        anterior: Etapa,
+        anterior_oficializada_em: datetime | None,
+    ) -> ResultadoRascunho:
+        with self._transacao(medico_id) as conn:
+            # trava a consulta: edição e geração da mesma consulta passam uma de cada vez
+            conn.execute("select id from encounters where id = %s for update", (consulta_id,))
+            self._aberta(conn, consulta_id)
+            a = conn.execute(
+                f"select status, stale, officialized_at from {TABELA[anterior]} where encounter_id = %s",
+                (consulta_id,),
+            ).fetchone()
+            if (
+                a is None
+                or a["status"] != "oficializado"
+                or a["stale"]
+                or a["officialized_at"] != anterior_oficializada_em
+            ):
+                return "mudou"
+            atual = conn.execute(
+                f"select status from {TABELA[etapa]} where encounter_id = %s", (consulta_id,)
+            ).fetchone()
+            if atual is not None and atual["status"] != "rascunho_ia":
+                return "revisado"
+            self._upsert(conn, medico_id, consulta_id, etapa, "rascunho_ia", conteudo, None)
+            return "gravado"
+
+    def _upsert(
+        self,
+        conn: psycopg.Connection[dict[str, Any]],
+        medico_id: UUID,
+        consulta_id: UUID,
+        etapa: Etapa,
+        estado: EstadoBloco,
+        conteudo: ModeloApi,
+        oficializado_em: datetime | None,
+    ) -> None:
+        conn.execute(
+            f"insert into {TABELA[etapa]}"
+            " (doctor_id, encounter_id, status, content, schema_version, stale, officialized_at)"
+            " values (%s, %s, %s, %s, %s, false, %s)"
+            " on conflict (encounter_id) do update set status = excluded.status, content = excluded.content,"
+            " schema_version = excluded.schema_version, stale = false, officialized_at = excluded.officialized_at",
+            (
+                medico_id,
+                consulta_id,
+                estado,
+                Jsonb(conteudo.model_dump(by_alias=True, mode="json")),
+                VERSAO_ESQUEMA_BLOCO,
+                oficializado_em,
+            ),
+        )
 
     def desatualizar(self, medico_id: UUID, consulta_id: UUID, etapas: list[Etapa]) -> None:
         with self._transacao(medico_id) as conn:
@@ -227,7 +281,7 @@ class RepositorioConsultasPostgres:
                 ([x["id"] for x in linhas],),
             ).fetchall():
                 adendos.setdefault(a["encounter_id"], []).append(
-                    Adendo(quando=a["created_at"].isoformat(timespec="minutes"), texto=a["text"])
+                    Adendo(quando=no_consultorio(a["created_at"]).isoformat(timespec="minutes"), texto=a["text"])
                 )
         return montar_entradas(
             [

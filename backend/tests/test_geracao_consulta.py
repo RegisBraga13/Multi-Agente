@@ -220,3 +220,67 @@ def test_conduta_rejeitada_nao_grava(cenario):
     r = gerar(contexto(cenario, Roteiro(conduta=lambda p: "timeout")), medico, cid, "conduta")
     assert (r.acao, r.gravado) == ("REJECT", False) and repo.buscar(medico, cid).bloco("conduta") is None
     assert conduta  # fábrica disponível para outros testes
+
+
+def test_nome_com_particula_gera_normalmente():
+    pacientes = RepositorioPacientesMemoria()
+    medico = uuid4()
+    p = pacientes.criar(medico, NovoPaciente(nome="Maria das Graças dos Santos", nascimento=date(1980, 1, 1), sexo="F"))
+    repo = RepositorioConsultasMemoria(pacientes)
+    c = repo.criar(
+        medico, NovaConsulta(paciente_id=p.id, tipo="consulta", modalidade="presencial", agendada_para=QUANDO)
+    )
+    cen = (repo, pacientes, medico, c.id)
+    oficializar_ate_exame(cen)
+    r = gerar(contexto(cen, Roteiro()), medico, c.id, "historia")
+    assert r.gravado
+
+
+class MexeDuranteAGeracao(Roteiro):
+    def __init__(self, acao, **trocas):
+        super().__init__(**trocas)
+        self.acao = acao
+
+    def gerar(self, pedido, esquema, ao_escrever=None):
+        if pedido.motor == "historia":
+            self.acao()
+        return super().gerar(pedido, esquema, ao_escrever)
+
+
+def test_anterior_mudou_durante_a_geracao(cenario):
+    oficializar_ate_exame(cenario)
+    repo, _, medico, cid = cenario
+    provedor = MexeDuranteAGeracao(lambda: editar(repo, medico, cid, "exame", EXAME))
+    r = gerar(contexto(cenario, provedor), medico, cid, "historia")
+    assert not r.gravado and "mudou durante a geração" in r.mensagem
+    assert repo.buscar(medico, cid).bloco("historia") is None
+
+
+def test_medico_salvou_a_etapa_durante_a_geracao(cenario):
+    from tests.fabrica import HISTORIA
+
+    oficializar_ate_exame(cenario)
+    repo, _, medico, cid = cenario
+    provedor = MexeDuranteAGeracao(lambda: editar(repo, medico, cid, "historia", HISTORIA))
+    r = gerar(contexto(cenario, provedor), medico, cid, "historia")
+    assert not r.gravado and "Sugestão da IA ao lado" in r.mensagem
+    assert repo.buscar(medico, cid).bloco("historia").estado == "revisado_medico"
+
+
+def test_idade_pelo_dia_da_consulta_no_fuso_do_consultorio():
+    from datetime import timedelta, timezone
+
+    pacientes = RepositorioPacientesMemoria()
+    medico = uuid4()
+    p = pacientes.criar(medico, NovoPaciente(nome="Joana Teste", nascimento=date(1992, 11, 14), sexo="F"))
+    repo = RepositorioConsultasMemoria(pacientes)
+    noite = datetime(2026, 11, 13, 23, 30, tzinfo=timezone(timedelta(hours=-3)))  # já é dia 14 em UTC
+    c = repo.criar(
+        medico,
+        NovaConsulta(paciente_id=p.id, tipo="consulta", modalidade="presencial", agendada_para=noite.astimezone(UTC)),
+    )
+    cen = (repo, pacientes, medico, c.id)
+    oficializar_ate_exame(cen)
+    provedor = Roteiro()
+    gerar(contexto(cen, provedor), medico, c.id, "historia")
+    assert provedor.pedidos[0].dados["consulta"]["paciente"].startswith("Paciente, 33 anos")

@@ -198,7 +198,7 @@ def test_resumo_tem_as_metricas():
     ]:
         assert chave in rel.resumo
     assert rel.resumo["principal_entre_3_pct"] == 100 and rel.resumo["conduta_da_tabela_pct"] == 100
-    assert rel.versoes_prompt["historia"] == "historia-derm-1"
+    assert rel.versoes_prompt["historia"] == "historia-derm-2"
 
 
 def test_sem_chave_sai_1(monkeypatch, capsys):

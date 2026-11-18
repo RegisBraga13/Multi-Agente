@@ -185,3 +185,10 @@ def test_sem_ao_escrever_funciona_como_antes():
 
     proposta = chamar_motor(SoDoisArgumentos(), pedido(), Hipoteses, 3, RelogioFixo(QUANDO), lambda r: None)
     assert proposta.acao == "HUMAN_REVIEW"
+
+
+def test_termo_proibido_nao_e_procurado_nas_instrucoes():
+    falso = ProvedorIAFalso({"dd": BRUTO_VALIDO})
+    p = PedidoIA(motor="dd", versao_prompt="v1", instrucoes="Organize os dados dos santos", dados={"t": "x pústulas"})
+    proposta = chamar_motor(falso, p, Hipoteses, 3, RelogioFixo(QUANDO), lambda r: None, termos_proibidos=["Santos"])
+    assert proposta.acao in ("HUMAN_REVIEW", "REJECT") and len(falso.pedidos) == 1

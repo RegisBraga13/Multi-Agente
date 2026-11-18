@@ -29,7 +29,19 @@ def entrada_do_caso(caso: Caso, sinais: dict[str, SinalAlerta]) -> EntradaConsul
         exame=ExameDerm(**e.exame.model_dump()),
         complementares=[
             ExameComplementar(
-                exame=c.exame, data=c.data, itens=[ItemComplementar(nome=i.nome, valor=i.valor) for i in c.itens]
+                exame=c.exame,
+                data=c.data,
+                origem="caso de teste",
+                itens=[
+                    ItemComplementar(
+                        nome=i.nome,
+                        valor=i.valor,
+                        status="MISSING" if i.valor is None else "PRESENT",
+                        aviso=None,
+                        evidencia=None,
+                    )
+                    for i in c.itens
+                ],
             )
             for c in e.complementares
         ],

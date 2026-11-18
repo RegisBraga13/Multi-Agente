@@ -72,9 +72,9 @@ def dados_da_consulta(
                 exame=c.exame,
                 nome=i.nome,
                 valor=i.valor,
-                status="MISSING" if i.valor is None else "PRESENT",
+                status=i.status,
                 data=c.data.isoformat(),
-                origem="laudo",
+                origem=c.origem,
             )
             for c in exame.complementares
             for i in c.itens

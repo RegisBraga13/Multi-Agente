@@ -1,6 +1,6 @@
 """Cenários do repositório da consulta. A fixture `ambiente` (conftest) roda em memória e, com -m banco, no Postgres."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
@@ -12,6 +12,7 @@ from app.contratos.motor import RegistroDecisao
 from tests.fabrica import DADOS_MINIMOS
 
 QUANDO = datetime(2026, 11, 13, 8, 0, tzinfo=UTC)
+BRT = timezone(timedelta(hours=-3))  # horário do consultório (sem horário de verão em 2026)
 EXAME = ExameBloco(
     exame=ExameDerm(morfologia="Pápulas", localizacao="Face", extensao=None, gravidade=None, achados=None),
     complementares=[],
@@ -120,12 +121,53 @@ def test_adendo_so_depois_de_finalizar(ambiente):
 
 def test_prontuario_mais_recente_no_topo_com_titulo(ambiente):
     repo, a, b, paciente = ambiente
-    c1 = repo.criar(a, nova(paciente, datetime(2026, 10, 1, 8, 0, tzinfo=UTC)))
-    c2 = repo.criar(a, nova(paciente, datetime(2026, 11, 1, 9, 30, tzinfo=UTC), tipo="retorno"))
-    aberta = repo.criar(a, nova(paciente, datetime(2026, 11, 20, 8, 0, tzinfo=UTC)))
+    c1 = repo.criar(a, nova(paciente, datetime(2026, 10, 1, 8, 0, tzinfo=BRT)))
+    c2 = repo.criar(a, nova(paciente, datetime(2026, 11, 1, 9, 30, tzinfo=BRT), tipo="retorno"))
+    aberta = repo.criar(a, nova(paciente, datetime(2026, 11, 20, 8, 0, tzinfo=BRT)))
     repo.finalizar(a, c1.id, DADOS_MINIMOS, {}, QUANDO)
     repo.finalizar(a, c2.id, DADOS_MINIMOS, {"hda": "editada"}, QUANDO)
     entradas = repo.prontuario(a, paciente)
     assert [(e.titulo, e.hora) for e in entradas] == [("Consulta 1 — Retorno", "09:30"), ("Consulta 1", "08:00")]
     assert entradas[0].edicoes == {"hda": "editada"} and aberta.id not in {e.id for e in entradas}
     assert repo.prontuario(b, paciente) == []
+
+
+def _oficial(repo, a, cid, etapa, conteudo):
+    repo.gravar_bloco(a, cid, etapa, "oficializado", conteudo, QUANDO)
+
+
+def test_gravar_bloco_desatualiza_as_seguintes_junto(ambiente):
+    from tests.fabrica import ANAMNESE, HISTORIA
+
+    repo, a, _, paciente = ambiente
+    c = repo.criar(a, nova(paciente))
+    _oficial(repo, a, c.id, "anamnese", ANAMNESE)
+    _oficial(repo, a, c.id, "historia", HISTORIA)
+    repo.gravar_bloco(a, c.id, "anamnese", "revisado_medico", ANAMNESE, None, desatualizar=["exame", "historia"])
+    assert repo.buscar(a, c.id).bloco("historia").desatualizado
+
+
+def test_rascunho_ia_so_grava_se_nada_mudou(ambiente):
+    from tests.fabrica import HISTORIA
+
+    repo, a, _, paciente = ambiente
+    c = repo.criar(a, nova(paciente))
+    _oficial(repo, a, c.id, "exame", EXAME)
+    em = repo.buscar(a, c.id).bloco("exame").oficializado_em
+    assert repo.gravar_rascunho_ia(a, c.id, "historia", HISTORIA, "exame", em) == "gravado"
+    assert repo.gravar_rascunho_ia(a, c.id, "historia", HISTORIA, "exame", em) == "gravado"  # rascunho é trocado
+    repo.gravar_bloco(a, c.id, "historia", "revisado_medico", HISTORIA, None)
+    assert repo.gravar_rascunho_ia(a, c.id, "historia", HISTORIA, "exame", em) == "revisado"
+    repo.gravar_bloco(a, c.id, "exame", "revisado_medico", EXAME, None)  # o médico mexeu no exame
+    assert repo.gravar_rascunho_ia(a, c.id, "historia", HISTORIA, "exame", em) == "mudou"
+
+
+def test_data_e_hora_no_fuso_do_consultorio(ambiente):
+    from datetime import timedelta, timezone
+
+    repo, a, _, paciente = ambiente
+    noite = datetime(2026, 11, 13, 22, 0, tzinfo=timezone(timedelta(hours=-3)))  # 01:00 do dia 14 em UTC
+    c = repo.criar(a, nova(paciente, noite.astimezone(UTC)))
+    repo.finalizar(a, c.id, DADOS_MINIMOS, {}, QUANDO)
+    [e] = repo.prontuario(a, paciente)
+    assert (str(e.data), e.hora) == ("2026-11-13", "22:00")

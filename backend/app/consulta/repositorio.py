@@ -4,17 +4,21 @@ As regras dos gatilhos do banco (0007/0008) valem nos dois: consulta finalizada 
 em consulta finalizada; propostas da IA e adendos só crescem. Consulta ou paciente de outro médico não existe.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Protocol
+from datetime import date, datetime
+from typing import Any, Literal, Protocol
 from uuid import UUID, uuid4
 
 from app.contratos.base import ModeloApi
 from app.contratos.consulta_blocos import ETAPAS, Bloco, Consulta, Documento, EstadoBloco, Etapa, NovaConsulta
 from app.contratos.motor import RegistroDecisao
 from app.contratos.prontuario import Adendo, DadosEntrada, EntradaProntuario
+from app.fuso import no_consultorio
 from app.pacientes.repositorio import RepositorioPacientes
 from app.prontuario.titulo import titulo_nova_entrada
+
+ResultadoRascunho = Literal["gravado", "revisado", "mudou"]
 
 
 class ConsultaNaoEncontrada(Exception):
@@ -42,7 +46,23 @@ class RepositorioConsultas(Protocol):
         estado: EstadoBloco,
         conteudo: ModeloApi,
         oficializado_em: datetime | None,
-    ) -> None: ...
+        desatualizar: Sequence[Etapa] = (),
+    ) -> None:
+        """Grava o bloco e, na mesma gravação, marca `desatualizar` como desatualizadas."""
+        ...
+
+    def gravar_rascunho_ia(
+        self,
+        medico_id: UUID,
+        consulta_id: UUID,
+        etapa: Etapa,
+        conteudo: ModeloApi,
+        anterior: Etapa,
+        anterior_oficializada_em: datetime | None,
+    ) -> ResultadoRascunho:
+        """Numa gravação só: grava o rascunho da IA se a etapa anterior continua oficializada como estava
+        (senão "mudou") e se a etapa ainda não foi mexida pelo médico (senão "revisado")."""
+        ...
 
     def desatualizar(self, medico_id: UUID, consulta_id: UUID, etapas: list[Etapa]) -> None: ...
 
@@ -69,7 +89,10 @@ def montar_entradas(
     finalizadas: list[tuple[Consulta, DadosEntrada, dict[str, str], list[Adendo]]],
 ) -> list[EntradaProntuario]:
     """Entradas do prontuário (mais recente no topo), com o título calculado pelas anteriores."""
-    chave = [(c.tipo, c.agendada_para.strftime("%Y-%m-%d"), c.agendada_para.strftime("%H:%M")) for c, *_ in finalizadas]
+    locais = [no_consultorio(c.agendada_para) for c, *_ in finalizadas]
+    chave = [
+        (c.tipo, x.strftime("%Y-%m-%d"), x.strftime("%H:%M")) for (c, *_), x in zip(finalizadas, locais, strict=True)
+    ]
     entradas = []
     for (c, dados, edicoes, adendos), (tipo, data, hora) in zip(finalizadas, chave, strict=True):
         antes = [k for k in chave if f"{k[1]} {k[2]}" < f"{data} {hora}"]
@@ -80,7 +103,7 @@ def montar_entradas(
                 titulo=titulo_nova_entrada(antes, tipo),
                 tipo=c.tipo,
                 modalidade=c.modalidade,
-                data=c.agendada_para.date(),
+                data=date.fromisoformat(data),
                 hora=hora,
                 dados=dados,
                 edicoes=edicoes,
@@ -135,6 +158,7 @@ class RepositorioConsultasMemoria:
         estado: EstadoBloco,
         conteudo: ModeloApi,
         oficializado_em: datetime | None,
+        desatualizar: Sequence[Etapa] = (),
     ) -> None:
         r = self._aberta(medico_id, consulta_id)
         novo = Bloco(
@@ -146,6 +170,28 @@ class RepositorioConsultasMemoria:
         )
         outros = [b for b in r.consulta.blocos if b.etapa != etapa]
         r.consulta.blocos = sorted([*outros, novo], key=lambda b: ETAPAS.index(b.etapa))
+        for b in r.consulta.blocos:
+            if b.etapa in desatualizar:
+                b.desatualizado = True
+
+    def gravar_rascunho_ia(
+        self,
+        medico_id: UUID,
+        consulta_id: UUID,
+        etapa: Etapa,
+        conteudo: ModeloApi,
+        anterior: Etapa,
+        anterior_oficializada_em: datetime | None,
+    ) -> ResultadoRascunho:
+        r = self._aberta(medico_id, consulta_id)
+        a = r.consulta.bloco(anterior)
+        if a is None or a.estado != "oficializado" or a.desatualizado or a.oficializado_em != anterior_oficializada_em:
+            return "mudou"
+        atual = r.consulta.bloco(etapa)
+        if atual is not None and atual.estado != "rascunho_ia":
+            return "revisado"
+        self.gravar_bloco(medico_id, consulta_id, etapa, "rascunho_ia", conteudo, None)
+        return "gravado"
 
     def desatualizar(self, medico_id: UUID, consulta_id: UUID, etapas: list[Etapa]) -> None:
         r = self._aberta(medico_id, consulta_id)
@@ -175,7 +221,7 @@ class RepositorioConsultasMemoria:
         r = self._achar(medico_id, consulta_id)
         if r.consulta.finalizada_em is None:
             raise ConsultaAberta
-        r.adendos.append(Adendo(quando=quando.isoformat(timespec="minutes"), texto=texto))
+        r.adendos.append(Adendo(quando=no_consultorio(quando).isoformat(timespec="minutes"), texto=texto))
 
     def prontuario(self, medico_id: UUID, paciente_id: UUID) -> list[EntradaProntuario]:
         finalizadas = [

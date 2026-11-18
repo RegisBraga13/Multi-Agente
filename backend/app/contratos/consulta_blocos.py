@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import AwareDatetime, Field
 
 from app.contratos.base import ModeloApi
 from app.contratos.consulta import Alergia, ExameComplementar, ExameDerm, Fala, SinalRespondido
@@ -94,7 +94,7 @@ class NovaConsulta(ModeloApi):
     paciente_id: UUID
     tipo: Literal["consulta", "retorno"]
     modalidade: Literal["presencial", "online"]
-    agendada_para: datetime
+    agendada_para: AwareDatetime  # com fuso: a data/hora do consultório sai daqui
 
 
 class Consulta(NovaConsulta):

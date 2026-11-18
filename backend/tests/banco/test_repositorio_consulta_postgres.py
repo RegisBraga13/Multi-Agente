@@ -16,12 +16,15 @@ from tests.test_repositorio_consulta import (  # noqa: F401 (os cenários rodam 
     test_adendo_so_depois_de_finalizar,
     test_consulta_de_outro_medico_nao_existe,
     test_criar_e_buscar,
+    test_data_e_hora_no_fuso_do_consultorio,
     test_desatualizar_so_as_existentes,
     test_documento_um_por_tipo,
     test_finalizada_recusa_qualquer_escrita,
+    test_gravar_bloco_desatualiza_as_seguintes_junto,
     test_gravar_bloco_substitui_e_zera_desatualizado,
     test_paciente_de_outro_medico_nao_vira_consulta,
     test_prontuario_mais_recente_no_topo_com_titulo,
+    test_rascunho_ia_so_grava_se_nada_mudou,
 )
 
 pytestmark = pytest.mark.banco

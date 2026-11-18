@@ -172,3 +172,18 @@ def test_erro_no_meio_do_fluxo_vira_evento_erro(mundo):
     ate_exame(c, cid)
     evs = eventos(c.post(f"/consultas/{cid}/historia/gerar").text)
     assert evs[0][0] == "parcial" and evs[-1][0] == "erro"
+
+
+def test_horario_sem_fuso_e_422(mundo):
+    c = cliente(mundo)
+    p = c.post("/pacientes", json=PACIENTE).json()
+    r = c.post(
+        "/consultas",
+        json={
+            "pacienteId": p["id"],
+            "tipo": "consulta",
+            "modalidade": "presencial",
+            "agendadaPara": "2026-11-13T08:00:00",
+        },
+    )
+    assert r.status_code == 422

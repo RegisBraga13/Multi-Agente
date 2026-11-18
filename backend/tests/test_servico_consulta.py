@@ -130,3 +130,17 @@ def test_consulta_finalizada_nao_muda(consulta):
         editar(repo, a, cid, "exame", EXAME)
     with pytest.raises(ConsultaFinalizada):
         oficializar(repo, a, cid, "anamnese", QUANDO)
+
+
+def test_editar_desatualiza_na_mesma_gravacao(consulta):
+    repo, a, cid = consulta
+    oficializar_ate(repo, a, cid, "historia")
+
+    def sem_chamada_separada(*args, **kwargs):
+        raise AssertionError("desatualizar separado deixaria a consulta pela metade se falhasse")
+
+    repo.desatualizar = sem_chamada_separada
+    c = editar(repo, a, cid, "anamnese", ANAMNESE)
+    assert c.bloco("historia").desatualizado
+    c = oficializar(repo, a, cid, "anamnese", QUANDO)
+    assert c.bloco("exame").desatualizado

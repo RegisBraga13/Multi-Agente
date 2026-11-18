@@ -102,14 +102,38 @@ def test_exames_missing():
                 ExameComplementar(
                     exame="Laboratório",
                     data=date(2026, 11, 1),
-                    itens=[ItemComplementar(nome="TSH", valor="2,1"), ItemComplementar(nome="Ferritina", valor=None)],
+                    origem="laudo-lab-0111.pdf",
+                    itens=[
+                        ItemComplementar(nome="TSH", valor="2,1", status="PRESENT", aviso=None, evidencia=None),
+                        ItemComplementar(nome="Ferritina", valor=None, status="MISSING", aviso=None, evidencia=None),
+                        ItemComplementar(
+                            nome="Glicemia",
+                            valor="98",
+                            status="INFERRED",
+                            aviso="foto borrada",
+                            evidencia="Glic... 98 mg/dL",
+                        ),
+                    ],
                 )
             ]
         }
     )
     d = montar(exame=ex)
-    assert [(e.nome, e.valor, e.status, e.data) for e in d.exames] == [
-        ("TSH", "2,1", "PRESENT", "2026-11-01"),
-        ("Ferritina", None, "MISSING", "2026-11-01"),
+    assert [(e.nome, e.valor, e.status, e.data, e.origem) for e in d.exames] == [
+        ("TSH", "2,1", "PRESENT", "2026-11-01", "laudo-lab-0111.pdf"),
+        ("Ferritina", None, "MISSING", "2026-11-01", "laudo-lab-0111.pdf"),
+        ("Glicemia", "98", "INFERRED", "2026-11-01", "laudo-lab-0111.pdf"),
     ]
     assert d.fotos == []
+
+
+def test_item_complementar_segue_present_inferred_missing():
+    import pytest
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):  # MISSING tem de ser null
+        ItemComplementar(nome="TSH", valor="2", status="MISSING", aviso=None, evidencia=None)
+    with pytest.raises(ValidationError):  # valor null tem de ser MISSING
+        ItemComplementar(nome="TSH", valor=None, status="PRESENT", aviso=None, evidencia=None)
+    with pytest.raises(ValidationError):  # INFERRED exige aviso e evidência
+        ItemComplementar(nome="TSH", valor="2", status="INFERRED", aviso=None, evidencia="x")
