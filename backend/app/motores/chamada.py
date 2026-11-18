@@ -4,14 +4,19 @@ Ordem: (1) privacidade — dado de identidade no pedido bloqueia antes do proved
 (3) estrutura inválida → REJECT, sem uso parcial; (4) válida → política (sempre HUMAN_REVIEW);
 (5) registro da decisão, sem prompt e sem dado.
 
-O provedor devolve o envelope {"resultado": <esquema do motor>, "meta": {confianca, evidencias, avisos, origem}}.
+O provedor devolve o envelope {"resultado": <esquema do motor>, "meta": {confianca, evidencias, avisos, origem}} —
+nada além disso. A validação é estrita (texto no lugar de número é erro) e feita como JSON.
+
+Limite conhecido: nomes de pessoas não são detectáveis por padrão; no marco 3 o pedido é montado só com
+campos desidentificados e com a lista de termos proibidos do paciente (nome, CPF, telefone).
 """
 
+import json
 from collections.abc import Callable, Iterator
 from typing import Any
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field, ValidationError
 
 from app.consulta.politica import decidir
 from app.contratos.base import ModeloApi
@@ -32,19 +37,27 @@ class _Meta(ModeloApi):
     origem: str
 
 
+class _Envelope(ModeloApi):
+    resultado: Any
+    meta: Any
+
+
 def _textos(x: Any) -> Iterator[str]:
+    """Todo texto do pedido, inclusive números e objetos (nada passa sem ser varrido)."""
     if isinstance(x, str):
         yield x
     elif isinstance(x, dict):
         for chave, valor in x.items():
             yield str(chave)
             yield from _textos(valor)
-    elif isinstance(x, list | tuple):
+    elif isinstance(x, list | tuple | set | frozenset):
         for valor in x:
             yield from _textos(valor)
+    elif x is not None and not isinstance(x, bool):
+        yield str(x)
 
 
-def chamar_motor[T: BaseModel](
+def chamar_motor[T: ModeloApi](
     provedor: ProvedorIA,
     pedido: PedidoIA,
     esquema: type[T],
@@ -61,11 +74,12 @@ def chamar_motor[T: BaseModel](
     resposta = provedor.gerar(pedido, esquema)
     resultado: T | None = None
     meta: _Meta | None = None
-    if resposta.erro is None and resposta.bruto is not None:
+    if resposta.erro is None and isinstance(resposta.bruto, dict):
         try:
-            resultado = esquema.model_validate(resposta.bruto.get("resultado"))
-            meta = _Meta.model_validate(resposta.bruto.get("meta"))
-        except ValidationError:
+            envelope = _Envelope.model_validate(resposta.bruto)
+            resultado = esquema.model_validate_json(json.dumps(envelope.resultado), strict=True)
+            meta = _Meta.model_validate_json(json.dumps(envelope.meta), strict=True)
+        except (ValidationError, TypeError, ValueError):
             resultado, meta = None, None
 
     valida = resultado is not None and meta is not None

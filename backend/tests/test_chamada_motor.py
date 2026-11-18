@@ -89,3 +89,30 @@ def test_registro_nao_guarda_prompt_nem_dados():
     _, registros, _ = chamar(BRUTO_VALIDO)
     texto = registros[0].model_dump_json()
     assert "INSTRUCOES-SECRETAS" not in texto and "Paciente, 34 anos" not in texto
+
+
+class Contagem(ModeloApi):
+    quantidade: int
+
+
+def test_texto_no_lugar_de_numero_e_rejeitado():
+    falso = ProvedorIAFalso({"dd": {"resultado": {"quantidade": "3"}, "meta": META}})
+    proposta = chamar_motor(falso, pedido(), Contagem, 1, RelogioFixo(QUANDO), lambda r: None)
+    assert proposta.acao == "REJECT"
+
+
+def test_chave_a_mais_no_envelope_e_rejeitada():
+    proposta, _, _ = chamar({**BRUTO_VALIDO, "extra": 1})
+    assert proposta.acao == "REJECT"
+
+
+def test_resposta_que_nao_e_objeto_e_rejeitada_e_registrada():
+    proposta, registros, _ = chamar([1, 2])  # type: ignore[arg-type]
+    assert proposta.acao == "REJECT" and len(registros) == 1
+
+
+def test_telefone_como_numero_nos_dados_bloqueia():
+    falso = ProvedorIAFalso({"dd": BRUTO_VALIDO})
+    with pytest.raises(ErroPrivacidade):
+        chamar_motor(falso, pedido({"contato": 11987654321}), Hipoteses, 3, RelogioFixo(QUANDO), lambda r: None)
+    assert falso.pedidos == []

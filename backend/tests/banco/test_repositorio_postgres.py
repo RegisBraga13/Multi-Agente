@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 
 from app.contratos.paciente import NovoPaciente
+from app.pacientes.repositorio import ErroCpfDuplicado
 from app.pacientes.repositorio_postgres import RepositorioPacientesPostgres
 from tests.banco.conftest import MEDICO_A, MEDICO_B
 
@@ -22,3 +23,10 @@ def test_postgres_nao_devolve_paciente_de_outro_medico(url_banco):
     repo = RepositorioPacientesPostgres(url_banco)
     criado = repo.criar(MEDICO_A, ANA.model_copy(update={"cpf": None}))
     assert repo.buscar(MEDICO_B, criado.id) is None
+
+
+def test_postgres_cpf_repetido_vira_erro_de_dominio(url_banco):
+    repo = RepositorioPacientesPostgres(url_banco)
+    repo.criar(MEDICO_A, ANA.model_copy(update={"cpf": "99988877766"}))
+    with pytest.raises(ErroCpfDuplicado):
+        repo.criar(MEDICO_A, ANA.model_copy(update={"cpf": "99988877766"}))

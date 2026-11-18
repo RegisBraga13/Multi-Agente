@@ -60,3 +60,19 @@ def test_campo_desconhecido_e_422(repo):
 def test_json_em_camel_case(repo):
     corpo = cliente(repo).post("/pacientes", json=ANA).json()
     assert "estadoCivil" in corpo and "criadoEm" in corpo and "estado_civil" not in corpo
+
+
+def test_cpf_repetido_e_409(repo):
+    c = cliente(repo)
+    assert c.post("/pacientes", json={**ANA, "cpf": "12345678901"}).status_code == 201
+    r = c.post("/pacientes", json={**ANA, "cpf": "12345678901"})
+    assert r.status_code == 409 and r.json() == {"detail": "já existe paciente com este CPF"}
+
+
+def test_mesmo_cpf_em_outro_medico_e_permitido(repo):
+    assert cliente(repo, MEDICO_A).post("/pacientes", json={**ANA, "cpf": "12345678901"}).status_code == 201
+    assert cliente(repo, MEDICO_B).post("/pacientes", json={**ANA, "cpf": "12345678901"}).status_code == 201
+
+
+def test_cpf_com_digitos_unicode_e_422(repo):
+    assert cliente(repo).post("/pacientes", json={**ANA, "cpf": "١٢٣٤٥٦٧٨٩٠١"}).status_code == 422

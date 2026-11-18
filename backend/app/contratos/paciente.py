@@ -18,7 +18,7 @@ class NovoPaciente(ModeloApi):
     sexo: Literal["F", "M"]
     estado_civil: str | None = None
     profissao: str | None = None
-    cpf: str | None = Field(default=None, pattern=r"^\d{11}$")
+    cpf: str | None = Field(default=None, pattern=r"^[0-9]{11}$")
     telefone: str | None = None
 
 

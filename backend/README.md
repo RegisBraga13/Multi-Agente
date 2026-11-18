@@ -19,6 +19,11 @@ docker compose down -v            # apaga o banco local (só dados fictícios)
 Variáveis do servidor: `DATABASE_URL` e `MEDICO_LOCAL_ID` (primeiro uso: só o autor, local). Sem elas o
 servidor não sobe.
 
+**Só neste computador.** O servidor ainda não tem login (todo pedido é do médico local), por isso as portas
+ficam presas em `127.0.0.1`. Localmente o servidor conecta como `postgres` e assume o papel `authenticated` a
+cada transação; em produção a conexão deve usar um usuário que só seja membro de `authenticated`
+(portões do §11 do desenho). `docker compose up` pode rodar de novo: migrations já aplicadas são puladas.
+
 ## Desenvolver
 
 ```bash

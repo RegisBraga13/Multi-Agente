@@ -9,7 +9,7 @@ import re
 from typing import Literal
 
 PADROES_IDENTIDADE = {
-    "CPF": re.compile(r"\d{3}\.?\d{3}\.?\d{3}-?\d{2}"),
+    "CPF": re.compile(r"(?<!\d)\d{3}[\s.]?\d{3}[\s.]?\d{3}[\s-]?\d{2}(?!\d)"),
     # com ou sem DDD; separadores comuns: espaço, ponto, hífen ("98765-4321", "(11) 98765 4321", "9 8765 4321")
     "telefone": re.compile(r"(?<!\d)(?:\(?\d{2}\)?[\s.-]?)?(?:9[\s.-]?)?\d{4}[\s.-]?\d{4}(?!\d)"),
     "e-mail": re.compile(r"\S+@\S+\.\S+"),

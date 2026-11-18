@@ -21,3 +21,7 @@ def test_encontra_identidade(texto, tipo):
 
 def test_numero_clinico_nao_e_identidade():
     assert encontrar_identidade("Plaquetas 250.000-300.000; lesão de 8 mm em 2019") == []
+
+
+def test_cpf_com_espacos():
+    assert "CPF" in encontrar_identidade("CPF 123 456 789 10")

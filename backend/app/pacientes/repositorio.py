@@ -7,6 +7,10 @@ from uuid import UUID, uuid4
 from app.contratos.paciente import NovoPaciente, Paciente
 
 
+class ErroCpfDuplicado(Exception):
+    """O médico já tem um paciente com este CPF (único por médico; não é chave)."""
+
+
 class RepositorioPacientes(Protocol):
     def criar(self, medico_id: UUID, novo: NovoPaciente) -> Paciente: ...
 
@@ -18,6 +22,8 @@ class RepositorioPacientesMemoria:
         self._dados: dict[UUID, tuple[UUID, Paciente]] = {}
 
     def criar(self, medico_id: UUID, novo: NovoPaciente) -> Paciente:
+        if novo.cpf and any(dono == medico_id and p.cpf == novo.cpf for dono, p in self._dados.values()):
+            raise ErroCpfDuplicado
         paciente = Paciente(**novo.model_dump(), id=uuid4(), criado_em=datetime.now(UTC))
         self._dados[paciente.id] = (medico_id, paciente)
         return paciente

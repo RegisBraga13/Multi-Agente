@@ -10,6 +10,7 @@ import psycopg
 from psycopg.rows import dict_row
 
 from app.contratos.paciente import NovoPaciente, Paciente
+from app.pacientes.repositorio import ErroCpfDuplicado
 
 _COLUNAS = "id, full_name, birth_date, sex, marital_status, occupation, cpf, phone, created_at"
 
@@ -52,12 +53,15 @@ class RepositorioPacientesPostgres:
             novo.cpf,
             novo.telefone,
         )
-        with transacao_do_medico(self.url, medico_id) as conn:
-            linha = conn.execute(
-                "insert into patients (doctor_id, full_name, birth_date, sex, marital_status, occupation, cpf, phone)"
-                f" values (%s, %s, %s, %s, %s, %s, %s, %s) returning {_COLUNAS}",
-                valores,
-            ).fetchone()
+        try:
+            with transacao_do_medico(self.url, medico_id) as conn:
+                linha = conn.execute(
+                    "insert into patients (doctor_id, full_name, birth_date, sex, marital_status, occupation, cpf, phone)"
+                    f" values (%s, %s, %s, %s, %s, %s, %s, %s) returning {_COLUNAS}",
+                    valores,
+                ).fetchone()
+        except psycopg.errors.UniqueViolation as erro:
+            raise ErroCpfDuplicado from erro
         if linha is None:
             raise RuntimeError("o banco não devolveu o paciente criado")
         return _paciente(linha)
