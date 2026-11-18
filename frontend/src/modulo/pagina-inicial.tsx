@@ -7,6 +7,7 @@ import { NaoEncontrada } from '../nao-encontrada'
 import { dataLocal, MEDICO_EXEMPLO } from '../medico/exemplo'
 import { dataPorExtenso, idade, janelaDeHoje, saudacao, somarDias, vistaDoModulo } from './dia'
 import type { Atendimento } from './tipos'
+import { abrirJanelaProntuario } from '../prontuario/registro'
 import { useAgora, vistaDoDia } from './vista'
 
 /** Quantos pacientes o cartão "Hoje" mostra, para a página caber numa tela (~690 px). */
@@ -78,7 +79,7 @@ function Pagina({ esp }: { esp: Especialidade }) {
   }, [aberto, vista])
 
   const painel = escolhido ? (
-    <PainelFicha classeAlergia={estiloAlergia(esp)} at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => setAviso('O prontuário é uma das próximas etapas do módulo.')} />
+    <PainelFicha classeAlergia={estiloAlergia(esp)} at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => abrirJanelaProntuario(esp.slug, escolhido.paciente)} />
   ) : (
     <CartaoFichas prontas={atual.fichasProntas} faltam={atual.semFicha} />
   )

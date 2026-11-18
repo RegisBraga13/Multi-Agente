@@ -22,6 +22,7 @@ import { alternarEmitir, atualizarAnexos, avancar, editarAnexo, montarAnexos, pe
 import { PaginaAnexos } from './anexos-pagina'
 import { atualizarProntuario, cabecalhoProntuario, chave, montarProntuario, type SecaoProntuario } from './prontuario'
 import { PaginaProntuario } from './prontuario-pagina'
+import { abrirJanelaProntuario, chavePaciente, salvarEntrada } from '../prontuario/registro'
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
@@ -58,6 +59,20 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
     return () => clearTimeout(t)
   }, [aviso])
   const fecharAnexos = useCallback(() => setAnexos(false), [])
+
+  // janela do prontuário: abre e fecha a qualquer momento, separada da consulta
+  const janela = useRef<Window | null>(null)
+  const [janelaAberta, setJanelaAberta] = useState(false)
+  useEffect(() => {
+    if (!janelaAberta) return
+    const t = setInterval(() => { if (!janela.current || janela.current.closed) setJanelaAberta(false) }, 800)
+    return () => clearInterval(t)
+  }, [janelaAberta])
+  const alternarJanela = () => {
+    if (janela.current && !janela.current.closed) { janela.current.close(); setJanelaAberta(false); return }
+    janela.current = abrirJanelaProntuario(esp.slug, at.paciente)
+    setJanelaAberta(!!janela.current)
+  }
 
   const f = at.ficha
   const alergias = f.situacao === 'pronta' ? f.alergias : []
@@ -175,6 +190,11 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
   /** Salvar prontuário: a consulta fica finalizada e volta para a página inicial do módulo. */
   const salvarProntuario = () => {
     fazer('oficializar', 'prontuario')
+    // a entrada desta consulta vai para o prontuário do paciente (com as edições do médico)
+    if (prontuario) salvarEntrada(chavePaciente(at.paciente), {
+      tipo: at.tipo, data: at.id.slice(0, 10), hora: at.inicio,
+      secoes: prontuario.geradas.map((s) => ({ titulo: s.titulo, linhas: s.linhas.map((l) => ({ rotulo: l.rotulo, texto: prontuario.textos[chave(s, l)] ?? l.texto })) })),
+    })
     navegar(`/modulo/${esp.slug}`, { state: { aviso: `Consulta finalizada. Prontuário de ${at.paciente.nome} salvo.` } })
   }
 
@@ -229,7 +249,11 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
               <b className="mr-1.5 text-[11px] tracking-[0.14em] uppercase">Alergia</b><b>{a.substancia}</b>
             </span>
           ))}
-          <button type="button" onClick={() => setAnexos(true)} className="ml-auto border-[1.5px] border-tinta px-3 py-1 text-[14px] font-semibold hover:bg-tinta hover:text-papel">
+          <button type="button" onClick={alternarJanela} aria-pressed={janelaAberta} title="Abre numa janela separada (só leitura)"
+            className={`ml-auto border-[1.5px] border-tinta px-3 py-1 text-[14px] font-semibold ${janelaAberta ? 'bg-tinta text-papel' : 'hover:bg-tinta hover:text-papel'}`}>
+            {janelaAberta ? 'Fechar prontuário' : 'Prontuário'}
+          </button>
+          <button type="button" onClick={() => setAnexos(true)} className="border-[1.5px] border-tinta px-3 py-1 text-[14px] font-semibold hover:bg-tinta hover:text-papel">
             Anexos
           </button>
         </div>

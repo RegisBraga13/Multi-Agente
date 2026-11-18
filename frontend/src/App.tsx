@@ -4,6 +4,7 @@ import { NaoEncontrada } from './nao-encontrada'
 import { PaginaContratar } from './pagina-contratar'
 import { PaginaMedico } from './medico/pagina-medico'
 import { PaginaInicialModulo } from './modulo/pagina-inicial'
+import { JanelaProntuario } from './prontuario/janela-prontuario'
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/medico/:slug" element={<PaginaMedico />} />
         <Route path="/modulo/:slug" element={<PaginaInicialModulo />} />
         <Route path="/modulo/:slug/consulta/:atendimento/:etapa" element={<PaginaConsulta />} />
+        <Route path="/modulo/:slug/prontuario/:paciente" element={<JanelaProntuario />} />
         <Route path="*" element={<NaoEncontrada />} />
       </Routes>
     </BrowserRouter>
