@@ -79,7 +79,6 @@ PROPOSTA_VAZIA = CondutaProposta(
     emergencia=[],
     tabela=None,
     ia=None,
-    complemento=None,
     origem="sugestão da IA",
     avisos=[],
     acao="REJECT",

@@ -140,7 +140,7 @@ def gerar(
             principal = next(i.hipotese for i in dd.itens if i.decisao == "confirmada")
             dx = DiagnosticoConfirmado(nome=principal.nome, cid=principal.cid, certeza=principal.certeza)
             c = motor_conduta(ctx.provedor, dx, h.seguranca, ctx.protocolos, ctx.relogio, reg, termos, ao_escrever)
-            conteudos["conduta"] = conteudos["conduta-complemento"] = c.model_dump(by_alias=True, mode="json")
+            conteudos["conduta"] = c.model_dump(by_alias=True, mode="json")
             avisos = c.avisos
             novo = (
                 CondutaBloco(proposta=c, diagnostico=dx, escolha={}, textos=["", "", "", ""], receita=[], livres=[])

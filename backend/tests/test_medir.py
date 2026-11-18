@@ -57,8 +57,7 @@ PADRAO = {
     "sinais": lambda p: {"resultado": {"detectados": [], "extras": []}, "meta": META},
     "historia": lambda p: historia(),
     "diagnosticos": lambda p: dd(),
-    "conduta-complemento": lambda p: {"resultado": {"orientacoes": [], "alertas": []}, "meta": META},
-    "conduta": lambda p: {"resultado": {"grupos": [], "alertas": []}, "meta": META},
+    "conduta": lambda p: {"resultado": {"grupos": []}, "meta": META},
     "avaliadora": avaliadora_cumpre,
 }
 
@@ -150,9 +149,10 @@ def test_excecao_num_caso_nao_para_os_outros():
 
 def test_conduta_usa_diagnostico_esperado():
     roteiro = Roteiro(diagnosticos=lambda p: dd("Rosácea", "L71.9"))
-    medir1(caso(), roteiro)
-    [p] = [p for p in roteiro.pedidos if p.motor.startswith("conduta")]
-    assert p.dados["diagnostico"]["cid"] == "L70.0" and p.motor == "conduta-complemento"
+    r = medir1(caso(), roteiro)
+    [x] = [x for x in r.criterios if x.criterio.startswith("protocolo")]
+    assert x.resultado == "passou" and x.nota == "usado: acne"  # tabela da acne, não da rosácea
+    assert not [p for p in roteiro.pedidos if p.motor.startswith("conduta")]  # com tabela, sem IA
 
 
 def test_custo_pelo_preco_do_modelo():
@@ -244,9 +244,9 @@ def test_conduta_rejeitada_nao_passa_proibidos_de_graca():
     assert any(x.criterio == "conduta produzida" and x.resultado == "falhou" for x in r.criterios)
 
 
-def test_complemento_e_avaliadora_rejeitados_entram_em_rejeitados():
-    r = medir1(caso(), Roteiro(**{"conduta-complemento": lambda p: "timeout", "avaliadora": lambda p: "timeout"}))
-    assert "conduta-complemento" in r.rejeitados and "avaliadora" in r.rejeitados
+def test_avaliadora_rejeitada_entra_em_rejeitados():
+    r = medir1(caso(), Roteiro(avaliadora=lambda p: "timeout"))
+    assert "avaliadora" in r.rejeitados
 
 
 def test_modelo_do_relatorio_vem_das_chamadas_e_demo_e_marcada(tmp_path, capsys):

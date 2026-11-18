@@ -4,7 +4,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from app.contratos.base import ModeloApi
-from app.motores.conduta import ComplementoConduta, CondutaIA
+from app.motores.conduta import CondutaIA
 from app.motores.diagnosticos import DiagnosticosIA
 from app.motores.historia import HistoriaClinica
 from app.motores.sinais import SinaisIA
@@ -45,7 +45,6 @@ ESQUEMAS: list[type[BaseModel]] = [
     HistoriaClinica,
     SinaisIA,
     DiagnosticosIA,
-    ComplementoConduta,
     CondutaIA,
     AvaliacaoIA,
 ]

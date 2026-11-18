@@ -79,7 +79,6 @@ def test_conduta_bloco_exige_4_textos():
             "emergencia": [],
             "tabela": None,
             "ia": None,
-            "complemento": None,
             "origem": "sugestão da IA",
             "avisos": [],
             "acao": "REJECT",

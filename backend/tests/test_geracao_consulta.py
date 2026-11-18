@@ -46,8 +46,7 @@ PADRAO = {
     "sinais": lambda p: {"resultado": {"detectados": [], "extras": []}, "meta": META},
     "historia": historia_ia,
     "diagnosticos": dd_ia,
-    "conduta-complemento": lambda p: {"resultado": {"orientacoes": ["Orientar"], "alertas": []}, "meta": META},
-    "conduta": lambda p: {"resultado": {"grupos": [], "alertas": []}, "meta": META},
+    "conduta": lambda p: {"resultado": {"grupos": []}, "meta": META},
 }
 
 

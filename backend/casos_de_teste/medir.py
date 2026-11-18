@@ -274,8 +274,6 @@ def medir_caso(
         if sem_conduta:
             rejeitados.append("conduta")
             criterios.append(_regra("conduta", "conduta produzida", False, "; ".join(conduta.avisos)))
-        elif conduta.ia_falhou:
-            rejeitados.append("conduta-complemento")
         usada = conduta.tabela.chave if conduta.tabela else None
         da_tabela = usada is not None
         ec = e.conduta

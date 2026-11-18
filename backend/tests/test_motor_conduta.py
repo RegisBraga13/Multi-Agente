@@ -15,7 +15,6 @@ PROTOCOLOS = carregar_protocolos("dermatologia")
 ACNE = DiagnosticoConfirmado(nome="Acne vulgar", cid="L70.0", certeza="clinico")
 URTICARIA = DiagnosticoConfirmado(nome="Urticária aguda", cid="L50.0", certeza="hipotese")
 
-COMPLEMENTO = {"resultado": {"orientacoes": ["Conversar sobre o plano de gestação"], "alertas": []}, "meta": META}
 ITEM = {
     "nome": "Bilastina",
     "forma": "COMP",
@@ -34,7 +33,6 @@ CONDUTA_IA = {
                 "opcoes": [{"rotulo": "Anti-histamínico", "texto": "Anti-histamínico oral.", "receita": [ITEM]}],
             },
         ],
-        "alertas": ["Avaliar via aérea"],
     },
     "meta": META,
 }
@@ -58,22 +56,28 @@ def rodar(dx, seg, respostas):
     return c, falso, registros
 
 
-def test_com_tabela_ia_so_complementa():
-    c, falso, _ = rodar(ACNE, seguranca("gestacao-ou-plano"), {"conduta-complemento": COMPLEMENTO})
-    [p] = falso.pedidos
-    assert (p.motor, p.esforco, p.versao_prompt) == ("conduta-complemento", "medium", "conduta-derm-1")
-    assert c.origem == "protocolo acne v1" and c.ia is None and c.acao == "HUMAN_REVIEW"
-    assert c.complemento.orientacoes == ["Conversar sobre o plano de gestação"]
+def test_com_tabela_e_a_tabela_sem_ia():
+    c, falso, registros = rodar(ACNE, seguranca("gestacao-ou-plano"), {})
+    assert falso.pedidos == [] and registros == []  # protocolo é regra fixa: nenhuma chamada à IA
+    assert c.origem == "protocolo acne v1" and c.ia is None and c.acao == "HUMAN_REVIEW" and not c.ia_falhou
     remedios = remedios_da_conduta(c)
     assert "Ácido azelaico" in remedios and "Isotretinoína" not in remedios
-    assert p.dados["tabela"]["chave"] == "acne"
+    assert c.avisos == []
 
 
-def test_sem_tabela_ia_propoe_marcada():
+def test_sem_tabela_ia_propoe_opcoes_objetivas():
     c, falso, _ = rodar(URTICARIA, seguranca(), {"conduta": CONDUTA_IA})
-    assert falso.pedidos[0].motor == "conduta"
+    [p] = falso.pedidos
+    assert (p.motor, p.versao_prompt) == ("conduta", "conduta-derm-2")
     assert c.origem == "sugestão da IA" and c.tabela is None and c.ia is not None
     assert remedios_da_conduta(c) == ["Bilastina"] and c.urgencia == "rotina"
+
+
+def test_sem_texto_livre_da_ia_na_conduta():
+    meta_com_aviso = {**META, "avisos": ["Idade não informada."]}
+    c, _, _ = rodar(URTICARIA, seguranca(), {"conduta": {**CONDUTA_IA, "meta": meta_com_aviso}})
+    assert c.avisos == []  # aviso livre da IA não vai à conduta
+    assert "alertas" not in c.ia.model_dump()
 
 
 def test_emergencia_entra_mesmo_com_ia_rejeitada():
@@ -84,21 +88,14 @@ def test_emergencia_entra_mesmo_com_ia_rejeitada():
 
 def test_sem_tabela_e_ia_rejeitada_e_reject():
     c, _, registros = rodar(URTICARIA, seguranca(), {"conduta": "timeout"})
-    assert c.acao == "REJECT" and registros[0].acao == "REJECT"
-
-
-def test_com_tabela_e_ia_rejeitada_continua_com_a_tabela():
-    c, _, _ = rodar(ACNE, seguranca(), {"conduta-complemento": "timeout"})
-    assert c.acao == "HUMAN_REVIEW" and c.tabela is not None and c.complemento is None
-    assert any("A IA não conseguiu" in a for a in c.avisos)
+    assert c.acao == "REJECT" and registros[0].acao == "REJECT" and c.ia_falhou
 
 
 def test_texto_cita_bloqueadas_com_motivo():
-    c, _, _ = rodar(ACNE, seguranca("gestacao-ou-plano"), {"conduta-complemento": COMPLEMENTO})
+    c, _, _ = rodar(ACNE, seguranca("gestacao-ou-plano"), {})
     texto = texto_da_conduta(c)
     assert "Não indicado: Isotretinoína oral — incompatível com gestação ou tentativa de gravidez" in texto
     assert "Ácido azelaico" in texto and "Urgência: rotina" in texto
-    assert "Conversar sobre o plano de gestação" in texto
 
 
 def test_texto_traz_a_emergencia():
@@ -121,8 +118,3 @@ def test_privacidade_bloqueada_mantem_emergencia_e_urgencia():
     )
     assert falso.pedidos == [] and c.urgencia == "imediata" and c.emergencia == LISTA["angioedema"].acao
     assert c.acao == "REJECT" and any("privacidade" in a for a in c.avisos) and c.ia_falhou
-
-
-def test_complemento_falho_marca_ia_falhou():
-    c, _, _ = rodar(ACNE, seguranca(), {"conduta-complemento": "timeout"})
-    assert c.ia_falhou and c.acao == "HUMAN_REVIEW"

@@ -18,7 +18,12 @@ Constituição seja garantida no servidor e o prontuário fique no Postgres, sem
 5. **Documentos** (receita, atestado, laudo): o texto continua montado pela tela, no formato aprovado; o
    servidor guarda o texto final e o estado (autor, 18/11).
 6. **Sem fila** no primeiro uso (um médico, local); entra atrás de uma interface quando houver mais uso (autor, 18/11).
-7. **Toda chamada da IA em `ai_proposals`**, com a proposta validada; IA real só com `IA_PROVEDOR=anthropic`
+7. **Conduta e tratamento sem texto livre da IA** (autor, 18/11, todos os módulos): objetiva, como uma
+   prescrição — grupos, opções e itens de receita, nada marcado; o médico escolhe o que vai para a receita.
+   Com protocolo, as opções são da tabela e a IA não é chamada; sem protocolo, a IA propõe opções no mesmo
+   formato. Sai o "complemento" de orientações e alertas do ADR 0004. A origem ("protocolo X" / "sugestão da
+   IA") só informa o médico na tela; nunca entra no prontuário. A história clínica continua como estabelecido.
+8. **Toda chamada da IA em `ai_proposals`**, com a proposta validada; IA real só com `IA_PROVEDOR=anthropic`
    (padrão: demonstração, sem chave e sem custo).
 
 **Consequências.** O 3C troca a simulação das telas pelas rotas, página por página. Nome do paciente no pedido

@@ -1,10 +1,14 @@
-"""Motor da conduta (desenho §6, §7.3 e §12): tabela primeiro, IA só complementa ou cobre a lacuna.
+"""Motor da conduta (desenho §6, §7.3 e §12): objetiva, como uma prescrição.
+
+Grupos, opções e itens de receita; nada vem marcado; o médico escolhe o que vai para a receita. A IA não escreve
+orientações nem alertas em texto livre na conduta (regra do autor, 18/11/2026, para todos os módulos).
 
 Ordem fixa:
 1. Urgência e ação de emergência pelos sinais disparados — regra fixa, sem IA, mesmo sem protocolo.
-2. Protocolo pelo CID do diagnóstico confirmado → opções da tabela (contraindicadas tiradas, com motivo); a IA só
-   devolve orientações e alertas complementares, sem receitar.
-3. Sem protocolo → a IA propõe os 4 grupos, marcada "sugestão da IA".
+2. Protocolo pelo CID do diagnóstico confirmado → as opções da tabela (contraindicadas tiradas, com motivo).
+   Sem IA.
+3. Sem protocolo → a IA propõe as opções nos 4 grupos, no mesmo formato objetivo. A origem ("protocolo X v.Y" /
+   "sugestão da IA") só informa o médico na tela; nunca entra no prontuário.
 Recebe SÓ o diagnóstico oficializado e os dados de segurança (Constituição): nada da história.
 """
 
@@ -47,11 +51,6 @@ class DiagnosticoConfirmado(ModeloApi):
     certeza: Certeza
 
 
-class ComplementoConduta(ModeloApi):
-    orientacoes: list[str]
-    alertas: list[str]
-
-
 class OpcaoIA(ModeloApi):
     rotulo: str
     texto: str
@@ -65,7 +64,6 @@ class GrupoIA(ModeloApi):
 
 class CondutaIA(ModeloApi):
     grupos: list[GrupoIA]
-    alertas: list[str]
 
 
 class CondutaProposta(ModeloApi):
@@ -73,7 +71,6 @@ class CondutaProposta(ModeloApi):
     emergencia: list[str]
     tabela: PropostaTabela | None
     ia: CondutaIA | None
-    complemento: ComplementoConduta | None
     origem: str
     avisos: list[str]
     acao: Acao
@@ -100,33 +97,17 @@ def motor_conduta(
         "emergencia": emergencia,
     }
 
-    def pedido(motor: str, extra: dict[str, object]) -> PedidoIA:
-        return PedidoIA(
-            motor=motor, versao_prompt=prompt.versao, instrucoes=prompt.texto, dados=dados | extra, esforco="medium"
-        )
-
     tabela = aplicar_protocolo(protocolo, seguranca.sinais) if protocolo is not None else None
-    avisos: list[str] = []
-    complemento: ComplementoConduta | None = None
+    avisos: list[str] = []  # só avisos do sistema (falha, privacidade); texto livre da IA não entra
     ia: CondutaIA | None = None
-    try:
-        if tabela is not None:
-            extra: dict[str, object] = {"tabela": tabela.model_dump(by_alias=True, mode="json")}
-            p = chamar_motor(
-                provedor,
-                pedido("conduta-complemento", extra),
-                ComplementoConduta,
-                VERSAO_ESQUEMA_CONDUTA,
-                relogio,
-                registrar,
-                termos_proibidos,
-                ao_escrever=ao_escrever,
-            )
-            complemento, avisos = p.resultado, p.avisos
-        else:
+    if tabela is None:
+        pedido = PedidoIA(
+            motor="conduta", versao_prompt=prompt.versao, instrucoes=prompt.texto, dados=dados, esforco="medium"
+        )
+        try:
             q = chamar_motor(
                 provedor,
-                pedido("conduta", {}),
+                pedido,
                 CondutaIA,
                 VERSAO_ESQUEMA_CONDUTA,
                 relogio,
@@ -134,11 +115,11 @@ def motor_conduta(
                 termos_proibidos,
                 ao_escrever=ao_escrever,
             )
-            ia, avisos = q.resultado, q.avisos
-    except ErroPrivacidade as erro:
-        # urgência, emergência e tabela são regra fixa: continuam valendo sem a IA
-        avisos = [f"pedido à IA bloqueado por privacidade ({erro})"]
-    ia_falhou = complemento is None and ia is None
+            ia = q.resultado
+        except ErroPrivacidade as erro:
+            # urgência e emergência são regra fixa: continuam valendo sem a IA
+            avisos = [f"pedido à IA bloqueado por privacidade ({erro})"]
+    ia_falhou = tabela is None and ia is None
     if ia_falhou:
         avisos = [*avisos, AVISO_FALHOU]
     return CondutaProposta(
@@ -146,10 +127,9 @@ def motor_conduta(
         emergencia=emergencia,
         tabela=tabela,
         ia=ia,
-        complemento=complemento,
         origem=tabela.origem if tabela is not None else ORIGEM_IA,
         avisos=avisos,
-        # com tabela, a proposta vale mesmo sem a IA; sem tabela e sem IA, não há conduta a revisar
+        # sem tabela e sem IA, não há conduta a revisar
         acao="HUMAN_REVIEW" if tabela is not None or ia is not None else "REJECT",
         ia_falhou=ia_falhou,
     )
@@ -174,10 +154,6 @@ def texto_da_conduta(c: CondutaProposta) -> str:
         for gi in c.ia.grupos:
             opcoes = [f"{o.rotulo}: {o.texto}" + "".join(f" [{_item(i)}]" for i in o.receita) for o in gi.opcoes]
             partes.append(f"{ROTULOS[gi.id]} — opções: " + " | ".join(opcoes))
-        partes += [f"Alerta: {a}" for a in c.ia.alertas]
-    if c.complemento is not None:
-        partes += [f"Orientação: {o}" for o in c.complemento.orientacoes]
-        partes += [f"Alerta: {a}" for a in c.complemento.alertas]
     partes += [f"Aviso: {a}" for a in c.avisos]
     return "\n".join(partes)
 

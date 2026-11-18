@@ -31,10 +31,8 @@ class ProvedorDemonstracao:
             ev = {"lado": "favor", "texto": "demonstração", "secao": "hda", "trecho": self.HDA}
             hip = {"nome": "Demonstração", "cid": "L98.9", "certeza": "hipotese", "pct": 50, "evidencias": [ev]}
             resultado = {"hipoteses": [hip], "naoPodePerder": None, "rastrear": []}
-        elif pedido.motor == "conduta-complemento":
-            resultado = {"orientacoes": [], "alertas": []}
         elif pedido.motor == "conduta":
-            resultado = {"grupos": [], "alertas": []}
+            resultado = {"grupos": []}
         else:  # avaliadora: tudo em dúvida
             resultado = {
                 "vereditos": [
