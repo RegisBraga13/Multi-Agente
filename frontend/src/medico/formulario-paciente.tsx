@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { UFS } from '../cadastro/validacao'
 import { Campo } from './campo'
-import { btnPrimario, btnSecundario, classeEntrada } from './estilos'
-import { linkWhatsapp } from './duvidas'
-import { mensagemFormulario } from './mensagem'
+import { btnSecundario, classeEntrada } from './estilos'
+import { enviarFormulario, ErroServidor, lerComoBase64 } from '../servidor/agenda'
 import { blocoRespondido, blocosDoFormulario, faltaResponder, type Bloco } from './blocos'
 import { GrupoOpcoes } from './opcoes'
 import { TextoCrescente } from './texto-crescente'
@@ -12,8 +11,9 @@ import { ESTADOS_CIVIS, calcularIdade, formatarWhatsapp, normalizarWhatsapp, val
 import { diaComSemana, horaCurta, NOME_MODALIDADE } from './textos'
 import type { Medico } from './tipos'
 
-type Props = { medico: Medico; pedido: RascunhoPedido; onConcluir(): void }
-type Foto = { nome: string; url: string }
+/** `token`: link do formulário deste pedido (as respostas vão para o servidor por ele) */
+type Props = { medico: Medico; token: string; pedido: RascunhoPedido; onConcluir(): void }
+type Foto = { nome: string; url: string; arquivo: File }
 
 const SIM_NAO = [{ valor: 'sim', rotulo: 'Sim' }, { valor: 'nao', rotulo: 'Não' }]
 const comoOpcoes = (lista: readonly string[]) => lista.map((t) => ({ valor: t, rotulo: t }))
@@ -23,7 +23,7 @@ const ocupaLinhaToda = (q: Pergunta) =>
 const semChave = <T,>(r: Record<string, T>, chave: string) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== chave))
 
 /** Formulário do paciente, aberto dentro da página logo depois do pedido enviado. */
-export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
+export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props) {
   const whatsapp = normalizarWhatsapp(pedido.whatsapp)
   const [dados, setDados] = useState<DadosPessoais>({
     nomeCompleto: pedido.nome, nascimento: '', sexo: '', whatsapp: pedido.whatsapp, email: '', cidade: '', uf: '',
@@ -37,7 +37,8 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
   const [fotos, setFotos] = useState<Record<string, Foto>>({})
   const [errosFoto, setErrosFoto] = useState<Record<string, string>>({})
   const [pronto, setPronto] = useState(false)
-  const [linkEnvio, setLinkEnvio] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [erroEnvio, setErroEnvio] = useState<string | null>(null)
   const blocos = blocosDoFormulario(partes)
   const [etapa, setEtapa] = useState(0)
   const tituloBloco = useRef<HTMLHeadingElement>(null)
@@ -71,7 +72,7 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
     const outras = semChave(fotos, id)
     const outrosErros = semChave(errosFoto, id)
     const erro = arquivo && validarFoto(arquivo)
-    setFotos(arquivo && !erro ? { ...outras, [id]: { nome: arquivo.name, url: URL.createObjectURL(arquivo) } } : outras)
+    setFotos(arquivo && !erro ? { ...outras, [id]: { nome: arquivo.name, url: URL.createObjectURL(arquivo), arquivo } } : outras)
     setErrosFoto(erro ? { ...outrosErros, [id]: erro } : outrosErros)
   }
 
@@ -156,6 +157,25 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
     return false
   }
 
+  async function enviar() {
+    setEnviando(true)
+    setErroEnvio(null)
+    try {
+      const fotosBase64 = Object.fromEntries(
+        await Promise.all(Object.entries(fotos).map(async ([id, f]) => [id, await lerComoBase64(f.arquivo)] as const)),
+      )
+      // só as perguntas que aparecem para este paciente e foram respondidas
+      const visiveis = new Set(partes.flatMap((pt) => pt.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map((q) => q.id)))
+      const respostas = Object.fromEntries(Object.entries(pre).filter(([id, v]) => visiveis.has(id) && (Array.isArray(v) ? v.length > 0 : v.trim())))
+      await enviarFormulario(token, { dados: { ...dados, sexo: dados.sexo || 'outro' }, respostas, fotos: fotosBase64 })
+      setPronto(true)
+    } catch (erro) {
+      setErroEnvio(erro instanceof ErroServidor ? erro.message : 'Não foi possível enviar. Tente de novo.')
+    } finally {
+      setEnviando(false)
+    }
+  }
+
   function avancar(ev: FormEvent) {
     ev.preventDefault()
     if (etapa === 0 && !validarIdentificacao()) return
@@ -168,13 +188,7 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
       conferirObrigatorias(blocos[pendente])
       return setEtapa(pendente)
     }
-    // teste: o formulário segue pelo WhatsApp do próprio paciente, com a mensagem pronta para o consultório
-    const link = linkWhatsapp(medico.whatsappConsultorio, mensagemFormulario({
-      medico, pedido, dados, partes, respostas: pre, fotos: Object.keys(fotos).length, hoje: new Date(),
-    }))
-    setLinkEnvio(link)
-    window.open(link, '_blank', 'noopener')
-    setPronto(true)
+    if (!enviando) void enviar()
   }
 
   function conteudoDoBloco(b: Bloco) {
@@ -283,17 +297,11 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
         <div className="border border-linha bg-branco p-4 shadow-[0_30px_60px_-36px_rgba(19,48,47,.5)] sm:px-8 sm:py-5" style={{ borderTop: '4px solid var(--esp)' }}>
           {pronto ? (
             <div role="status">
-              <h2 id="h-form" ref={titulo} tabIndex={-1} className="text-[clamp(28px,4vw,38px)] leading-tight font-bold outline-none">Falta só enviar.</h2>
+              <h2 id="h-form" ref={titulo} tabIndex={-1} className="text-[clamp(28px,4vw,38px)] leading-tight font-bold outline-none">Formulário enviado.</h2>
               <p className="mt-3 text-[17px]">
-                O WhatsApp abriu com o formulário pronto. Toque em enviar para {medico.tratamento} {medico.nome} receber antes da consulta.
+                {medico.tratamento} {medico.nome} já recebeu suas respostas{Object.keys(fotos).length > 0 ? ' e as fotos' : ''}. Obrigado!
               </p>
-              {Object.keys(fotos).length > 0 && (
-                <p className="mt-2 text-[17px]">Depois, mande as fotos na mesma conversa.</p>
-              )}
-              <a href={linkEnvio} target="_blank" rel="noopener noreferrer" className={`${btnPrimario} mt-7 block text-center no-underline`}>
-                Abrir o WhatsApp de novo
-              </a>
-              <button type="button" className={`${btnSecundario} mt-3`} onClick={onConcluir}>Voltar à página</button>
+              <button type="button" className={`${btnSecundario} mt-7`} onClick={onConcluir}>Voltar à página</button>
             </div>
           ) : (
             <form id="formulario-paciente" noValidate onSubmit={avancar}>
@@ -351,6 +359,8 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
                 </>
               )}
 
+              {erroEnvio && <p role="alert" className="mt-4 text-[14.5px] font-semibold text-alerta">{erroEnvio}</p>}
+
               {/* navegação numa linha só: Voltar à esquerda; Pular e Próximo à direita */}
               <div className="mt-5 flex items-center gap-4 border-t border-linha pt-4 text-[14.5px] font-semibold">
                 {etapa > 0 && (
@@ -360,8 +370,8 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
                 {bloco && !bloco.obrigatorio && (
                   <button type="button" onClick={() => setEtapa(etapa + 1)} className="text-apagado underline hover:text-tinta">Pular</button>
                 )}
-                <button type="submit" className="bg-(--esp) px-7 py-3 text-[16px] font-bold text-papel transition hover:-translate-y-0.5">
-                  {bloco ? 'Próximo' : 'Enviar'}
+                <button type="submit" disabled={enviando} className="bg-(--esp) px-7 py-3 text-[16px] font-bold text-papel transition hover:-translate-y-0.5 disabled:opacity-60">
+                  {bloco ? 'Próximo' : enviando ? 'Enviando…' : 'Enviar'}
                 </button>
               </div>
             </form>

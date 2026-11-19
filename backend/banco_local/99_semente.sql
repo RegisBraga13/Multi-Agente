@@ -6,3 +6,7 @@ values (
   '{"crm": "123456", "uf": "SP", "nome": "Médico Local (fictício)", "especialidade": "dermatologia"}'
 )
 on conflict (id) do nothing;
+
+-- endereço da página do médico local (a página de exemplo /medico/ana-souza)
+update public.doctors set page_slug = 'ana-souza'
+where id = '00000000-0000-4000-8000-000000000001' and page_slug is null;

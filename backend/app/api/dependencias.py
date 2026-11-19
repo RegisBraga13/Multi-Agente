@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import Request
 
+from app.agenda.repositorio import RepositorioAgenda, RepositorioAgendaMemoria
 from app.consulta.geracao import Contexto
 from app.consulta.repositorio import RepositorioConsultas, RepositorioConsultasMemoria
 from app.especialidades.condutas import Protocolo, carregar_protocolos
@@ -25,6 +26,7 @@ class Dependencias:
     relogio: Relogio = field(default_factory=RelogioSistema)
     sinais: list[SinalAlerta] = field(default_factory=lambda: carregar_sinais("dermatologia"))
     protocolos: dict[str, Protocolo] = field(default_factory=lambda: carregar_protocolos("dermatologia"))
+    agenda: RepositorioAgenda = field(default_factory=RepositorioAgendaMemoria)
 
     def __post_init__(self) -> None:
         if self.consultas is None:

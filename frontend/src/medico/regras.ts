@@ -1,4 +1,5 @@
 // Regras do agendamento pela página do médico (funções puras, testadas).
+import type { NovoPedido } from '../servidor/agenda'
 import { EMAIL_REGEX, UFS } from '../cadastro/validacao'
 import type { Modalidade } from './tipos'
 
@@ -130,4 +131,12 @@ export function validarFoto(f: { type: string; size: number }): string | null {
   if (!f.type.startsWith('image/')) return 'Envie uma foto (imagem).'
   if (f.size > FOTO_MAX_BYTES) return 'A foto passa de 10 MB. Envie uma menor.'
   return null
+}
+
+/** O pedido no formato do servidor. Só chamar depois de `validarPedido` sem erros. */
+export function pedidoParaServidor(r: RascunhoPedido): NovoPedido {
+  return {
+    modalidade: r.modalidade, data: r.data!, inicio: r.inicio!, nome: r.nome.trim(), whatsapp: normalizarWhatsapp(r.whatsapp)!,
+    pagamento: r.atendimento === 'convenio' ? r.convenio.trim() : 'Particular', transcricao: r.transcricao!, forma: r.forma!,
+  }
 }

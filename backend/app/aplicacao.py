@@ -3,7 +3,9 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from app.api import consultas, pacientes, prontuario, saude
+from app.agenda.repositorio import HorarioOcupado, PedidoNaoEncontrado
+from app.agenda.servico import ErroAgenda, FormularioNaoEncontrado, PaginaNaoEncontrada
+from app.api import agenda, consultas, pacientes, prontuario, saude
 from app.api.dependencias import Dependencias
 from app.consulta.repositorio import ConsultaAberta, ConsultaFinalizada, ConsultaNaoEncontrada
 from app.consulta.servico import ErroEtapa
@@ -18,6 +20,12 @@ _ERROS: dict[type[Exception], tuple[int, str | None]] = {
     ConsultaAberta: (status.HTTP_409_CONFLICT, "adendo só em consulta finalizada"),
     ErroEtapa: (status.HTTP_409_CONFLICT, None),  # None = a própria mensagem do erro
     ErroPrivacidade: (status.HTTP_422_UNPROCESSABLE_CONTENT, "dado de identidade no pedido à IA; nada foi enviado"),
+    # agenda: as mensagens aparecem para o paciente
+    HorarioOcupado: (status.HTTP_409_CONFLICT, "Esse horário acabou de ser ocupado. Escolha outro."),
+    PaginaNaoEncontrada: (status.HTTP_404_NOT_FOUND, "página não encontrada"),
+    FormularioNaoEncontrado: (status.HTTP_404_NOT_FOUND, "Este link de formulário não existe."),
+    PedidoNaoEncontrado: (status.HTTP_404_NOT_FOUND, "pedido não encontrado"),
+    ErroAgenda: (status.HTTP_422_UNPROCESSABLE_CONTENT, None),
 }
 
 
@@ -37,4 +45,6 @@ def criar_app(dep: Dependencias) -> FastAPI:
     app.include_router(pacientes.rotas)
     app.include_router(consultas.rotas)
     app.include_router(prontuario.rotas)
+    app.include_router(agenda.publico)
+    app.include_router(agenda.medico_rotas)
     return app

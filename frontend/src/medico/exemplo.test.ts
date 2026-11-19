@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buscarMedico, diaAberto, gerarAgenda, horarioExiste } from './exemplo'
+import { buscarMedico, diaAberto, gerarAgenda, horarioExiste, marcarOcupados } from './exemplo'
 
 describe('gerarAgenda', () => {
   it('começa amanhã, mesmo tarde da noite', () => {
@@ -59,5 +59,17 @@ describe('buscarMedico', () => {
   it('acha a médica de exemplo e recusa slug desconhecido', () => {
     expect(buscarMedico('ana-souza')?.crm).toBe('12345')
     expect(buscarMedico('nao-existe')).toBeUndefined()
+  })
+})
+
+describe('marcarOcupados', () => {
+  it('horário pedido por outro paciente deixa de estar livre nas duas modalidades', () => {
+    const agenda = gerarAgenda(new Date(2026, 10, 16)) // segunda; amanhã = terça 17/11
+    const dia = agenda.presencial[0]
+    const livre = dia.horarios.find((h) => h.livre)!
+    const marcada = marcarOcupados(agenda, [{ data: dia.data, inicio: livre.inicio }])
+    expect(horarioExiste(marcada, 'presencial', dia.data, livre.inicio)).toBe(false)
+    expect(horarioExiste(agenda, 'presencial', dia.data, livre.inicio)).toBe(true) // a original não muda
+    expect(marcarOcupados(agenda, [])).toEqual(agenda)
   })
 })

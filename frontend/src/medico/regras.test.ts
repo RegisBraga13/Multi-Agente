@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  calcularIdade, convenioAtendido, FOTO_MAX_BYTES, normalizarWhatsapp, validarAtendimento, validarContato, validarDadosPessoais, validarFoto, validarPedido,
+  calcularIdade, convenioAtendido, FOTO_MAX_BYTES, normalizarWhatsapp, pedidoParaServidor, validarAtendimento, validarContato, validarDadosPessoais, validarFoto, validarPedido,
   type DadosPessoais, type RascunhoPedido,
 } from './regras'
 
@@ -105,5 +105,15 @@ describe('validarFoto', () => {
     expect(validarFoto({ type: 'image/jpeg', size: 2_000_000 })).toBeNull()
     expect(validarFoto({ type: 'application/pdf', size: 1000 })).not.toBeNull()
     expect(validarFoto({ type: 'image/png', size: FOTO_MAX_BYTES + 1 })).not.toBeNull()
+  })
+})
+
+describe('pedidoParaServidor', () => {
+  it('manda o WhatsApp normalizado e "Particular" ou o nome do convênio', () => {
+    expect(pedidoParaServidor({ ...base, nome: '  Maria Lima ' })).toEqual({
+      modalidade: 'presencial', data: '2026-11-17', inicio: '08:00', nome: 'Maria Lima', whatsapp: '5585991018813',
+      pagamento: 'Particular', transcricao: 'aceita', forma: 'whatsapp',
+    })
+    expect(pedidoParaServidor({ ...base, atendimento: 'convenio', convenio: ' Unimed ' }).pagamento).toBe('Unimed')
   })
 })

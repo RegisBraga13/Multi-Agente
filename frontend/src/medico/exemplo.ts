@@ -77,3 +77,12 @@ export function diaAberto(
 export function horarioExiste(agenda: Agenda, modalidade: Modalidade, data: string, inicio: string): boolean {
   return !!agenda[modalidade].find((d) => d.data === data)?.horarios.some((h) => h.inicio === inicio && h.livre)
 }
+
+/** Horários já pedidos por outros pacientes (vêm do servidor) deixam de estar livres, nas duas modalidades. */
+export function marcarOcupados(agenda: Agenda, ocupados: readonly { data: string; inicio: string }[]): Agenda {
+  if (!ocupados.length) return agenda
+  const tomado = new Set(ocupados.map((o) => `${o.data} ${o.inicio}`))
+  const marcar = (dias: DiaAgenda[]) =>
+    dias.map((d) => ({ ...d, horarios: d.horarios.map((h) => (tomado.has(`${d.data} ${h.inicio}`) ? { ...h, livre: false } : h)) }))
+  return { presencial: marcar(agenda.presencial), online: marcar(agenda.online) }
+}

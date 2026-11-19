@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 import { Campo } from './campo'
 import { btnPainel, btnPainelSecundario, classeEntrada } from './estilos'
-import { convenioAtendido, formatarWhatsapp, normalizarWhatsapp, validarAtendimento, validarContato, validarPedido, type ErrosPedido, type FormaFormulario, type RascunhoPedido } from './regras'
+import { ErroServidor, pedirConsulta } from '../servidor/agenda'
+import { convenioAtendido, formatarWhatsapp, normalizarWhatsapp, pedidoParaServidor, validarAtendimento, validarContato, validarPedido, type ErrosPedido, type FormaFormulario, type RascunhoPedido } from './regras'
 import { NOME_MODALIDADE, rotuloDiaLongo, TEXTO_TRANSCRICAO } from './textos'
 import type { Medico } from './tipos'
 
@@ -12,6 +13,10 @@ type Props = {
   rascunho: RascunhoPedido
   onMudar(r: RascunhoPedido): void
   onFechar(): void
+  /** o servidor aceitou o pedido; `token` = link do formulário */
+  onEnviado(token: string): void
+  /** outro paciente ficou com o horário enquanto este preenchia */
+  onHorarioTomado(): void
   onPreencherNaPagina(): void
 }
 
@@ -19,9 +24,11 @@ type Passo = 1 | 2 | 3 | 4 | 5 | 'enviado'
 const TOTAL = 5
 const OUTRO = 'Outro'
 
-export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, onPreencherNaPagina }: Props) {
+export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, onEnviado, onHorarioTomado, onPreencherNaPagina }: Props) {
   const [passo, setPasso] = useState<Passo>(1)
   const [erros, setErros] = useState<ErrosPedido>({})
+  const [enviando, setEnviando] = useState(false)
+  const [erroEnvio, setErroEnvio] = useState<string | null>(null)
   const [confirmouConsulta, setConfirmouConsulta] = useState(rascunho.forma === 'consulta')
   // convênio fora da lista do médico: o paciente digita o nome
   const [outro, setOutro] = useState(!!rascunho.convenio && !convenioAtendido(medico.convenios, rascunho.convenio))
@@ -47,10 +54,22 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
     muda({ forma: f })
   }
 
-  function enviar() {
+  async function enviar() {
     const e = validarPedido(r)
     setErros(e)
-    if (Object.keys(e).length) return
+    setErroEnvio(null)
+    if (Object.keys(e).length || enviando) return
+    setEnviando(true)
+    try {
+      const criado = await pedirConsulta(medico.slug, pedidoParaServidor(r))
+      onEnviado(criado.tokenFormulario)
+    } catch (erro) {
+      setErroEnvio(erro instanceof ErroServidor ? erro.message : 'Não foi possível enviar. Tente de novo.')
+      if (erro instanceof ErroServidor && erro.status === 409) onHorarioTomado()
+      return
+    } finally {
+      setEnviando(false)
+    }
     // quem escolheu preencher na página segue direto para o formulário, que abre na própria página
     if (r.forma === 'pagina') return onPreencherNaPagina()
     setPasso('enviado')
@@ -257,9 +276,11 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
               <p role="alert" className="mt-4 text-[14.5px] font-semibold text-alerta">{erros.forma ?? erros.transcricao ?? erros.horario ?? erros.atendimento ?? erros.convenio}</p>
             )}
 
+            {erroEnvio && <p role="alert" className="mt-4 text-[14.5px] font-semibold text-alerta">{erroEnvio}</p>}
+
             {!precisaReconsiderar && (
               <div className="mt-5 grid gap-2.5">
-                <button type="button" className={btnPainel} onClick={enviar}>Enviar pedido</button>
+                <button type="button" className={btnPainel} onClick={enviar} disabled={enviando}>{enviando ? 'Enviando…' : 'Enviar pedido'}</button>
                 <button type="button" className="mt-1 text-[14px] font-semibold text-apagado underline" onClick={() => setPasso(4)}>Voltar</button>
               </div>
             )}
@@ -280,7 +301,6 @@ export function PainelAgendamento({ modal, medico, rascunho, onMudar, onFechar, 
             <div className="mt-5 grid gap-2.5">
               <button type="button" className={btnPainelSecundario} onClick={onFechar}>Fechar</button>
             </div>
-            <p className="mt-5 border-l-4 border-alerta bg-[#fbe9e6] px-4 py-3 text-[14px]">Demonstração: nada foi enviado.</p>
           </div>
         )}
       </div>

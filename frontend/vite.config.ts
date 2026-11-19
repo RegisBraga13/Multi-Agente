@@ -8,7 +8,7 @@ const raiz = (arquivo: string) => fileURLToPath(new URL(arquivo, import.meta.url
 // Páginas do app React. Tudo o que começar com estes caminhos abre o app.html;
 // o resto (a raiz "/") é a landing estática em index.html.
 // Em produção, a hospedagem precisa da mesma regra de reescrita.
-export const ROTAS_DO_APP = ['/contratar', '/entrar', '/medico', '/modulo']
+export const ROTAS_DO_APP = ['/contratar', '/entrar', '/medico', '/modulo', '/formulario']
 
 function rotasDoApp(): Plugin {
   return {
@@ -25,6 +25,10 @@ function rotasDoApp(): Plugin {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), rotasDoApp()],
+  // o servidor (FastAPI, Docker) atende em /api: celular e computador falam só com esta página
+  server: {
+    proxy: { '/api': { target: 'http://localhost:8000', rewrite: (c) => c.replace(/^\/api/, '') } },
+  },
   build: {
     rollupOptions: {
       input: {

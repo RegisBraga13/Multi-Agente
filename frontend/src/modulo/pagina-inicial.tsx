@@ -9,6 +9,11 @@ import { dataPorExtenso, idade, janelaDeHoje, saudacao, somarDias, vistaDoModulo
 import type { Atendimento } from './tipos'
 import { abrirJanelaProntuario } from '../prontuario/registro'
 import { useAgora, vistaDoDia } from './vista'
+import { linkWhatsapp } from '../medico/duvidas'
+import { formatarWhatsapp } from '../medico/regras'
+import type { Medico } from '../medico/tipos'
+import { marcarLinkEnviado, pedidosDaAgenda, type PedidoNaAgenda } from '../servidor/agenda'
+import { mensagemDoFormulario } from './pedidos'
 
 /** Quantos pacientes o cartão "Hoje" mostra, para a página caber numa tela (~690 px). */
 const MAX_HOJE = 5
@@ -38,8 +43,20 @@ function Pagina({ esp }: { esp: Especialidade }) {
   const medico = MEDICO_EXEMPLO
   const navegar = useNavigate()
 
-  const deHoje = useMemo(() => vistaDoDia(dataLocal(agora), agora), [agora])
-  const doDia = useMemo(() => vistaDoDia(dia, agora), [dia, agora])
+  // pedidos feitos na página do médico (servidor), renovados a cada 10 s; sem servidor, só o exemplo
+  const [pedidos, setPedidos] = useState<PedidoNaAgenda[]>([])
+  const recarregar = useMemo(() => () => {
+    const hoje = dataLocal(new Date())
+    pedidosDaAgenda(somarDias(hoje, -7), somarDias(hoje, 45)).then(setPedidos, () => {})
+  }, [])
+  useEffect(() => {
+    recarregar()
+    const t = setInterval(recarregar, 10_000)
+    return () => clearInterval(t)
+  }, [recarregar])
+
+  const deHoje = useMemo(() => vistaDoDia(dataLocal(agora), agora, pedidos), [agora, pedidos])
+  const doDia = useMemo(() => vistaDoDia(dia, agora, pedidos), [dia, agora, pedidos])
   const atual = vista === 'agenda' ? doDia : deHoje
   const escolhido = atual.lista.find((x) => x.id === selecionado) ?? null
 
@@ -79,7 +96,11 @@ function Pagina({ esp }: { esp: Especialidade }) {
   }, [aberto, vista])
 
   const painel = escolhido ? (
-    <PainelFicha classeAlergia={estiloAlergia(esp)} at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => abrirJanelaProntuario(esp.slug, escolhido.paciente.id)} />
+    <PainelFicha
+      classeAlergia={estiloAlergia(esp)} at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => abrirJanelaProntuario(esp.slug, escolhido.paciente.id)}
+      pedido={pedidos.find((p) => p.id === escolhido.pedido?.id)} medico={medico}
+      onLinkEnviado={(id) => { marcarLinkEnviado(id).then(recarregar, () => setAviso('Não foi possível marcar o envio. Tente de novo.')) }}
+    />
   ) : (
     <CartaoFichas prontas={atual.fichasProntas} faltam={atual.semFicha} />
   )
@@ -258,6 +279,7 @@ function Linhas({ lista, proximo, selecionado, onSelecionar, compacta = false }:
               <span className="flex items-center gap-2">
                 <span className="truncate text-[16px] font-semibold">{x.paciente.nome}</span>
                 {x.id === proximo && <span className="shrink-0 bg-tinta px-1.5 py-0.5 text-[10px] font-bold tracking-[0.1em] text-papel uppercase">Próximo</span>}
+                {x.pedido?.novo && <span className="shrink-0 bg-(--esp) px-1.5 py-0.5 text-[10px] font-bold tracking-[0.1em] text-papel uppercase">Pedido novo</span>}
               </span>
               <span className="block truncate text-[13.5px] leading-snug text-apagado">
                 {x.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · {x.modalidade === 'online' ? 'Online' : 'Presencial'} · {x.pagamento}
@@ -296,7 +318,16 @@ function CartaoFichas({ prontas, faltam }: { prontas: number; faltam: number }) 
 
 const ROTULO = 'text-[11px] font-bold tracking-[0.14em] text-apagado uppercase'
 
-function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario }: { classeAlergia: string; at: Atendimento; agora: Date; onFechar: () => void; onProntuario: () => void }) {
+type PropsPainel = {
+  classeAlergia: string; at: Atendimento; agora: Date; onFechar: () => void; onProntuario: () => void
+  /** pedido do servidor (só quando o atendimento veio da página do médico) */
+  pedido?: PedidoNaAgenda; medico: Medico; onLinkEnviado: (id: string) => void
+}
+
+/** Endereço que o paciente abre no celular (o computador do consultório pode estar em "localhost"). */
+const ENDERECO_PUBLICO = (import.meta.env.VITE_ENDERECO_PUBLICO as string | undefined) || window.location.origin
+
+function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario, pedido, medico, onLinkEnviado }: PropsPainel) {
   const titulo = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
     titulo.current?.focus({ preventScroll: true })
@@ -306,9 +337,12 @@ function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario }: { cla
   return (
     <aside className="relative border border-linha bg-branco px-5 py-4" aria-label="Ficha do paciente">
       <button type="button" onClick={onFechar} aria-label="Fechar ficha" className="absolute top-2 right-2 px-2 text-[22px] leading-none text-apagado hover:text-tinta">×</button>
-      <p className={ROTULO}>{f.situacao === 'pronta' ? `Ficha recebida · ${f.recebidaAs}` : `Paciente das ${at.inicio}`}</p>
+      <p className={ROTULO}>{f.situacao === 'pronta' ? `Ficha recebida · ${f.recebidaAs}` : at.pedido ? `Pedido recebido · ${at.pedido.chegouAs}` : `Paciente das ${at.inicio}`}</p>
       <h2 ref={titulo} tabIndex={-1} className="mt-1 pr-6 text-[22px] leading-tight font-semibold outline-none">{at.paciente.nome}</h2>
-      <p className="mt-0.5 text-[14px] text-apagado">{idade(at.paciente.nascimento, agora)} anos · {at.pagamento}</p>
+      <p className="mt-0.5 text-[14px] text-apagado">
+        {at.paciente.nascimento ? `${idade(at.paciente.nascimento, agora)} anos · ` : ''}{at.pagamento}
+        {at.pedido && <> · WhatsApp {formatarWhatsapp(at.pedido.whatsapp)}</>}
+      </p>
 
       {f.situacao === 'pronta' ? (
         <div className="mt-2.5 space-y-2 text-[14.5px] leading-snug">
@@ -316,7 +350,7 @@ function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario }: { cla
             f.alergias.map((a) => (
               <div key={a.substancia} className={`px-3 py-1.5 ${classeAlergia}`}>
                 <p className="text-[11px] font-bold tracking-[0.14em] uppercase opacity-90">Alergia</p>
-                <p><b className="text-[16px]">{a.substancia}</b> · {a.reacao}</p>
+                <p><b className="text-[16px]">{a.substancia}</b>{a.reacao && ` · ${a.reacao}`}</p>
               </div>
             ))
           ) : (
@@ -331,6 +365,18 @@ function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario }: { cla
         <p className="mt-3 text-[14.5px]">
           {f.situacao === 'link-enviado' ? 'O link da ficha foi enviado. O paciente ainda não preencheu.' : 'Este paciente ainda não tem ficha da pré-consulta.'}
         </p>
+      )}
+
+      {pedido && f.situacao !== 'pronta' && (
+        // abre o WhatsApp do consultório com a mensagem pronta; quem envia é a pessoa
+        <a
+          href={linkWhatsapp(pedido.whatsapp, mensagemDoFormulario(pedido, medico, ENDERECO_PUBLICO))}
+          target="_blank" rel="noopener noreferrer"
+          onClick={() => onLinkEnviado(pedido.id)}
+          className="mt-3 block bg-(--esp) px-4 py-2.5 text-center text-[15px] font-bold text-papel no-underline transition hover:-translate-y-0.5"
+        >
+          {f.situacao === 'link-enviado' ? 'Mandar formulário de novo' : 'Mandar formulário'}
+        </a>
       )}
 
       {at.temHistorico && (

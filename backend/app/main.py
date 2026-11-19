@@ -2,6 +2,7 @@
 
 import os
 
+from app.agenda.repositorio_postgres import RepositorioAgendaPostgres
 from app.aplicacao import Dependencias, criar_app
 from app.config import carregar_configuracao
 from app.consulta.repositorio_postgres import RepositorioConsultasPostgres
@@ -27,5 +28,6 @@ app = criar_app(
         pacientes=RepositorioPacientesPostgres(configuracao.database_url),
         consultas=RepositorioConsultasPostgres(configuracao.database_url),
         provedor=_provedor(),
+        agenda=RepositorioAgendaPostgres(configuracao.database_url),
     )
 )

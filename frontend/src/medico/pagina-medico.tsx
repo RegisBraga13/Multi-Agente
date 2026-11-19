@@ -4,7 +4,8 @@ import { buscarEspecialidade } from '../especialidades'
 import { Marca } from '../marca'
 import { NaoEncontrada } from '../nao-encontrada'
 import { AgendaMedico } from './agenda'
-import { buscarMedico, gerarAgenda, horarioExiste } from './exemplo'
+import { horariosOcupados, type HorarioOcupado } from '../servidor/agenda'
+import { buscarMedico, gerarAgenda, horarioExiste, marcarOcupados } from './exemplo'
 import { ComoFunciona, Duvidas } from './informacoes'
 import { FormularioPaciente } from './formulario-paciente'
 import { PainelAgendamento } from './painel-agendamento'
@@ -26,9 +27,24 @@ export function PaginaMedico() {
 
 function Pagina({ medico }: { medico: Medico }) {
   const esp = buscarEspecialidade(medico.especialidade)
-  const agenda = useMemo(() => gerarAgenda(new Date()), [])
+  const base = useMemo(() => gerarAgenda(new Date()), [])
+  // horários já pedidos por outros pacientes (servidor); sem conexão, a agenda aparece como está
+  const [ocupados, setOcupados] = useState<HorarioOcupado[]>([])
+  const agenda = useMemo(() => marcarOcupados(base, ocupados), [base, ocupados])
+  const recarregarOcupados = useCallback(() => {
+    const dias = [...base.presencial, ...base.online].map((d) => d.data).sort()
+    if (!dias.length) return
+    horariosOcupados(medico.slug, dias[0], dias[dias.length - 1]).then(setOcupados, () => {})
+  }, [base, medico.slug])
+  useEffect(() => {
+    recarregarOcupados()
+    const t = setInterval(recarregarOcupados, 30_000)
+    return () => clearInterval(t)
+  }, [recarregarOcupados])
   const [rascunho, setRascunho] = useState<RascunhoPedido>(RASCUNHO_VAZIO)
   const [preenchendo, setPreenchendo] = useState(false)
+  // link do formulário do pedido enviado (o formulário na página grava nele)
+  const [token, setToken] = useState<string | null>(null)
   const vista = useVista()
 
   // trocar de página leva ao topo e põe o foco no título da página nova (para quem usa leitor de tela).
@@ -78,6 +94,8 @@ function Pagina({ medico }: { medico: Medico }) {
       rascunho={rascunho}
       onMudar={setRascunho}
       onFechar={fecharPainel}
+      onEnviado={(t) => { setToken(t); recarregarOcupados() }}
+      onHorarioTomado={recarregarOcupados}
       onPreencherNaPagina={() => setPreenchendo(true)}
     />
   )
@@ -95,9 +113,10 @@ function Pagina({ medico }: { medico: Medico }) {
         {vista === 'como' && <div className="flex flex-1 flex-col justify-center"><ComoFunciona /></div>}
         {vista === 'duvidas' && <div className="flex flex-1 flex-col justify-center"><Duvidas medico={medico} /></div>}
 
-        {vista === 'agenda' && (preenchendo ? (
+        {vista === 'agenda' && (preenchendo && token ? (
           <FormularioPaciente
             medico={medico}
+            token={token}
             pedido={rascunho}
             onConcluir={() => { setPreenchendo(false); fecharPainel() }}
           />
