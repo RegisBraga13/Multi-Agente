@@ -37,7 +37,7 @@ const CAMPOS_DERMATO = ['Morfologia', 'Localização', 'Extensão', 'Gravidade e
 type Rascunho = { exame: [string, string, string, string, string]; fotos: number; fala: string; alertas?: string[]; faltou?: string[]; marcas?: [number, number][]; relato?: [string, string][] }
 
 /** Pergunta lembrada pela IA. `sim`/`nao`: como a resposta entra na história; `secao`: em que parte dela. */
-export type Pergunta = { texto: string; sim: string; nao: string; secao: 'hda' | 'ant' }
+export type Pergunta = { texto: string; sim: string; nao: string; secao: 'hda' | 'ant'; /** campo que o paciente não respondeu no formulário: só lembra (sem Sim/Não; a resposta vem da gravação) */ lembrete?: boolean }
 export type RespostaPergunta = { pergunta: Pergunta; resposta: 'sim' | 'nao' }
 
 const hda = (sim: string, nao: string) => ({ sim, nao, secao: 'hda' as const })
@@ -195,8 +195,8 @@ export function conteudoDaConsulta(at: Atendimento, slug: string): ConteudoConsu
     if (f.antecedentes.length) falas.push({ quem: 'Paciente', texto: `Tenho ${f.antecedentes.join(' e ').toLowerCase()}.`, clinico: '' })
     if (f.alergias.length) {
       falas.push({ quem: 'Médico', texto: 'E alergia a algum medicamento?' })
-      falas.push({ quem: 'Paciente', texto: f.alergias.map((a) => `${a.substancia}, me deu ${a.reacao}`).join('; ') + '.', clinico: '' })
-      f.alergias.forEach((a, i) => alertas.push({ id: `alergia-${i}`, tipo: 'alergia', texto: `Alergia: ${a.substancia.toLowerCase()} (${a.reacao})` }))
+      falas.push({ quem: 'Paciente', texto: f.alergias.map((a) => (a.reacao ? `${a.substancia}, me deu ${a.reacao}` : a.substancia)).join('; ') + '.', clinico: '' })
+      f.alergias.forEach((a, i) => alertas.push({ id: `alergia-${i}`, tipo: 'alergia', texto: `Alergia: ${a.substancia.toLowerCase()}${a.reacao ? ` (${a.reacao})` : ''}` }))
     }
   } else {
     falas.push({ quem: 'Paciente', texto: 'Vim por causa de um problema na pele.', clinico: 'procura atendimento por queixa de pele' })

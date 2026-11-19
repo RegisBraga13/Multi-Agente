@@ -76,6 +76,8 @@ export const enviarFormulario = (
 
 export const pedidosDaAgenda = (de: string, ate: string) => chamar<PedidoNaAgenda[]>(`/agenda/pedidos?de=${de}&ate=${ate}`)
 
+export const buscarPedido = (id: string) => chamar<PedidoNaAgenda>(`/agenda/pedidos/${id}`)
+
 export const marcarLinkEnviado = (id: string) => chamar<PedidoNaAgenda>(`/agenda/pedidos/${id}/link-enviado`, { method: 'POST' })
 
 export const enderecoFoto = (id: string, pergunta: string) => `${BASE}/agenda/pedidos/${id}/fotos/${pergunta}`

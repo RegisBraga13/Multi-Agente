@@ -1,7 +1,11 @@
-// Página 1, coluna da esquerda: anamnese (gravar e escrever na mesma caixa), perguntas e sinais de alerta.
+// Página 1, coluna da esquerda: anamnese (formulário, gravar e escrever), perguntas e sinais de alerta.
+// Formulário: o mesmo que o paciente viu, já respondido; o médico troca de modo quando quiser, sem perder nada.
 // Na anamnese só entra o que é transcrito ou escrito. Pergunta clicada = o médico vai perguntar (grava ou escreve a resposta).
 // Sinal de alerta: o médico pergunta e marca V ou F; V vai para a história clínica (não para a anamnese).
 import { useEffect, useRef, useState } from 'react'
+import type { Parte } from '../medico/pre-consulta'
+import { FORMULARIO_VAZIO, naoRespondidas, type FormularioConsulta } from './formulario-consulta'
+import { FormularioMedico } from './formulario-medico'
 import type { Alerta, Fala, Pergunta, RespostaPergunta } from './exemplo'
 import type { EstadoConsulta, RespostaAlerta, Situacao } from './tipos'
 import { SEM_CORRETOR } from './campo-linha'
@@ -26,11 +30,18 @@ type Props = {
   podeGravar: boolean
   onEditar: () => void
   onResponder: (id: string, r: RespostaAlerta) => void
+  /** perguntas do formulário da especialidade */
+  partes: Parte[]
+  /** o formulário que o paciente enviou (null = não enviou; o médico pode preencher) */
+  formulario: FormularioConsulta | null
   /** salva com o texto atual (a história clínica é montada com ele) */
   onOficializar: (texto: string, perguntas: RespostaPergunta[]) => void
 }
 
-export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pendencias, podeGravar, onEditar, onResponder, onOficializar }: Props) {
+export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pendencias, podeGravar, partes, formulario, onEditar, onResponder, onOficializar }: Props) {
+  const [modo, setModo] = useState<'texto' | 'formulario'>('texto')
+  const [form, setForm] = useState<FormularioConsulta>(formulario ?? FORMULARIO_VAZIO)
+  const [parte, setParte] = useState(0)
   const [gravando, setGravando] = useState(false)
   const [segundos, setSegundos] = useState(0)
   /** a anamnese numa caixa só: a transcrição entra no fim do texto, e o médico escreve e corrige ali mesmo */
@@ -69,14 +80,29 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
 
   const alternar = () => {
     if (!gravando) { mudou(); transcrever() }
+    setModo('texto')
     setGravando((g) => !g)
   }
+  const escrever = () => {
+    setModo('texto')
+    requestAnimationFrame(() => caixa.current?.focus())
+  }
+  // começou a gravar: o que o paciente não respondeu no formulário vira lembrete em Perguntas
+  const lembretes = segundos > 0
+    ? naoRespondidas(partes, form).map((q) => ({ texto: q.rotulo, sim: '', nao: '', secao: 'hda' as const, lembrete: true }))
+    : []
+  const todas = [...perguntas, ...lembretes.filter((l) => !perguntas.some((p) => p.texto === l.texto))]
+  const botaoModo = (ativo: boolean) =>
+    `border-[1.5px] border-tinta px-3 py-1 text-[14px] font-bold ${ativo ? 'bg-tinta text-papel' : 'hover:bg-tinta hover:text-papel'}`
 
   return (
     <Cartao
       titulo="Anamnese"
       cabecalho={
         <div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-3">
+          <button type="button" onClick={() => setModo('formulario')} aria-pressed={modo === 'formulario'} className={botaoModo(modo === 'formulario')}>
+            Formulário
+          </button>
           <button type="button" onClick={alternar} disabled={!podeGravar} aria-pressed={gravando} className="flex items-center gap-2 bg-tinta px-3 py-1.5 text-[14px] font-bold text-papel disabled:opacity-40">
             <span className={`inline-block size-2.5 rounded-full! bg-alerta-clinico ${gravando ? 'animate-pulse' : ''}`} />
             {gravando ? 'Pausar' : segundos > 0 ? 'Continuar' : 'Gravar'}
@@ -85,7 +111,7 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
           {(!podeGravar || gravando) && (
             <span className="truncate text-[13px] text-apagado">{!podeGravar ? 'Sem consentimento de gravação' : 'Gravando · consentimento na ficha'}</span>
           )}
-          <button type="button" onClick={() => caixa.current?.focus()} className="border-[1.5px] border-tinta px-3 py-1 text-[14px] font-bold hover:bg-tinta hover:text-papel">
+          <button type="button" onClick={escrever} aria-pressed={modo === 'texto' && !gravando} className={botaoModo(false)}>
             Escrever
           </button>
         </div>
@@ -101,13 +127,16 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
             if (pendencias > 0 || gravando) return setTentou(true)
             setTentou(false)
             // só as perguntas com Sim/Não vão para a história (riscada sem resposta = o médico não quis perguntar)
-            onOficializar(texto, perguntas.flatMap((p) => { const r = perguntado[p.texto]; return r ? [{ pergunta: p, resposta: r }] : [] }))
+            onOficializar(texto, perguntas.flatMap((p) => { const r = perguntado[p.texto]; return r && !p.lembrete ? [{ pergunta: p, resposta: r }] : [] }))
           }}
         />
       }
     >
       {/* a caixa ocupa a altura que sobra no cartão (o cartão desce até perto do rodapé) */}
       <div className="flex min-h-[118px] flex-1 flex-col border-[1.5px] border-linha focus-within:border-tinta lg:min-h-[150px]">
+        {modo === 'formulario' && (
+          <FormularioMedico partes={partes} valor={form} parte={parte} onParte={setParte} onMudar={(f) => { setForm(f); mudou() }} />
+        )}
         <textarea
           ref={caixa}
           {...SEM_CORRETOR}
@@ -115,20 +144,21 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
           onChange={(e) => { setTexto(e.target.value); mudou() }}
           placeholder="Queixa, história, antecedentes…"
           aria-label="Anamnese"
-          className="block min-h-0 w-full flex-1 resize-none bg-branco px-3 py-2 text-[14.5px] leading-snug focus:outline-none"
+          className={`${modo === 'formulario' ? 'hidden' : 'block'} min-h-0 w-full flex-1 resize-none bg-branco px-3 py-2 text-[14.5px] leading-snug focus:outline-none`}
         />
       </div>
 
-      {perguntas.length > 0 && (
+      {todas.length > 0 && (
         <div className="mt-3">
           <p className={ROTULO}>Perguntas</p>
-          <div className="mt-1 flex flex-col items-start gap-1">
-            {perguntas.map(({ texto: q }) => {
+          {/* lembretes do formulário lado a lado (cabem numa tela); as da IA, uma por linha com Sim/Não */}
+          <div className="mt-1 flex flex-wrap items-start gap-1">
+            {todas.map(({ texto: q, lembrete }) => {
               const feito = q in perguntado
               const r = perguntado[q]
               return (
                 // clicar risca (a pergunta foi feita) e abre Sim/Não; a resposta vai para a história, não para a anamnese
-                <div key={q} className="flex max-w-full items-center gap-1.5">
+                <div key={q} className={`flex max-w-full items-center gap-1.5 ${lembrete ? '' : 'basis-full'}`}>
                   <button type="button" aria-pressed={feito}
                     onClick={() => {
                       setPerguntado((p) => { const n = { ...p }; if (feito) delete n[q]; else n[q] = null; return n })
@@ -137,7 +167,7 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
                     className={`min-w-0 truncate border-[1.5px] px-2 py-0.5 text-left text-[13.5px] ${feito ? 'border-linha text-apagado line-through' : 'border-dashed border-(--esp-medio)'}`}>
                     {q}
                   </button>
-                  {feito && (['sim', 'nao'] as const).map((op) => (
+                  {feito && !lembrete && (['sim', 'nao'] as const).map((op) => (
                     <button key={op} type="button" aria-pressed={r === op}
                       onClick={() => { setPerguntado((p) => ({ ...p, [q]: r === op ? null : op })); mudou() }}
                       className={`shrink-0 border-[1.5px] px-2 py-0.5 text-[13px] font-bold ${r === op ? 'border-tinta bg-tinta text-papel' : 'border-linha hover:bg-suave'}`}>

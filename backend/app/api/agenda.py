@@ -58,6 +58,11 @@ def pedidos(de: date, ate: date, dep: Dep, medico: Medico) -> list[Pedido]:
     return dep.agenda.pedidos(medico, de, ate)
 
 
+@medico_rotas.get("/pedidos/{pedido_id}", response_model=Pedido)
+def um_pedido(pedido_id: UUID, dep: Dep, medico: Medico) -> Pedido:
+    return dep.agenda.pedido(medico, pedido_id)
+
+
 @medico_rotas.post("/pedidos/{pedido_id}/link-enviado", response_model=Pedido)
 def link_enviado(pedido_id: UUID, dep: Dep, medico: Medico) -> Pedido:
     return dep.agenda.marcar_link_enviado(medico, pedido_id)

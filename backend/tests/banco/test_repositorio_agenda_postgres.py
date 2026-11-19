@@ -61,6 +61,9 @@ def test_outro_medico_nao_ve_nem_altera(url_banco):
     repo = RepositorioAgendaPostgres(url_banco)
     criado = repo.criar_pedido(MEDICO_A, pedido(3), novo_token())
     assert repo.pedidos(MEDICO_B, date(2027, 3, 3), date(2027, 3, 3)) == []
+    assert repo.pedido(MEDICO_A, criado.id) == criado
+    with pytest.raises(PedidoNaoEncontrado):
+        repo.pedido(MEDICO_B, criado.id)
     with pytest.raises(PedidoNaoEncontrado):
         repo.marcar_link_enviado(MEDICO_B, criado.id)
 

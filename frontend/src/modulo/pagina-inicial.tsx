@@ -100,6 +100,7 @@ function Pagina({ esp }: { esp: Especialidade }) {
       classeAlergia={estiloAlergia(esp)} at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => abrirJanelaProntuario(esp.slug, escolhido.paciente.id)}
       pedido={pedidos.find((p) => p.id === escolhido.pedido?.id)} medico={medico}
       onLinkEnviado={(id) => { marcarLinkEnviado(id).then(recarregar, () => setAviso('Não foi possível marcar o envio. Tente de novo.')) }}
+      onAbrirConsulta={() => navegar(`/modulo/${esp.slug}/consulta/${escolhido.id}/anamnese-exame`)}
     />
   ) : (
     <CartaoFichas prontas={atual.fichasProntas} faltam={atual.semFicha} />
@@ -322,12 +323,14 @@ type PropsPainel = {
   classeAlergia: string; at: Atendimento; agora: Date; onFechar: () => void; onProntuario: () => void
   /** pedido do servidor (só quando o atendimento veio da página do médico) */
   pedido?: PedidoNaAgenda; medico: Medico; onLinkEnviado: (id: string) => void
+  /** pedido da página do médico: a consulta abre em qualquer dia (simulação) */
+  onAbrirConsulta: () => void
 }
 
 /** Endereço que o paciente abre no celular (o computador do consultório pode estar em "localhost"). */
 const ENDERECO_PUBLICO = (import.meta.env.VITE_ENDERECO_PUBLICO as string | undefined) || window.location.origin
 
-function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario, pedido, medico, onLinkEnviado }: PropsPainel) {
+function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario, pedido, medico, onLinkEnviado, onAbrirConsulta }: PropsPainel) {
   const titulo = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
     titulo.current?.focus({ preventScroll: true })
@@ -377,6 +380,13 @@ function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario, pedido,
         >
           {f.situacao === 'link-enviado' ? 'Mandar formulário de novo' : 'Mandar formulário'}
         </a>
+      )}
+
+      {pedido && (
+        <button type="button" onClick={onAbrirConsulta}
+          className="mt-2 block w-full border-[1.5px] border-tinta px-4 py-2 text-center text-[15px] font-bold transition hover:bg-tinta hover:text-papel">
+          Abrir consulta
+        </button>
       )}
 
       {at.temHistorico && (

@@ -118,6 +118,13 @@ class RepositorioAgendaPostgres:
             ).fetchall()
         return [_pedido(linha) for linha in linhas]
 
+    def pedido(self, medico_id: UUID, pedido_id: UUID) -> Pedido:
+        with transacao_do_medico(self.url, medico_id) as conn:
+            linha = conn.execute(f"select {_COLUNAS} from booking_requests where id = %s", (pedido_id,)).fetchone()
+        if linha is None:
+            raise PedidoNaoEncontrado
+        return _pedido(linha)
+
     def marcar_link_enviado(self, medico_id: UUID, pedido_id: UUID) -> Pedido:
         with transacao_do_medico(self.url, medico_id) as conn:
             conn.execute(

@@ -50,6 +50,8 @@ class RepositorioAgenda(Protocol):
         """Busca sem saber o médico (o link do formulário só tem o token); devolve o dono e o pedido."""
         ...
 
+    def pedido(self, medico_id: UUID, pedido_id: UUID) -> Pedido: ...
+
     def marcar_link_enviado(self, medico_id: UUID, pedido_id: UUID) -> Pedido: ...
 
     def gravar_formulario(
@@ -107,6 +109,9 @@ class RepositorioAgendaMemoria:
         if registro is None or registro[0] != medico_id:
             raise PedidoNaoEncontrado
         return registro[1]
+
+    def pedido(self, medico_id: UUID, pedido_id: UUID) -> Pedido:
+        return self._buscar(medico_id, pedido_id)
 
     def marcar_link_enviado(self, medico_id: UUID, pedido_id: UUID) -> Pedido:
         pedido = self._buscar(medico_id, pedido_id)

@@ -113,6 +113,13 @@ def test_link_do_formulario_mostra_o_pedido_e_o_medico(agenda):
     assert c.get("/publico/formularios/token-que-nao-existe").status_code == 404
 
 
+def test_medico_abre_um_pedido_pelo_id(agenda):
+    c = cliente(agenda)
+    pid = pedir(c).json()["id"]
+    assert c.get(f"/agenda/pedidos/{pid}").json()["nome"] == "Maria Teste"
+    assert cliente(agenda, MEDICO_B).get(f"/agenda/pedidos/{pid}").status_code == 404
+
+
 def test_medico_manda_o_link_e_a_ficha_fica_link_enviado(agenda):
     c = cliente(agenda)
     pid = pedir(c).json()["id"]

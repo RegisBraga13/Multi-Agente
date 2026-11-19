@@ -24,16 +24,43 @@ import { aplicarEdicoes, atualizarProntuario, cabecalhoProntuario, chave, dadosD
 import { PaginaProntuario } from './prontuario-pagina'
 import { abrirJanelaProntuario, salvarEntrada, tituloDaConsulta, type DadosEntrada } from '../prontuario/registro'
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
+import { FORMULARIO_VAZIO, type FormularioConsulta } from './formulario-consulta'
+import { partesPreConsulta } from '../medico/pre-consulta'
+import { atendimentoDoPedido } from '../modulo/pedidos'
+import { buscarPedido, enderecoFoto, type PedidoNaAgenda } from '../servidor/agenda'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
 
 export function PaginaConsulta() {
   const { slug = '', atendimento = '', etapa } = useParams()
   const esp = buscarEspecialidade(slug)
+  // pedido feito na página do médico: vem do servidor ("pedido-<id>")
+  const idPedido = atendimento.startsWith('pedido-') ? atendimento.slice('pedido-'.length) : null
+  const [pedido, setPedido] = useState<PedidoNaAgenda | null | 'erro'>(null)
+  useEffect(() => {
+    if (idPedido) buscarPedido(idPedido).then(setPedido, () => setPedido('erro'))
+  }, [idPedido])
+  const doServidor = pedido && pedido !== 'erro' ? pedido : null
   // o dia da consulta é o do endereço; o "agora" só decide quem já foi atendido
-  const at = useMemo(() => buscarAtendimento(atendimento, new Date()), [atendimento])
+  const at = useMemo(
+    () => (idPedido ? (doServidor ? atendimentoDoPedido(doServidor, new Date()) : undefined) : buscarAtendimento(atendimento, new Date())),
+    [atendimento, idPedido, doServidor],
+  )
+  if (idPedido && pedido === null) return <p className="py-16 text-center text-apagado">Abrindo a consulta…</p>
   if (!esp || esp.status !== 'disponivel' || !at || !ehEtapa(etapa)) return <NaoEncontrada />
-  return <Consulta key={at.id} esp={esp} at={at} etapa={etapa} />
+  return <Consulta key={at.id} esp={esp} at={at} etapa={etapa} formulario={doServidor ? formularioDoPedido(doServidor) : null} />
+}
+
+/** O formulário que o paciente enviou, para o modo Formulário da anamnese. */
+function formularioDoPedido(p: PedidoNaAgenda): FormularioConsulta | null {
+  const f = p.formulario
+  if (!f) return null
+  const d = f.dados
+  return {
+    dados: { ...FORMULARIO_VAZIO.dados, nomeCompleto: d.nomeCompleto, nascimento: d.nascimento, sexo: d.sexo, cidade: d.cidade, uf: d.uf, estadoCivil: d.estadoCivil, profissao: d.profissao, trabalhoExposto: d.trabalhoExposto },
+    respostas: f.respostas,
+    fotos: Object.fromEntries(f.fotos.map((q) => [q, enderecoFoto(p.id, q)])),
+  }
 }
 
 type Acao = { tipo: 'oficializar' | 'editar'; bloco: Bloco } | { tipo: 'alerta'; id: string; r: RespostaAlerta }
@@ -43,7 +70,7 @@ function reduzir(e: EstadoConsulta, a: Acao): EstadoConsulta {
   return a.tipo === 'oficializar' ? oficializar(e, a.bloco) : editar(e, a.bloco)
 }
 
-function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; etapa: EtapaId }) {
+function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Atendimento; etapa: EtapaId; formulario: FormularioConsulta | null }) {
   const conteudo = useMemo(() => conteudoDaConsulta(at, esp.slug), [at, esp.slug])
   const [estado, despachar] = useReducer(reduzir, conteudo.alertas.map((a) => a.id), inicial)
   const [anexos, setAnexos] = useState(false)
@@ -241,7 +268,7 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
           <Link to={`/modulo/${esp.slug}`} className="no-underline" aria-label={`${esp.raiz}IA, início`}><NomeModulo esp={esp} className="text-[26px]" /></Link>
           <p className="text-[15px]">
             <b className="text-[17px]">{at.paciente.nome}</b>
-            <span className="text-apagado"> · {idade(at.paciente.nascimento, new Date())} anos · {at.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · {at.modalidade === 'online' ? 'Online' : 'Presencial'}</span>
+            <span className="text-apagado">{at.paciente.nascimento && ` · ${idade(at.paciente.nascimento, new Date())} anos`} · {at.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · {at.modalidade === 'online' ? 'Online' : 'Presencial'}</span>
           </p>
           {alergias.map((a) => (
             <span key={a.substancia} className="bg-alerta-clinico px-2.5 py-1 text-[13px] text-branco">
@@ -274,6 +301,8 @@ function Consulta({ esp, at, etapa }: { esp: Especialidade; at: Atendimento; eta
               situacao={estado.blocos.anamnese.estado}
               pendencias={pendenciasAnamnese(estado)}
               podeGravar={podeGravar(f)}
+              partes={partesPreConsulta(esp.slug)}
+              formulario={formulario}
               onEditar={() => fazer('editar', 'anamnese')}
               onResponder={(id, r) => despachar({ tipo: 'alerta', id, r })}
               onOficializar={(texto, perguntas) => { fontes.current.anamnese = texto; fontes.current.perguntas = perguntas; salvarPagina1('anamnese') }}
