@@ -4,7 +4,8 @@
 // Sinal de alerta: o médico pergunta e marca V ou F; V vai para a história clínica (não para a anamnese).
 import { useEffect, useRef, useState } from 'react'
 import type { Parte } from '../medico/pre-consulta'
-import { FORMULARIO_VAZIO, naoRespondidas, type FormularioConsulta } from './formulario-consulta'
+import { FORMULARIO_VAZIO, juntarFormularioAoTexto, naoRespondidas, textoDoFormulario, type FormularioConsulta } from './formulario-consulta'
+import { blocosDoFormulario } from '../medico/blocos'
 import { FormularioMedico } from './formulario-medico'
 import type { Alerta, Fala, Pergunta, RespostaPergunta } from './exemplo'
 import type { EstadoConsulta, RespostaAlerta, Situacao } from './tipos'
@@ -42,6 +43,9 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
   const [modo, setModo] = useState<'texto' | 'formulario'>('texto')
   const [form, setForm] = useState<FormularioConsulta>(formulario ?? FORMULARIO_VAZIO)
   const [parte, setParte] = useState(0)
+  const [conferidas, setConferidas] = useState<boolean[]>(() => blocosDoFormulario(partes).map(() => false))
+  /** texto do formulário que já está na caixa (null = ainda não salvo) */
+  const [textoForm, setTextoForm] = useState<string | null>(null)
   const [gravando, setGravando] = useState(false)
   const [segundos, setSegundos] = useState(0)
   /** a anamnese numa caixa só: a transcrição entra no fim do texto, e o médico escreve e corrige ali mesmo */
@@ -87,8 +91,16 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
     setModo('texto')
     requestAnimationFrame(() => caixa.current?.focus())
   }
-  // começou a gravar: o que o paciente não respondeu no formulário vira lembrete em Perguntas
-  const lembretes = segundos > 0
+  /** Salvar formulário: vira texto no começo da caixa e a tela volta à anamnese (Perguntas, Sinais de alerta) */
+  const salvarFormulario = () => {
+    const novo = textoDoFormulario(partes, form, new Date())
+    setTexto((t) => juntarFormularioAoTexto(t, novo, textoForm))
+    setTextoForm(novo)
+    setModo('texto')
+    mudou()
+  }
+  // começou a gravar ou salvou o formulário: o que o paciente não respondeu vira lembrete em Perguntas
+  const lembretes = segundos > 0 || textoForm !== null
     ? naoRespondidas(partes, form).map((q) => ({ texto: q.rotulo, sim: '', nao: '', secao: 'hda' as const, lembrete: true }))
     : []
   const todas = [...perguntas, ...lembretes.filter((l) => !perguntas.some((p) => p.texto === l.texto))]
@@ -135,7 +147,9 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
       {/* a caixa ocupa a altura que sobra no cartão (o cartão desce até perto do rodapé) */}
       <div className="flex min-h-[118px] flex-1 flex-col border-[1.5px] border-linha focus-within:border-tinta lg:min-h-[150px]">
         {modo === 'formulario' && (
-          <FormularioMedico partes={partes} valor={form} parte={parte} onParte={setParte} onMudar={(f) => { setForm(f); mudou() }} />
+          <FormularioMedico partes={partes} valor={form} parte={parte} onParte={setParte} onMudar={(f) => { setForm(f); mudou() }}
+            conferidas={conferidas} onConferir={(n) => setConferidas((c) => c.map((x, i) => (i === n ? true : x)))}
+            onSalvar={salvarFormulario} salvo={textoForm !== null} />
         )}
         <textarea
           ref={caixa}

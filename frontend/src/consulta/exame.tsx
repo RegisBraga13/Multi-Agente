@@ -106,7 +106,7 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, foto
                   onEnter={fechar}
                   onFocus={() => setAtivo(campos.length)}
                   aria-label="Observações"
-                  placeholder={temRascunho ? 'Acrescente o que quiser, com suas palavras' : 'Sem fotos ainda: descreva o exame aqui'}
+                  placeholder={temRascunho ? 'Acrescente o que quiser, com suas palavras' : fotosPaciente.length || fotos ? 'Descreva o exame aqui' : 'Sem fotos ainda: descreva o exame aqui'}
                   caixa={CAIXA}
                   className={`bg-branco focus:border-tinta focus:outline-none ${ativo === campos.length ? 'border-tinta' : 'border-linha'}`}
                 />

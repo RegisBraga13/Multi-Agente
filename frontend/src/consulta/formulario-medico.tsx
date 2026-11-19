@@ -1,5 +1,6 @@
 // Anamnese, modo Formulário: o mesmo formulário que o paciente viu, uma parte por vez, já com as respostas dele.
-// O médico confere o que foi respondido e completa o resto, se quiser.
+// O médico confere cada parte ("Conferido ✓"), corrige ou completa, e na última salva: o formulário vira texto da anamnese.
+// Depois de salvo, fica só para consulta (as correções são feitas na caixa de texto).
 import { blocosDoFormulario, type Bloco } from '../medico/blocos'
 import { ALERGIAS, alternarOpcao, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
 import { ESTADOS_CIVIS, type DadosPessoais } from '../medico/regras'
@@ -19,9 +20,16 @@ type Props = {
   parte: number
   onParte: (n: number) => void
   onMudar: (f: FormularioConsulta) => void
+  /** partes já conferidas pelo médico */
+  conferidas: boolean[]
+  onConferir: (n: number) => void
+  /** última parte: o formulário vira texto da anamnese */
+  onSalvar: () => void
+  /** já salvo: só para consulta */
+  salvo: boolean
 }
 
-export function FormularioMedico({ partes, valor, parte, onParte, onMudar }: Props) {
+export function FormularioMedico({ partes, valor, parte, onParte, onMudar, conferidas, onConferir, onSalvar, salvo }: Props) {
   const blocos = blocosDoFormulario(partes)
   const bloco = blocos[parte]
   const dados = valor.dados
@@ -126,12 +134,29 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar }: Pro
       <div className="flex items-center gap-2 border-b border-linha px-3 py-1.5">
         <button type="button" onClick={() => onParte(parte - 1)} disabled={parte === 0} aria-label="Parte anterior" className="px-1 text-[20px] leading-none disabled:opacity-30">‹</button>
         <p className="min-w-0 flex-1 truncate text-center text-[14px]">
+          {conferidas[parte] && <span className="mr-1 font-bold text-(--esp)" aria-label="conferido">✓</span>}
           <b>{bloco.titulo}</b> <span className="text-apagado">· parte {parte + 1} de {blocos.length}</span>
         </p>
         <button type="button" onClick={() => onParte(parte + 1)} disabled={parte === blocos.length - 1} aria-label="Próxima parte" className="px-1 text-[20px] leading-none disabled:opacity-30">›</button>
       </div>
-      <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-x-3 gap-y-2 overflow-y-auto bg-branco px-3 py-2 [&>*]:min-w-0">
+      {/* salvo: só para consulta (fieldset desabilitado trava todos os campos de uma vez) */}
+      <fieldset disabled={salvo} className="grid min-h-0 flex-1 grid-cols-2 content-start gap-x-3 gap-y-2 overflow-y-auto bg-branco px-3 py-2 [&>*]:min-w-0">
         {conteudo(bloco)}
+      </fieldset>
+      <div className="flex items-center justify-end gap-3 border-t border-linha px-3 py-1.5">
+        {salvo ? (
+          <p className="flex-1 text-[13px] text-apagado">Formulário salvo no texto da anamnese. Corrija na caixa de texto (Escrever).</p>
+        ) : parte < blocos.length - 1 ? (
+          <button type="button" onClick={() => { onConferir(parte); onParte(parte + 1) }}
+            className="border-[1.5px] border-tinta px-3 py-1 text-[14px] font-bold hover:bg-tinta hover:text-papel">
+            Conferido ✓
+          </button>
+        ) : (
+          <button type="button" onClick={() => { onConferir(parte); onSalvar() }}
+            className="bg-(--esp) px-4 py-1.5 text-[14px] font-bold text-papel transition hover:-translate-y-0.5">
+            Salvar formulário
+          </button>
+        )}
       </div>
     </div>
   )
