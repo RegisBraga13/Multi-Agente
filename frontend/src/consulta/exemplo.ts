@@ -37,7 +37,7 @@ const CAMPOS_DERMATO = ['Morfologia', 'Localização', 'Extensão', 'Gravidade e
 type Rascunho = { exame: [string, string, string, string, string]; fotos: number; fala: string; alertas?: string[]; faltou?: string[]; marcas?: [number, number][]; relato?: [string, string][] }
 
 /** Pergunta lembrada pela IA. `sim`/`nao`: como a resposta entra na história; `secao`: em que parte dela. */
-export type Pergunta = { texto: string; sim: string; nao: string; secao: 'hda' | 'ant'; /** campo que o paciente não respondeu no formulário: só lembra (sem Sim/Não; a resposta vem da gravação) */ lembrete?: boolean }
+export type Pergunta = { texto: string; sim: string; nao: string; secao: 'hda' | 'ant'; /** pergunta do formulário (em branco, ou Alergias): clicada, abre as opções dela ou uma linha para escrever */ lembrete?: boolean }
 export type RespostaPergunta = { pergunta: Pergunta; resposta: 'sim' | 'nao' }
 
 const hda = (sim: string, nao: string) => ({ sim, nao, secao: 'hda' as const })

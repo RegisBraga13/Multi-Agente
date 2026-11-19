@@ -1,5 +1,6 @@
 // Pedidos feitos na página do médico (servidor) entram na agenda do dia como atendimentos.
 // Sem nascimento até o formulário chegar ('' = ainda não informado).
+import { formatarWhatsapp, type DadosPessoais } from '../medico/regras'
 import { horaCurta, rotuloDiaLongo } from '../medico/textos'
 import type { Medico } from '../medico/tipos'
 import type { PedidoNaAgenda } from '../servidor/agenda'
@@ -62,4 +63,38 @@ export function mensagemDoFormulario(p: PedidoNaAgenda, medico: Medico, endereco
   const primeiro = p.nome.trim().split(/\s+/)[0]
   return `Olá, ${primeiro}! Para a sua consulta com ${medico.tratamento} ${medico.nome}, ${rotuloDiaLongo(p.data)}, às ${horaCurta(p.inicio)}`
     + ` (${p.modalidade}), preencha o formulário: ${endereco}/formulario/${p.tokenFormulario}`
+}
+
+/** "Preencher na consulta": sem formulário, a consulta só abre depois da Identificação (o médico pode preencher na chegada). */
+export const precisaIdentificacao = (p: PedidoNaAgenda) => p.formulario === null
+
+/** Identificação para o médico preencher na chegada: já vem com o nome e o WhatsApp do pedido. */
+export function identificacaoDaChegada(p: PedidoNaAgenda): DadosPessoais {
+  return {
+    nomeCompleto: p.nome, nomeSocial: '', nascimento: '', sexo: '', whatsapp: formatarWhatsapp(p.whatsapp), email: '', cidade: '', uf: '',
+    estadoCivil: '', profissao: '', trabalhoExposto: '',
+  }
+}
+
+/** Aviso no dia: quem escolheu "preencher na consulta" e ainda não preencheu (`hoje` = AAAA-MM-DD). */
+export const lembrarHoje = (p: PedidoNaAgenda, hoje: string) => p.forma === 'consulta' && p.formulario === null && p.data === hoje
+
+/** Mensagem pronta do aviso no dia (o app abre o WhatsApp com ela; quem envia é a pessoa). */
+export function mensagemDoLembrete(p: PedidoNaAgenda, medico: Medico, endereco: string): string {
+  const primeiro = p.nome.trim().split(/\s+/)[0]
+  return `Olá, ${primeiro}! Hoje é a sua consulta com ${medico.tratamento} ${medico.nome}, às ${horaCurta(p.inicio)} (${p.modalidade}).`
+    + ` Se puder, preencha o formulário antes. Leva poucos minutos: ${endereco}/formulario/${p.tokenFormulario}`
+}
+
+/** Mensagem pronta do Confirmar (o app abre o WhatsApp com ela; quem envia é a pessoa). */
+export function mensagemDaConfirmacao(p: PedidoNaAgenda, medico: Medico): string {
+  const primeiro = p.nome.trim().split(/\s+/)[0]
+  return `Olá, ${primeiro}! Sua consulta com ${medico.tratamento} ${medico.nome} está confirmada: ${rotuloDiaLongo(p.data)}, às ${horaCurta(p.inicio)} (${p.modalidade}).`
+}
+
+/** Mensagem pronta do Avisar: o médico não vai poder atender; o paciente escolhe outro horário na página. */
+export function mensagemDoAviso(p: PedidoNaAgenda, medico: Medico, endereco: string): string {
+  const primeiro = p.nome.trim().split(/\s+/)[0]
+  return `Olá, ${primeiro}! Infelizmente não será possível atender ${rotuloDiaLongo(p.data)}, às ${horaCurta(p.inicio)}.`
+    + ` Escolha outro horário: ${endereco}/medico/${medico.slug}`
 }

@@ -61,7 +61,7 @@ class FotoEnviada(ModeloApi):
 class FormularioEnviado(ModeloApi):
     dados: DadosPessoais
     respostas: dict[str, str | list[str]] = Field(default_factory=dict, max_length=80)
-    fotos: dict[str, FotoEnviada] = Field(default_factory=dict, max_length=10)
+    fotos: dict[str, FotoEnviada] = Field(default_factory=dict, max_length=12)  # 2 fotos da pele + até 10 documentos
 
 
 class FormularioRecebido(ModeloApi):

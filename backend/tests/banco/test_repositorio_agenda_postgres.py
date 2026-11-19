@@ -95,3 +95,22 @@ def test_formulario_e_foto_gravados(url_banco):
         repo.foto(MEDICO_B, criado.id, "foto_perto")
     # mandar o link de novo não desfaz a ficha pronta
     assert repo.marcar_link_enviado(MEDICO_A, criado.id).situacao_ficha == "pronta"
+
+
+def test_confirmar_muda_o_status_so_do_proprio_medico(url_banco):
+    repo = RepositorioAgendaPostgres(url_banco)
+    criado = repo.criar_pedido(MEDICO_A, pedido(9, "11:00"), novo_token())
+    with pytest.raises(PedidoNaoEncontrado):
+        repo.confirmar(MEDICO_B, criado.id)
+    assert repo.confirmar(MEDICO_A, criado.id).status == "confirmado"
+    assert repo.pedido(MEDICO_A, criado.id).status == "confirmado"
+
+
+def test_cancelar_libera_o_horario(url_banco):
+    repo = RepositorioAgendaPostgres(url_banco)
+    criado = repo.criar_pedido(MEDICO_A, pedido(10, "11:00"), novo_token())
+    with pytest.raises(PedidoNaoEncontrado):
+        repo.cancelar(MEDICO_B, criado.id)
+    assert repo.cancelar(MEDICO_A, criado.id).status == "cancelado"
+    assert repo.ocupados(MEDICO_A, date(2027, 3, 10), date(2027, 3, 10)) == []
+    assert repo.criar_pedido(MEDICO_A, pedido(10, "11:00"), novo_token()).status == "novo"

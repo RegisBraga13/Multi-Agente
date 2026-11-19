@@ -26,7 +26,8 @@ import { abrirJanelaProntuario, salvarEntrada, tituloDaConsulta, type DadosEntra
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import { FORMULARIO_VAZIO, type FormularioConsulta } from './formulario-consulta'
 import { partesPreConsulta } from '../medico/pre-consulta'
-import { atendimentoDoPedido } from '../modulo/pedidos'
+import { atendimentoDoPedido, precisaIdentificacao } from '../modulo/pedidos'
+import { IdentificacaoNaChegada } from './identificacao-chegada'
 import { buscarPedido, enderecoFoto, type PedidoNaAgenda } from '../servidor/agenda'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
@@ -48,6 +49,8 @@ export function PaginaConsulta() {
   )
   if (idPedido && pedido === null) return <p className="py-16 text-center text-apagado">Abrindo a consulta…</p>
   if (!esp || esp.status !== 'disponivel' || !at || !ehEtapa(etapa)) return <NaoEncontrada />
+  // sem a Identificação a consulta não começa (o médico pode preenchê-la aqui, na chegada)
+  if (doServidor && precisaIdentificacao(doServidor)) return <IdentificacaoNaChegada esp={esp} pedido={doServidor} onPronto={setPedido} />
   return <Consulta key={at.id} esp={esp} at={at} etapa={etapa} formulario={doServidor ? formularioDoPedido(doServidor) : null} />
 }
 

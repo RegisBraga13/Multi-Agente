@@ -142,7 +142,7 @@ export function validarFoto(f: { type: string; size: number }, documento = false
   return null
 }
 
-export const MAX_DOCUMENTOS = 5
+export const MAX_DOCUMENTOS = 10
 
 /** Chave de cada documento enviado ("documentos_1", "documentos_2"...): o servidor guarda um arquivo por chave. */
 export const chavesDeDocumentos = (id: string, n: number) => Array.from({ length: n }, (_, i) => `${id}_${i + 1}`)

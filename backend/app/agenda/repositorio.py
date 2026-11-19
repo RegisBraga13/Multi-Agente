@@ -54,6 +54,14 @@ class RepositorioAgenda(Protocol):
 
     def marcar_link_enviado(self, medico_id: UUID, pedido_id: UUID) -> Pedido: ...
 
+    def confirmar(self, medico_id: UUID, pedido_id: UUID) -> Pedido:
+        """Pedido novo vira confirmado (tocar de novo não muda nada)."""
+        ...
+
+    def cancelar(self, medico_id: UUID, pedido_id: UUID) -> Pedido:
+        """Avisar: o médico não pode atender; o pedido sai da agenda e o horário volta a ficar livre."""
+        ...
+
     def gravar_formulario(
         self, medico_id: UUID, pedido_id: UUID, recebido: FormularioRecebido, fotos: dict[str, FotoGuardada]
     ) -> Pedido: ...
@@ -118,6 +126,18 @@ class RepositorioAgendaMemoria:
         if pedido.situacao_ficha == "sem-ficha":
             pedido = pedido.model_copy(update={"situacao_ficha": "link-enviado"})
             self._pedidos[pedido_id] = (medico_id, pedido)
+        return pedido
+
+    def confirmar(self, medico_id: UUID, pedido_id: UUID) -> Pedido:
+        pedido = self._buscar(medico_id, pedido_id)
+        if pedido.status == "novo":
+            pedido = pedido.model_copy(update={"status": "confirmado"})
+            self._pedidos[pedido_id] = (medico_id, pedido)
+        return pedido
+
+    def cancelar(self, medico_id: UUID, pedido_id: UUID) -> Pedido:
+        pedido = self._buscar(medico_id, pedido_id).model_copy(update={"status": "cancelado"})
+        self._pedidos[pedido_id] = (medico_id, pedido)
         return pedido
 
     def gravar_formulario(

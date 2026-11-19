@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  calcularIdade, chavesDeDocumentos, convenioAtendido, FOTO_MAX_BYTES, normalizarWhatsapp, pedidoParaServidor, validarAtendimento, validarContato, validarDadosPessoais, validarFoto, validarPedido,
+  calcularIdade, chavesDeDocumentos, convenioAtendido, FOTO_MAX_BYTES, MAX_DOCUMENTOS, normalizarWhatsapp, pedidoParaServidor, validarAtendimento, validarContato, validarDadosPessoais, validarFoto, validarPedido,
   type DadosPessoais, type RascunhoPedido,
 } from './regras'
 
@@ -107,6 +107,9 @@ describe('documentos (receitas, exames, laudos)', () => {
     expect(validarFoto({ type: 'application/msword', size: 1000 }, true)).toBe('Envie foto ou PDF.')
     expect(validarFoto({ type: 'application/pdf', size: FOTO_MAX_BYTES + 1 }, true)).toBe('O arquivo passa de 10 MB. Envie um menor.')
     expect(validarFoto({ type: 'application/pdf', size: 1000 })).toBe('Envie uma foto (imagem).')
+  })
+  it('até 10 fotos, prints ou arquivos', () => {
+    expect(MAX_DOCUMENTOS).toBe(10)
   })
   it('cada documento ganha a sua chave, na ordem', () => {
     expect(chavesDeDocumentos('documentos', 3)).toEqual(['documentos_1', 'documentos_2', 'documentos_3'])

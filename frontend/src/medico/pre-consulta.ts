@@ -24,6 +24,8 @@ export type Pergunta = {
   obrigatoria?: boolean
   /** botão que responde "não tenho" com um toque; a resposta vira este texto */
   semResposta?: string
+  /** no formulário do paciente, ocupa a linha toda (mantém a ordem das perguntas) */
+  linhaToda?: boolean
 }
 
 export type Parte = { titulo: string; perguntas: Pergunta[]; nota?: string }
@@ -33,9 +35,9 @@ export type RespostasPreConsulta = Record<string, string | string[]>
 
 const QUEIXA: Pergunta = { id: 'queixa', rotulo: 'Qual o motivo da sua consulta?', tipo: 'texto-longo' }
 const DESDE: Pergunta = { id: 'desde_quando', rotulo: 'Desde quando?', tipo: 'texto', placeholder: 'Ex.: uns três meses' }
-/** Alergias: obrigatória, fica na Identificação (não existe uma sem a outra). */
+/** Alergias: em Saúde geral, opcional (pedido do autor, 19/11/2026); na consulta, sempre aparece em Perguntas. */
 export const ALERGIAS: Pergunta = {
-  id: 'alergias', rotulo: 'Alergias', tipo: 'texto', obrigatoria: true, semResposta: 'Não tenho alergia',
+  id: 'alergias', rotulo: 'Alergias', tipo: 'texto', semResposta: 'Não tenho alergia',
   placeholder: 'Ex.: dipirona, níquel',
 }
 const SIM_NAO = ['Sim', 'Não'] as const
@@ -44,7 +46,7 @@ const GERAIS: Parte[] = [
   { titulo: 'Queixa principal', perguntas: [QUEIXA, DESDE] },
   {
     titulo: 'Saúde geral',
-    perguntas: [{ id: 'medicamentos', rotulo: 'Medicamentos que usa ou já usou', tipo: 'texto-longo' }],
+    perguntas: [{ id: 'medicamentos', rotulo: 'Medicamentos que usa ou já usou', tipo: 'texto-longo' }, ALERGIAS],
   },
 ]
 
@@ -95,9 +97,12 @@ const DERMATOLOGIA: Parte[] = [
   {
     titulo: 'Saúde geral',
     perguntas: [
-      { id: 'doencas', rotulo: 'Doenças crônicas', tipo: 'texto', placeholder: 'Ex.: diabetes, pressão alta, tireoide' },
+      { id: 'doencas', rotulo: 'Doenças crônicas', tipo: 'texto', placeholder: 'Ex.: diabetes, pressão alta, tireoide', linhaToda: true },
       { id: 'medicamentos', rotulo: 'Medicamentos em uso, incluindo hormônios e corticoides', tipo: 'texto-longo', placeholder: 'Inclua pomadas e cremes' },
-      { id: 'gestacao', rotulo: 'Está grávida ou amamentando?', tipo: 'escolha', opcoes: ['Não', 'Grávida', 'Amamentando'], soParaSexo: 'F' },
+      ALERGIAS,
+      // duas perguntas Sim/Não (pedido do autor, 19/11/2026); o médico sabe quando e a quem perguntar
+      { id: 'gravida', rotulo: 'Está grávida?', tipo: 'escolha', opcoes: SIM_NAO, soParaSexo: 'F' },
+      { id: 'amamentando', rotulo: 'Está amamentando?', tipo: 'escolha', opcoes: SIM_NAO, soParaSexo: 'F' },
     ],
   },
   {
@@ -115,7 +120,7 @@ const DERMATOLOGIA: Parte[] = [
     perguntas: [
       { id: 'foto_perto', rotulo: 'Foto de perto', tipo: 'foto', ajuda: 'Com boa luz. Até 10 MB.' },
       { id: 'foto_longe', rotulo: 'Foto de longe', tipo: 'foto', ajuda: 'Mostrando onde fica a lesão no corpo. Até 10 MB.' },
-      { id: 'documentos', rotulo: 'Receitas anteriores, exames e laudos', tipo: 'arquivos', ajuda: 'Foto ou PDF. Até 5 arquivos de 10 MB.' },
+      { id: 'documentos', rotulo: 'Receitas anteriores, exames e laudos', tipo: 'arquivos', ajuda: 'Foto, print ou PDF. Até 10 arquivos de 10 MB.' },
     ],
   },
 ]

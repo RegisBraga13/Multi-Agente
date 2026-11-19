@@ -136,6 +136,25 @@ class RepositorioAgendaPostgres:
             raise PedidoNaoEncontrado
         return _pedido(linha)
 
+    def confirmar(self, medico_id: UUID, pedido_id: UUID) -> Pedido:
+        with transacao_do_medico(self.url, medico_id) as conn:
+            conn.execute(
+                "update booking_requests set status = 'confirmado' where id = %s and status = 'novo'", (pedido_id,)
+            )
+            linha = conn.execute(f"select {_COLUNAS} from booking_requests where id = %s", (pedido_id,)).fetchone()
+        if linha is None:
+            raise PedidoNaoEncontrado
+        return _pedido(linha)
+
+    def cancelar(self, medico_id: UUID, pedido_id: UUID) -> Pedido:
+        with transacao_do_medico(self.url, medico_id) as conn:
+            linha = conn.execute(
+                f"update booking_requests set status = 'cancelado' where id = %s returning {_COLUNAS}", (pedido_id,)
+            ).fetchone()
+        if linha is None:
+            raise PedidoNaoEncontrado
+        return _pedido(linha)
+
     def gravar_formulario(
         self, medico_id: UUID, pedido_id: UUID, recebido: FormularioRecebido, fotos: dict[str, FotoGuardada]
     ) -> Pedido:

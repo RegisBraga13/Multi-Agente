@@ -2,7 +2,7 @@
 // O médico confere cada parte ("Conferido ✓"), corrige ou completa, e na última salva: o formulário vira texto da anamnese.
 // Depois de salvo, fica só para consulta (as correções são feitas na caixa de texto).
 import { blocosDoFormulario, type Bloco } from '../medico/blocos'
-import { ALERGIAS, alternarOpcao, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
+import { alternarOpcao, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
 import { ESTADOS_CIVIS, type DadosPessoais } from '../medico/regras'
 import type { FormularioConsulta } from './formulario-consulta'
 import { SEM_CORRETOR } from './campo-linha'
@@ -125,7 +125,6 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar, confe
         <RotuloCampo texto="UF" vazio={!dados.uf} />
         <input {...SEM_CORRETOR} maxLength={2} value={dados.uf} onChange={(e) => mudaDado('uf', e.target.value.toUpperCase())} className={`${ENTRADA} w-16`} />
       </label>,
-      <div key="al" className="col-span-2">{campoPergunta(ALERGIAS)}</div>,
     ]
   }
 

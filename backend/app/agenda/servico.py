@@ -7,7 +7,7 @@ from datetime import date, datetime
 from uuid import UUID
 
 from app.agenda.repositorio import FotoGuardada, RepositorioAgenda, instante
-from app.contratos.agenda import FormularioEnviado, FormularioRecebido, NovoPedido, Pedido, PedidoCriado
+from app.contratos.agenda import DadosPessoais, FormularioEnviado, FormularioRecebido, NovoPedido, Pedido, PedidoCriado
 
 TAMANHO_MAXIMO_FOTO = 10 * 1024 * 1024
 
@@ -70,6 +70,17 @@ def enviar_formulario(repo: RepositorioAgenda, token: str, enviado: FormularioEn
         dados=enviado.dados, respostas=enviado.respostas, fotos=sorted(fotos), recebido_em=agora
     )
     return repo.gravar_formulario(medico, pedido.id, recebido, fotos)
+
+
+def identificacao_na_chegada(
+    repo: RepositorioAgenda, medico: UUID, pedido_id: UUID, dados: DadosPessoais, agora: datetime
+) -> Pedido:
+    """Quem escolheu "preencher na consulta": o médico preenche a Identificação na chegada (o resto vira Perguntas).
+    Não substitui um formulário que o paciente já enviou."""
+    if repo.pedido(medico, pedido_id).formulario is not None:
+        raise ErroAgenda("O paciente já enviou o formulário.")
+    recebido = FormularioRecebido(dados=dados, respostas={}, fotos=[], recebido_em=agora)
+    return repo.gravar_formulario(medico, pedido_id, recebido, {})
 
 
 def periodo_valido(de: date, ate: date) -> None:

@@ -38,6 +38,15 @@ describe('frasesDoFormulario', () => {
     expect(f.antecedentes).toEqual(['Nega alergias.', 'Hipertensão.', 'Em uso de losartana 50 mg.', 'Nega história familiar de doenças de pele.'])
   })
 
+  it('gravidez e amamentação: cada uma só entra se foi respondida', () => {
+    const ant = (r: Record<string, string>) => frasesDoFormulario({ dados: MARCYA.dados, respostas: r }).antecedentes
+    expect(ant({ gravida: 'Não', amamentando: 'Não' })).toEqual(['Nega gestação e amamentação.'])
+    expect(ant({ gravida: 'Sim' })).toEqual(['Gestante.'])
+    expect(ant({ amamentando: 'Sim' })).toEqual(['Amamentando.'])
+    expect(ant({ gravida: 'Não' })).toEqual(['Nega gestação.'])
+    expect(ant({ gravida: 'Não', amamentando: 'Sim' })).toEqual(['Nega gestação.', 'Amamentando.'])
+  })
+
   it('sem queixa no formulário: nada para abrir a HDA', () => {
     expect(frasesDoFormulario({ dados: MARCYA.dados, respostas: {} }).queixa).toBe('')
   })

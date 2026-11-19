@@ -80,6 +80,16 @@ export const buscarPedido = (id: string) => chamar<PedidoNaAgenda>(`/agenda/pedi
 
 export const marcarLinkEnviado = (id: string) => chamar<PedidoNaAgenda>(`/agenda/pedidos/${id}/link-enviado`, { method: 'POST' })
 
+/** O médico preenche a Identificação na chegada (paciente que escolheu "preencher na consulta"). */
+export const gravarIdentificacao = (id: string, dados: FormularioRecebido['dados']) =>
+  chamar<PedidoNaAgenda>(`/agenda/pedidos/${id}/identificacao`, { method: 'POST', body: JSON.stringify(dados) })
+
+/** Pedido novo vira confirmado (a etiqueta "Pedido novo" some da agenda). */
+export const confirmarPedido = (id: string) => chamar<PedidoNaAgenda>(`/agenda/pedidos/${id}/confirmar`, { method: 'POST' })
+
+/** Avisar: o médico não pode atender; o pedido sai da agenda e o horário volta a ficar livre. */
+export const cancelarPedido = (id: string) => chamar<PedidoNaAgenda>(`/agenda/pedidos/${id}/cancelar`, { method: 'POST' })
+
 export const enderecoFoto = (id: string, pergunta: string) => `${BASE}/agenda/pedidos/${id}/fotos/${pergunta}`
 
 /** Arquivo escolhido → base64 sem o prefixo "data:...;base64,". */

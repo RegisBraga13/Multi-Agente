@@ -1,6 +1,6 @@
-// Blocos do formulário do paciente: uma parte por tela. Obrigatória: a Identificação (com as alergias).
+// Blocos do formulário do paciente: uma parte por tela. Obrigatória: só a Identificação (alergias ficam em Saúde geral, opcional).
 // O resto pode ser pulado.
-import { ALERGIAS, perguntaVisivel, type Parte, type RespostasPreConsulta } from './pre-consulta'
+import { perguntaVisivel, type Parte, type RespostasPreConsulta } from './pre-consulta'
 import { validarDadosPessoais, type DadosPessoais } from './regras'
 
 export type Bloco =
@@ -31,7 +31,6 @@ export function blocoRespondido(b: Bloco, { dados, respostas, fotos, hoje }: Est
 
 /** Perguntas obrigatórias do bloco ainda sem resposta (a Identificação tem a sua própria validação). */
 export function faltaResponder(b: Bloco, { dados, respostas }: Estado): string[] {
-  if (b.id === 'identificacao') return preenchida(respostas[ALERGIAS.id]) ? [] : [ALERGIAS.id]
   if (!('parte' in b)) return []
   return b.parte.perguntas.filter((q) => q.obrigatoria && perguntaVisivel(q, dados.sexo) && !preenchida(respostas[q.id])).map((q) => q.id)
 }

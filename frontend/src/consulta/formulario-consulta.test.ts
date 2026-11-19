@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { partesPreConsulta } from '../medico/pre-consulta'
-import { FORMULARIO_VAZIO, juntarFormularioAoTexto, textoDoFormulario, type FormularioConsulta } from './formulario-consulta'
+import { FORMULARIO_VAZIO, formularioParaHistoria, juntarFormularioAoTexto, lembretesDoFormulario, textoDoFormulario, type FormularioConsulta } from './formulario-consulta'
 
 const partes = partesPreConsulta('dermatologia')
 const hoje = new Date(2026, 10, 19)
 const F: FormularioConsulta = {
   dados: { ...FORMULARIO_VAZIO.dados, nomeCompleto: 'Maria Lima', nascimento: '1979-10-19', sexo: 'F', cidade: 'Fortaleza', uf: 'CE', profissao: 'Professora' },
-  respostas: { alergias: 'Dipirona', queixa: 'Manchas no rosto', desde_quando: '2 anos', sintomas: ['Coça', 'Dói'], cor_pele: 'Clara', gestacao: 'Não', familia: ['Psoríase'] },
+  respostas: { alergias: 'Dipirona', queixa: 'Manchas no rosto', desde_quando: '2 anos', sintomas: ['Coça', 'Dói'], cor_pele: 'Clara', gravida: 'Não', familia: ['Psoríase'] },
   fotos: { foto_perto: '/x', documentos_1: '/y', documentos_2: '/z' },
 }
 
@@ -14,11 +14,10 @@ describe('textoDoFormulario', () => {
   it('vira texto na ordem do formulário; pergunta com "?" seguida da resposta; o que está em branco não entra', () => {
     expect(textoDoFormulario(partes, F, hoje)).toBe([
       'Identificação: Maria Lima, 47 anos, sexo F, Fortaleza/CE.',
-      'Alergias: Dipirona.',
       'Estado civil e trabalho: Professora.',
       'Queixa principal: Qual o motivo da sua consulta? Manchas no rosto. Há quanto tempo apareceu? 2 anos. Coça, dói ou sangra? Coça, Dói.',
       'Fototipo e exposição ao sol: Cor da pele: Clara.',
-      'Saúde geral: Está grávida ou amamentando? Não.',
+      'Saúde geral: Alergias: Dipirona. Está grávida? Não.',
       'Histórico familiar: Alguém da família tem ou teve: Psoríase.',
       'Fotos e documentos: 1 foto e 2 documentos (no Exame físico).',
     ].join('\n'))
@@ -26,7 +25,17 @@ describe('textoDoFormulario', () => {
 
   it('nome social aparece; "Não tenho alergia" fica escrito como resposta', () => {
     const t = textoDoFormulario(partes, { ...F, dados: { ...F.dados, nomeSocial: 'Mari' }, respostas: { alergias: 'Não tenho alergia' }, fotos: {} }, hoje)
-    expect(t.split('\n').slice(0, 2)).toEqual(['Identificação: Maria Lima (nome social: Mari), 47 anos, sexo F, Fortaleza/CE.', 'Alergias: Não tenho alergia.'])
+    expect(t.split('\n')).toEqual(['Identificação: Maria Lima (nome social: Mari), 47 anos, sexo F, Fortaleza/CE.', 'Estado civil e trabalho: Professora.', 'Saúde geral: Alergias: Não tenho alergia.'])
+  })
+})
+
+describe('lembretesDoFormulario', () => {
+  it('alergias sempre aparece em Perguntas, mesmo respondida; as outras só quando em branco', () => {
+    const ids = lembretesDoFormulario(partes, F).map((q) => q.id)
+    expect(ids.filter((id) => id === 'alergias')).toEqual(['alergias'])
+    expect(ids).not.toContain('queixa')
+    expect(ids).toContain('local')
+    expect(lembretesDoFormulario(partes, FORMULARIO_VAZIO).filter((q) => q.id === 'alergias')).toHaveLength(1)
   })
 })
 
@@ -38,5 +47,23 @@ describe('juntarFormularioAoTexto', () => {
   })
   it('salvar o formulário de novo troca o texto antigo dele, sem duplicar', () => {
     expect(juntarFormularioAoTexto('VELHO\n\nMédico: oi', 'NOVO', 'VELHO')).toBe('NOVO\n\nMédico: oi')
+  })
+})
+
+describe('formularioParaHistoria', () => {
+  it('formulário salvo + respostas dos lembretes: as respostas entram; em branco não', () => {
+    const h = formularioParaHistoria(F, F.dados, { local: 'Rosto', protetor: '', bronzeamento: [] })!
+    expect(h.respostas.local).toBe('Rosto')
+    expect(h.respostas.queixa).toBe('Manchas no rosto')
+    expect('protetor' in h.respostas).toBe(false)
+    expect('bronzeamento' in h.respostas).toBe(false)
+  })
+  it('formulário não salvo: só o que foi respondido nos lembretes (o resto do formulário não foi conferido)', () => {
+    const h = formularioParaHistoria(null, F.dados, { gravida: 'Não' })!
+    expect(h.respostas).toEqual({ gravida: 'Não' })
+    expect(h.dados.sexo).toBe('F')
+  })
+  it('sem formulário salvo e sem resposta nos lembretes: nada', () => {
+    expect(formularioParaHistoria(null, F.dados, { local: '  ' })).toBeNull()
   })
 })

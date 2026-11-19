@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { MEDICO_EXEMPLO } from '../medico/exemplo'
 import type { PedidoNaAgenda } from '../servidor/agenda'
-import { atendimentoDoPedido, juntarPedidos, mensagemDoFormulario } from './pedidos'
+import { atendimentoDoPedido, identificacaoDaChegada, juntarPedidos, lembrarHoje, mensagemDaConfirmacao, mensagemDoAviso, mensagemDoFormulario, mensagemDoLembrete, precisaIdentificacao } from './pedidos'
 import type { Atendimento } from './tipos'
 
 const PEDIDO: PedidoNaAgenda = {
@@ -77,6 +77,56 @@ describe('mensagemDoFormulario', () => {
     expect(m).toBe(
       'Olá, Maria! Para a sua consulta com Dra. Ana Souza, sexta-feira, 20 de novembro, às 10h (presencial), '
       + 'preencha o formulário: http://192.168.100.60:5180/formulario/tok123',
+    )
+  })
+})
+
+describe('preencher na consulta (Identificação na chegada)', () => {
+  it('sem formulário a consulta pede a Identificação; com formulário, não', () => {
+    expect(precisaIdentificacao(PEDIDO)).toBe(true)
+    const dados = { ...identificacaoDaChegada(PEDIDO), nascimento: '1990-05-02', sexo: 'F' as const, cidade: 'Fortaleza', uf: 'CE' }
+    expect(precisaIdentificacao({ ...PEDIDO, formulario: { dados, respostas: {}, fotos: [], recebidoEm: '' } })).toBe(false)
+  })
+
+  it('já vem com o nome e o WhatsApp do pedido; o resto em branco', () => {
+    expect(identificacaoDaChegada(PEDIDO)).toEqual({
+      nomeCompleto: 'Maria Teste', nomeSocial: '', nascimento: '', sexo: '', whatsapp: '(85) 99999-0000', email: '', cidade: '', uf: '',
+      estadoCivil: '', profissao: '', trabalhoExposto: '',
+    })
+  })
+})
+
+describe('aviso no dia (preencher na consulta)', () => {
+  const NA_CONSULTA = { ...PEDIDO, forma: 'consulta' as const }
+  it('só no dia da consulta, para quem escolheu preencher na consulta e ainda não preencheu', () => {
+    expect(lembrarHoje(NA_CONSULTA, '2026-11-20')).toBe(true)
+    expect(lembrarHoje(NA_CONSULTA, '2026-11-19')).toBe(false)
+    expect(lembrarHoje(PEDIDO, '2026-11-20')).toBe(false)
+    const dados = { ...identificacaoDaChegada(PEDIDO), nascimento: '1990-05-02', sexo: 'F' as const, cidade: 'Fortaleza', uf: 'CE' }
+    expect(lembrarHoje({ ...NA_CONSULTA, formulario: { dados, respostas: {}, fotos: [], recebidoEm: '' } }, '2026-11-20')).toBe(false)
+  })
+
+  it('mensagem: hoje, médico, hora e o link', () => {
+    expect(mensagemDoLembrete(NA_CONSULTA, MEDICO_EXEMPLO, 'https://x.trycloudflare.com')).toBe(
+      'Olá, Maria! Hoje é a sua consulta com Dra. Ana Souza, às 10h (presencial). Se puder, preencha o formulário antes. Leva poucos minutos: '
+      + 'https://x.trycloudflare.com/formulario/tok123',
+    )
+  })
+})
+
+describe('Confirmar', () => {
+  it('mensagem: primeiro nome, médico, dia, hora e modalidade', () => {
+    expect(mensagemDaConfirmacao(PEDIDO, MEDICO_EXEMPLO)).toBe(
+      'Olá, Maria! Sua consulta com Dra. Ana Souza está confirmada: sexta-feira, 20 de novembro, às 10h (presencial).',
+    )
+  })
+})
+
+describe('Avisar (não vai poder atender)', () => {
+  it('mensagem: dia, hora e o link da página de agendar', () => {
+    expect(mensagemDoAviso(PEDIDO, MEDICO_EXEMPLO, 'https://x.trycloudflare.com')).toBe(
+      'Olá, Maria! Infelizmente não será possível atender sexta-feira, 20 de novembro, às 10h. '
+      + 'Escolha outro horário: https://x.trycloudflare.com/medico/ana-souza',
     )
   })
 })

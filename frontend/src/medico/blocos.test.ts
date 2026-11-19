@@ -11,7 +11,7 @@ const dados: DadosPessoais = {
 const hoje = new Date(2026, 10, 16)
 
 describe('blocosDoFormulario', () => {
-  it('só a identificação (com as alergias) é obrigatória; o resto é opcional', () => {
+  it('só a identificação é obrigatória; o resto (alergias também) é opcional', () => {
     const b = blocosDoFormulario(partes)
     expect(b.map((x) => x.titulo)).toEqual([
       'Identificação', 'Estado civil e trabalho', 'Queixa principal', 'Fototipo e exposição ao sol',
@@ -36,7 +36,7 @@ describe('blocoRespondido', () => {
     expect(blocoRespondido(queixa, { dados, respostas: { queixa: '  ', sintomas: [] }, fotos: [], hoje })).toBe(false)
     expect(blocoRespondido(queixa, { dados, respostas: { sintomas: ['Coça'] }, fotos: [], hoje })).toBe(true)
     // gestação não aparece para sexo masculino: não conta
-    expect(blocoRespondido(saude, { dados, respostas: { gestacao: 'Não' }, fotos: [], hoje })).toBe(false)
+    expect(blocoRespondido(saude, { dados, respostas: { gravida: 'Não', amamentando: 'Não' }, fotos: [], hoje })).toBe(false)
   })
   it('fotos: conta quando alguma foto foi escolhida', () => {
     expect(blocoRespondido(fotos, { dados, respostas: {}, fotos: [], hoje })).toBe(false)
@@ -47,13 +47,9 @@ describe('blocoRespondido', () => {
 describe('faltaResponder', () => {
   const [ident, , queixa, , , saude] = blocosDoFormulario(partes)
   const estado = (respostas: Record<string, string | string[]>) => ({ dados, respostas, fotos: [], hoje })
-  it('alergias em branco: falta responder na identificação', () => {
-    expect(faltaResponder(ident, estado({}))).toEqual(['alergias'])
-    expect(faltaResponder(ident, estado({ alergias: '   ' }))).toEqual(['alergias'])
-  })
-  it('alergia escrita ou "Não tenho alergia": respondido', () => {
-    expect(faltaResponder(ident, estado({ alergias: 'dipirona' }))).toEqual([])
-    expect(faltaResponder(ident, estado({ alergias: 'Não tenho alergia' }))).toEqual([])
+  it('alergias em branco não trava nada (a identificação tem a sua própria validação)', () => {
+    expect(faltaResponder(ident, estado({}))).toEqual([])
+    expect(faltaResponder(saude, estado({}))).toEqual([])
   })
   it('as outras partes nunca faltam', () => {
     expect(faltaResponder(queixa, estado({}))).toEqual([])

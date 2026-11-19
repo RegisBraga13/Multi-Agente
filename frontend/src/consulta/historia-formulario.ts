@@ -61,8 +61,13 @@ export function frasesDoFormulario({ dados, respostas: r }: Entrada): FrasesForm
   if (pele || sol) ant.push(`${pele ? `Pele ${min(pele)}` : 'Pele'}${sol ? `, ${min(sol)}` : ''}.`)
   if (um(r.doencas)) ant.push(`${sem(um(r.doencas))}.`)
   if (um(r.medicamentos)) ant.push(`Em uso de ${min(sem(um(r.medicamentos)))}.`)
-  const gest = um(r.gestacao)
-  if (gest) ant.push(gest === 'Não' ? 'Nega gestação e amamentação.' : gest === 'Grávida' ? 'Gestante.' : 'Amamentando.')
+  const gravida = um(r.gravida)
+  const amamenta = um(r.amamentando)
+  if (gravida === 'Não' && amamenta === 'Não') ant.push('Nega gestação e amamentação.')
+  else {
+    if (gravida) ant.push(gravida === 'Sim' ? 'Gestante.' : 'Nega gestação.')
+    if (amamenta) ant.push(amamenta === 'Sim' ? 'Amamentando.' : 'Nega amamentação.')
+  }
   const familia = txt(r.familia)
   if (familia.length) ant.push(familia.includes('Nenhum desses') ? 'Nega história familiar de doenças de pele.' : `História familiar de ${lista(familia.map(min))}.`)
 

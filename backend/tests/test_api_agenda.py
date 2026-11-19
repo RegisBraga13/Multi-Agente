@@ -174,3 +174,65 @@ def test_formulario_aceita_receita_ou_laudo_em_pdf(agenda):
     assert r.headers["content-type"] == "application/pdf" and r.content == b"%PDF-1.4 laudo"
     word = {"dados": DADOS, "fotos": {"documentos_1": {"tipo": "application/msword", "base64": pdf}}}
     assert c.post(f"/publico/formularios/{criado['tokenFormulario']}", json=word).status_code == 422
+
+
+def test_formulario_aceita_duas_fotos_e_dez_documentos(agenda):
+    c = cliente(agenda)
+    token = pedir(c).json()["tokenFormulario"]
+    png = {"tipo": "image/png", "base64": base64.b64encode(b"png").decode()}
+    fotos = {"foto_perto": png, "foto_longe": png, **{f"documentos_{i}": png for i in range(1, 11)}}
+    assert c.post(f"/publico/formularios/{token}", json={"dados": DADOS, "fotos": fotos}).status_code == 204
+    demais = {**fotos, "documentos_11": png}
+    assert c.post(f"/publico/formularios/{token}", json={"dados": DADOS, "fotos": demais}).status_code == 422
+
+
+def test_medico_preenche_a_identificacao_na_chegada(agenda):
+    # "preencher na consulta": sem a Identificação a consulta não começa; o médico preenche por ela no computador
+    c = cliente(agenda)
+    criado = pedir(c).json()
+    pid = criado["id"]
+    assert cliente(agenda, MEDICO_B).post(f"/agenda/pedidos/{pid}/identificacao", json=DADOS).status_code == 404
+    r = c.post(f"/agenda/pedidos/{pid}/identificacao", json=DADOS)
+    assert r.status_code == 200
+    p = r.json()
+    assert p["situacaoFicha"] == "pronta"
+    assert p["formulario"]["dados"]["nascimento"] == "1990-05-02"
+    assert p["formulario"]["respostas"] == {} and p["formulario"]["fotos"] == []
+
+
+def test_identificacao_pelo_medico_nao_apaga_formulario_enviado(agenda):
+    c = cliente(agenda)
+    criado = pedir(c).json()
+    corpo = {"dados": DADOS, "respostas": {"alergias": "Não tenho alergia"}}
+    assert c.post(f"/publico/formularios/{criado['tokenFormulario']}", json=corpo).status_code == 204
+    r = c.post(f"/agenda/pedidos/{criado['id']}/identificacao", json=DADOS)
+    assert r.status_code == 422
+    assert c.get(f"/agenda/pedidos/{criado['id']}").json()["formulario"]["respostas"] == {
+        "alergias": "Não tenho alergia"
+    }
+
+
+def test_identificacao_incompleta_e_recusada(agenda):
+    c = cliente(agenda)
+    pid = pedir(c).json()["id"]
+    assert c.post(f"/agenda/pedidos/{pid}/identificacao", json={**DADOS, "nascimento": ""}).status_code == 422
+    assert c.get(f"/agenda/pedidos/{pid}").json()["formulario"] is None
+
+
+def test_medico_confirma_o_pedido_e_ele_deixa_de_ser_novo(agenda):
+    c = cliente(agenda)
+    pid = pedir(c).json()["id"]
+    assert cliente(agenda, MEDICO_B).post(f"/agenda/pedidos/{pid}/confirmar").status_code == 404
+    r = c.post(f"/agenda/pedidos/{pid}/confirmar")
+    assert r.status_code == 200 and r.json()["status"] == "confirmado"
+    assert c.post(f"/agenda/pedidos/{pid}/confirmar").json()["status"] == "confirmado"  # tocar de novo não muda nada
+
+
+def test_avisar_cancela_o_pedido_e_o_horario_volta_a_ficar_livre(agenda):
+    c = cliente(agenda)
+    pid = pedir(c).json()["id"]
+    assert cliente(agenda, MEDICO_B).post(f"/agenda/pedidos/{pid}/cancelar").status_code == 404
+    r = c.post(f"/agenda/pedidos/{pid}/cancelar")
+    assert r.status_code == 200 and r.json()["status"] == "cancelado"
+    assert c.get("/publico/medicos/ana-souza/ocupados", params={"de": "2026-11-20", "ate": "2026-11-20"}).json() == []
+    assert pedir(c).status_code == 201  # outro paciente pode pegar o mesmo horário

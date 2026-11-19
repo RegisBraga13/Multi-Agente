@@ -1,10 +1,13 @@
 // Página 1, coluna da esquerda: anamnese (formulário, gravar e escrever), perguntas e sinais de alerta.
 // Formulário: o mesmo que o paciente viu, já respondido; o médico troca de modo quando quiser, sem perder nada.
 // Na anamnese só entra o que é transcrito ou escrito. Pergunta clicada = o médico vai perguntar (grava ou escreve a resposta).
+// Lembrete do formulário clicado: abre as opções da pergunta (Sim/Não, Todo dia/Às vezes...) ou uma linha para escrever;
+// a resposta vai para a história, na seção certa (pedido do autor, 19/11/2026).
 // Sinal de alerta: o médico pergunta e marca V ou F; V vai para a história clínica (não para a anamnese).
 import { useEffect, useRef, useState } from 'react'
-import type { Parte } from '../medico/pre-consulta'
-import { FORMULARIO_VAZIO, juntarFormularioAoTexto, naoRespondidas, textoDoFormulario, type FormularioConsulta } from './formulario-consulta'
+import { alternarOpcao, type Parte, type Pergunta as PerguntaFormulario } from '../medico/pre-consulta'
+import type { Respostas } from '../servidor/agenda'
+import { FORMULARIO_VAZIO, formularioParaHistoria, juntarFormularioAoTexto, lembretesDoFormulario, textoDoFormulario, type FormularioConsulta } from './formulario-consulta'
 import { blocosDoFormulario } from '../medico/blocos'
 import { FormularioMedico } from './formulario-medico'
 import type { Alerta, Fala, Pergunta, RespostaPergunta } from './exemplo'
@@ -54,6 +57,8 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
   const [texto, setTexto] = useState('')
   /** pergunta clicada (riscada = foi feita) → resposta do médico (null = ainda sem Sim/Não) */
   const [perguntado, setPerguntado] = useState<Record<string, 'sim' | 'nao' | null>>({})
+  /** respostas dos lembretes do formulário, pela chave da pergunta */
+  const [respLembrete, setRespLembrete] = useState<Respostas>({})
   /** o aviso de sinais pendentes só aparece depois de tentar salvar */
   const [tentou, setTentou] = useState(false)
   const proxima = useRef(0)
@@ -102,10 +107,39 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
     setModo('texto')
     mudou()
   }
-  // começou a gravar ou salvou o formulário: o que o paciente não respondeu vira lembrete em Perguntas
-  const lembretes = segundos > 0 || textoForm !== null
-    ? naoRespondidas(partes, form).map((q) => ({ texto: q.rotulo, sim: '', nao: '', secao: 'hda' as const, lembrete: true }))
-    : []
+  // começou a gravar ou salvou o formulário: o que o paciente não respondeu vira lembrete em Perguntas (Alergias, sempre)
+  const camposLembrete = segundos > 0 || textoForm !== null ? lembretesDoFormulario(partes, form) : []
+  const lembretes = camposLembrete.map((q) => ({ texto: q.rotulo, sim: '', nao: '', secao: 'hda' as const, lembrete: true }))
+  const campoDoLembrete = (rotulo: string) => camposLembrete.find((q) => q.rotulo === rotulo)
+  const responderLembrete = (id: string, v: string | string[]) => { setRespLembrete((r) => ({ ...r, [id]: v })); mudou() }
+
+  /** opções da pergunta (uma ou várias) ou uma linha para escrever, do jeito que o paciente viu */
+  const respostaLembrete = (q: PerguntaFormulario) => {
+    const atual = respLembrete[q.id] ?? form.respostas[q.id] ?? (q.tipo === 'varias' ? [] : '')
+    const botao = (ativo: boolean) => `shrink-0 border-[1.5px] px-2 py-0.5 text-[13px] font-bold ${ativo ? 'border-tinta bg-tinta text-papel' : 'border-linha hover:bg-suave'}`
+    if (q.opcoes && (q.tipo === 'escolha' || q.tipo === 'varias')) {
+      const marcadas = Array.isArray(atual) ? atual : atual ? [atual] : []
+      return q.opcoes.map((op) => (
+        <button key={op} type="button" aria-pressed={marcadas.includes(op)} className={botao(marcadas.includes(op))}
+          onClick={() => responderLembrete(q.id, q.tipo === 'varias' ? alternarOpcao(marcadas, op, q.exclusiva) : marcadas.includes(op) ? '' : op)}>
+          {op}
+        </button>
+      ))
+    }
+    const valor = Array.isArray(atual) ? atual.join(', ') : atual
+    return (
+      <>
+        <input {...SEM_CORRETOR} value={valor} placeholder={q.placeholder ?? 'Resposta'} aria-label={`Resposta: ${q.rotulo}`}
+          onChange={(e) => responderLembrete(q.id, e.target.value)}
+          className="min-w-[10rem] flex-1 border-b-[1.5px] border-linha bg-transparent px-1 py-0.5 text-[13.5px] focus:border-tinta focus:outline-none" />
+        {q.semResposta && (
+          <button type="button" aria-pressed={valor === q.semResposta} className={botao(valor === q.semResposta)} onClick={() => responderLembrete(q.id, q.semResposta!)}>
+            {q.semResposta}
+          </button>
+        )}
+      </>
+    )
+  }
   const todas = [...perguntas, ...lembretes.filter((l) => !perguntas.some((p) => p.texto === l.texto))]
   const botaoModo = (ativo: boolean) =>
     `border-[1.5px] border-tinta px-3 py-1 text-[14px] font-bold ${ativo ? 'bg-tinta text-papel' : 'hover:bg-tinta hover:text-papel'}`
@@ -142,7 +176,10 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
             if (pendencias > 0 || gravando) return setTentou(true)
             setTentou(false)
             // só as perguntas com Sim/Não vão para a história (riscada sem resposta = o médico não quis perguntar)
-            onOficializar(texto, perguntas.flatMap((p) => { const r = perguntado[p.texto]; return r && !p.lembrete ? [{ pergunta: p, resposta: r }] : [] }), formSalvo)
+            // lembretes: só os riscados (perguntados) e respondidos
+            const lembretesFeitos = Object.fromEntries(camposLembrete.filter((q) => q.rotulo in perguntado && q.id in respLembrete).map((q) => [q.id, respLembrete[q.id]]))
+            onOficializar(texto, perguntas.flatMap((p) => { const r = perguntado[p.texto]; return r && !p.lembrete ? [{ pergunta: p, resposta: r }] : [] }),
+              formularioParaHistoria(formSalvo, form.dados, lembretesFeitos))
           }}
         />
       }
@@ -173,9 +210,10 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
             {todas.map(({ texto: q, lembrete }) => {
               const feito = q in perguntado
               const r = perguntado[q]
+              const campo = lembrete ? campoDoLembrete(q) : undefined
               return (
                 // clicar risca (a pergunta foi feita) e abre Sim/Não; a resposta vai para a história, não para a anamnese
-                <div key={q} className={`flex max-w-full items-center gap-1.5 ${lembrete ? '' : 'basis-full'}`}>
+                <div key={q} className={`flex max-w-full flex-wrap items-center gap-1.5 ${lembrete && !feito ? '' : 'basis-full'}`}>
                   <button type="button" aria-pressed={feito}
                     onClick={() => {
                       setPerguntado((p) => { const n = { ...p }; if (feito) delete n[q]; else n[q] = null; return n })
@@ -184,6 +222,7 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
                     className={`min-w-0 truncate border-[1.5px] px-2 py-0.5 text-left text-[13.5px] ${feito ? 'border-linha text-apagado line-through' : 'border-dashed border-(--esp-medio)'}`}>
                     {q}
                   </button>
+                  {feito && campo && respostaLembrete(campo)}
                   {feito && !lembrete && (['sim', 'nao'] as const).map((op) => (
                     <button key={op} type="button" aria-pressed={r === op}
                       onClick={() => { setPerguntado((p) => ({ ...p, [q]: r === op ? null : op })); mudou() }}

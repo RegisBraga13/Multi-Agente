@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { UFS } from '../cadastro/validacao'
 import { Campo } from './campo'
+import { CamposIdentificacao } from './campos-identificacao'
 import { btnSecundario, classeEntrada } from './estilos'
 import { enviarFormulario, ErroServidor, lerComoBase64 } from '../servidor/agenda'
 import { blocoRespondido, blocosDoFormulario, faltaResponder, type Bloco } from './blocos'
 import { GrupoOpcoes } from './opcoes'
 import { TextoCrescente } from './texto-crescente'
-import { ALERGIAS, alternarOpcao, partesPreConsulta, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
-import { chavesDeDocumentos, ESTADOS_CIVIS, MAX_DOCUMENTOS, calcularIdade, formatarWhatsapp, normalizarWhatsapp, validarDadosPessoais, validarFoto, type DadosPessoais, type RascunhoPedido } from './regras'
+import { alternarOpcao, partesPreConsulta, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
+import { chavesDeDocumentos, ESTADOS_CIVIS, MAX_DOCUMENTOS, formatarWhatsapp, normalizarWhatsapp, validarDadosPessoais, validarFoto, type DadosPessoais, type RascunhoPedido } from './regras'
 import { diaComSemana, horaCurta, NOME_MODALIDADE } from './textos'
 import type { Medico } from './tipos'
 
@@ -19,7 +19,7 @@ const SIM_NAO = [{ valor: 'sim', rotulo: 'Sim' }, { valor: 'nao', rotulo: 'Não'
 const comoOpcoes = (lista: readonly string[]) => lista.map((t) => ({ valor: t, rotulo: t }))
 /** Texto longo, foto e listas grandes de opções ocupam a linha toda; o resto divide a linha no PC. */
 const ocupaLinhaToda = (q: Pergunta) =>
-  q.tipo === 'texto-longo' || q.tipo === 'foto' || q.tipo === 'arquivos' || (q.opcoes ?? []).join('').length > 28
+  q.linhaToda || q.tipo === 'texto-longo' || q.tipo === 'foto' || q.tipo === 'arquivos' || (q.opcoes ?? []).join('').length > 28
 const semChave = <T,>(r: Record<string, T>, chave: string) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== chave))
 
 /** Formulário do paciente, aberto dentro da página logo depois do pedido enviado. */
@@ -44,7 +44,6 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
   const tituloBloco = useRef<HTMLHeadingElement>(null)
   const primeiraEtapa = useRef(true)
   const titulo = useRef<HTMLHeadingElement>(null)
-  const idade = calcularIdade(dados.nascimento, new Date())
 
   // ao abrir (e ao concluir), leva a tela e o foco até o formulário
   useEffect(() => {
@@ -195,7 +194,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
         await Promise.all(Object.entries(fotos).map(async ([id, f]) => [id, await lerComoBase64(f.arquivo)] as const)),
       )
       // só as perguntas que aparecem para este paciente e foram respondidas
-      const visiveis = new Set([ALERGIAS.id, ...partes.flatMap((pt) => pt.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map((q) => q.id))])
+      const visiveis = new Set([...partes.flatMap((pt) => pt.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map((q) => q.id))])
       const respostas = Object.fromEntries(Object.entries(pre).filter(([id, v]) => visiveis.has(id) && (Array.isArray(v) ? v.length > 0 : v.trim())))
       await enviarFormulario(token, { dados: { ...dados, sexo: dados.sexo || 'I' }, respostas, fotos: fotosBase64 })
       setPronto(true)
@@ -208,13 +207,13 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
 
   function avancar(ev: FormEvent) {
     ev.preventDefault()
-    // na identificação, todos os erros aparecem juntos (dados e alergias)
+    // na identificação, todos os erros aparecem juntos
     const identOk = etapa !== 0 || validarIdentificacao()
     const obrigOk = !bloco || conferirObrigatorias(bloco)
     if (!identOk || !obrigOk) return
     if (etapa < ultimo) return setEtapa(etapa + 1)
     if (!validarIdentificacao()) return setEtapa(0)
-    // quem pulou para a revisão sem responder as alergias volta ao bloco delas
+    // quem pulou para a revisão sem responder uma obrigatória volta ao bloco dela
     const pendente = blocos.findIndex((b) => faltaResponder(b, estado).length > 0)
     if (pendente >= 0) {
       conferirObrigatorias(blocos[pendente])
@@ -258,70 +257,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
         </div>
       )
     }
-    // Campos com a largura do que cabem neles: data, sexo, WhatsApp e UF estreitos;
-    // nome, e-mail e cidade crescem e ocupam o espaço que sobra na linha.
-    return (
-      <div className="flex flex-wrap gap-x-3 gap-y-3 sm:gap-x-4">
-        <div className="min-w-[13rem] flex-1">
-          <Campo rotulo="Nome completo" erro={erros.nomeCompleto}>
-            {(p) => <input {...p} autoComplete="name" value={dados.nomeCompleto} onChange={(e) => muda('nomeCompleto', e.target.value)} className={classeEntrada(p)} />}
-          </Campo>
-        </div>
-        <div className="min-w-[13rem] flex-1">
-          <Campo rotulo="Nome social (opcional)">
-            {(p) => <input {...p} autoComplete="nickname" value={dados.nomeSocial} onChange={(e) => muda('nomeSocial', e.target.value)} className={classeEntrada(p)} />}
-          </Campo>
-        </div>
-        <div className="w-[9.5rem]">
-          <Campo rotulo="Nascimento" erro={erros.nascimento} ajuda={idade !== null ? `${idade} ${idade === 1 ? 'ano' : 'anos'}` : undefined}>
-            {/* no iPad (Safari) o campo de data tem largura própria: min-w-0 o mantém dentro da caixa */}
-            {(p) => <input {...p} type="date" autoComplete="bday" value={dados.nascimento} onChange={(e) => muda('nascimento', e.target.value)} className={`${classeEntrada(p)} min-w-0 appearance-none`} />}
-          </Campo>
-        </div>
-        <div className="w-[8rem]">
-          <Campo rotulo="Sexo" erro={erros.sexo}>
-            {(p) => (
-              <select {...p} value={dados.sexo} onChange={(e) => muda('sexo', e.target.value as DadosPessoais['sexo'])} className={classeEntrada(p)}>
-                <option value="">Escolha</option>
-                <option value="M">Masculino</option>
-                <option value="F">Feminino</option>
-                <option value="I">Intersexo</option>
-              </select>
-            )}
-          </Campo>
-        </div>
-        <div className="w-[10rem]">
-          <Campo rotulo="WhatsApp" erro={erros.whatsapp}>
-            {(p) => <input {...p} type="tel" inputMode="tel" autoComplete="tel" value={dados.whatsapp} onChange={(e) => muda('whatsapp', e.target.value)} className={classeEntrada(p)} />}
-          </Campo>
-        </div>
-        <div className="min-w-[13rem] flex-1">
-          <Campo rotulo="E-mail (opcional)" erro={erros.email}>
-            {(p) => <input {...p} type="email" inputMode="email" autoComplete="email" value={dados.email} onChange={(e) => muda('email', e.target.value)} className={classeEntrada(p)} />}
-          </Campo>
-        </div>
-        {/* Cidade e UF sempre juntas na mesma linha; a cidade cresce */}
-        <div className="flex min-w-[15rem] flex-1 gap-3">
-          <div className="min-w-0 flex-1">
-            <Campo rotulo="Cidade" erro={erros.cidade}>
-              {(p) => <input {...p} autoComplete="address-level2" value={dados.cidade} onChange={(e) => muda('cidade', e.target.value)} className={classeEntrada(p)} />}
-            </Campo>
-          </div>
-          <div className="w-[5.5rem] flex-none">
-            <Campo rotulo="UF" erro={erros.uf}>
-              {(p) => (
-                <select {...p} value={dados.uf} onChange={(e) => muda('uf', e.target.value)} className={classeEntrada(p)}>
-                  <option value="">—</option>
-                  {UFS.map((u) => <option key={u}>{u}</option>)}
-                </select>
-              )}
-            </Campo>
-          </div>
-        </div>
-        {/* alergias: obrigatória, na identificação */}
-        <div className="basis-full">{campoPergunta(ALERGIAS)}</div>
-      </div>
-    )
+    return <CamposIdentificacao dados={dados} erros={erros} muda={muda} />
   }
 
   return (
@@ -387,7 +323,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
                         <li key={b.id} className="flex items-center gap-3 border-b border-linha py-2 text-[15px]">
                           <span aria-hidden className={`w-5 text-center font-bold ${ok ? 'text-(--esp)' : 'text-apagado'}`}>{ok ? '✓' : '–'}</span>
                           <span className="min-w-0 flex-1">{n + 1}. {b.titulo}</span>
-                          <span className={`text-[13px] ${falta ? 'font-semibold text-alerta' : 'hidden text-apagado sm:inline'}`}>{falta ? 'falta alergias' : ok ? 'respondido' : 'não respondido'}</span>
+                          <span className={`text-[13px] ${falta ? 'font-semibold text-alerta' : 'hidden text-apagado sm:inline'}`}>{falta ? 'falta responder' : ok ? 'respondido' : 'não respondido'}</span>
                           <button type="button" onClick={() => setEtapa(n)} className="text-[14px] font-semibold text-(--esp) underline" aria-label={`Editar ${b.titulo}`}>Editar</button>
                         </li>
                       )

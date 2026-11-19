@@ -23,6 +23,23 @@ export function naoRespondidas(partes: Parte[], f: FormularioConsulta): Pergunta
   return partes.flatMap((p) => p.perguntas).filter((q) => q.tipo !== 'foto' && q.tipo !== 'arquivos' && perguntaVisivel(q, f.dados.sexo) && !respondida(f.respostas[q.id]))
 }
 
+/** Lembretes em Perguntas: o que ficou em branco e, sempre, Alergias (mesmo respondida: o médico confirma). */
+export function lembretesDoFormulario(partes: Parte[], f: FormularioConsulta): Pergunta[] {
+  const brancas = naoRespondidas(partes, f)
+  return brancas.some((q) => q.id === ALERGIAS.id) ? brancas : [...brancas, ALERGIAS]
+}
+
+/**
+ * O que a história recebe do formulário ao salvar a anamnese: o formulário salvo (se foi salvo)
+ * mais o que o médico respondeu nos lembretes de Perguntas. Em branco não entra (não perguntado ≠ negado).
+ */
+export function formularioParaHistoria(salvo: FormularioConsulta | null, dados: FormularioConsulta['dados'], lembretes: Respostas): FormularioConsulta | null {
+  const respondidos = Object.fromEntries(Object.entries(lembretes).filter(([, v]) => respondida(v)))
+  if (!salvo && !Object.keys(respondidos).length) return null
+  const base = salvo ?? { ...FORMULARIO_VAZIO, dados }
+  return { ...base, respostas: { ...base.respostas, ...respondidos } }
+}
+
 const resposta = (v: string | string[] | undefined) => (Array.isArray(v) ? v.join(', ') : (v ?? '')).trim()
 const ponto = (t: string) => (/[.!?]$/.test(t) ? t : `${t}.`)
 
@@ -41,8 +58,6 @@ export function textoDoFormulario(partes: Parte[], f: FormularioConsulta, hoje: 
     d.cidade.trim() && `${d.cidade.trim()}${d.uf ? `/${d.uf}` : ''}`,
   ].filter(Boolean)
   if (ident.length) linhas.push(`Identificação: ${ident.join(', ')}.`)
-  const alergias = resposta(f.respostas[ALERGIAS.id])
-  if (alergias) linhas.push(`Alergias: ${ponto(alergias)}`)
   const trabalho = [
     ESTADOS_CIVIS.find((e) => e.valor === d.estadoCivil)?.rotulo ?? '',
     d.profissao.trim(),

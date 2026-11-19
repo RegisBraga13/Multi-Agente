@@ -26,7 +26,15 @@ describe('partesPreConsulta', () => {
     expect(q.familia.tipo).toBe('varias')
     expect(q.familia.opcoes).toEqual(['Câncer de pele', 'Psoríase', 'Dermatite atópica', 'Vitiligo', 'Queda de cabelo', 'Nenhum desses'])
     expect(q.medicamentos.rotulo).toContain('hormônios e corticoides')
-    expect(q.gestacao.soParaSexo).toBe('F')
+    // gravidez e amamentação: duas perguntas Sim/Não, só para F (pedido do autor, 19/11/2026)
+    for (const id of ['gravida', 'amamentando']) {
+      expect(q[id].opcoes).toEqual(['Sim', 'Não'])
+      expect(q[id].soParaSexo).toBe('F')
+    }
+    // Saúde geral na ordem da lista do autor; Doenças ocupa a linha (Alergias vem depois de Medicamentos)
+    const saude = partesPreConsulta('dermatologia').find((p) => p.titulo === 'Saúde geral')!
+    expect(saude.perguntas.map((x) => x.id)).toEqual(['doencas', 'medicamentos', 'alergias', 'gravida', 'amamentando'])
+    expect(q.doencas.linhaToda).toBe(true)
     const fotos = partesPreConsulta('dermatologia').find((p) => p.titulo === 'Fotos e documentos')!
     expect(fotos.perguntas.map((x) => x.tipo)).toEqual(['foto', 'foto', 'arquivos'])
     expect(fotos.nota).toBe('A foto ajuda a acompanhar a evolução, e o exame presencial continua necessário.')
@@ -34,14 +42,16 @@ describe('partesPreConsulta', () => {
 
   it('especialidade sem pacote próprio recebe as perguntas gerais, sem foto', () => {
     const p = todas('cardiologia')
-    expect(p.map((x) => x.id)).toEqual(['queixa', 'desde_quando', 'medicamentos'])
+    expect(p.map((x) => x.id)).toEqual(['queixa', 'desde_quando', 'medicamentos', 'alergias'])
     expect(p.some((x) => x.tipo === 'foto')).toBe(false)
   })
 
-  it('todo pacote é coerente: alergia fica na identificação (não nas partes), ids únicos, opções só onde se escolhe', () => {
+  it('todo pacote é coerente: alergias em Saúde geral (opcional), ids únicos, opções só onde se escolhe', () => {
     for (const e of ESPECIALIDADES) {
+      const saude = partesPreConsulta(e.slug).find((x) => x.titulo === 'Saúde geral')
+      expect(saude?.perguntas.find((x) => x.id === 'alergias')?.obrigatoria).toBeFalsy()
+      expect(saude?.perguntas.some((x) => x.id === 'alergias')).toBe(true)
       const p = todas(e.slug)
-      expect(p.some((x) => x.id === 'alergias')).toBe(false)
       expect(new Set(p.map((x) => x.id)).size).toBe(p.length)
       for (const x of p) {
         const escolhe = x.tipo === 'escolha' || x.tipo === 'varias'

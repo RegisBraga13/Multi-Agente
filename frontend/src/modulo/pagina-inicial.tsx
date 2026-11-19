@@ -12,8 +12,8 @@ import { useAgora, vistaDoDia } from './vista'
 import { linkWhatsapp } from '../medico/duvidas'
 import { formatarWhatsapp } from '../medico/regras'
 import type { Medico } from '../medico/tipos'
-import { marcarLinkEnviado, pedidosDaAgenda, type PedidoNaAgenda } from '../servidor/agenda'
-import { mensagemDoFormulario } from './pedidos'
+import { cancelarPedido, confirmarPedido, marcarLinkEnviado, pedidosDaAgenda, type PedidoNaAgenda } from '../servidor/agenda'
+import { lembrarHoje, mensagemDaConfirmacao, mensagemDoAviso, mensagemDoFormulario, mensagemDoLembrete } from './pedidos'
 
 /** Quantos pacientes o cartão "Hoje" mostra, para a página caber numa tela (~690 px). */
 const MAX_HOJE = 5
@@ -100,6 +100,8 @@ function Pagina({ esp }: { esp: Especialidade }) {
       classeAlergia={estiloAlergia(esp)} at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => abrirJanelaProntuario(esp.slug, escolhido.paciente.id)}
       pedido={pedidos.find((p) => p.id === escolhido.pedido?.id)} medico={medico}
       onLinkEnviado={(id) => { marcarLinkEnviado(id).then(recarregar, () => setAviso('Não foi possível marcar o envio. Tente de novo.')) }}
+      onConfirmar={(id) => { confirmarPedido(id).then(recarregar, () => setAviso('Não foi possível confirmar. Tente de novo.')) }}
+      onAvisar={(id) => { setSelecionado(null); cancelarPedido(id).then(recarregar, () => setAviso('Não foi possível cancelar. Tente de novo.')) }}
       onAbrirConsulta={() => navegar(`/modulo/${esp.slug}/consulta/${escolhido.id}/anamnese-exame`)}
     />
   ) : (
@@ -323,6 +325,10 @@ type PropsPainel = {
   classeAlergia: string; at: Atendimento; agora: Date; onFechar: () => void; onProntuario: () => void
   /** pedido do servidor (só quando o atendimento veio da página do médico) */
   pedido?: PedidoNaAgenda; medico: Medico; onLinkEnviado: (id: string) => void
+  /** Confirmar: o pedido deixa de ser novo e o WhatsApp abre com a mensagem de confirmação */
+  onConfirmar: (id: string) => void
+  /** Avisar: o pedido é cancelado (sai da agenda) e o WhatsApp abre com o aviso */
+  onAvisar: (id: string) => void
   /** pedido da página do médico: a consulta abre em qualquer dia (simulação) */
   onAbrirConsulta: () => void
 }
@@ -330,13 +336,16 @@ type PropsPainel = {
 /** Endereço que o paciente abre no celular (o computador do consultório pode estar em "localhost"). */
 const ENDERECO_PUBLICO = (import.meta.env.VITE_ENDERECO_PUBLICO as string | undefined) || window.location.origin
 
-function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario, pedido, medico, onLinkEnviado, onAbrirConsulta }: PropsPainel) {
+function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario, pedido, medico, onLinkEnviado, onConfirmar, onAvisar, onAbrirConsulta }: PropsPainel) {
   const titulo = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
     titulo.current?.focus({ preventScroll: true })
     if (window.matchMedia('(max-width: 767px)').matches) titulo.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [at.id])
   const f = at.ficha
+  const lembrar = !!pedido && lembrarHoje(pedido, dataLocal(agora))
+  /** pedido em que o médico tocou Avisar (falta a segunda confirmação) */
+  const [avisando, setAvisando] = useState<string | null>(null)
   return (
     <aside className="relative border border-linha bg-branco px-5 py-4" aria-label="Ficha do paciente">
       <button type="button" onClick={onFechar} aria-label="Fechar ficha" className="absolute top-2 right-2 px-2 text-[22px] leading-none text-apagado hover:text-tinta">×</button>
@@ -370,15 +379,53 @@ function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario, pedido,
         </p>
       )}
 
+      {pedido && (avisando === pedido.id ? (
+        // Avisar cancela o horário: pede uma segunda confirmação antes
+        <div className="mt-3 border-l-4 border-alerta bg-suave px-3 py-2 text-[14px]">
+          <p className="font-semibold">Cancelar este horário e avisar {pedido.nome.trim().split(/\s+/)[0]}?</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <a
+              href={linkWhatsapp(pedido.whatsapp, mensagemDoAviso(pedido, medico, ENDERECO_PUBLICO))}
+              target="_blank" rel="noopener noreferrer"
+              onClick={() => { setAvisando(null); onAvisar(pedido.id) }}
+              className="block bg-alerta px-3 py-2 text-center text-[14.5px] font-bold text-papel no-underline"
+            >
+              Sim, avisar
+            </a>
+            <button type="button" onClick={() => setAvisando(null)} className="border-[1.5px] border-tinta px-3 py-2 text-[14.5px] font-semibold hover:bg-tinta hover:text-papel">Não</button>
+          </div>
+        </div>
+      ) : (
+        // Confirmar: mensagem pronta de confirmação e a etiqueta "Pedido novo" some.
+        // Avisar: o médico não pode atender; o horário é cancelado e volta a ficar livre (regra 6.3).
+        <div className={`mt-3 grid gap-2 ${pedido.status === 'novo' ? 'grid-cols-2' : ''}`}>
+          {pedido.status === 'novo' && (
+            <a
+              href={linkWhatsapp(pedido.whatsapp, mensagemDaConfirmacao(pedido, medico))}
+              target="_blank" rel="noopener noreferrer"
+              onClick={() => onConfirmar(pedido.id)}
+              className="block bg-petroleo px-4 py-2.5 text-center text-[15px] font-bold text-papel no-underline transition hover:-translate-y-0.5"
+            >
+              Confirmar
+            </a>
+          )}
+          <button type="button" onClick={() => setAvisando(pedido.id)}
+            className="border-[1.5px] border-alerta px-4 py-2 text-[15px] font-bold text-alerta transition hover:bg-alerta hover:text-papel">
+            Avisar
+          </button>
+        </div>
+      ))}
+
       {pedido && f.situacao !== 'pronta' && (
-        // abre o WhatsApp do consultório com a mensagem pronta; quem envia é a pessoa
+        // abre o WhatsApp do consultório com a mensagem pronta; quem envia é a pessoa.
+        // No dia, para quem escolheu "preencher na consulta": aviso para preencher antes (regra 5.5).
         <a
-          href={linkWhatsapp(pedido.whatsapp, mensagemDoFormulario(pedido, medico, ENDERECO_PUBLICO))}
+          href={linkWhatsapp(pedido.whatsapp, lembrar ? mensagemDoLembrete(pedido, medico, ENDERECO_PUBLICO) : mensagemDoFormulario(pedido, medico, ENDERECO_PUBLICO))}
           target="_blank" rel="noopener noreferrer"
           onClick={() => onLinkEnviado(pedido.id)}
           className="mt-3 block bg-(--esp) px-4 py-2.5 text-center text-[15px] font-bold text-papel no-underline transition hover:-translate-y-0.5"
         >
-          {f.situacao === 'link-enviado' ? 'Mandar formulário de novo' : 'Mandar formulário'}
+          {lembrar ? 'Lembrar formulário' : f.situacao === 'link-enviado' ? 'Mandar formulário de novo' : 'Mandar formulário'}
         </a>
       )}
 

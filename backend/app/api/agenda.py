@@ -13,7 +13,15 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.agenda import servico
 from app.api.dependencias import Dependencias, dependencias, medico_atual
-from app.contratos.agenda import FormularioEnviado, Horario, NovoPedido, Pedido, PedidoCriado, PedidoParaPaciente
+from app.contratos.agenda import (
+    DadosPessoais,
+    FormularioEnviado,
+    Horario,
+    NovoPedido,
+    Pedido,
+    PedidoCriado,
+    PedidoParaPaciente,
+)
 
 publico = APIRouter(prefix="/publico", tags=["agenda (paciente)"])
 medico_rotas = APIRouter(prefix="/agenda", tags=["agenda (médico)"])
@@ -66,6 +74,21 @@ def um_pedido(pedido_id: UUID, dep: Dep, medico: Medico) -> Pedido:
 @medico_rotas.post("/pedidos/{pedido_id}/link-enviado", response_model=Pedido)
 def link_enviado(pedido_id: UUID, dep: Dep, medico: Medico) -> Pedido:
     return dep.agenda.marcar_link_enviado(medico, pedido_id)
+
+
+@medico_rotas.post("/pedidos/{pedido_id}/confirmar", response_model=Pedido)
+def confirmar(pedido_id: UUID, dep: Dep, medico: Medico) -> Pedido:
+    return dep.agenda.confirmar(medico, pedido_id)
+
+
+@medico_rotas.post("/pedidos/{pedido_id}/cancelar", response_model=Pedido)
+def cancelar(pedido_id: UUID, dep: Dep, medico: Medico) -> Pedido:
+    return dep.agenda.cancelar(medico, pedido_id)
+
+
+@medico_rotas.post("/pedidos/{pedido_id}/identificacao", response_model=Pedido)
+def identificacao(pedido_id: UUID, dados: DadosPessoais, dep: Dep, medico: Medico) -> Pedido:
+    return servico.identificacao_na_chegada(dep.agenda, medico, pedido_id, dados, dep.relogio.agora())
 
 
 @medico_rotas.get("/pedidos/{pedido_id}/fotos/{pergunta}")
