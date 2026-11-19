@@ -41,8 +41,9 @@ class DadosPessoais(ModeloApi):
     """Identificação do formulário (os opcionais chegam vazios)."""
 
     nome_completo: str = Field(min_length=1, max_length=160)
+    nome_social: str = Field(default="", max_length=160)
     nascimento: date
-    sexo: Literal["F", "M", "outro"]
+    sexo: Literal["M", "F", "I"]  # masculino, feminino, intersexo
     whatsapp: str = Field(max_length=30)
     email: str = Field(default="", max_length=160)
     cidade: str = Field(max_length=80)
@@ -53,14 +54,14 @@ class DadosPessoais(ModeloApi):
 
 
 class FotoEnviada(ModeloApi):
-    tipo: str = Field(pattern=r"^image/[a-z0-9.+-]+$")
+    tipo: str = Field(pattern=r"^(image/[a-z0-9.+-]+|application/pdf)$")  # foto, ou receita/exame/laudo em PDF
     base64: str = Field(max_length=14_000_000)  # ~10 MB depois de decodificada
 
 
 class FormularioEnviado(ModeloApi):
     dados: DadosPessoais
     respostas: dict[str, str | list[str]] = Field(default_factory=dict, max_length=80)
-    fotos: dict[str, FotoEnviada] = Field(default_factory=dict, max_length=6)
+    fotos: dict[str, FotoEnviada] = Field(default_factory=dict, max_length=10)
 
 
 class FormularioRecebido(ModeloApi):

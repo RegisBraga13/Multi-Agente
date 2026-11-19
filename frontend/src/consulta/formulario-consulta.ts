@@ -4,14 +4,14 @@ import type { DadosPessoais } from '../medico/regras'
 import type { Respostas } from '../servidor/agenda'
 
 export type FormularioConsulta = {
-  dados: Pick<DadosPessoais, 'nomeCompleto' | 'nascimento' | 'sexo' | 'cidade' | 'uf' | 'estadoCivil' | 'profissao' | 'trabalhoExposto'>
+  dados: Pick<DadosPessoais, 'nomeCompleto' | 'nomeSocial' | 'nascimento' | 'sexo' | 'cidade' | 'uf' | 'estadoCivil' | 'profissao' | 'trabalhoExposto'>
   respostas: Respostas
   /** perguntas de foto com foto recebida → endereço da imagem */
   fotos: Record<string, string>
 }
 
 export const FORMULARIO_VAZIO: FormularioConsulta = {
-  dados: { nomeCompleto: '', nascimento: '', sexo: '', cidade: '', uf: '', estadoCivil: '', profissao: '', trabalhoExposto: '' },
+  dados: { nomeCompleto: '', nomeSocial: '', nascimento: '', sexo: '', cidade: '', uf: '', estadoCivil: '', profissao: '', trabalhoExposto: '' },
   respostas: {},
   fotos: {},
 }
@@ -20,5 +20,5 @@ const respondida = (v: string | string[] | undefined) => (Array.isArray(v) ? v.l
 
 /** Perguntas do formulário que o paciente não respondeu (viram lembrete em Perguntas). Fotos ficam de fora. */
 export function naoRespondidas(partes: Parte[], f: FormularioConsulta): Pergunta[] {
-  return partes.flatMap((p) => p.perguntas).filter((q) => q.tipo !== 'foto' && perguntaVisivel(q, f.dados.sexo) && !respondida(f.respostas[q.id]))
+  return partes.flatMap((p) => p.perguntas).filter((q) => q.tipo !== 'foto' && q.tipo !== 'arquivos' && perguntaVisivel(q, f.dados.sexo) && !respondida(f.respostas[q.id]))
 }

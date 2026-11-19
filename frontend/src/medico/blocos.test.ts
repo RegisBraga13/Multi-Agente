@@ -5,19 +5,19 @@ import type { DadosPessoais } from './regras'
 
 const partes = partesPreConsulta('dermatologia')
 const dados: DadosPessoais = {
-  nomeCompleto: 'Maria Lima', nascimento: '1990-05-02', sexo: 'M', whatsapp: '85912345678', email: '',
+  nomeCompleto: 'Maria Lima', nomeSocial: '', nascimento: '1990-05-02', sexo: 'M', whatsapp: '85912345678', email: '',
   cidade: 'Fortaleza', uf: 'CE', estadoCivil: '', profissao: '', trabalhoExposto: '',
 }
 const hoje = new Date(2026, 10, 16)
 
 describe('blocosDoFormulario', () => {
-  it('identificação obrigatória; Saúde geral também, por causa das alergias; o resto opcional', () => {
+  it('só a identificação (com as alergias) é obrigatória; o resto é opcional', () => {
     const b = blocosDoFormulario(partes)
     expect(b.map((x) => x.titulo)).toEqual([
       'Identificação', 'Estado civil e trabalho', 'Queixa principal', 'Fototipo e exposição ao sol',
-      'Rotina de cuidados', 'Saúde geral', 'Histórico familiar', 'Fotos',
+      'Rotina de cuidados', 'Saúde geral', 'Histórico familiar', 'Fotos e documentos',
     ])
-    expect(b.map((x) => x.obrigatorio)).toEqual([true, false, false, false, false, true, false, false])
+    expect(b.map((x) => x.obrigatorio)).toEqual([true, false, false, false, false, false, false, false])
     expect(new Set(b.map((x) => x.id)).size).toBe(b.length)
   })
 })
@@ -47,16 +47,16 @@ describe('blocoRespondido', () => {
 describe('faltaResponder', () => {
   const [ident, , queixa, , , saude] = blocosDoFormulario(partes)
   const estado = (respostas: Record<string, string | string[]>) => ({ dados, respostas, fotos: [], hoje })
-  it('alergias em branco: falta responder', () => {
-    expect(faltaResponder(saude, estado({}))).toEqual(['alergias'])
-    expect(faltaResponder(saude, estado({ alergias: '   ', medicamentos: 'losartana' }))).toEqual(['alergias'])
+  it('alergias em branco: falta responder na identificação', () => {
+    expect(faltaResponder(ident, estado({}))).toEqual(['alergias'])
+    expect(faltaResponder(ident, estado({ alergias: '   ' }))).toEqual(['alergias'])
   })
   it('alergia escrita ou "Não tenho alergia": respondido', () => {
-    expect(faltaResponder(saude, estado({ alergias: 'dipirona' }))).toEqual([])
-    expect(faltaResponder(saude, estado({ alergias: 'Não tenho alergia' }))).toEqual([])
+    expect(faltaResponder(ident, estado({ alergias: 'dipirona' }))).toEqual([])
+    expect(faltaResponder(ident, estado({ alergias: 'Não tenho alergia' }))).toEqual([])
   })
-  it('blocos sem pergunta obrigatória nunca faltam', () => {
+  it('as outras partes nunca faltam', () => {
     expect(faltaResponder(queixa, estado({}))).toEqual([])
-    expect(faltaResponder(ident, estado({}))).toEqual([])
+    expect(faltaResponder(saude, estado({}))).toEqual([])
   })
 })

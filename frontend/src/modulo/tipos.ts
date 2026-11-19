@@ -12,7 +12,7 @@ export type Ficha =
       /** 'HH:MM' em que chegou */
       recebidaAs: string
       /** da identificação do formulário (sexo é obrigatório; estado civil e profissão, opcionais: '' = não respondeu) */
-      sexo: 'F' | 'M' | 'outro'
+      sexo: 'F' | 'M' | 'I'
       estadoCivil: EstadoCivil | ''
       profissao: string
       queixa: string

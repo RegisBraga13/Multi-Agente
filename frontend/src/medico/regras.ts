@@ -73,8 +73,8 @@ export const ESTADOS_CIVIS: { valor: EstadoCivil; rotulo: string }[] = [
   { valor: 'solteiro', rotulo: 'Solteiro(a)' }, { valor: 'casado', rotulo: 'Casado(a)' }, { valor: 'uniao-estavel', rotulo: 'União estável' },
   { valor: 'separado', rotulo: 'Separado(a)' }, { valor: 'divorciado', rotulo: 'Divorciado(a)' }, { valor: 'viuvo', rotulo: 'Viúvo(a)' },
 ]
-/** Estado civil no texto clínico, concordando com o sexo ("casado"/"casada"; sexo "outro" → "casado(a)"). */
-export function estadoCivilNoTexto(e: EstadoCivil, sexo: 'F' | 'M' | 'outro' | ''): string {
+/** Estado civil no texto clínico, concordando com o sexo ("casado"/"casada"; intersexo → "casado(a)"). */
+export function estadoCivilNoTexto(e: EstadoCivil, sexo: 'F' | 'M' | 'I' | ''): string {
   if (e === 'uniao-estavel') return 'em união estável'
   const m = { solteiro: 'solteiro', casado: 'casado', separado: 'separado', divorciado: 'divorciado', viuvo: 'viúvo' }[e]
   return sexo === 'F' ? `${m.slice(0, -1)}a` : sexo === 'M' ? m : `${m}(a)`
@@ -83,7 +83,10 @@ export function estadoCivilNoTexto(e: EstadoCivil, sexo: 'F' | 'M' | 'outro' | '
 export type DadosPessoais = {
   nomeCompleto: string
   nascimento: string // YYYY-MM-DD
-  sexo: 'F' | 'M' | 'outro' | ''
+  /** M / F / I (masculino, feminino, intersexo) */
+  sexo: 'F' | 'M' | 'I' | ''
+  /** opcional: como a pessoa quer ser chamada */
+  nomeSocial: string
   whatsapp: string
   email: string
   cidade: string
@@ -127,11 +130,22 @@ export function validarDadosPessoais(d: DadosPessoais, hoje: Date): Partial<Reco
 
 export const FOTO_MAX_BYTES = 10 * 1024 * 1024
 
-export function validarFoto(f: { type: string; size: number }): string | null {
+/** `documento`: receita, exame ou laudo (foto ou PDF). */
+export function validarFoto(f: { type: string; size: number }, documento = false): string | null {
+  if (documento) {
+    if (!f.type.startsWith('image/') && f.type !== 'application/pdf') return 'Envie foto ou PDF.'
+    if (f.size > FOTO_MAX_BYTES) return 'O arquivo passa de 10 MB. Envie um menor.'
+    return null
+  }
   if (!f.type.startsWith('image/')) return 'Envie uma foto (imagem).'
   if (f.size > FOTO_MAX_BYTES) return 'A foto passa de 10 MB. Envie uma menor.'
   return null
 }
+
+export const MAX_DOCUMENTOS = 5
+
+/** Chave de cada documento enviado ("documentos_1", "documentos_2"...): o servidor guarda um arquivo por chave. */
+export const chavesDeDocumentos = (id: string, n: number) => Array.from({ length: n }, (_, i) => `${id}_${i + 1}`)
 
 /** O pedido no formato do servidor. Só chamar depois de `validarPedido` sem erros. */
 export function pedidoParaServidor(r: RascunhoPedido): NovoPedido {

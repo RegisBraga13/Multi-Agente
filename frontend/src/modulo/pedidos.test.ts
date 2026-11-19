@@ -31,7 +31,7 @@ describe('atendimentoDoPedido', () => {
       situacaoFicha: 'pronta',
       formulario: {
         dados: {
-          nomeCompleto: 'Maria Teste da Silva', nascimento: '1990-05-02', sexo: 'F', whatsapp: '', email: '', cidade: 'Fortaleza', uf: 'CE',
+          nomeCompleto: 'Maria Teste da Silva', nomeSocial: '', nascimento: '1990-05-02', sexo: 'F', whatsapp: '', email: '', cidade: 'Fortaleza', uf: 'CE',
           estadoCivil: 'casado', profissao: 'professora', trabalhoExposto: '',
         },
         respostas: { queixa: 'Manchas no rosto', medicamentos: 'Anticoncepcional', doencas: 'Hipotireoidismo', alergias: 'Não tenho alergia' },
@@ -49,7 +49,7 @@ describe('atendimentoDoPedido', () => {
     const f = atendimentoDoPedido({
       ...PEDIDO, situacaoFicha: 'pronta',
       formulario: {
-        dados: { nomeCompleto: 'Maria', nascimento: '1990-05-02', sexo: 'F', whatsapp: '', email: '', cidade: 'X', uf: 'CE', estadoCivil: '', profissao: '', trabalhoExposto: '' },
+        dados: { nomeCompleto: 'Maria', nomeSocial: '', nascimento: '1990-05-02', sexo: 'F', whatsapp: '', email: '', cidade: 'X', uf: 'CE', estadoCivil: '', profissao: '', trabalhoExposto: '' },
         respostas: { alergias: 'Dipirona' }, fotos: [], recebidoEm: '2026-11-19T17:30:00Z',
       },
     }, AGORA).ficha

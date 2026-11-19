@@ -16,7 +16,7 @@ export type NovoPedido = {
 export type Respostas = Record<string, string | string[]>
 
 export type FormularioRecebido = {
-  dados: Omit<DadosPessoais, 'nascimento' | 'sexo'> & { nascimento: string; sexo: 'F' | 'M' | 'outro' }
+  dados: Omit<DadosPessoais, 'nascimento' | 'sexo' | 'nomeSocial'> & { nascimento: string; sexo: 'F' | 'M' | 'I'; /** formulários antigos não têm */ nomeSocial?: string }
   respostas: Respostas
   fotos: string[]
   recebidoEm: string

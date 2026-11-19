@@ -4,7 +4,8 @@
 // Quando o médico puder editar o próprio modelo (tela CF-04), isto passa para o banco.
 import type { DadosPessoais } from './regras'
 
-export type TipoPergunta = 'texto' | 'texto-longo' | 'escolha' | 'varias' | 'foto'
+/** 'arquivos': vários arquivos (foto ou PDF), como receitas anteriores, exames e laudos */
+export type TipoPergunta = 'texto' | 'texto-longo' | 'escolha' | 'varias' | 'foto' | 'arquivos'
 
 export type Pergunta = {
   /** chave da resposta; estável, para o banco */
@@ -32,7 +33,8 @@ export type RespostasPreConsulta = Record<string, string | string[]>
 
 const QUEIXA: Pergunta = { id: 'queixa', rotulo: 'Qual o motivo da sua consulta?', tipo: 'texto-longo' }
 const DESDE: Pergunta = { id: 'desde_quando', rotulo: 'Desde quando?', tipo: 'texto', placeholder: 'Ex.: uns três meses' }
-const ALERGIAS: Pergunta = {
+/** Alergias: obrigatória, fica na Identificação (não existe uma sem a outra). */
+export const ALERGIAS: Pergunta = {
   id: 'alergias', rotulo: 'Alergias', tipo: 'texto', obrigatoria: true, semResposta: 'Não tenho alergia',
   placeholder: 'Ex.: dipirona, níquel',
 }
@@ -42,7 +44,7 @@ const GERAIS: Parte[] = [
   { titulo: 'Queixa principal', perguntas: [QUEIXA, DESDE] },
   {
     titulo: 'Saúde geral',
-    perguntas: [{ id: 'medicamentos', rotulo: 'Medicamentos que usa ou já usou', tipo: 'texto-longo' }, ALERGIAS],
+    perguntas: [{ id: 'medicamentos', rotulo: 'Medicamentos que usa ou já usou', tipo: 'texto-longo' }],
   },
 ]
 
@@ -95,7 +97,6 @@ const DERMATOLOGIA: Parte[] = [
     perguntas: [
       { id: 'doencas', rotulo: 'Doenças crônicas', tipo: 'texto', placeholder: 'Ex.: diabetes, pressão alta, tireoide' },
       { id: 'medicamentos', rotulo: 'Medicamentos em uso, incluindo hormônios e corticoides', tipo: 'texto-longo', placeholder: 'Inclua pomadas e cremes' },
-      ALERGIAS,
       { id: 'gestacao', rotulo: 'Está grávida ou amamentando?', tipo: 'escolha', opcoes: ['Não', 'Grávida', 'Amamentando'], soParaSexo: 'F' },
     ],
   },
@@ -109,11 +110,12 @@ const DERMATOLOGIA: Parte[] = [
     ],
   },
   {
-    titulo: 'Fotos',
+    titulo: 'Fotos e documentos',
     nota: 'A foto ajuda a acompanhar a evolução, e o exame presencial continua necessário.',
     perguntas: [
       { id: 'foto_perto', rotulo: 'Foto de perto', tipo: 'foto', ajuda: 'Com boa luz. Até 10 MB.' },
       { id: 'foto_longe', rotulo: 'Foto de longe', tipo: 'foto', ajuda: 'Mostrando onde fica a lesão no corpo. Até 10 MB.' },
+      { id: 'documentos', rotulo: 'Receitas anteriores, exames e laudos', tipo: 'arquivos', ajuda: 'Foto ou PDF. Até 5 arquivos de 10 MB.' },
     ],
   },
 ]

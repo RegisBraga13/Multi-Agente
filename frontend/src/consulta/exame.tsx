@@ -16,6 +16,10 @@ type Props = {
   /** lesões marcadas pela IA na foto 1 */
   marcas: [number, number][]
   complementares: Complementar[]
+  /** fotos que o paciente mandou pelo formulário (endereços) */
+  fotosPaciente?: string[]
+  /** receitas anteriores, exames e laudos que o paciente mandou pelo formulário */
+  documentos?: { nome: string; url: string }[]
   situacao: Situacao
   onEditar: () => void
   /** salva com os valores atuais (a história clínica é montada com eles) */
@@ -23,7 +27,7 @@ type Props = {
   onAviso: (texto: string) => void
 }
 
-export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, situacao, onEditar, onOficializar, onAviso }: Props) {
+export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, fotosPaciente = [], documentos = [], situacao, onEditar, onOficializar, onAviso }: Props) {
   const [laudos, setLaudos] = useState(false)
   const fecharLaudos = useCallback(() => setLaudos(false), [])
   const [valores, setValores] = useState(() => campos.map((c) => c.valor))
@@ -53,7 +57,7 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, situ
   const inserir = (
     <div className="flex flex-1 justify-center">
       <button type="button" onClick={() => setLaudos(true)} className="border-[1.5px] border-tinta px-3 py-1 text-[14px] font-bold hover:bg-tinta hover:text-papel">
-        Inserir prints, arquivos, laudos{complementares.length ? ` (${complementares.length})` : ''}
+        Inserir prints, arquivos, laudos{complementares.length + documentos.length ? ` (${complementares.length + documentos.length})` : ''}
       </button>
     </div>
   )
@@ -66,7 +70,7 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, situ
       rodape={<BotaoOficializar rotulo="Salvar exame físico" oficializado={oficializado} onClick={() => onOficializar([...campos.map((c, i) => ({ rotulo: c.rotulo, valor: valores[i] })), { rotulo: 'Observações', valor: observacoes }])} />}
     >
       <>
-          <Fotos fotos={fotos} fotoExemplo={fotoExemplo} marcas={marcas} onAdicionar={() => onAviso('Fotos e câmera chegam numa próxima etapa.')} />
+          <Fotos fotos={fotosPaciente.length || fotos} urls={fotosPaciente} fotoExemplo={fotoExemplo} marcas={marcas} onAdicionar={() => onAviso('Fotos e câmera chegam numa próxima etapa.')} />
           {/* editando um campo, os outros se recolhem; ao sair (clicar fora), todos voltam */}
           <div className="flex min-h-0 flex-1 flex-col" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setAtivo(null) }}>
           <dl className="mt-2 space-y-[3px]">
@@ -134,7 +138,19 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, situ
       </>
       {laudos && (
         <Gaveta titulo="Prints, arquivos, laudos" onFechar={fecharLaudos}>
-          <Complementares lista={complementares} onAnexar={() => onAviso('Anexar laudos chega numa próxima etapa.')} />
+          {documentos.length > 0 && (
+            <div className="mb-4">
+              <p className="text-[15px] font-semibold">Enviados pelo paciente no formulário</p>
+              <ul className="mt-1 divide-y divide-linha border-y border-linha">
+                {documentos.map((d) => (
+                  <li key={d.url} className="py-1.5 text-[14.5px]">
+                    <a href={d.url} target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-4 hover:text-(--esp)">{d.nome}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <Complementares lista={complementares} semMensagem={documentos.length > 0} onAnexar={() => onAviso('Anexar laudos chega numa próxima etapa.')} />
         </Gaveta>
       )}
     </Cartao>
@@ -145,9 +161,9 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, situ
  * Fotos do exame: todas juntas no mesmo espaço (quanto mais fotos, menores). Um clique abre a foto para analisar
  * (a 1 com as lesões marcadas pela IA); as outras ficam pequenas ao lado para trocar. Nada abre ao passar o mouse.
  */
-function Fotos({ fotos, fotoExemplo, marcas, onAdicionar }: { fotos: number; fotoExemplo: string | null; marcas: [number, number][]; onAdicionar: () => void }) {
+function Fotos({ fotos, urls, fotoExemplo, marcas, onAdicionar }: { fotos: number; urls: string[]; fotoExemplo: string | null; marcas: [number, number][]; onAdicionar: () => void }) {
   const [aberta, setAberta] = useState<number | null>(null)
-  const real = (i: number) => (i === 0 ? fotoExemplo : null)
+  const real = (i: number) => urls[i] ?? (i === 0 ? fotoExemplo : null)
   const mais = (classe: string, comNome = true) => (
     <button type="button" onClick={onAdicionar} aria-label="Adicionar foto"
       className={`flex flex-col items-center justify-center border-[1.5px] border-dashed border-(--esp-medio) text-[12px] font-semibold text-apagado hover:border-tinta hover:text-tinta ${classe}`}>
@@ -212,10 +228,10 @@ function Fotos({ fotos, fotoExemplo, marcas, onAdicionar }: { fotos: number; fot
   )
 }
 
-function Complementares({ lista, onAnexar }: { lista: Complementar[]; onAnexar: () => void }) {
+function Complementares({ lista, semMensagem = false, onAnexar }: { lista: Complementar[]; semMensagem?: boolean; onAnexar: () => void }) {
   return (
     <div className="space-y-3">
-      {lista.length === 0 && <p className="text-[14.5px] text-apagado">Nenhum exame trazido pelo paciente.</p>}
+      {lista.length === 0 && !semMensagem && <p className="text-[14.5px] text-apagado">Nenhum exame trazido pelo paciente.</p>}
       {lista.map((c) => (
         <div key={c.exame}>
           <p className="text-[15px] font-semibold">{c.exame} <span className="font-normal text-apagado">· {c.data} · {c.origem}</span></p>

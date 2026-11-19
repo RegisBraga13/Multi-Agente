@@ -1,7 +1,7 @@
 // Anamnese, modo Formulário: o mesmo formulário que o paciente viu, uma parte por vez, já com as respostas dele.
 // O médico confere o que foi respondido e completa o resto, se quiser.
 import { blocosDoFormulario, type Bloco } from '../medico/blocos'
-import { alternarOpcao, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
+import { ALERGIAS, alternarOpcao, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
 import { ESTADOS_CIVIS, type DadosPessoais } from '../medico/regras'
 import type { FormularioConsulta } from './formulario-consulta'
 import { SEM_CORRETOR } from './campo-linha'
@@ -28,16 +28,17 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar }: Pro
   const mudaDado = <K extends keyof FormularioConsulta['dados']>(k: K, v: FormularioConsulta['dados'][K]) => onMudar({ ...valor, dados: { ...dados, [k]: v } })
   const mudaResposta = (id: string, v: string | string[]) => onMudar({ ...valor, respostas: { ...valor.respostas, [id]: v } })
 
-  function campoDado(rotulo: string, k: 'nomeCompleto' | 'nascimento' | 'cidade' | 'profissao', tipo = 'text') {
+  function campoDado(rotulo: string, k: 'nomeCompleto' | 'nomeSocial' | 'nascimento' | 'cidade' | 'profissao', tipo = 'text') {
     return (
       <label key={k} className="block">
         <RotuloCampo texto={rotulo} vazio={!dados[k].trim()} />
-        <input {...SEM_CORRETOR} type={tipo} value={dados[k]} onChange={(e) => mudaDado(k, e.target.value)} className={ENTRADA} />
+        {/* min-w-0: no iPad o campo de data tem largura própria e invadia o campo ao lado */}
+        <input {...SEM_CORRETOR} type={tipo} value={dados[k]} onChange={(e) => mudaDado(k, e.target.value)} className={`${ENTRADA} min-w-0 appearance-none`} />
       </label>
     )
   }
 
-  function opcoes(rotulo: string, lista: readonly { valor: string; rotulo: string }[], marcadas: string[], onTocar: (v: string) => void) {
+  function opcoes(rotulo: string, lista: readonly { valor: string; rotulo: string; nome?: string }[], marcadas: string[], onTocar: (v: string) => void) {
     return (
       <div role="group" aria-label={rotulo}>
         <RotuloCampo texto={rotulo} vazio={marcadas.length === 0} />
@@ -45,7 +46,7 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar }: Pro
           {lista.map((o) => {
             const sel = marcadas.includes(o.valor)
             return (
-              <button key={o.valor} type="button" aria-pressed={sel} onClick={() => onTocar(o.valor)}
+              <button key={o.valor} type="button" aria-pressed={sel} onClick={() => onTocar(o.valor)} title={o.nome} aria-label={o.nome}
                 className={`border-[1.5px] px-2 py-0.5 text-[13px] ${sel ? 'border-tinta bg-tinta font-semibold text-papel' : 'border-linha hover:bg-suave'}`}>
                 {o.rotulo}
               </button>
@@ -58,6 +59,15 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar }: Pro
 
   function campoPergunta(q: Pergunta) {
     const v = valor.respostas[q.id]
+    if (q.tipo === 'arquivos') {
+      const docs = Object.entries(valor.fotos).filter(([k]) => k.startsWith(`${q.id}_`))
+      return (
+        <div key={q.id} className="col-span-2">
+          <RotuloCampo texto={q.rotulo} vazio={docs.length === 0} />
+          {docs.length > 0 && <p className="text-[13px]">{docs.length} {docs.length === 1 ? 'arquivo' : 'arquivos'} · ver em Exame físico, “Inserir prints, arquivos, laudos”</p>}
+        </div>
+      )
+    }
     if (q.tipo === 'foto') {
       const url = valor.fotos[q.id]
       return (
@@ -95,16 +105,19 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar }: Pro
           dados.trabalhoExposto ? [dados.trabalhoExposto] : [], (v) => mudaDado('trabalhoExposto', dados.trabalhoExposto === v ? '' : v as DadosPessoais['trabalhoExposto']))}</div>,
       ]
     }
+    // um campo por linha onde a largura aperta (iPad): nada sobe sobre o vizinho
     return [
       <div key="n" className="col-span-2">{campoDado('Nome completo', 'nomeCompleto')}</div>,
-      campoDado('Nascimento', 'nascimento', 'date'),
-      <div key="s">{opcoes('Sexo', [{ valor: 'F', rotulo: 'Feminino' }, { valor: 'M', rotulo: 'Masculino' }, { valor: 'outro', rotulo: 'Outro' }],
+      <div key="ns" className="col-span-2">{campoDado('Nome social', 'nomeSocial')}</div>,
+      <div key="dn">{campoDado('Nascimento', 'nascimento', 'date')}</div>,
+      <div key="s">{opcoes('Sexo', [{ valor: 'M', rotulo: 'M', nome: 'Masculino' }, { valor: 'F', rotulo: 'F', nome: 'Feminino' }, { valor: 'I', rotulo: 'I', nome: 'Intersexo' }],
         dados.sexo ? [dados.sexo] : [], (v) => mudaDado('sexo', v as DadosPessoais['sexo']))}</div>,
       campoDado('Cidade', 'cidade'),
       <label key="uf" className="block">
         <RotuloCampo texto="UF" vazio={!dados.uf} />
         <input {...SEM_CORRETOR} maxLength={2} value={dados.uf} onChange={(e) => mudaDado('uf', e.target.value.toUpperCase())} className={`${ENTRADA} w-16`} />
       </label>,
+      <div key="al" className="col-span-2">{campoPergunta(ALERGIAS)}</div>,
     ]
   }
 

@@ -57,7 +57,7 @@ function formularioDoPedido(p: PedidoNaAgenda): FormularioConsulta | null {
   if (!f) return null
   const d = f.dados
   return {
-    dados: { ...FORMULARIO_VAZIO.dados, nomeCompleto: d.nomeCompleto, nascimento: d.nascimento, sexo: d.sexo, cidade: d.cidade, uf: d.uf, estadoCivil: d.estadoCivil, profissao: d.profissao, trabalhoExposto: d.trabalhoExposto },
+    dados: { ...FORMULARIO_VAZIO.dados, nomeCompleto: d.nomeCompleto, nomeSocial: d.nomeSocial ?? '', nascimento: d.nascimento, sexo: d.sexo, cidade: d.cidade, uf: d.uf, estadoCivil: d.estadoCivil, profissao: d.profissao, trabalhoExposto: d.trabalhoExposto },
     respostas: f.respostas,
     fotos: Object.fromEntries(f.fotos.map((q) => [q, enderecoFoto(p.id, q)])),
   }
@@ -316,6 +316,8 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
               fotoExemplo={fotoExemplo}
               marcas={conteudo.marcas}
               complementares={conteudo.complementares}
+              fotosPaciente={Object.entries(formulario?.fotos ?? {}).filter(([k]) => !k.startsWith('documentos_')).map(([, url]) => url)}
+              documentos={Object.entries(formulario?.fotos ?? {}).filter(([k]) => k.startsWith('documentos_')).map(([k, url]) => ({ nome: `Documento ${k.slice('documentos_'.length)}`, url }))}
               situacao={estado.blocos.exame.estado}
               onEditar={() => fazer('editar', 'exame')}
               onOficializar={(valores) => { fontes.current.exame = valores; salvarPagina1('exame') }}

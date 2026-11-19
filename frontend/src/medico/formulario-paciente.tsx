@@ -6,8 +6,8 @@ import { enviarFormulario, ErroServidor, lerComoBase64 } from '../servidor/agend
 import { blocoRespondido, blocosDoFormulario, faltaResponder, type Bloco } from './blocos'
 import { GrupoOpcoes } from './opcoes'
 import { TextoCrescente } from './texto-crescente'
-import { alternarOpcao, partesPreConsulta, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
-import { ESTADOS_CIVIS, calcularIdade, formatarWhatsapp, normalizarWhatsapp, validarDadosPessoais, validarFoto, type DadosPessoais, type RascunhoPedido } from './regras'
+import { ALERGIAS, alternarOpcao, partesPreConsulta, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
+import { chavesDeDocumentos, ESTADOS_CIVIS, MAX_DOCUMENTOS, calcularIdade, formatarWhatsapp, normalizarWhatsapp, validarDadosPessoais, validarFoto, type DadosPessoais, type RascunhoPedido } from './regras'
 import { diaComSemana, horaCurta, NOME_MODALIDADE } from './textos'
 import type { Medico } from './tipos'
 
@@ -19,14 +19,14 @@ const SIM_NAO = [{ valor: 'sim', rotulo: 'Sim' }, { valor: 'nao', rotulo: 'Não'
 const comoOpcoes = (lista: readonly string[]) => lista.map((t) => ({ valor: t, rotulo: t }))
 /** Texto longo, foto e listas grandes de opções ocupam a linha toda; o resto divide a linha no PC. */
 const ocupaLinhaToda = (q: Pergunta) =>
-  q.tipo === 'texto-longo' || q.tipo === 'foto' || (q.opcoes ?? []).join('').length > 28
+  q.tipo === 'texto-longo' || q.tipo === 'foto' || q.tipo === 'arquivos' || (q.opcoes ?? []).join('').length > 28
 const semChave = <T,>(r: Record<string, T>, chave: string) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== chave))
 
 /** Formulário do paciente, aberto dentro da página logo depois do pedido enviado. */
 export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props) {
   const whatsapp = normalizarWhatsapp(pedido.whatsapp)
   const [dados, setDados] = useState<DadosPessoais>({
-    nomeCompleto: pedido.nome, nascimento: '', sexo: '', whatsapp: pedido.whatsapp, email: '', cidade: '', uf: '',
+    nomeCompleto: pedido.nome, nomeSocial: '', nascimento: '', sexo: '', whatsapp: pedido.whatsapp, email: '', cidade: '', uf: '',
     estadoCivil: '', profissao: '', trabalhoExposto: '',
   })
   const partes = partesPreConsulta(medico.especialidade)
@@ -76,6 +76,18 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
     setErrosFoto(erro ? { ...outrosErros, [id]: erro } : outrosErros)
   }
 
+  /** receitas, exames, laudos: troca a lista inteira de uma vez (até MAX_DOCUMENTOS) */
+  function escolherDocumentos(id: string, lista: File[]) {
+    const atuais = Object.keys(fotos).filter((k) => k.startsWith(`${id}_`))
+    atuais.forEach((k) => URL.revokeObjectURL(fotos[k].url))
+    const outras = Object.fromEntries(Object.entries(fotos).filter(([k]) => !k.startsWith(`${id}_`)))
+    const erro = lista.length > MAX_DOCUMENTOS ? `Envie até ${MAX_DOCUMENTOS} arquivos.` : lista.map((f) => validarFoto(f, true)).find(Boolean) ?? null
+    const validos = erro ? [] : lista
+    const novos = Object.fromEntries(chavesDeDocumentos(id, validos.length).map((k, i) => [k, { nome: validos[i].name, url: URL.createObjectURL(validos[i]), arquivo: validos[i] }]))
+    setFotos({ ...outras, ...novos })
+    setErrosFoto(erro ? { ...semChave(errosFoto, id), [id]: erro } : semChave(errosFoto, id))
+  }
+
   function campoPergunta(q: Pergunta) {
     const valor = pre[q.id]
     if (q.tipo === 'escolha' || q.tipo === 'varias') {
@@ -84,6 +96,24 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
         <GrupoOpcoes key={q.id} rotulo={q.rotulo} ajuda={q.ajuda} modo={q.tipo === 'escolha' ? 'uma' : 'varias'}
           opcoes={comoOpcoes(q.opcoes ?? [])} marcadas={marcadas}
           onAlternar={(o) => mudaPre(q.id, q.tipo === 'escolha' ? o : alternarOpcao(marcadas, o, q.exclusiva))} />
+      )
+    }
+    if (q.tipo === 'arquivos') {
+      const escolhidos = Object.entries(fotos).filter(([k]) => k.startsWith(`${q.id}_`))
+      return (
+        <div key={q.id} className="grid gap-2">
+          <Campo rotulo={q.rotulo} erro={errosFoto[q.id]} ajuda={q.ajuda}>
+            {(p) => (
+              <input {...p} type="file" multiple accept="image/*,application/pdf" onChange={(e) => escolherDocumentos(q.id, Array.from(e.target.files ?? []))}
+                className="block w-full text-[15px] file:mr-4 file:border-[1.5px] file:border-tinta file:bg-transparent file:px-4 file:py-2.5 file:font-semibold" />
+            )}
+          </Campo>
+          {escolhidos.length > 0 && (
+            <ul className="text-[14px] text-apagado">
+              {escolhidos.map(([k, f]) => <li key={k}>✓ {f.nome}</li>)}
+            </ul>
+          )}
+        </div>
       )
     }
     if (q.tipo === 'foto') {
@@ -165,9 +195,9 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
         await Promise.all(Object.entries(fotos).map(async ([id, f]) => [id, await lerComoBase64(f.arquivo)] as const)),
       )
       // só as perguntas que aparecem para este paciente e foram respondidas
-      const visiveis = new Set(partes.flatMap((pt) => pt.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map((q) => q.id)))
+      const visiveis = new Set([ALERGIAS.id, ...partes.flatMap((pt) => pt.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map((q) => q.id))])
       const respostas = Object.fromEntries(Object.entries(pre).filter(([id, v]) => visiveis.has(id) && (Array.isArray(v) ? v.length > 0 : v.trim())))
-      await enviarFormulario(token, { dados: { ...dados, sexo: dados.sexo || 'outro' }, respostas, fotos: fotosBase64 })
+      await enviarFormulario(token, { dados: { ...dados, sexo: dados.sexo || 'I' }, respostas, fotos: fotosBase64 })
       setPronto(true)
     } catch (erro) {
       setErroEnvio(erro instanceof ErroServidor ? erro.message : 'Não foi possível enviar. Tente de novo.')
@@ -178,8 +208,10 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
 
   function avancar(ev: FormEvent) {
     ev.preventDefault()
-    if (etapa === 0 && !validarIdentificacao()) return
-    if (bloco && !conferirObrigatorias(bloco)) return
+    // na identificação, todos os erros aparecem juntos (dados e alergias)
+    const identOk = etapa !== 0 || validarIdentificacao()
+    const obrigOk = !bloco || conferirObrigatorias(bloco)
+    if (!identOk || !obrigOk) return
     if (etapa < ultimo) return setEtapa(etapa + 1)
     if (!validarIdentificacao()) return setEtapa(0)
     // quem pulou para a revisão sem responder as alergias volta ao bloco delas
@@ -235,9 +267,15 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
             {(p) => <input {...p} autoComplete="name" value={dados.nomeCompleto} onChange={(e) => muda('nomeCompleto', e.target.value)} className={classeEntrada(p)} />}
           </Campo>
         </div>
+        <div className="min-w-[13rem] flex-1">
+          <Campo rotulo="Nome social (opcional)">
+            {(p) => <input {...p} autoComplete="nickname" value={dados.nomeSocial} onChange={(e) => muda('nomeSocial', e.target.value)} className={classeEntrada(p)} />}
+          </Campo>
+        </div>
         <div className="w-[9.5rem]">
           <Campo rotulo="Nascimento" erro={erros.nascimento} ajuda={idade !== null ? `${idade} ${idade === 1 ? 'ano' : 'anos'}` : undefined}>
-            {(p) => <input {...p} type="date" autoComplete="bday" value={dados.nascimento} onChange={(e) => muda('nascimento', e.target.value)} className={classeEntrada(p)} />}
+            {/* no iPad (Safari) o campo de data tem largura própria: min-w-0 o mantém dentro da caixa */}
+            {(p) => <input {...p} type="date" autoComplete="bday" value={dados.nascimento} onChange={(e) => muda('nascimento', e.target.value)} className={`${classeEntrada(p)} min-w-0 appearance-none`} />}
           </Campo>
         </div>
         <div className="w-[8rem]">
@@ -245,9 +283,9 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
             {(p) => (
               <select {...p} value={dados.sexo} onChange={(e) => muda('sexo', e.target.value as DadosPessoais['sexo'])} className={classeEntrada(p)}>
                 <option value="">Escolha</option>
-                <option value="F">Feminino</option>
                 <option value="M">Masculino</option>
-                <option value="outro">Outro</option>
+                <option value="F">Feminino</option>
+                <option value="I">Intersexo</option>
               </select>
             )}
           </Campo>
@@ -280,6 +318,8 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
             </Campo>
           </div>
         </div>
+        {/* alergias: obrigatória, na identificação */}
+        <div className="basis-full">{campoPergunta(ALERGIAS)}</div>
       </div>
     )
   }
@@ -321,7 +361,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
 
               {etapa === 0 && (
                 <p className="mt-4 border-l-4 border-(--esp) bg-suave px-4 py-2.5 text-[14.5px]">
-                  Identificação e alergias são obrigatórias. O restante é opcional, mas ajuda seu médico a se preparar.
+                  Só a identificação é obrigatória. O restante é opcional, mas ajuda seu médico a se preparar.
                 </p>
               )}
 

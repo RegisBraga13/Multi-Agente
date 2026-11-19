@@ -1,6 +1,6 @@
-// Blocos do formulário do paciente: uma parte por tela. Obrigatórios: a Identificação e
-// a parte que tem pergunta obrigatória (Alergias, em Saúde geral). O resto pode ser pulado.
-import { perguntaVisivel, type Parte, type RespostasPreConsulta } from './pre-consulta'
+// Blocos do formulário do paciente: uma parte por tela. Obrigatória: a Identificação (com as alergias).
+// O resto pode ser pulado.
+import { ALERGIAS, perguntaVisivel, type Parte, type RespostasPreConsulta } from './pre-consulta'
 import { validarDadosPessoais, type DadosPessoais } from './regras'
 
 export type Bloco =
@@ -22,7 +22,8 @@ const preenchida = (r: string | string[] | undefined) => (Array.isArray(r) ? r.l
 /** Para a revisão: o bloco tem alguma resposta (a Identificação, só quando válida). */
 export function blocoRespondido(b: Bloco, { dados, respostas, fotos, hoje }: Estado): boolean {
   if ('parte' in b) {
-    return b.parte.perguntas.some((q) => perguntaVisivel(q, dados.sexo) && (q.tipo === 'foto' ? fotos.includes(q.id) : preenchida(respostas[q.id])))
+    return b.parte.perguntas.some((q) => perguntaVisivel(q, dados.sexo) && (q.tipo === 'foto' ? fotos.includes(q.id)
+      : q.tipo === 'arquivos' ? fotos.some((f) => f.startsWith(`${q.id}_`)) : preenchida(respostas[q.id])))
   }
   if (b.id === 'identificacao') return Object.keys(validarDadosPessoais(dados, hoje)).length === 0
   return !!(dados.estadoCivil || dados.profissao.trim() || dados.trabalhoExposto)
@@ -30,6 +31,7 @@ export function blocoRespondido(b: Bloco, { dados, respostas, fotos, hoje }: Est
 
 /** Perguntas obrigatórias do bloco ainda sem resposta (a Identificação tem a sua própria validação). */
 export function faltaResponder(b: Bloco, { dados, respostas }: Estado): string[] {
+  if (b.id === 'identificacao') return preenchida(respostas[ALERGIAS.id]) ? [] : [ALERGIAS.id]
   if (!('parte' in b)) return []
   return b.parte.perguntas.filter((q) => q.obrigatoria && perguntaVisivel(q, dados.sexo) && !preenchida(respostas[q.id])).map((q) => q.id)
 }

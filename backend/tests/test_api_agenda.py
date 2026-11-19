@@ -159,3 +159,18 @@ def test_foto_ilegivel_e_recusada_sem_gravar(agenda):
 def test_periodo_longo_demais_e_recusado(agenda):
     r = cliente(agenda).get("/agenda/pedidos", params={"de": "2026-01-01", "ate": "2026-12-31"})
     assert r.status_code == 422
+
+
+def test_formulario_aceita_receita_ou_laudo_em_pdf(agenda):
+    c = cliente(agenda)
+    criado = pedir(c).json()
+    pdf = base64.b64encode(b"%PDF-1.4 laudo").decode()
+    corpo = {
+        "dados": {**DADOS, "sexo": "I", "nomeSocial": "Mar"},
+        "fotos": {"documentos_1": {"tipo": "application/pdf", "base64": pdf}},
+    }
+    assert c.post(f"/publico/formularios/{criado['tokenFormulario']}", json=corpo).status_code == 204
+    r = c.get(f"/agenda/pedidos/{criado['id']}/fotos/documentos_1")
+    assert r.headers["content-type"] == "application/pdf" and r.content == b"%PDF-1.4 laudo"
+    word = {"dados": DADOS, "fotos": {"documentos_1": {"tipo": "application/msword", "base64": pdf}}}
+    assert c.post(f"/publico/formularios/{criado['tokenFormulario']}", json=word).status_code == 422

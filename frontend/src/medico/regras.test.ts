@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  calcularIdade, convenioAtendido, FOTO_MAX_BYTES, normalizarWhatsapp, pedidoParaServidor, validarAtendimento, validarContato, validarDadosPessoais, validarFoto, validarPedido,
+  calcularIdade, chavesDeDocumentos, convenioAtendido, FOTO_MAX_BYTES, normalizarWhatsapp, pedidoParaServidor, validarAtendimento, validarContato, validarDadosPessoais, validarFoto, validarPedido,
   type DadosPessoais, type RascunhoPedido,
 } from './regras'
 
@@ -66,7 +66,7 @@ describe('validarDadosPessoais', () => {
   it('nome completo, nascimento válido, e-mail opcional', () => {
     const hoje = new Date(2026, 10, 15)
     const d: DadosPessoais = {
-      nomeCompleto: 'Maria Lima', nascimento: '1990-05-02', sexo: 'F',
+      nomeCompleto: 'Maria Lima', nomeSocial: '', nascimento: '1990-05-02', sexo: 'F',
       whatsapp: '85991018813', email: '', cidade: 'Fortaleza', uf: 'CE',
       estadoCivil: '', profissao: '', trabalhoExposto: '',
     }
@@ -97,6 +97,19 @@ describe('calcularIdade', () => {
   })
   it('data incompleta, impossível ou futura não tem idade', () => {
     for (const iso of ['', '1990-02-31', '2027-01-01', '1890-01-01']) expect(calcularIdade(iso, hoje)).toBeNull()
+  })
+})
+
+describe('documentos (receitas, exames, laudos)', () => {
+  it('aceita imagem e PDF de até 10 MB; recusa o resto', () => {
+    expect(validarFoto({ type: 'application/pdf', size: 1000 }, true)).toBeNull()
+    expect(validarFoto({ type: 'image/png', size: 1000 }, true)).toBeNull()
+    expect(validarFoto({ type: 'application/msword', size: 1000 }, true)).toBe('Envie foto ou PDF.')
+    expect(validarFoto({ type: 'application/pdf', size: FOTO_MAX_BYTES + 1 }, true)).toBe('O arquivo passa de 10 MB. Envie um menor.')
+    expect(validarFoto({ type: 'application/pdf', size: 1000 })).toBe('Envie uma foto (imagem).')
+  })
+  it('cada documento ganha a sua chave, na ordem', () => {
+    expect(chavesDeDocumentos('documentos', 3)).toEqual(['documentos_1', 'documentos_2', 'documentos_3'])
   })
 })
 
