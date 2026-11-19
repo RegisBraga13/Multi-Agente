@@ -103,12 +103,12 @@ sinais:
   # 18/11/2026 (autor): separado em dois — só gravidez, suspeita ou tentativa tiram as opções incompatíveis;
   # plano de engravidar no futuro não tira nada (o médico escolhe).
   - id: gestacao-ou-suspeita
-    texto: Grávida, suspeita de gravidez ou tentando engravidar
+    texto: Grávida, suspeita de gravidez, tentando engravidar ou amamentando
     porque: Contraindica medicamentos teratogênicos (ex. isotretinoína, tetraciclinas, metotrexato).
     tipo: muda_tratamento
     prazo: antes de prescrever
     acao:
-      - Não recomendar nem prescrever medicamento incompatível com a gestação
+      - Não recomendar nem prescrever medicamento incompatível com a gestação ou a amamentação
   - id: plano-gravidez
     texto: Planeja engravidar no futuro
     porque: O plano de gravidez pesa na escolha do tratamento.
