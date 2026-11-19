@@ -38,7 +38,8 @@ def test_urgencias_imediatas_tem_acao_de_emergencia():
 
 def test_gravidez_muda_o_tratamento():
     sinais = {s.id: s for s in carregar_sinais("dermatologia")}
-    assert sinais["gestacao-ou-plano"].tipo == "muda_tratamento"
+    assert sinais["gestacao-ou-suspeita"].tipo == "muda_tratamento"
+    assert sinais["plano-gravidez"].tipo == "muda_tratamento"
     assert sinais["imunossupressao"].tipo == "muda_tratamento"
 
 

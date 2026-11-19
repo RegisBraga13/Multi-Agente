@@ -100,7 +100,7 @@ def test_nao_repete_sinal_respondido_e_detectado():
 
 
 def test_ordem_por_tipo():
-    e = entrada([sim("gestacao-ou-plano"), sim("virilizacao"), sim("angioedema")])
+    e = entrada([sim("gestacao-ou-suspeita"), sim("virilizacao"), sim("angioedema")])
     r, _, _ = rodar(e, ia())
     assert [d.tipo for d in r.disparados] == ["urgencia_imediata", "prioridade", "muda_tratamento"]
 

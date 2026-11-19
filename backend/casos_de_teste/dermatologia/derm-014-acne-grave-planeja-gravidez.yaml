@@ -22,7 +22,7 @@ entrada:
     - {quem: Médico, texto: "Vou olhar o rosto e o peito."}
   sinais:
     - {sinal: acne-grave-nodulos-cicatrizes, resposta: v}
-    - {sinal: gestacao-ou-plano, resposta: v}
+    - {sinal: gestacao-ou-suspeita, resposta: v}
     - {sinal: virilizacao, resposta: f}
   exame:
     morfologia: Nódulos inflamatórios dolorosos, com cicatrizes atróficas
@@ -41,7 +41,7 @@ esperado:
     vazias: [hf, exames]
   diagnosticos:
     principal: {nome: Acne nodular grave com cicatrizes, cid: L70.0, certeza: clinico}
-  sinais: {disparados: [acne-grave-nodulos-cicatrizes, gestacao-ou-plano]}
+  sinais: {disparados: [acne-grave-nodulos-cicatrizes, gestacao-ou-suspeita]}
   conduta:
     protocolo: acne
     urgencia: prioritaria

@@ -61,10 +61,16 @@ def test_sem_sinal_nada_bloqueado_e_origem_com_versao():
 
 
 def test_gestacao_bloqueia_e_poe_azelaico_primeiro():
-    t = aplicar_protocolo(ACNE, [sinal("gestacao-ou-plano")])
+    t = aplicar_protocolo(ACNE, [sinal("gestacao-ou-suspeita")])
     assert "isotretinoina" not in ids(t, "sistemico") and ids(t, "topico")[0] == "azelaico"
     assert {b.opcao for b in t.bloqueadas} >= {"isotretinoina", "adapaleno", "doxiciclina", "espironolactona"}
-    assert t.motivos_ordem["topico"] == "gestacao-ou-plano"
+    assert t.motivos_ordem["topico"] == "gestacao-ou-suspeita"
+
+
+def test_plano_de_gravidez_futura_nao_tira_nada_e_poe_azelaico_primeiro():
+    t = aplicar_protocolo(ACNE, [sinal("plano-gravidez")])
+    assert t.bloqueadas == [] and "isotretinoina" in ids(t, "sistemico")
+    assert ids(t, "topico")[0] == "azelaico"
 
 
 def test_virilizacao_poe_perfil_hormonal_e_gineco_primeiro():
@@ -76,7 +82,7 @@ def test_virilizacao_poe_perfil_hormonal_e_gineco_primeiro():
 
 def test_urgencia_por_sinais():
     assert urgencia_por_sinais([]) == "rotina"
-    assert urgencia_por_sinais([sinal("gestacao-ou-plano")]) == "rotina"
+    assert urgencia_por_sinais([sinal("gestacao-ou-suspeita")]) == "rotina"
     assert urgencia_por_sinais([sinal("lesao-pigmentada-abcde")]) == "prioritaria"
     assert urgencia_por_sinais([sinal("lesao-pigmentada-abcde"), sinal("angioedema")]) == "imediata"
 

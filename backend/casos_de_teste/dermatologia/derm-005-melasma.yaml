@@ -28,7 +28,7 @@ entrada:
     - {quem: Paciente, texto: "Não."}
     - {quem: Médico, texto: "Vou olhar as manchas com a lâmpada."}
   sinais:
-    - {sinal: gestacao-ou-plano, resposta: f}
+    - {sinal: gestacao-ou-suspeita, resposta: f}
   exame:
     morfologia: Máculas acastanhadas de bordas irregulares
     localizacao: Região malar e lábio superior, simétricas

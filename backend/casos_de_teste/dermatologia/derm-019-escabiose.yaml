@@ -19,7 +19,7 @@ entrada:
     - {quem: Paciente, texto: "Não."}
     - {quem: Médico, texto: "Vou olhar as mãos, os punhos e as axilas."}
   sinais:
-    - {sinal: gestacao-ou-plano, resposta: f}
+    - {sinal: gestacao-ou-suspeita, resposta: f}
   exame:
     morfologia: Pápulas escoriadas e túneis lineares
     localizacao: Espaços interdigitais, punhos, axilas e cintura

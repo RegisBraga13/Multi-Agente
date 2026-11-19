@@ -25,7 +25,8 @@ entrada:
   sinais:
     - {sinal: acne-grave-nodulos-cicatrizes, resposta: f}
     - {sinal: virilizacao, resposta: f}
-    - {sinal: gestacao-ou-plano, resposta: f}
+    - {sinal: gestacao-ou-suspeita, resposta: f}
+    - {sinal: plano-gravidez, resposta: f}
   exame:
     morfologia: Pápulas, pústulas e comedões
     localizacao: Região mandibular e malar; dorso

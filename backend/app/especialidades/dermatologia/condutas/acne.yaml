@@ -126,14 +126,15 @@ grupos:
 
 # Com o sinal disparado, estas opções vêm primeiro na linha (o "porquê" aparece ao médico).
 regras:
-  # planeja gravidez: sem retinoide tópico — o ácido azelaico vem primeiro
-  - {sinal: gestacao-ou-plano, linha: topico, opcoes: [azelaico]}
+  # gravidez (ou suspeita/tentativa) ou plano de engravidar: o ácido azelaico vem primeiro
+  - {sinal: gestacao-ou-suspeita, linha: topico, opcoes: [azelaico]}
+  - {sinal: plano-gravidez, linha: topico, opcoes: [azelaico]}
   # sinais de hiperandrogenismo: investigar (perfil hormonal e ginecologia vêm primeiro)
   - {sinal: virilizacao, linha: exames, opcoes: [hormonal]}
   - {sinal: virilizacao, linha: encaminhamento, opcoes: [gineco]}
 
 # Com o sinal disparado, estas opções não são oferecidas; aparecem ao médico como "não indicado" com o motivo.
 contraindicacoes:
-  - sinal: gestacao-ou-plano
+  - sinal: gestacao-ou-suspeita  # só gravidez, suspeita ou tentativa (autor, 18/11); plano futuro não tira
     opcoes: [adapaleno-bpo, tretinoina-clinda, adapaleno, doxiciclina, limeciclina, espironolactona, isotretinoina, aco]
     motivo: incompatível com gestação ou tentativa de gravidez

@@ -57,7 +57,7 @@ def rodar(dx, seg, respostas):
 
 
 def test_com_tabela_e_a_tabela_sem_ia():
-    c, falso, registros = rodar(ACNE, seguranca("gestacao-ou-plano"), {})
+    c, falso, registros = rodar(ACNE, seguranca("gestacao-ou-suspeita"), {})
     assert falso.pedidos == [] and registros == []  # protocolo é regra fixa: nenhuma chamada à IA
     assert c.origem == "protocolo acne v1" and c.ia is None and c.acao == "HUMAN_REVIEW" and not c.ia_falhou
     remedios = remedios_da_conduta(c)
@@ -92,7 +92,7 @@ def test_sem_tabela_e_ia_rejeitada_e_reject():
 
 
 def test_texto_cita_bloqueadas_com_motivo():
-    c, _, _ = rodar(ACNE, seguranca("gestacao-ou-plano"), {})
+    c, _, _ = rodar(ACNE, seguranca("gestacao-ou-suspeita"), {})
     texto = texto_da_conduta(c)
     assert "Não indicado: Isotretinoína oral — incompatível com gestação ou tentativa de gravidez" in texto
     assert "Ácido azelaico" in texto and "Urgência: rotina" in texto
