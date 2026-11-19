@@ -4,7 +4,7 @@ import { Campo } from './campo'
 import { btnPrimario, btnSecundario, classeEntrada } from './estilos'
 import { linkWhatsapp } from './duvidas'
 import { mensagemFormulario } from './mensagem'
-import { blocoRespondido, blocosDoFormulario, type Bloco } from './blocos'
+import { blocoRespondido, blocosDoFormulario, faltaResponder, type Bloco } from './blocos'
 import { GrupoOpcoes } from './opcoes'
 import { TextoCrescente } from './texto-crescente'
 import { alternarOpcao, partesPreConsulta, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
@@ -31,6 +31,7 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
   })
   const partes = partesPreConsulta(medico.especialidade)
   const [pre, setPre] = useState<RespostasPreConsulta>({})
+  const [errosPre, setErrosPre] = useState<Record<string, string>>({})
   const [erros, setErros] = useState<Partial<Record<keyof DadosPessoais, string>>>({})
   const [tentou, setTentou] = useState(false)
   const [fotos, setFotos] = useState<Record<string, Foto>>({})
@@ -59,7 +60,10 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
     setDados(novo)
     if (tentou) setErros(validarDadosPessoais(novo, new Date()))
   }
-  const mudaPre = (id: string, valor: string | string[]) => setPre((p) => ({ ...p, [id]: valor }))
+  const mudaPre = (id: string, valor: string | string[]) => {
+    setPre((p) => ({ ...p, [id]: valor }))
+    setErrosPre((e) => semChave(e, id))
+  }
 
   function escolherFoto(id: string, arquivo: File | undefined) {
     const antiga = fotos[id]
@@ -96,8 +100,26 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
       )
     }
     const texto = typeof valor === 'string' ? valor : ''
+    const rotulo = q.obrigatoria ? `${q.rotulo} (obrigatória)` : q.rotulo
+    if (q.semResposta) {
+      // um toque responde "não tenho"; tocar de novo volta a deixar escrever
+      const nao = texto === q.semResposta
+      return (
+        <Campo key={q.id} rotulo={rotulo} ajuda={q.ajuda} erro={errosPre[q.id]}>
+          {(p) => (
+            <div className="flex flex-wrap gap-2">
+              {!nao && <input {...p} placeholder={q.placeholder} value={texto} onChange={(e) => mudaPre(q.id, e.target.value)} className={`${classeEntrada(p)} min-w-[12rem] flex-1`} />}
+              <button type="button" aria-pressed={nao} onClick={() => mudaPre(q.id, nao ? '' : q.semResposta!)}
+                className={`flex-none border-[1.5px] px-4 py-2.5 text-[15px] font-semibold transition ${nao ? 'border-(--esp) bg-(--esp) text-papel' : 'border-tinta hover:bg-suave'}`}>
+                {nao ? `✓ ${q.semResposta}` : q.semResposta}
+              </button>
+            </div>
+          )}
+        </Campo>
+      )
+    }
     return (
-      <Campo key={q.id} rotulo={q.rotulo} ajuda={q.ajuda}>
+      <Campo key={q.id} rotulo={rotulo} ajuda={q.ajuda} erro={errosPre[q.id]}>
         {(p) => q.tipo === 'texto-longo'
           ? <TextoCrescente {...p} placeholder={q.placeholder} value={texto} onChange={(e) => mudaPre(q.id, e.target.value)} className={classeEntrada(p)} />
           : <input {...p} placeholder={q.placeholder} value={texto} onChange={(e) => mudaPre(q.id, e.target.value)} className={classeEntrada(p)} />}
@@ -107,6 +129,8 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
 
   // um bloco por vez; o último passo é a revisão
   const ultimo = blocos.length // índice da revisão
+  const bloco = blocos[etapa] as Bloco | undefined
+  const estado = { dados, respostas: pre, fotos: Object.keys(fotos), hoje: new Date() }
   useEffect(() => {
     if (primeiraEtapa.current) { primeiraEtapa.current = false; return }
     tituloBloco.current?.closest('section')?.scrollIntoView({ block: 'start' })
@@ -123,11 +147,27 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
     return false
   }
 
+  /** Marca as perguntas obrigatórias sem resposta do bloco; devolve true se não falta nada. */
+  function conferirObrigatorias(b: Bloco): boolean {
+    const falta = faltaResponder(b, estado)
+    if (!falta.length) return true
+    setErrosPre((e) => ({ ...e, ...Object.fromEntries(falta.map((id) => [id, 'Escreva qual alergia ou toque em “Não tenho alergia”.'])) }))
+    requestAnimationFrame(() => document.querySelector<HTMLElement>('#formulario-paciente [aria-invalid="true"]')?.focus())
+    return false
+  }
+
   function avancar(ev: FormEvent) {
     ev.preventDefault()
     if (etapa === 0 && !validarIdentificacao()) return
+    if (bloco && !conferirObrigatorias(bloco)) return
     if (etapa < ultimo) return setEtapa(etapa + 1)
     if (!validarIdentificacao()) return setEtapa(0)
+    // quem pulou para a revisão sem responder as alergias volta ao bloco delas
+    const pendente = blocos.findIndex((b) => faltaResponder(b, estado).length > 0)
+    if (pendente >= 0) {
+      conferirObrigatorias(blocos[pendente])
+      return setEtapa(pendente)
+    }
     // teste: o formulário segue pelo WhatsApp do próprio paciente, com a mensagem pronta para o consultório
     const link = linkWhatsapp(medico.whatsappConsultorio, mensagemFormulario({
       medico, pedido, dados, partes, respostas: pre, fotos: Object.keys(fotos).length, hoje: new Date(),
@@ -136,9 +176,6 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
     window.open(link, '_blank', 'noopener')
     setPronto(true)
   }
-
-  const bloco = blocos[etapa] as Bloco | undefined
-  const estado = { dados, respostas: pre, fotos: Object.keys(fotos), hoje: new Date() }
 
   function conteudoDoBloco(b: Bloco) {
     if ('parte' in b) {
@@ -276,7 +313,7 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
 
               {etapa === 0 && (
                 <p className="mt-4 border-l-4 border-(--esp) bg-suave px-4 py-2.5 text-[14.5px]">
-                  Só a identificação é obrigatória. O restante é opcional, mas ajuda seu médico a se preparar.
+                  Identificação e alergias são obrigatórias. O restante é opcional, mas ajuda seu médico a se preparar.
                 </p>
               )}
 
@@ -296,12 +333,13 @@ export function FormularioPaciente({ medico, pedido, onConcluir }: Props) {
                   <h3 ref={tituloBloco} tabIndex={-1} className="mt-4 text-[22px] leading-tight font-bold outline-none">Revise e envie</h3>
                   <ul className="mt-4 border-t border-linha">
                     {blocos.map((b, n) => {
-                      const ok = blocoRespondido(b, estado)
+                      const falta = faltaResponder(b, estado).length > 0
+                      const ok = !falta && blocoRespondido(b, estado)
                       return (
                         <li key={b.id} className="flex items-center gap-3 border-b border-linha py-2 text-[15px]">
                           <span aria-hidden className={`w-5 text-center font-bold ${ok ? 'text-(--esp)' : 'text-apagado'}`}>{ok ? '✓' : '–'}</span>
                           <span className="min-w-0 flex-1">{n + 1}. {b.titulo}</span>
-                          <span className="hidden text-[13px] text-apagado sm:inline">{ok ? 'respondido' : 'não respondido'}</span>
+                          <span className={`text-[13px] ${falta ? 'font-semibold text-alerta' : 'hidden text-apagado sm:inline'}`}>{falta ? 'falta alergias' : ok ? 'respondido' : 'não respondido'}</span>
                           <button type="button" onClick={() => setEtapa(n)} className="text-[14px] font-semibold text-(--esp) underline" aria-label={`Editar ${b.titulo}`}>Editar</button>
                         </li>
                       )

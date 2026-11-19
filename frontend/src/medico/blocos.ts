@@ -1,16 +1,17 @@
-// Blocos do formulário do paciente: uma parte por tela. Só a Identificação é obrigatória.
+// Blocos do formulário do paciente: uma parte por tela. Obrigatórios: a Identificação e
+// a parte que tem pergunta obrigatória (Alergias, em Saúde geral). O resto pode ser pulado.
 import { perguntaVisivel, type Parte, type RespostasPreConsulta } from './pre-consulta'
 import { validarDadosPessoais, type DadosPessoais } from './regras'
 
 export type Bloco =
   | { id: 'identificacao' | 'trabalho'; titulo: string; obrigatorio: boolean }
-  | { id: string; titulo: string; obrigatorio: false; parte: Parte }
+  | { id: string; titulo: string; obrigatorio: boolean; parte: Parte }
 
 export function blocosDoFormulario(partes: Parte[]): Bloco[] {
   return [
     { id: 'identificacao', titulo: 'Identificação', obrigatorio: true },
     { id: 'trabalho', titulo: 'Estado civil e trabalho', obrigatorio: false },
-    ...partes.map((parte, i) => ({ id: `parte-${i}`, titulo: parte.titulo, obrigatorio: false as const, parte })),
+    ...partes.map((parte, i) => ({ id: `parte-${i}`, titulo: parte.titulo, obrigatorio: parte.perguntas.some((q) => q.obrigatoria), parte })),
   ]
 }
 
@@ -25,4 +26,10 @@ export function blocoRespondido(b: Bloco, { dados, respostas, fotos, hoje }: Est
   }
   if (b.id === 'identificacao') return Object.keys(validarDadosPessoais(dados, hoje)).length === 0
   return !!(dados.estadoCivil || dados.profissao.trim() || dados.trabalhoExposto)
+}
+
+/** Perguntas obrigatórias do bloco ainda sem resposta (a Identificação tem a sua própria validação). */
+export function faltaResponder(b: Bloco, { dados, respostas }: Estado): string[] {
+  if (!('parte' in b)) return []
+  return b.parte.perguntas.filter((q) => q.obrigatoria && perguntaVisivel(q, dados.sexo) && !preenchida(respostas[q.id])).map((q) => q.id)
 }

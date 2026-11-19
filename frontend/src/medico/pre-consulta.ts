@@ -19,6 +19,10 @@ export type Pergunta = {
   exclusiva?: string
   /** só aparece para quem marcou esse sexo nos dados pessoais */
   soParaSexo?: 'F' | 'M'
+  /** sem resposta, o formulário não avança (e a consulta não começa) */
+  obrigatoria?: boolean
+  /** botão que responde "não tenho" com um toque; a resposta vira este texto */
+  semResposta?: string
 }
 
 export type Parte = { titulo: string; perguntas: Pergunta[]; nota?: string }
@@ -29,8 +33,8 @@ export type RespostasPreConsulta = Record<string, string | string[]>
 const QUEIXA: Pergunta = { id: 'queixa', rotulo: 'Qual o motivo da sua consulta?', tipo: 'texto-longo' }
 const DESDE: Pergunta = { id: 'desde_quando', rotulo: 'Desde quando?', tipo: 'texto', placeholder: 'Ex.: uns três meses' }
 const ALERGIAS: Pergunta = {
-  id: 'alergias', rotulo: 'Alergias', tipo: 'texto',
-  placeholder: 'Ex.: dipirona, níquel. Se não tiver, escreva “não”.',
+  id: 'alergias', rotulo: 'Alergias', tipo: 'texto', obrigatoria: true, semResposta: 'Não tenho alergia',
+  placeholder: 'Ex.: dipirona, níquel',
 }
 const SIM_NAO = ['Sim', 'Não'] as const
 
