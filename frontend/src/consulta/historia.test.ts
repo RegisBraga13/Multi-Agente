@@ -17,7 +17,7 @@ describe('montarHistoria', () => {
 
   it('o nome do paciente não aparece na história (fica só no cabeçalho do prontuário)', () => {
     expect(h.map((s) => s.texto).join(' ')).not.toContain(antonio.paciente.nome)
-    expect(h[0].texto).toBe('Paciente, 73 anos · Retorno · Presencial')
+    expect(h[0].texto).toBe('Paciente, 73 anos') // consulta/retorno e presencial/online não ajudam no DD nem no tratamento
   })
   it('tem as seis seções da landing, na ordem', () => {
     expect(h.map((s) => s.rotulo)).toEqual(['Identificação', 'Queixa principal', 'História da doença atual', 'Antecedentes e alertas', 'Exame físico', 'Exames complementares'])

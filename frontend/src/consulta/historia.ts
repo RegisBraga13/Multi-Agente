@@ -154,8 +154,8 @@ export function montarHistoria(
     : 'Nenhum exame trazido.'
 
   return [
-    // sem o nome: ele fica só no cabeçalho do prontuário (decisão do autor; à IA vai "Paciente, 47 anos")
-    { rotulo: 'Identificação', texto: `Paciente, ${anos} anos · ${at.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · ${at.modalidade === 'online' ? 'Online' : 'Presencial'}` },
+    // história só serve de fonte para DD e tratamento (depois some): sem nome, sem consulta/retorno, sem presencial/online
+    { rotulo: 'Identificação', texto: `Paciente, ${anos} anos` },
     { rotulo: 'Queixa principal', texto: (form && textoResposta(form.respostas.queixa)) || pronta?.queixa || 'Não registrada na ficha.' },
     { rotulo: 'História da doença atual', texto: form ? hdaComFormulario(anamnese, anos, form, contexto.falas, respostas('hda')) : hda(anamnese, identificacaoHda(anos, pronta), contexto.falas, respostas('hda')) },
     { rotulo: 'Antecedentes e alertas', texto: antecedentes },
