@@ -15,6 +15,10 @@ describe('montarHistoria', () => {
   const contexto = { falas: c.falas, sinais: [{ texto: 'Ferida não cicatriza há >4 sem', resposta: 'v' as const }, { texto: 'Outro sinal', resposta: 'f' as const }] }
   const h = montarHistoria(antonio, agora, texto, exame, c.complementares, contexto)
 
+  it('o nome do paciente não aparece na história (fica só no cabeçalho do prontuário)', () => {
+    expect(h.map((s) => s.texto).join(' ')).not.toContain(antonio.paciente.nome)
+    expect(h[0].texto).toBe('Paciente, 73 anos · Retorno · Presencial')
+  })
   it('tem as seis seções da landing, na ordem', () => {
     expect(h.map((s) => s.rotulo)).toEqual(['Identificação', 'Queixa principal', 'História da doença atual', 'Antecedentes e alertas', 'Exame físico', 'Exames complementares'])
   })
