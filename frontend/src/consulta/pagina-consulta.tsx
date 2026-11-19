@@ -106,7 +106,7 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
   const fazer = (tipo: 'oficializar' | 'editar', bloco: Bloco) => despachar({ tipo, bloco })
 
   // o que foi salvo na página 1: a história é montada só com isso
-  const fontes = useRef<{ anamnese: string; perguntas: RespostaPergunta[]; exame: { rotulo: string; valor: string }[] }>({ anamnese: '', perguntas: [], exame: [] })
+  const fontes = useRef<{ anamnese: string; perguntas: RespostaPergunta[]; exame: { rotulo: string; valor: string }[]; formulario: FormularioConsulta | null }>({ anamnese: '', perguntas: [], exame: [], formulario: null })
   /** geradas = última versão da IA; textos = o que está na tela (com as edições do médico); mudou = seções que a IA reescreveu agora */
   const [historia, setHistoria] = useState<{ versao: number; geradas: SecaoHistoria[]; textos: string[]; mudou: boolean[]; sugestoes: (string | null)[] } | null>(null)
 
@@ -118,7 +118,7 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
       const f = fontes.current
       // sinais de alerta da anamnese, com a resposta do médico, entram em "Antecedentes e alertas"
       const sinais = conteudo.alertas.filter((x) => x.tipo === 'sinal').map((x) => ({ texto: x.texto, resposta: novo.alertas[x.id] }))
-      const novas = montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais, perguntas: f.perguntas })
+      const novas = montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais, perguntas: f.perguntas, formulario: f.formulario ? { ...f.formulario, partes: partesPreConsulta(esp.slug) } : undefined })
       // primeira vez: tudo novo; depois: a IA mexe só no que mudou
       setHistoria((h) => h
         ? { versao: h.versao + 1, geradas: novas, ...atualizarHistoria(h.geradas, h.textos, novas) }
@@ -305,7 +305,7 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
               formulario={formulario}
               onEditar={() => fazer('editar', 'anamnese')}
               onResponder={(id, r) => despachar({ tipo: 'alerta', id, r })}
-              onOficializar={(texto, perguntas) => { fontes.current.anamnese = texto; fontes.current.perguntas = perguntas; salvarPagina1('anamnese') }}
+              onOficializar={(texto, perguntas, formulario) => { fontes.current.anamnese = texto; fontes.current.perguntas = perguntas; fontes.current.formulario = formulario; salvarPagina1('anamnese') }}
             />
           </div>
           <div className="flex min-w-0 flex-col gap-3 [&>section]:flex-1">

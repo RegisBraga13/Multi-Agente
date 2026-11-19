@@ -1,8 +1,12 @@
 // História clínica: montada SÓ com a anamnese e o exame físico salvos (Constituição, fase 2).
 // Simulação da IA: organiza o que foi salvo em seções, como na landing.
 import { idade } from '../modulo/dia'
-import type { Atendimento, Ficha } from '../modulo/tipos'
-import { estadoCivilNoTexto } from '../medico/regras'
+import type { Atendimento } from '../modulo/tipos'
+import { estadoCivilNoTexto, type EstadoCivil } from '../medico/regras'
+import type { Parte } from '../medico/pre-consulta'
+import type { Respostas } from '../servidor/agenda'
+import type { FormularioConsulta } from './formulario-consulta'
+import { frasesDoFormulario } from './historia-formulario'
 import { minuscula, type Complementar, type Fala, type RespostaPergunta } from './exemplo'
 import type { RespostaAlerta } from './tipos'
 
@@ -30,7 +34,11 @@ export function atualizarHistoria(
 
 /** O que a IA sabe da anamnese salva além do texto: como escrever cada fala e os sinais de alerta respondidos. */
 /** `perguntas`: as que o médico respondeu Sim/Não (entram contextualizadas na HDA ou nos antecedentes) */
-export type ContextoHistoria = { falas: Fala[]; sinais: { texto: string; resposta: RespostaAlerta | null }[]; perguntas?: RespostaPergunta[] }
+/** `formulario`: o formulário do paciente salvo na anamnese (vira frases de prontuário; as linhas dele na caixa não entram de novo) */
+export type ContextoHistoria = {
+  falas: Fala[]; sinais: { texto: string; resposta: RespostaAlerta | null }[]; perguntas?: RespostaPergunta[]
+  formulario?: { dados: FormularioConsulta['dados']; respostas: Respostas; partes: Parte[] }
+}
 
 const ponto = (x: string) => (/[.!?:]$/.test(x.trim()) ? x.trim() : `${x.trim()}.`)
 const maiuscula = (x: string) => x.charAt(0).toUpperCase() + x.slice(1)
@@ -80,8 +88,31 @@ function exameFisico(exame: { rotulo: string; valor: string }[]): string {
 }
 
 /** "Paciente, 52 anos, casado, comerciante": idade de hoje + estado civil e profissão da ficha desta consulta (mudou na ficha, muda aqui). */
-export function identificacaoHda(anos: number, f: Pick<Extract<Ficha, { situacao: 'pronta' }>, 'sexo' | 'estadoCivil' | 'profissao'> | null): string {
+export function identificacaoHda(anos: number, f: { sexo: 'F' | 'M' | 'I' | ''; estadoCivil: EstadoCivil | ''; profissao: string } | null): string {
   return ['Paciente', `${anos} anos`, f?.estadoCivil ? estadoCivilNoTexto(f.estadoCivil, f.sexo) : '', minuscula(f?.profissao.trim() ?? '')].filter(Boolean).join(', ')
+}
+
+const textoResposta = (v: string | string[] | undefined) => (Array.isArray(v) ? v.join(', ') : (v ?? '')).trim()
+
+/**
+ * HDA quando o formulário foi salvo na anamnese: o formulário abre a história em linguagem de prontuário
+ * (exemplo aprovado pelo autor em 19/11/2026) e o que foi gravado ou escrito continua depois, sem repetir a queixa.
+ */
+function hdaComFormulario(anamnese: string, anos: number, form: NonNullable<ContextoHistoria['formulario']>, falas: Fala[], extras: string[]): string {
+  const ident = identificacaoHda(anos, form.dados)
+  const f = frasesDoFormulario(form)
+  // as linhas do formulário na caixa ("Queixa principal: ...") já estão nas frases acima
+  const rotulos = ['Identificação', 'Alergias', 'Estado civil e trabalho', ...form.partes.map((p) => p.titulo)]
+  const resto = anamnese.split('\n').filter((l) => !rotulos.some((r) => l.trim().startsWith(`${r}:`))).join('\n')
+  let depois = hda(resto, ident, falas, extras)
+  if (depois === 'Não registrada.') depois = ''
+  depois = depois.replace(new RegExp(`^${ident.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[,.] ?`), '')
+  // a queixa já veio do formulário: a mesma queixa dita na gravação não entra de novo
+  if (f.queixa && depois.startsWith('refere ')) depois = depois.replace(/^refere [^.]*\.\s*/, '')
+  depois = depois.charAt(0).toUpperCase() + depois.slice(1)
+  const abertura = f.queixa ? ponto(`${ident}, ${f.queixa}`) : ''
+  const texto = [abertura, f.habitos, depois].filter(Boolean).join(' ')
+  return !texto ? 'Não registrada.' : abertura ? texto : `${ident}. ${texto}`
 }
 
 export function montarHistoria(
@@ -99,7 +130,10 @@ export function montarHistoria(
 
   // sinal de alerta marcado V entra na história; F (ou sem resposta) não entra
   const sinais = contexto.sinais.filter((x) => x.resposta === 'v').map((x) => `Alerta: ${minuscula(x.texto)}.`)
-  const antecedentes = (pronta
+  const form = contexto.formulario
+  const antecedentes = form
+    ? [...frasesDoFormulario(form).antecedentes, ...respostas('ant'), ...sinais].join(' ') || 'Não informados no formulário.'
+    : (pronta
     ? [
         !pronta.antecedentes.length && !pronta.emUso.length ? 'Nega comorbidades e uso contínuo de medicações.'
           : [
@@ -107,7 +141,7 @@ export function montarHistoria(
               pronta.emUso.length ? `Em uso de ${lista(pronta.emUso.map(minuscula))}.` : 'Nega uso contínuo de medicações.',
             ].join(' '),
         ...respostas('ant'),
-        pronta.alergias.length ? pronta.alergias.map((a) => `Alergia a ${a.substancia.toLowerCase()} (${a.reacao}).`).join(' ') : 'Nega alergias.',
+        pronta.alergias.length ? pronta.alergias.map((a) => `Alergia a ${a.substancia.toLowerCase()}${a.reacao ? ` (${a.reacao})` : ''}.`).join(' ') : 'Nega alergias.',
         ...sinais,
       ]
     : ['Ficha da pré-consulta não preenchida.', ...respostas('ant'), ...sinais]).join(' ')
@@ -121,8 +155,8 @@ export function montarHistoria(
 
   return [
     { rotulo: 'Identificação', texto: `${at.paciente.nome}, ${anos} anos · ${at.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · ${at.modalidade === 'online' ? 'Online' : 'Presencial'}` },
-    { rotulo: 'Queixa principal', texto: pronta?.queixa || 'Não registrada na ficha.' },
-    { rotulo: 'História da doença atual', texto: hda(anamnese, identificacaoHda(anos, pronta), contexto.falas, respostas('hda')) },
+    { rotulo: 'Queixa principal', texto: (form && textoResposta(form.respostas.queixa)) || pronta?.queixa || 'Não registrada na ficha.' },
+    { rotulo: 'História da doença atual', texto: form ? hdaComFormulario(anamnese, anos, form, contexto.falas, respostas('hda')) : hda(anamnese, identificacaoHda(anos, pronta), contexto.falas, respostas('hda')) },
     { rotulo: 'Antecedentes e alertas', texto: antecedentes },
     { rotulo: 'Exame físico', texto: exameFisico(exame) },
     { rotulo: 'Exames complementares', texto: exames },

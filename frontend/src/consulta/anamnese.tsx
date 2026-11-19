@@ -36,7 +36,7 @@ type Props = {
   /** o formulário que o paciente enviou (null = não enviou; o médico pode preencher) */
   formulario: FormularioConsulta | null
   /** salva com o texto atual (a história clínica é montada com ele) */
-  onOficializar: (texto: string, perguntas: RespostaPergunta[]) => void
+  onOficializar: (texto: string, perguntas: RespostaPergunta[], formulario: FormularioConsulta | null) => void
 }
 
 export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pendencias, podeGravar, partes, formulario, onEditar, onResponder, onOficializar }: Props) {
@@ -46,6 +46,8 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
   const [conferidas, setConferidas] = useState<boolean[]>(() => blocosDoFormulario(partes).map(() => false))
   /** texto do formulário que já está na caixa (null = ainda não salvo) */
   const [textoForm, setTextoForm] = useState<string | null>(null)
+  /** o formulário como estava ao ser salvo (a história é escrita a partir dele) */
+  const [formSalvo, setFormSalvo] = useState<FormularioConsulta | null>(null)
   const [gravando, setGravando] = useState(false)
   const [segundos, setSegundos] = useState(0)
   /** a anamnese numa caixa só: a transcrição entra no fim do texto, e o médico escreve e corrige ali mesmo */
@@ -96,6 +98,7 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
     const novo = textoDoFormulario(partes, form, new Date())
     setTexto((t) => juntarFormularioAoTexto(t, novo, textoForm))
     setTextoForm(novo)
+    setFormSalvo(form)
     setModo('texto')
     mudou()
   }
@@ -139,7 +142,7 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
             if (pendencias > 0 || gravando) return setTentou(true)
             setTentou(false)
             // só as perguntas com Sim/Não vão para a história (riscada sem resposta = o médico não quis perguntar)
-            onOficializar(texto, perguntas.flatMap((p) => { const r = perguntado[p.texto]; return r && !p.lembrete ? [{ pergunta: p, resposta: r }] : [] }))
+            onOficializar(texto, perguntas.flatMap((p) => { const r = perguntado[p.texto]; return r && !p.lembrete ? [{ pergunta: p, resposta: r }] : [] }), formSalvo)
           }}
         />
       }

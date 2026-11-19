@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { agendaDoDia } from '../modulo/exemplo'
 import { conteudoDaConsulta } from './exemplo'
 import { atualizarHistoria, identificacaoHda, montarHistoria } from './historia'
+import { FORMULARIO_VAZIO, textoDoFormulario } from './formulario-consulta'
+import { partesPreConsulta } from '../medico/pre-consulta'
 
 const agora = new Date(2026, 10, 16, 7, 0)
 const antonio = agendaDoDia('2026-11-16', agora).find((x) => x.paciente.nome === 'Antônio Barbosa')!
@@ -105,5 +107,35 @@ describe('identificação na HDA (dados da ficha)', () => {
     const cj = conteudoDaConsulta(joao, 'dermatologia')
     const fala = 'Paciente: Placas vermelhas com descamação nos cotovelos e joelhos.'
     expect(montarHistoria(joao, agora, fala, [], [], { falas: cj.falas, sinais: [] })[2].texto).toMatch(/^Paciente, 52 anos, casado, comerciante, refere /)
+  })
+})
+
+describe('história com o formulário salvo na anamnese (exemplo aprovado pelo autor, 19/11/2026)', () => {
+  // pedido real vira atendimento sem roteiro de exemplo
+  const at = { ...agendaDoDia('2026-11-17', new Date(2026, 10, 17, 7))[0], paciente: { id: 'p', nome: 'Marcya Braga', nascimento: '1979-10-19' } }
+  const partes = partesPreConsulta('dermatologia')
+  const form = {
+    dados: { ...FORMULARIO_VAZIO.dados, nomeCompleto: 'Marcya Braga', nascimento: '1979-10-19', sexo: 'F' as const, estadoCivil: 'casado' as const, profissao: 'Educadora física', trabalhoExposto: 'sim' as const },
+    respostas: {
+      alergias: 'Dipirona', queixa: 'Manchas no rosto', local: 'Rosto', desde_quando: '2 anos', mudou: 'Não', sintomas: ['Nenhum dos três'],
+      cor_pele: 'Morena clara', reacao_sol: 'Raramente queimar e bronzear fácil', protetor: 'Às vezes', bronzeamento: 'Não', familia: ['Dermatite atópica'],
+    },
+    fotos: {},
+  }
+  const caixa = textoDoFormulario(partes, form, new Date(2026, 10, 19))
+  const agora = new Date(2026, 10, 19)
+
+  it('HDA e antecedentes em linguagem de prontuário; o texto do formulário não é colado', () => {
+    const h = montarHistoria(at, agora, caixa, [], [], { falas: [], sinais: [], formulario: { ...form, partes } })
+    expect(h[1].texto).toBe('Manchas no rosto')
+    expect(h[2].texto).toBe('Paciente, 47 anos, casada, educadora física, refere manchas no rosto há 2 anos, sem mudança de cor, tamanho ou formato, '
+      + 'sem prurido, dor ou sangramento. Trabalha exposta ao sol; usa protetor solar às vezes; nega bronzeamento artificial.')
+    expect(h[3].texto).toBe('Alergia a dipirona. Pele morena clara, raramente queima e bronzeia fácil. História familiar de dermatite atópica.')
+    expect(h[3].texto).not.toMatch(/Nega comorbidades|uso contínuo/)
+  })
+
+  it('o que foi escrito depois do formulário continua na HDA', () => {
+    const h = montarHistoria(at, agora, `${caixa}\n\nPiora no verão.`, [], [], { falas: [], sinais: [], formulario: { ...form, partes } })
+    expect(h[2].texto.endsWith('nega bronzeamento artificial. Piora no verão.')).toBe(true)
   })
 })
