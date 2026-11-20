@@ -3,7 +3,7 @@ import { escolherOpcao, montarConduta, revelar, type Conduta } from './conduta'
 import type { ItemDD } from './diagnosticos'
 import { definirCampos, montarAnexos } from './anexos'
 import { CONDUTAS } from './conduta-exemplo'
-import { aplicarEdicoes, atualizarProntuario, chave, dadosDaConsulta, diagnosticosDoProntuario, montarProntuario, secoesDaEntrada } from './prontuario'
+import { aplicarEdicoes, atualizarProntuario, chave, dadosDaConsulta, diagnosticosDoProntuario, montarProntuario, secoesDaEntrada, secoesDosDados } from './prontuario'
 
 const item = (id: string, nome: string, cid: string, decisao: ItemDD['decisao']): ItemDD => ({ hip: { id, nome, cid, pct: 50, evidencias: [] }, decisao, propria: false, mudou: false, aviso: null })
 const ITENS = [item('acne', 'Acne grau II · papulopustulosa', 'L70.0', 'confirmada'), item('rosacea', 'Rosácea', 'L71', 'descartada')]
@@ -135,5 +135,43 @@ describe('prontuário gravado como dados organizados', () => {
     const t = Object.fromEntries(secoesDaEntrada(r).flatMap((s) => s.linhas.map((l) => [chave(s, l), l.texto])))
     expect(t['A.hd']).toBe('Acne (revisar).')
     expect(t['S.hda']).toBe('HDA reescrita.')
+  })
+})
+
+describe('extensão das lesões gravada como número', () => {
+  const dados = (extensao?: string) => dadosDaConsulta({ historia: HISTORIA, itens: ITENS, conduta: conduta(), extensao })
+  it('o valor do campo Extensão do exame vira número no prontuário', () => {
+    expect(dados('Cerca de 4% da superfície corporal').extensaoPct).toBe(4)
+    expect(dados('1').extensaoPct).toBe(1)
+    expect(dados('6,5%').extensaoPct).toBe(6.5)
+  })
+  it('sem número no campo (vazio ou texto), fica null: nada é inventado', () => {
+    expect(dados().extensaoPct).toBeNull()
+    expect(dados('7 lesões na face').extensaoPct).toBeNull()
+  })
+})
+
+describe('retorno: a Evolução vai para o prontuário', () => {
+  const EVOLUCAO = [
+    { rotulo: 'Evolução', texto: 'Paciente relata melhora importante das placas. Nega efeitos colaterais.' },
+    { rotulo: 'Exame', texto: 'Placas residuais. Extensão das lesões: 1% (consulta anterior, 18/09: 4%), redução de 3 pontos percentuais.' },
+    { rotulo: 'Exames', texto: 'Resultados comparados na tabela abaixo.' },
+  ]
+  const dados = () => dadosDaConsulta({ historia: EVOLUCAO, itens: ITENS, conduta: conduta(), extensao: '1' })
+  it('a entrada do retorno guarda a Evolução e o Exame de hoje; sem queixa, HDA ou antecedentes', () => {
+    const d = dados()
+    expect(d.evolucao).toBe('Paciente relata melhora importante das placas. Nega efeitos colaterais.')
+    expect(d.exameFisico).toMatch(/^Placas residuais/)
+    expect([d.qp, d.hda, d.ap, d.examesTexto]).toEqual(['', '', '', ''])
+    expect(d.extensaoPct).toBe(1)
+  })
+  it('a primeira consulta não tem Evolução', () => {
+    expect(dadosDaConsulta({ historia: HISTORIA, itens: ITENS, conduta: conduta() }).evolucao).toBe('')
+  })
+  it('o texto mostra a linha Evolução no lugar de QP/HDA/AP, e o médico pode editá-la', () => {
+    const secoes = secoesDosDados(dados())
+    expect(secoes[0].linhas.map((l) => l.rotulo)).toEqual(['Evolução'])
+    const editado = aplicarEdicoes(dados(), { 'S.evolucao': 'Paciente informa melhora. Nega efeitos colaterais.' })
+    expect(editado.dados.evolucao).toBe('Paciente informa melhora. Nega efeitos colaterais.')
   })
 })

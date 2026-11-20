@@ -28,6 +28,10 @@ export type DocumentoRegistro =
  * edição do médico; '' = não colhido (não aparece). O resto é estruturado.
  */
 export type DadosEntrada = {
+  /** extensão das lesões em % do corpo (do campo Extensão do exame físico); null = sem número. Entradas antigas não têm */
+  extensaoPct?: number | null
+  /** retorno: a evolução de hoje (texto da História da evolução); vazio na primeira consulta */
+  evolucao?: string
   qp: string; hda: string; ap: string; hp: string; hf: string
   exameFisico: string
   /** os exames como ficaram escritos na história (o que o médico aprovou) */
@@ -147,6 +151,7 @@ const EXEMPLOS: Record<string, EntradaProntuario[]> = {
     id: '0b7c2f0e-3f4d-4f43-9a51-1d7e3b0c9a10', pacienteId: JOAO_ID,
     titulo: 'Consulta 1', tipo: 'consulta', modalidade: 'presencial', data: '2026-09-18', hora: '09:00',
     dados: {
+      extensaoPct: 4,
       qp: 'Placas vermelhas com descamação nos cotovelos e joelhos.',
       hda: 'Paciente, 52 anos, casado, comerciante, refere placas avermelhadas e descamativas nos cotovelos e joelhos há 2 anos, com piora no último inverno. Prurido leve. Nega dor articular.',
       ap: 'Hipertensão arterial. Em uso de losartana 50 mg 1x/dia. Alergia a dipirona (inchaço no rosto).',

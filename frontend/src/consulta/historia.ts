@@ -38,7 +38,7 @@ export function atualizarHistoria(
 export type ContextoHistoria = {
   falas: Fala[]; sinais: { texto: string; resposta: RespostaAlerta | null }[]; perguntas?: RespostaPergunta[]
   /** retorno: consultas anteriores do prontuário, da mais recente para a mais antiga (data 'AAAA-MM-DD') */
-  anteriores?: { data: string; exameFisico: string }[]
+  anteriores?: { data: string; exameFisico: string; /** número gravado no prontuário (entradas antigas não têm: lê do texto) */ extensaoPct?: number | null }[]
   formulario?: { dados: FormularioConsulta['dados']; respostas: Respostas; partes: Parte[] }
 }
 
@@ -178,11 +178,11 @@ export function extensaoDe(texto: string): number | null {
 const numero = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',')
 
 /** "Extensão das lesões: 1% (consulta anterior, 18/09: 4%), redução de 3 pontos percentuais." (o médico digita o número) */
-function frasePercentual(digitado: string, anteriores: { data: string; exameFisico: string }[]): string {
+function frasePercentual(digitado: string, anteriores: { data: string; exameFisico: string; extensaoPct?: number | null }[]): string {
   if (!digitado) return ''
   const hoje = extensaoDe(digitado)
   if (hoje === null) return `Extensão das lesões: ${digitado}`
-  const antes = anteriores.map((a) => ({ data: a.data, pct: extensaoDe(a.exameFisico) })).find((a) => a.pct !== null)
+  const antes = anteriores.map((a) => ({ data: a.data, pct: a.extensaoPct ?? extensaoDe(a.exameFisico) })).find((a) => a.pct !== null)
   if (!antes || antes.pct === null) return `Extensão das lesões: ${numero(hoje)}%`
   const dif = hoje - antes.pct
   const [, mes, dia] = antes.data.split('-')
@@ -224,4 +224,21 @@ export function montarHistoriaEvolucao(
     // com resultados, eles ficam na tabela por data (abaixo da história): não se repetem aqui
     { rotulo: 'Exames', texto: complementares.length ? 'Resultados comparados na tabela abaixo.' : 'Nenhum exame novo.' },
   ]
+}
+
+/** A consulta anterior do prontuário como seções de história (o retorno parte dela; a IA lê o que não muda: alergias, comorbidades). */
+export function secoesDaConsultaAnterior(d: { qp: string; hda: string; ap: string; exameFisico: string; examesTexto: string }): SecaoHistoria[] {
+  return [
+    { rotulo: 'Queixa principal', texto: d.qp },
+    { rotulo: 'História da doença atual', texto: d.hda },
+    { rotulo: 'Antecedentes e alertas', texto: d.ap },
+    { rotulo: 'Exame físico', texto: d.exameFisico },
+    { rotulo: 'Exames complementares', texto: d.examesTexto },
+  ].filter((s) => s.texto.trim())
+}
+
+/** Retorno: a IA dos diagnósticos lê SÓ a evolução de hoje, como numa primeira consulta (a consulta anterior fica no prontuário, de referência). */
+export function secoesDaEvolucaoParaDD(evolucao: SecaoHistoria[]): SecaoHistoria[] {
+  const rotulos: Record<string, string> = { Evolução: 'História da doença atual', Exame: 'Exame físico', Exames: 'Exames complementares' }
+  return evolucao.map((s) => ({ rotulo: rotulos[s.rotulo] ?? s.rotulo, texto: s.texto }))
 }

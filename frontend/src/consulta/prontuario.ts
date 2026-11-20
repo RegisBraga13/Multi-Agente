@@ -8,7 +8,7 @@ import { dataBr, itensReceita, textoFinalidade } from './anexos'
 import type { Conduta } from './conduta'
 import type { ItemDD } from './diagnosticos'
 import type { Complementar } from './exemplo'
-import type { SecaoHistoria } from './historia'
+import { extensaoDe, type SecaoHistoria } from './historia'
 import type { DadosEntrada, DiagnosticoRegistro, DocumentoRegistro, FotoRegistro } from '../prontuario/registro'
 
 /** Uma linha ("• QP: texto"; rótulo vazio = só o texto). `id` estável para atualizar sem perder a edição do médico. */
@@ -48,24 +48,29 @@ export type FontesProntuario = {
   anexos?: Anexo[]
   complementares?: Complementar[]
   fotos?: FotoRegistro[]
+  /** o que o médico deixou no campo Extensão do exame físico (vira número no prontuário, se houver) */
+  extensao?: string
 }
 
 /**
  * Os dados da entrada, das páginas salvas. As orientações da conduta são separadas por frase:
  * "Solicito…" → solicitado; "Encaminho para…" → encaminhado; "Retorno…" → retorno; o resto → orientações gerais.
  */
-export function dadosDaConsulta({ historia, itens, conduta, anexos = [], complementares = [], fotos = [] }: FontesProntuario): DadosEntrada {
+export function dadosDaConsulta({ historia, itens, conduta, anexos = [], complementares = [], fotos = [], extensao = '' }: FontesProntuario): DadosEntrada {
   const t = conduta.textos.map((x) => x.trim())
   const orient = frases(t[3] ?? '')
   const receita = anexos.find((x) => x.tipo === 'receita' && x.emitir)?.texto.trim()
   return {
+    extensaoPct: extensaoDe(extensao),
+    // retorno: a evolução de hoje (a consulta anterior já está no prontuário; nada se repete)
+    evolucao: daHistoria(historia, 'Evolução'),
     qp: daHistoria(historia, 'Queixa principal'),
     hda: daHistoria(historia, 'História da doença atual'),
     ap: daHistoria(historia, 'Antecedentes e alertas'),
     // só quando houver (a história ainda não tem essas seções: hoje não aparecem)
     hp: daHistoria(historia, 'História pessoal'),
     hf: daHistoria(historia, 'História familiar'),
-    exameFisico: daHistoria(historia, 'Exame físico'),
+    exameFisico: daHistoria(historia, 'Exame físico') || daHistoria(historia, 'Exame'),
     examesTexto: daHistoria(historia, 'Exames complementares'),
     exames: complementares.flatMap((c) => c.itens.map((i) => ({
       exame: c.exame, nome: i.nome, valor: i.v.status === 'MISSING' ? null : i.v.valor, status: i.v.status, data: c.data, origem: c.origem,
@@ -110,6 +115,7 @@ export function secoesDosDados(d: DadosEntrada): SecaoProntuario[] {
   const ponto = (xs: string[]) => (xs.length ? `${xs.join(', ')}.` : '')
   const secoes: SecaoProntuario[] = [
     { id: 'S', titulo: '', linhas: [
+      { id: 'evolucao', rotulo: 'Evolução', texto: d.evolucao ?? '' },
       { id: 'qp', rotulo: 'QP', texto: d.qp },
       { id: 'hda', rotulo: 'HDA', texto: d.hda },
       { id: 'ap', rotulo: 'AP', texto: d.ap },
@@ -140,7 +146,7 @@ export const montarProntuario = (historia: SecaoHistoria[], itens: ItemDD[], con
 
 /** Linhas narrativas: a edição do médico vai para o próprio dado. As outras (HD, receita…) guardam a edição à parte. */
 const NARRATIVAS: Record<string, keyof DadosEntrada> = {
-  'S.qp': 'qp', 'S.hda': 'hda', 'S.ap': 'ap', 'S.hp': 'hp', 'S.hf': 'hf', 'O.exame': 'exameFisico', 'O.exames': 'examesTexto', 'P.orientacoes': 'orientacoes',
+  'S.evolucao': 'evolucao', 'S.qp': 'qp', 'S.hda': 'hda', 'S.ap': 'ap', 'S.hp': 'hp', 'S.hf': 'hf', 'O.exame': 'exameFisico', 'O.exames': 'examesTexto', 'P.orientacoes': 'orientacoes',
 }
 
 /** Ao salvar: os dados com as edições do médico (narrativas no próprio dado; linha estruturada reescrita → `edicoes`). */

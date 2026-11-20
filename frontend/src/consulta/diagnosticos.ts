@@ -7,7 +7,6 @@ import { EXTRAS, MODELOS } from './diagnosticos-exemplo'
 export type Evidencia = { lado: 'favor' | 'contra'; texto: string; /** rótulo da seção da história */ secao: string; /** frase da história que justifica */ trecho: string }
 /** `pct` = sinal da IA para ordenar (a calibrar com uso real); null no diagnóstico do médico */
 export type Hipotese = { id: string; nome: string; cid: string; pct: number | null; evidencias: Evidencia[] }
-export type NaoPerder = { nome: string; cid: string; porque: string; como: string }
 export type Decisao = 'pendente' | 'confirmada' | 'descartada'
 /** `aviso`: sugestão ao lado de uma decisão do médico (a IA nunca muda a decisão dele) */
 export type Aviso = { tipo: 'mudou'; antes: number | null } | { tipo: 'saiu' }
@@ -18,9 +17,9 @@ function trechoCom(texto: string, termo: RegExp): string | null {
   return texto.split(/(?<=\.)\s+/).find((f) => termo.test(f))?.trim() ?? null
 }
 
-export function montarDiagnosticos(slug: string, paciente: string, historia: SecaoHistoria[]): { hipoteses: Hipotese[]; naoPerder: NaoPerder | null } {
+export function montarDiagnosticos(slug: string, paciente: string, historia: SecaoHistoria[]): { hipoteses: Hipotese[] } {
   const modelo = slug === 'dermatologia' ? MODELOS[paciente] : undefined
-  if (!modelo) return { hipoteses: [], naoPerder: null }
+  if (!modelo) return { hipoteses: [] }
   const textoDe = (secao: string) => historia.find((s) => s.rotulo === secao)?.texto ?? ''
 
   const hipoteses = [...modelo.hipoteses, ...(EXTRAS[paciente] ?? [])].flatMap((m): Hipotese[] => {
@@ -36,7 +35,7 @@ export function montarDiagnosticos(slug: string, paciente: string, historia: Sec
     const fator = (0.5 + 0.5 * (favor / favorTotal)) * (contraTotal ? 1.25 - 0.25 * (contra / contraTotal) : 1)
     return [{ id: m.id, nome: m.nome, cid: m.cid, pct: Math.min(99, Math.max(1, Math.round(m.base * fator))), evidencias }]
   })
-  return { hipoteses: hipoteses.sort((a, b) => (b.pct ?? 0) - (a.pct ?? 0)), naoPerder: modelo.naoPerder }
+  return { hipoteses: hipoteses.sort((a, b) => (b.pct ?? 0) - (a.pct ?? 0)) }
 }
 
 export function primeirosItens(hipoteses: Hipotese[]): ItemDD[] {
@@ -100,10 +99,9 @@ export function atualizarDiagnosticos(itens: ItemDD[], novas: Hipotese[]): ItemD
 }
 
 /** O que impede salvar (null = pode salvar). Mostrado só depois de uma tentativa. */
-export function pendenciasDiagnosticos(itens: ItemDD[], naoPerderAvaliado: boolean): string | null {
+export function pendenciasDiagnosticos(itens: ItemDD[]): string | null {
   const avisos = itens.filter((x) => x.aviso).length
   if (avisos) return `Falta decidir ${avisos} ${avisos === 1 ? 'sugestão' : 'sugestões'}`
-  if (!naoPerderAvaliado) return 'Avalie o "não pode perder"'
   if (!itens.some((x) => x.decisao === 'confirmada')) return 'Confirme ao menos um diagnóstico'
   return null
 }

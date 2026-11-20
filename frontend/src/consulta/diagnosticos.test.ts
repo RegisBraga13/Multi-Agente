@@ -45,10 +45,6 @@ describe('montarDiagnosticos', () => {
       expect(Math.max(...EXTRAS[nome].map((x) => x.base))).toBeLessThan(Math.min(...m.hipoteses.map((x) => x.base)))
     }
   })
-  it('"não pode perder" só quando há um (melanoma no Carlos; nada inventado na acne)', () => {
-    expect(dd.naoPerder).toBeNull()
-    expect(montarDiagnosticos('dermatologia', 'Carlos Henrique Rocha', historiaDe('Carlos Henrique Rocha')).naoPerder?.cid).toBe('C43.5')
-  })
   it('sem a pista na história, a evidência some e o % muda', () => {
     const semComedoes = trocar(mariana, 'Exame físico', 'Morfologia: Pápulas e pústulas. Localização: Região mandibular e malar; dorso.')
     const r = montarDiagnosticos('dermatologia', 'Mariana Costa', semComedoes)
@@ -127,12 +123,11 @@ describe('"+": mais uma hipótese da IA, uma por vez (até 3 a mais)', () => {
 describe('pendenciasDiagnosticos', () => {
   const base = primeirosItens([hip('a', 60), hip('b', 30)])
   it('salvar pede ao menos um diagnóstico confirmado', () => {
-    expect(pendenciasDiagnosticos(base, true)).toBe('Confirme ao menos um diagnóstico')
-    expect(pendenciasDiagnosticos(base.map((x, i) => (i === 0 ? { ...x, decisao: 'confirmada' } : x)), true)).toBeNull()
+    expect(pendenciasDiagnosticos(base)).toBe('Confirme ao menos um diagnóstico')
+    expect(pendenciasDiagnosticos(base.map((x, i) => (i === 0 ? { ...x, decisao: 'confirmada' } : x)))).toBeNull()
   })
-  it('"não pode perder" precisa ser avaliado; sugestões precisam de decisão', () => {
+  it('sugestões precisam de decisão', () => {
     const ok = base.map((x, i) => (i === 0 ? { ...x, decisao: 'confirmada' as const } : x))
-    expect(pendenciasDiagnosticos(ok, false)).toBe('Avalie o "não pode perder"')
-    expect(pendenciasDiagnosticos(ok.map((x) => ({ ...x, aviso: { tipo: 'saiu' as const } })), true)).toBe('Falta decidir 2 sugestões')
+    expect(pendenciasDiagnosticos(ok.map((x) => ({ ...x, aviso: { tipo: 'saiu' as const } })))).toBe('Falta decidir 2 sugestões')
   })
 })

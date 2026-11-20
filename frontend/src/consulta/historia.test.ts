@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { agendaDoDia } from '../modulo/exemplo'
 import { conteudoDaConsulta } from './exemplo'
-import { atualizarHistoria, identificacaoHda, montarHistoria, montarHistoriaEvolucao } from './historia'
+import { atualizarHistoria, identificacaoHda, montarHistoria, montarHistoriaEvolucao, secoesDaConsultaAnterior, secoesDaEvolucaoParaDD } from './historia'
 import { FORMULARIO_VAZIO, textoDoFormulario } from './formulario-consulta'
 import { partesPreConsulta } from '../medico/pre-consulta'
 
@@ -209,5 +209,39 @@ describe('História da evolução: extensão das lesões', () => {
   it('sem medida anterior, só o valor; texto que não é número entra como está', () => {
     expect(ext('1', [])).toBe('Extensão das lesões: 1%.')
     expect(ext('quase nada')).toBe('Extensão das lesões: quase nada.')
+  })
+})
+
+describe('secoesDaConsultaAnterior (o retorno lê o prontuário)', () => {
+  it('devolve as seções com os rótulos da história clínica, só as que têm texto', () => {
+    const dados = { qp: 'Placas.', hda: 'Há 2 anos.', ap: 'Hipertensão.', hp: '', hf: '', exameFisico: 'BSA 4%.', examesTexto: '' }
+    expect(secoesDaConsultaAnterior(dados)).toEqual([
+      { rotulo: 'Queixa principal', texto: 'Placas.' },
+      { rotulo: 'História da doença atual', texto: 'Há 2 anos.' },
+      { rotulo: 'Antecedentes e alertas', texto: 'Hipertensão.' },
+      { rotulo: 'Exame físico', texto: 'BSA 4%.' },
+    ])
+  })
+})
+
+describe('secoesDaEvolucaoParaDD (diagnósticos do retorno partem só da evolução de hoje)', () => {
+  it('a evolução entra com os rótulos da história clínica, como numa primeira consulta', () => {
+    expect(secoesDaEvolucaoParaDD([
+      { rotulo: 'Evolução', texto: 'Paciente relata melhora.' },
+      { rotulo: 'Exame', texto: 'Placas residuais.' },
+      { rotulo: 'Exames', texto: 'Nenhum exame novo.' },
+    ])).toEqual([
+      { rotulo: 'História da doença atual', texto: 'Paciente relata melhora.' },
+      { rotulo: 'Exame físico', texto: 'Placas residuais.' },
+      { rotulo: 'Exames complementares', texto: 'Nenhum exame novo.' },
+    ])
+  })
+})
+
+describe('História da evolução: extensão anterior gravada como número', () => {
+  it('usa o número do prontuário, não o texto do exame físico', () => {
+    const anteriores = [{ data: '2026-09-18', exameFisico: 'Placas bem delimitadas (sem número no texto).', extensaoPct: 4 }]
+    expect(montarHistoriaEvolucao('melhora', [{ rotulo: 'Extensão', valor: '1' }], [], { falas: [], sinais: [], anteriores })[1].texto)
+      .toBe('Extensão das lesões: 1% (consulta anterior, 18/09: 4%), redução de 3 pontos percentuais.')
   })
 })

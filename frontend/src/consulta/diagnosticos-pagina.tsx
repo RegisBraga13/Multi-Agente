@@ -5,7 +5,7 @@
 // À direita, "Para relembrar": o que pesa na conduta, com V/F (o médico só troca a marca).
 import { useRef, useState } from 'react'
 import { CampoLinha, SEM_CORRETOR } from './campo-linha'
-import type { Decisao, ItemDD, NaoPerder } from './diagnosticos'
+import type { Decisao, ItemDD } from './diagnosticos'
 import { useEscrita } from './escrita'
 import type { Marca, ItemResumo } from './resumo'
 import type { Situacao } from './tipos'
@@ -23,9 +23,9 @@ type Props = {
   resumo: ItemResumo[]
   /** classes da tarja de alergia (vermelha cheia; contornada quando a cor da especialidade é parecida) */
   alergia: string
-  naoPerder: NaoPerder | null
-  naoPerderAvaliado: boolean
   primeira: boolean
+  /** retorno: as hipóteses vêm só da evolução de hoje */
+  retorno?: boolean
   /** falso quando esta versão já foi escrita (voltando de outra etapa) */
   animar: boolean
   onEscrito: () => void
@@ -39,12 +39,11 @@ type Props = {
   onAdicionar: (nome: string, cid: string) => void
   onMais: () => void
   onMarcar: (id: string, m: Marca) => void
-  onAvaliarNaoPerder: () => void
   onSalvar: () => void
 }
 
 export function PaginaDiagnosticos(p: Props) {
-  const { itens, naoPerder, primeira, situacao } = p
+  const { itens, primeira, situacao } = p
   // só as hipóteses que a IA (re)escreveu são escritas, na ordem
   const [fila] = useState(() => itens.filter((x) => x.mudou).map((x) => x.hip.id))
   const [nomesFila] = useState(() => fila.map((id) => itens.find((x) => x.hip.id === id)!.hip.nome))
@@ -65,9 +64,9 @@ export function PaginaDiagnosticos(p: Props) {
     avisos && `${avisos} ${avisos === 1 ? 'sugestão' : 'sugestões'} ao lado da sua decisão`,
   ].filter(Boolean)
   const aviso = escrevendo
-    ? (primeira ? 'A IA está sugerindo hipóteses com a história clínica salva…' : 'A IA está atualizando só o que mudou…')
-    : daIA.length === 0 ? 'A IA não tem hipóteses de exemplo para este paciente. Acrescente o seu diagnóstico.'
-    : primeira ? 'Sugeridas só com a história clínica salva. Você decide o diagnóstico.'
+    ? (primeira ? `A IA está sugerindo hipóteses com ${p.retorno ? 'a evolução de hoje' : 'a história clínica salva'}…` : 'A IA está atualizando só o que mudou…')
+    : daIA.length === 0 ? (p.retorno ? 'A IA não encontrou pistas na evolução de hoje. Acrescente o seu diagnóstico.' : 'A IA não tem hipóteses de exemplo para este paciente. Acrescente o seu diagnóstico.')
+    : primeira ? `Sugeridas só com ${p.retorno ? 'a evolução de hoje' : 'a história clínica salva'}. Você decide o diagnóstico.`
     : inicio.atualizadas + inicio.avisos === 0 ? 'Nada mudou nas hipóteses com a última alteração.'
     : partes.length ? partes.join(' · ') + '.' : 'Hipóteses revistas com a história nova.'
 
@@ -116,21 +115,6 @@ export function PaginaDiagnosticos(p: Props) {
         </div>
 
         <div className="min-w-0">
-          {naoPerder && (
-            <div className={`mb-2.5 bg-escuro px-4 py-2 text-sobre-escuro transition-opacity ${escrevendo ? 'opacity-0' : ''}`}>
-              <div className="flex items-start gap-3">
-                <p className="min-w-0 flex-1 text-[15.5px] leading-snug font-semibold">
-                  <span className="mr-2 text-[11px] font-bold tracking-[0.14em] text-escuro-apagado uppercase">Não pode perder</span>
-                  {naoPerder.nome} <span className="text-[13px] font-bold text-escuro-apagado">(CID 10 {naoPerder.cid})</span>
-                </p>
-                <button type="button" onClick={p.onAvaliarNaoPerder} aria-pressed={p.naoPerderAvaliado}
-                  className={`shrink-0 border-[1.5px] border-sobre-escuro px-2 py-px text-[12.5px] font-bold whitespace-nowrap ${p.naoPerderAvaliado ? 'bg-sobre-escuro text-escuro' : 'hover:bg-sobre-escuro/15'}`}>
-                  {p.naoPerderAvaliado ? '✓ Avaliado' : 'Marcar avaliado'}
-                </button>
-              </div>
-              <p className="mt-0.5 text-[13.5px] leading-snug">{naoPerder.porque} {naoPerder.como}</p>
-            </div>
-          )}
           {/* o que pesa na conduta, da história salva: tudo vai para a conduta com a marca */}
           <div className={`border-[1.5px] border-(--esp-medio) bg-(--esp-claro) px-3 pt-1.5 pb-2 transition-opacity ${escrevendo ? 'opacity-0' : ''}`}>
             <p className={ROTULO}>Para relembrar · da história salva</p>

@@ -92,8 +92,7 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 
 1. **Só depois de salvar a história, e só com os dados dela.** Até 3 hipóteses da IA, com CID-10 e %, da mais à menos provável.
 2. **Toque confirma, × descarta.** Cada hipótese mostra os pontos a favor e contra, com o trecho da história de onde saíram.
-3. **"Não pode perder":** cartão escuro, só quando existe.
-4. **Certeza do diagnóstico:** suspeita, hipótese ou clínico. Câncer sem biópsia é suspeita.
+3. **Certeza do diagnóstico:** suspeita, hipótese ou clínico. Câncer sem biópsia é suspeita.
 
 ## 11. Conduta e tratamento
 
@@ -119,7 +118,7 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 4. **Linhas:** QP, HDA, AP, HP, HF, Ex. físico, Exames, HD; depois CONDUTA (tratamento, Solicitado, Encaminhado para, Orientações, Retorno, Atestado/Laudo). Campo não colhido some.
 5. **HD:** sempre 3. Os clicados pelo médico = "Assinalado"; completam até 3 os da IA = "Sugerido". Descartado não entra.
 6. **Gravado como dados organizados** (diagnósticos, remédios, exames, fotos). Fotos em miniatura.
-7. **Exames em tabela, ao longo do tempo:** o prontuário guarda e atualiza os exames complementares numa tabela (uma coluna por data, uma linha por exame), sempre que recebe um retorno ou uma nova consulta. *(feito: tabela no topo da janela do prontuário; a atualização pelo retorno depende de salvar o prontuário do retorno, etapa que falta)*
+7. **Exames em tabela, ao longo do tempo:** o prontuário guarda e atualiza os exames complementares numa tabela (uma coluna por data, uma linha por exame), sempre que recebe um retorno ou uma nova consulta. *(feito: tabela no topo da janela do prontuário, atualizada a cada retorno salvo)*
 8. **O app não guarda por 20 anos:** o médico recebe a cópia e guarda.
 
 ## 14. Retorno
@@ -127,7 +126,10 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 1. **Evolução** (melhora, piora, uso do remédio, efeitos; fotos e exames comparados) → **História da evolução** (com gráfico comparativo) → diagnósticos, conduta, receita e anexos (podem mudar) → prontuário atualizado. *(Etapa 1 feita: tela **Evolução** — Gravar/Escrever, sem Formulário; Perguntas do retorno Sim/Não: Melhorou? · Piorou algum ponto? · Usa o remédio direitinho? · Teve efeito colateral?; à direita **Fotos e exames**, com as fotos da consulta anterior ao lado. Faltam: História da evolução, diagnósticos/conduta/anexos do retorno, prontuário atualizado.)*
 2. **No retorno, a IA olha o prontuário,** principalmente o que não muda (alergias, comorbidades, efeitos colaterais anteriores).
 3. **Explorar o que surge:** quando o paciente relata algo novo (efeito colateral, novo sinal ou sintoma), a tela abre perguntas para aprofundar, ou o médico acrescenta gravando ou escrevendo. *(feito: pergunta fixa "Surgiu algum sintoma ou sinal novo?"; Sim em efeito colateral ou sinal novo abre perguntas de aprofundamento — as de resposta aberta têm uma linha para escrever)*
-4. **História da evolução, abertura:** sem identificação (nada de "Paciente, 52 anos, casado, comerciante": já está no prontuário e sabemos de quem se trata). Começa com **"Paciente relata melhora"** (ou "informa" / "piora" / "pouca alteração")... Sem redundâncias. *(Etapa 2 feita, sem o gráfico: três blocos — Evolução, Exame, Exames. Faltam: gráfico comparativo, diagnósticos/conduta/anexos do retorno, prontuário atualizado.)* **Comparação (sem gráfico por enquanto; o gráfico fica para depois):** o médico digita a **extensão das lesões em % do corpo** no campo "Extensão" de Fotos e exames; a história compara com a consulta anterior ("1% (consulta anterior, 18/09: 4%), redução de 3 pontos percentuais"). Os **exames complementares** aparecem numa **tabela por data** abaixo da história. **Cartão Retorno** da página inicial abre a Evolução (retorno aberto na ficha; senão o próximo; senão o do dia).
+4. **História da evolução, abertura:** sem identificação (nada de "Paciente, 52 anos, casado, comerciante": já está no prontuário e sabemos de quem se trata). Começa com **"Paciente relata melhora"** (ou "informa" / "piora" / "pouca alteração")... Sem redundâncias. *(Etapa 2 feita, sem o gráfico: três blocos — Evolução, Exame, Exames. Etapas seguintes feitas: diagnósticos novos, conduta, anexos e prontuário atualizado com a Evolução. Falta o gráfico comparativo (adiado).)* **Comparação (sem gráfico por enquanto; o gráfico fica para depois):** a **extensão das lesões em % do corpo** é um campo do Exame físico (a IA sugere pelas fotos, tracejado, e o médico corrige); no retorno o médico digita no campo "Extensão" de Fotos e exames. O valor é **gravado como número** no prontuário; a história compara com a consulta anterior ("1% (consulta anterior, 18/09: 4%), redução de 3 pontos percentuais"). Os **exames complementares** aparecem numa **tabela por data** abaixo da história. **Cartão Retorno** da página inicial abre a Evolução (retorno aberto na ficha; senão o próximo; senão o do dia).
+5. **Diagnósticos no retorno são NOVOS.** A IA zera e apresenta diagnósticos novos, só com a evolução de hoje, como numa primeira consulta (ignora a consulta anterior). Os diagnósticos antigos **não aparecem na tela**: ficam no prontuário, de referência, e nada os tira. Se vierem os mesmos, não importa: a IA decide pela evolução e o médico aceita ou descarta. O médico tem total autonomia. "Para relembrar" (alergias, comorbidades) ainda vem do prontuário. *(feito)*
+6. **Conduta no retorno:** sempre depende do diagnóstico. É a de sempre, vinda dos **novos** diagnósticos confirmados; nada marcado; **sem "Manter"** e sem o tratamento anterior na tela. O médico olha o **prontuário aberto** (o que o paciente usa, efeito colateral anterior) e, se a conduta sugerir algo que não deu certo, troca. *(feito)*
+7. **O prontuário é o centro e o guia.** Guarda toda a história e toda a evolução, é o documento para auditoria e, a partir do retorno, o guia que o médico consulta aberto. Vale para todas as especialidades. As telas do retorno não repetem o que já está nele.
 
 ## 15. IA e privacidade
 

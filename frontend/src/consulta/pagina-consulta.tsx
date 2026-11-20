@@ -11,10 +11,10 @@ import type { Atendimento } from '../modulo/tipos'
 import { Anamnese } from './anamnese'
 import { ETAPAS, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
 import { Exame } from './exame'
-import { atualizarHistoria, montarHistoria, montarHistoriaEvolucao, type SecaoHistoria } from './historia'
+import { atualizarHistoria, montarHistoria, montarHistoriaEvolucao, secoesDaConsultaAnterior, secoesDaEvolucaoParaDD, type SecaoHistoria } from './historia'
 import { PaginaHistoria } from './historia-pagina'
 import { tabelaDeExames } from './exames-tabela'
-import { atualizarComReserva, chamarMais, iniciarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, type Hipotese, type ItemDD, type NaoPerder } from './diagnosticos'
+import { atualizarComReserva, chamarMais, iniciarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, type Hipotese, type ItemDD } from './diagnosticos'
 import { atualizarResumo, marcarResumo, montarResumo, type ItemResumo } from './resumo'
 import { PaginaDiagnosticos } from './diagnosticos-pagina'
 import { atualizarConduta, editarTexto, escolherOpcao, escreverOutro, montarConduta, pendenciasConduta, revelar, type Conduta } from './conduta'
@@ -128,7 +128,7 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
       const sinais = conteudo.alertas.filter((x) => x.tipo === 'sinal').map((x) => ({ texto: x.texto, resposta: novo.alertas[x.id] }))
       // retorno: História da evolução (sem identificação, abre com "Paciente relata..."); primeira consulta: história clínica
       const novas = at.tipo === 'retorno'
-        ? montarHistoriaEvolucao(f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais: [], perguntas: f.perguntas, anteriores: entradas(at.paciente.id).map((e) => ({ data: e.data, exameFisico: e.dados.exameFisico })) })
+        ? montarHistoriaEvolucao(f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais: [], perguntas: f.perguntas, anteriores: entradas(at.paciente.id).map((e) => ({ data: e.data, exameFisico: e.dados.exameFisico, extensaoPct: e.dados.extensaoPct })) })
         : montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais, perguntas: f.perguntas, formulario: f.formulario ? { ...f.formulario, partes: partesPreConsulta(esp.slug) } : undefined })
       // primeira vez: tudo novo; depois: a IA mexe só no que mudou
       setHistoria((h) => h
@@ -140,7 +140,7 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
 
   /** Diagnósticos: itens = hipóteses da IA à mostra + as do médico, cada uma com a decisão dele; reserva = as que o "+" traz.
    *  resumo = o que pesa na conduta, da história salva (vai para a conduta com V/F). */
-  const [dd, setDd] = useState<{ versao: number; itens: ItemDD[]; reserva: Hipotese[]; resumo: ItemResumo[]; naoPerder: NaoPerder | null; naoPerderAvaliado: boolean } | null>(null)
+  const [dd, setDd] = useState<{ versao: number; itens: ItemDD[]; reserva: Hipotese[]; resumo: ItemResumo[] } | null>(null)
   /** última versão já escrita "ao vivo" de cada página: ao voltar, aparece pronta (não escreve de novo) */
   const [escrita, setEscrita] = useState({ historia: 0, diagnosticos: 0, prontuario: 0 })
   const escreveu = (pagina: 'historia' | 'diagnosticos' | 'prontuario', versao: number) =>
@@ -153,11 +153,16 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
     if (!historia || podeOficializar(estado, 'diagnosticos') || !podeOficializar(novo, 'diagnosticos')) return
     // a IA usa só a história salva: o texto que está na tela, com as edições do médico
     const salva = historia.geradas.map((s, i) => ({ rotulo: s.rotulo, texto: historia.textos[i] }))
-    const r = montarDiagnosticos(esp.slug, at.paciente.nome, salva)
-    const resumo = montarResumo(salva)
+    // retorno: os diagnósticos são NOVOS, só da evolução de hoje (como numa primeira consulta, sem repetir o prontuário);
+    // "Para relembrar" (alergias, comorbidades, o que não muda) ainda vem do prontuário, junto com a evolução (regra 14.2)
+    const retorno = at.tipo === 'retorno'
+    const anterior = retorno ? entradas(at.paciente.id).find((e) => e.data < at.id.slice(0, 10) && e.dados.diagnosticos.length > 0) : undefined
+    const r = montarDiagnosticos(esp.slug, at.paciente.nome, retorno ? secoesDaEvolucaoParaDD(salva) : salva)
+    const resumo = montarResumo(anterior ? [...secoesDaConsultaAnterior(anterior.dados), ...salva] : salva)
+    const inicio = iniciarDiagnosticos(r.hipoteses)
     setDd((d) => d
-      ? { versao: d.versao + 1, ...atualizarComReserva(d.itens, r.hipoteses), resumo: atualizarResumo(d.resumo, resumo), naoPerder: r.naoPerder, naoPerderAvaliado: d.naoPerderAvaliado && d.naoPerder?.cid === r.naoPerder?.cid }
-      : { versao: 1, ...iniciarDiagnosticos(r.hipoteses), resumo, naoPerder: r.naoPerder, naoPerderAvaliado: false })
+      ? { versao: d.versao + 1, ...atualizarComReserva(d.itens, r.hipoteses), resumo: atualizarResumo(d.resumo, resumo) }
+      : { versao: 1, ...inicio, resumo })
     navegar(`${base}/diagnosticos`)
   }
 
@@ -219,7 +224,7 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
     if (!historia || !dd || !conduta || podeOficializar(estado, 'prontuario') || !podeOficializar(novo, 'prontuario')) return
     const salva = historia.geradas.map((s, i) => ({ rotulo: s.rotulo, texto: historia.textos[i] }))
     const fotos = Array.from({ length: conteudo.fotos }, (_, i) => ({ n: i + 1, src: i === 0 ? fotoExemplo : null }))
-    const dadosP = dadosDaConsulta({ historia: salva, itens: dd.itens, conduta: conduta.c, anexos: docs?.itens, complementares: conteudo.complementares, fotos })
+    const dadosP = dadosDaConsulta({ historia: salva, itens: dd.itens, conduta: conduta.c, anexos: docs?.itens, complementares: conteudo.complementares, fotos, extensao: fontes.current.exame.find((x) => x.rotulo === 'Extensão')?.valor })
     const novas = secoesDosDados(dadosP)
     setProntuario((x) => x
       ? { versao: x.versao + 1, dados: dadosP, geradas: novas, ...atualizarProntuario(x.geradas, x.textos, novas) }
@@ -384,14 +389,13 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
               naReserva={dd.reserva.length}
               resumo={dd.resumo}
               alergia={estiloAlergia(esp)}
-              naoPerder={dd.naoPerder}
-              naoPerderAvaliado={dd.naoPerderAvaliado}
               primeira={dd.versao === 1}
+              retorno={at.tipo === 'retorno'}
               animar={escrita.diagnosticos < dd.versao}
               onEscrito={() => escreveu('diagnosticos', dd.versao)}
               situacao={situacaoDaEtapa(estado, 'diagnosticos')}
               podeSalvar={podeOficializar(estado, 'diagnosticos')}
-              pendencia={pendenciasDiagnosticos(dd.itens, dd.naoPerderAvaliado || !dd.naoPerder)}
+              pendencia={pendenciasDiagnosticos(dd.itens)}
               onDecidir={(id, d) => nosItens((xs) => xs.flatMap((x) => (x.hip.id !== id ? [x] : x.propria && d === 'descartada' ? [] : [{ ...x, decisao: d }])))}
               onAviso={(id, manter) => nosItens((xs) => xs.flatMap((x) => {
                 if (x.hip.id !== id || !x.aviso) return [x]
@@ -401,7 +405,6 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
               onAdicionar={(nome, cid) => nosItens((xs) => [...xs, { hip: { id: `propria-${Date.now()}`, nome, cid, pct: null, evidencias: [] }, decisao: 'confirmada', propria: true, mudou: false, aviso: null }])}
               onMais={() => mexerDd((d) => ({ ...d, ...chamarMais(d) }))}
               onMarcar={(id, m) => mexerDd((d) => ({ ...d, resumo: marcarResumo(d.resumo, id, m) }))}
-              onAvaliarNaoPerder={() => mexerDd((d) => ({ ...d, naoPerderAvaliado: !d.naoPerderAvaliado }))}
               onSalvar={salvarDiagnosticos}
             />
           </div>
