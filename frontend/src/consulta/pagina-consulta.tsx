@@ -13,6 +13,7 @@ import { ETAPAS, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, pode
 import { Exame } from './exame'
 import { atualizarHistoria, montarHistoria, montarHistoriaEvolucao, type SecaoHistoria } from './historia'
 import { PaginaHistoria } from './historia-pagina'
+import { tabelaDeExames } from './exames-tabela'
 import { atualizarComReserva, chamarMais, iniciarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, type Hipotese, type ItemDD, type NaoPerder } from './diagnosticos'
 import { atualizarResumo, marcarResumo, montarResumo, type ItemResumo } from './resumo'
 import { PaginaDiagnosticos } from './diagnosticos-pagina'
@@ -127,7 +128,7 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
       const sinais = conteudo.alertas.filter((x) => x.tipo === 'sinal').map((x) => ({ texto: x.texto, resposta: novo.alertas[x.id] }))
       // retorno: História da evolução (sem identificação, abre com "Paciente relata..."); primeira consulta: história clínica
       const novas = at.tipo === 'retorno'
-        ? montarHistoriaEvolucao(f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais: [], perguntas: f.perguntas })
+        ? montarHistoriaEvolucao(f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais: [], perguntas: f.perguntas, anteriores: entradas(at.paciente.id).map((e) => ({ data: e.data, exameFisico: e.dados.exameFisico })) })
         : montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais, perguntas: f.perguntas, formulario: f.formulario ? { ...f.formulario, partes: partesPreConsulta(esp.slug) } : undefined })
       // primeira vez: tudo novo; depois: a IA mexe só no que mudou
       setHistoria((h) => h
@@ -350,6 +351,7 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
               animar={escrita.historia < historia.versao}
               onEscrito={() => escreveu('historia', historia.versao)}
               secoes={historia.geradas}
+              tabelaExames={at.tipo === 'retorno' ? tabelaDeExames(entradas(at.paciente.id).flatMap((e) => e.dados.exames), conteudo.complementares) : null}
               textos={historia.textos}
               mudou={historia.mudou}
               sugestoes={historia.sugestoes}

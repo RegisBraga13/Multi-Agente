@@ -208,6 +208,18 @@ const RELATO_RETORNO: Record<string, [string, string]> = {
   'João Pedro Lima': ['Melhorou bastante, as placas dos cotovelos quase sumiram. Passo a pomada toda noite.', 'Melhora importante das placas, com uso regular da pomada à noite.'],
 }
 
+/** Exames que o paciente trouxe para o retorno (exemplo). */
+const RETORNO_COMPLEMENTARES: Record<string, Complementar[]> = {
+  'João Pedro Lima': [{
+    exame: 'Exames laboratoriais', data: '12/11/2026', origem: 'laudo-rotina.pdf',
+    itens: [
+      { nome: 'Glicemia de jejum', v: { status: 'PRESENT', valor: '101 mg/dL', origem: 'pág. 1' } },
+      { nome: 'TGO', v: { status: 'PRESENT', valor: '26 U/L', origem: 'pág. 1' } },
+      { nome: 'TGP', v: { status: 'PRESENT', valor: '33 U/L', origem: 'pág. 1' } },
+    ],
+  }],
+}
+
 function conteudoDoRetorno(at: Atendimento): ConteudoConsulta {
   const [fala, clinico] = RELATO_RETORNO[at.paciente.nome] ?? ['Estou melhor.', 'Refere melhora.']
   return {
@@ -222,9 +234,11 @@ function conteudoDoRetorno(at: Atendimento): ConteudoConsulta {
     marcas: [],
     exame: [
       { rotulo: 'Aspecto atual das lesões', valor: '', prov: 'inferido_ia' },
+      // o médico digita o número (% da superfície do corpo); a história compara com a consulta anterior
+      { rotulo: 'Extensão', valor: '', prov: 'inferido_ia' },
       { rotulo: 'Comparado à consulta anterior', valor: '', prov: 'inferido_ia' },
     ],
-    complementares: [],
+    complementares: RETORNO_COMPLEMENTARES[at.paciente.nome] ?? [],
   }
 }
 

@@ -152,7 +152,12 @@ const EXEMPLOS: Record<string, EntradaProntuario[]> = {
       ap: 'Hipertensão arterial. Em uso de losartana 50 mg 1x/dia. Alergia a dipirona (inchaço no rosto).',
       hp: '', hf: '',
       exameFisico: 'Placas eritematodescamativas bem delimitadas em cotovelos e joelhos; couro cabeludo e unhas sem alterações. BSA estimada em 4%.',
-      examesTexto: '', exames: [],
+      examesTexto: '',
+      exames: [
+        { exame: 'Exames laboratoriais', nome: 'Glicemia de jejum', valor: '98 mg/dL', status: 'PRESENT', data: '10/09/2026', origem: 'laudo-rotina.pdf' },
+        { exame: 'Exames laboratoriais', nome: 'TGO', valor: '24 U/L', status: 'PRESENT', data: '10/09/2026', origem: 'laudo-rotina.pdf' },
+        { exame: 'Exames laboratoriais', nome: 'TGP', valor: '30 U/L', status: 'PRESENT', data: '10/09/2026', origem: 'laudo-rotina.pdf' },
+      ],
       diagnosticos: [{ nome: 'Psoríase vulgar', cid: 'L40.0', pct: 85, situacao: 'assinalado' }, { nome: 'Dermatite seborreica', cid: 'L21', pct: 10, situacao: 'sugerido' }, { nome: 'Eczema numular', cid: 'L30.0', pct: 5, situacao: 'sugerido' }],
       receita: {
         itens: [

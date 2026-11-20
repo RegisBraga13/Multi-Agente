@@ -196,3 +196,18 @@ describe('História da evolução: aprofundamento', () => {
     )
   })
 })
+
+describe('História da evolução: extensão das lesões', () => {
+  const anteriores = [{ data: '2026-09-18', exameFisico: 'Placas eritematodescamativas. BSA estimada em 4%.' }]
+  const ext = (valor: string, ant = anteriores) =>
+    montarHistoriaEvolucao('melhora', [{ rotulo: 'Extensão', valor }], [], { falas: [], sinais: [], anteriores: ant })[1].texto
+  it('compara com a consulta anterior, em pontos percentuais', () => {
+    expect(ext('1')).toBe('Extensão das lesões: 1% (consulta anterior, 18/09: 4%), redução de 3 pontos percentuais.')
+    expect(ext('6,5%')).toBe('Extensão das lesões: 6,5% (consulta anterior, 18/09: 4%), aumento de 2,5 pontos percentuais.')
+    expect(ext('4%')).toBe('Extensão das lesões: 4% (consulta anterior, 18/09: 4%), sem alteração.')
+  })
+  it('sem medida anterior, só o valor; texto que não é número entra como está', () => {
+    expect(ext('1', [])).toBe('Extensão das lesões: 1%.')
+    expect(ext('quase nada')).toBe('Extensão das lesões: quase nada.')
+  })
+})

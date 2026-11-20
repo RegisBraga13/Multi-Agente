@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { tabelaDeExames } from '../consulta/exames-tabela'
 import { dataLocal } from '../medico/exemplo'
 import { buscarPaciente } from '../modulo/exemplo'
 import { ANTONIO_ID, JOAO_ID, entradas, salvarEntrada, tituloDaConsulta, tituloNovaEntrada, type DadosEntrada, type NovaEntrada } from './registro'
@@ -75,5 +76,18 @@ describe('Antônio Barbosa: prontuário pronto de exemplo', () => {
     expect(e.data).toBe(dataLocal(new Date()))
     expect(e.dados.diagnosticos).toHaveLength(3)
     expect(e.dados.solicitado).toEqual(['biópsia da lesão (anatomopatológico)'])
+  })
+})
+
+describe('Exames ao longo do tempo (tabela do prontuário)', () => {
+  it('cada retorno ou consulta salvo acrescenta uma coluna à tabela, sem apagar as anteriores', () => {
+    const exame = (data: string, valor: string) => ({ exame: 'Exames laboratoriais', nome: 'Glicemia de jejum', valor, status: 'PRESENT' as const, data, origem: 'x.pdf' })
+    const daVez = (data: string, tipo: 'consulta' | 'retorno', valor: string): NovaEntrada => ({ ...nova(tipo, data), dados: { ...DADOS, exames: [exame(data === '2026-11-20' ? '12/11/2026' : '01/01/2027', valor)] } })
+    const tabela = () => tabelaDeExames(entradas(JOAO_ID).flatMap((e) => e.dados.exames), [])
+    expect(tabela()?.datas).toEqual(['10/09/2026'])
+    salvarEntrada(JOAO_ID, daVez('2026-11-20', 'retorno', '101 mg/dL'))
+    expect(tabela()?.datas).toEqual(['10/09/2026', '12/11/2026'])
+    salvarEntrada(JOAO_ID, daVez('2027-01-08', 'retorno', '97 mg/dL'))
+    expect(tabela()?.linhas[0]).toEqual({ nome: 'Glicemia de jejum', valores: ['98 mg/dL', '101 mg/dL', '97 mg/dL'] })
   })
 })

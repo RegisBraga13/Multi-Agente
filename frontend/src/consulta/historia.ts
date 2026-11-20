@@ -37,6 +37,8 @@ export function atualizarHistoria(
 /** `formulario`: o formulário do paciente salvo na anamnese (vira frases de prontuário; as linhas dele na caixa não entram de novo) */
 export type ContextoHistoria = {
   falas: Fala[]; sinais: { texto: string; resposta: RespostaAlerta | null }[]; perguntas?: RespostaPergunta[]
+  /** retorno: consultas anteriores do prontuário, da mais recente para a mais antiga (data 'AAAA-MM-DD') */
+  anteriores?: { data: string; exameFisico: string }[]
   formulario?: { dados: FormularioConsulta['dados']; respostas: Respostas; partes: Parte[] }
 }
 
@@ -168,6 +170,26 @@ function textoExames(complementares: Complementar[], vazio: string): string {
     : vazio
 }
 
+/** Percentual da superfície do corpo num texto ("BSA estimada em 4%", "1", "6,5%"); null se não houver número. */
+export function extensaoDe(texto: string): number | null {
+  const m = /(\d+(?:[.,]\d+)?)\s*%/.exec(texto) ?? /^\s*(\d+(?:[.,]\d+)?)\s*$/.exec(texto)
+  return m ? Number(m[1].replace(',', '.')) : null
+}
+const numero = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',')
+
+/** "Extensão das lesões: 1% (consulta anterior, 18/09: 4%), redução de 3 pontos percentuais." (o médico digita o número) */
+function frasePercentual(digitado: string, anteriores: { data: string; exameFisico: string }[]): string {
+  if (!digitado) return ''
+  const hoje = extensaoDe(digitado)
+  if (hoje === null) return `Extensão das lesões: ${digitado}`
+  const antes = anteriores.map((a) => ({ data: a.data, pct: extensaoDe(a.exameFisico) })).find((a) => a.pct !== null)
+  if (!antes || antes.pct === null) return `Extensão das lesões: ${numero(hoje)}%`
+  const dif = hoje - antes.pct
+  const [, mes, dia] = antes.data.split('-')
+  const variacao = dif === 0 ? 'sem alteração' : `${dif < 0 ? 'redução' : 'aumento'} de ${numero(Math.abs(dif))} pontos percentuais`
+  return `Extensão das lesões: ${numero(hoje)}% (consulta anterior, ${dia}/${mes}: ${numero(antes.pct)}%), ${variacao}`
+}
+
 /**
  * História da evolução (retorno, regra 14): só o que foi colhido hoje, sem identificação (já está no prontuário).
  * Evolução abre com "Paciente relata ..."; Exame compara com a consulta anterior; Exames = resultados novos.
@@ -194,11 +216,12 @@ export function montarHistoriaEvolucao(
   const evolucao = [abertura, ...respostas].filter(Boolean).join(' ') || 'Não registrada.'
 
   const v = (r: string) => exame.find((x) => x.rotulo === r)?.valor.trim().replace(/\.$/, '') ?? ''
-  const [aspecto, comparado, obs] = ['Aspecto atual das lesões', 'Comparado à consulta anterior', 'Observações'].map(v)
-  const frases = [aspecto, comparado ? `Em relação à consulta anterior: ${minuscula(comparado)}` : '', obs].filter(Boolean)
+  const [aspecto, extensao, comparado, obs] = ['Aspecto atual das lesões', 'Extensão', 'Comparado à consulta anterior', 'Observações'].map(v)
+  const frases = [aspecto, frasePercentual(extensao, contexto.anteriores ?? []), comparado ? `Em relação à consulta anterior: ${minuscula(comparado)}` : '', obs].filter(Boolean)
   return [
     { rotulo: 'Evolução', texto: evolucao },
     { rotulo: 'Exame', texto: frases.length ? frases.map(ponto).join(' ') : 'Não registrado.' },
-    { rotulo: 'Exames', texto: textoExames(complementares, 'Nenhum exame novo.') },
+    // com resultados, eles ficam na tabela por data (abaixo da história): não se repetem aqui
+    { rotulo: 'Exames', texto: complementares.length ? 'Resultados comparados na tabela abaixo.' : 'Nenhum exame novo.' },
   ]
 }

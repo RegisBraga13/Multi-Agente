@@ -119,14 +119,15 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 4. **Linhas:** QP, HDA, AP, HP, HF, Ex. físico, Exames, HD; depois CONDUTA (tratamento, Solicitado, Encaminhado para, Orientações, Retorno, Atestado/Laudo). Campo não colhido some.
 5. **HD:** sempre 3. Os clicados pelo médico = "Assinalado"; completam até 3 os da IA = "Sugerido". Descartado não entra.
 6. **Gravado como dados organizados** (diagnósticos, remédios, exames, fotos). Fotos em miniatura.
-7. **O app não guarda por 20 anos:** o médico recebe a cópia e guarda.
+7. **Exames em tabela, ao longo do tempo:** o prontuário guarda e atualiza os exames complementares numa tabela (uma coluna por data, uma linha por exame), sempre que recebe um retorno ou uma nova consulta. *(feito: tabela no topo da janela do prontuário; a atualização pelo retorno depende de salvar o prontuário do retorno, etapa que falta)*
+8. **O app não guarda por 20 anos:** o médico recebe a cópia e guarda.
 
 ## 14. Retorno
 
 1. **Evolução** (melhora, piora, uso do remédio, efeitos; fotos e exames comparados) → **História da evolução** (com gráfico comparativo) → diagnósticos, conduta, receita e anexos (podem mudar) → prontuário atualizado. *(Etapa 1 feita: tela **Evolução** — Gravar/Escrever, sem Formulário; Perguntas do retorno Sim/Não: Melhorou? · Piorou algum ponto? · Usa o remédio direitinho? · Teve efeito colateral?; à direita **Fotos e exames**, com as fotos da consulta anterior ao lado. Faltam: História da evolução, diagnósticos/conduta/anexos do retorno, prontuário atualizado.)*
 2. **No retorno, a IA olha o prontuário,** principalmente o que não muda (alergias, comorbidades, efeitos colaterais anteriores).
 3. **Explorar o que surge:** quando o paciente relata algo novo (efeito colateral, novo sinal ou sintoma), a tela abre perguntas para aprofundar, ou o médico acrescenta gravando ou escrevendo. *(feito: pergunta fixa "Surgiu algum sintoma ou sinal novo?"; Sim em efeito colateral ou sinal novo abre perguntas de aprofundamento — as de resposta aberta têm uma linha para escrever)*
-4. **História da evolução, abertura:** sem identificação (nada de "Paciente, 52 anos, casado, comerciante": já está no prontuário e sabemos de quem se trata). Começa com **"Paciente relata melhora"** (ou "informa" / "piora" / "pouca alteração")... Sem redundâncias. *(Etapa 2 feita, sem o gráfico: três blocos — Evolução, Exame, Exames. Faltam: gráfico comparativo, diagnósticos/conduta/anexos do retorno, prontuário atualizado.)* **Cartão Retorno** da página inicial abre a Evolução (retorno aberto na ficha; senão o próximo; senão o do dia).
+4. **História da evolução, abertura:** sem identificação (nada de "Paciente, 52 anos, casado, comerciante": já está no prontuário e sabemos de quem se trata). Começa com **"Paciente relata melhora"** (ou "informa" / "piora" / "pouca alteração")... Sem redundâncias. *(Etapa 2 feita, sem o gráfico: três blocos — Evolução, Exame, Exames. Faltam: gráfico comparativo, diagnósticos/conduta/anexos do retorno, prontuário atualizado.)* **Comparação (sem gráfico por enquanto; o gráfico fica para depois):** o médico digita a **extensão das lesões em % do corpo** no campo "Extensão" de Fotos e exames; a história compara com a consulta anterior ("1% (consulta anterior, 18/09: 4%), redução de 3 pontos percentuais"). Os **exames complementares** aparecem numa **tabela por data** abaixo da história. **Cartão Retorno** da página inicial abre a Evolução (retorno aberto na ficha; senão o próximo; senão o do dia).
 
 ## 15. IA e privacidade
 

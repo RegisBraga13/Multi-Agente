@@ -65,8 +65,8 @@ describe('conteudoDaConsulta: retorno (Evolução)', () => {
   })
   it('a conversa é de acompanhamento (não repete a primeira consulta) e o exame compara com a anterior', () => {
     expect(c.falas[0].texto).toMatch(/desde a última consulta/)
-    expect(c.exame.map((x) => x.rotulo)).toEqual(['Aspecto atual das lesões', 'Comparado à consulta anterior'])
-    expect(c.complementares).toEqual([])
+    expect(c.exame.map((x) => x.rotulo)).toEqual(['Aspecto atual das lesões', 'Extensão', 'Comparado à consulta anterior'])
+    expect(c.complementares.map((x) => x.data)).toEqual(['12/11/2026'])
   })
 })
 

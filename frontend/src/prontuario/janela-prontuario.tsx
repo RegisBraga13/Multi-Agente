@@ -3,7 +3,9 @@
 // O texto de cada entrada é montado dos dados gravados (secoesDaEntrada); as fotos aparecem em miniatura.
 import { useEffect, useState, type CSSProperties } from 'react'
 import { useParams } from 'react-router-dom'
+import { tabelaDeExames } from '../consulta/exames-tabela'
 import { secoesDaEntrada } from '../consulta/prontuario'
+import { TabelaDeExames } from '../consulta/tabela-exames'
 import { buscarEspecialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
 import { buscarPaciente } from '../modulo/exemplo'
@@ -32,6 +34,7 @@ export function JanelaProntuario() {
   }, [id])
 
   if (!esp || !cadastro) return <NaoEncontrada />
+  const tabela = tabelaDeExames(lista.flatMap((e) => e.dados.exames), [])
   return (
     <div style={{ '--esp': esp.cor } as CSSProperties} className="cor-esp flex min-h-screen flex-col bg-papel bg-[url(/papel.png)] bg-size-[512px]">
       <header className="mx-auto flex w-full max-w-3xl flex-wrap items-baseline gap-x-4 gap-y-1 px-4 pt-3 sm:px-6">
@@ -42,7 +45,18 @@ export function JanelaProntuario() {
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-3 sm:px-6">
         {lista.length === 0 ? (
           <p className="border border-historia-borda bg-historia px-5 py-4 text-[15px]">Sem prontuário anterior. A primeira entrada nasce ao salvar o prontuário no fim da consulta.</p>
-        ) : lista.map((e) => <Entrada key={e.id} e={e} />)}
+        ) : (
+          <>
+            {tabela && (
+              // o prontuário guarda e atualiza os exames ao longo do tempo: uma coluna por data (regra 13.8)
+              <section className="border border-historia-borda bg-historia px-5 py-3" aria-label="Exames ao longo do tempo">
+                <h2 className="mb-1 text-[16px] font-bold">Exames ao longo do tempo</h2>
+                <TabelaDeExames tabela={tabela} />
+              </section>
+            )}
+            {lista.map((e) => <Entrada key={e.id} e={e} />)}
+          </>
+        )}
       </main>
       <footer className="py-3 text-center"><Marca className="text-[17px]" /></footer>
     </div>

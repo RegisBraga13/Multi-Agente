@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { TextoCrescente } from '../medico/texto-crescente'
 import type { SecaoHistoria } from './historia'
+import type { TabelaExames } from './exames-tabela'
+import { TabelaDeExames } from './tabela-exames'
 import type { Situacao } from './tipos'
 import { SEM_CORRETOR } from './campo-linha'
 import { useEscrita } from './escrita'
@@ -19,6 +21,8 @@ const SEGUNDOS_POR_FRASE = 3
 type Props = {
   /** o que a IA gerou nesta versão (rótulo + texto) */
   secoes: SecaoHistoria[]
+  /** retorno: exames realizados, por data (só leitura, abaixo do texto) */
+  tabelaExames?: TabelaExames | null
   /** o texto atual de cada seção (gerado ou editado pelo médico) */
   textos: string[]
   /** seções que a IA (re)escreveu nesta versão; as demais ficam como estavam */
@@ -38,7 +42,7 @@ type Props = {
   onSalvar: () => void
 }
 
-export function PaginaHistoria({ secoes, textos, mudou, sugestoes, primeira, animar, onEscrito, situacao, podeSalvar, onMudar, onDecidir, onSalvar }: Props) {
+export function PaginaHistoria({ secoes, tabelaExames, textos, mudou, sugestoes, primeira, animar, onEscrito, situacao, podeSalvar, onMudar, onDecidir, onSalvar }: Props) {
   // só as seções que mudaram são escritas, na ordem; k = posição na fila, n = letras já escritas
   const [fila] = useState(() => secoes.map((_, i) => i).filter((i) => mudou[i]))
   const [textosFila] = useState(() => fila.map((i) => secoes[i].texto))
@@ -150,6 +154,7 @@ export function PaginaHistoria({ secoes, textos, mudou, sugestoes, primeira, ani
           )
         })}
       </div>
+      {tabelaExames && <TabelaDeExames tabela={tabelaExames} className="mt-2" />}
     </Cartao>
   )
 }
