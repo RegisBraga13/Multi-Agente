@@ -38,11 +38,13 @@ type Props = {
   partes: Parte[]
   /** o formulário que o paciente enviou (null = não enviou; o médico pode preencher) */
   formulario: FormularioConsulta | null
+  /** retorno: a página vira "Evolução" (sem Formulário; o paciente já passou por ele na consulta) */
+  retorno?: boolean
   /** salva com o texto atual (a história clínica é montada com ele) */
   onOficializar: (texto: string, perguntas: RespostaPergunta[], formulario: FormularioConsulta | null) => void
 }
 
-export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pendencias, podeGravar, partes, formulario, onEditar, onResponder, onOficializar }: Props) {
+export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pendencias, podeGravar, partes, formulario, retorno = false, onEditar, onResponder, onOficializar }: Props) {
   const [modo, setModo] = useState<'texto' | 'formulario'>('texto')
   const [form, setForm] = useState<FormularioConsulta>(formulario ?? FORMULARIO_VAZIO)
   const [parte, setParte] = useState(0)
@@ -108,7 +110,7 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
     mudou()
   }
   // começou a gravar ou salvou o formulário: o que o paciente não respondeu vira lembrete em Perguntas (Alergias, sempre)
-  const camposLembrete = segundos > 0 || textoForm !== null ? lembretesDoFormulario(partes, form) : []
+  const camposLembrete = !retorno && (segundos > 0 || textoForm !== null) ? lembretesDoFormulario(partes, form) : []
   const lembretes = camposLembrete.map((q) => ({ texto: q.rotulo, sim: '', nao: '', secao: 'hda' as const, lembrete: true }))
   const campoDoLembrete = (rotulo: string) => camposLembrete.find((q) => q.rotulo === rotulo)
   const responderLembrete = (id: string, v: string | string[]) => { setRespLembrete((r) => ({ ...r, [id]: v })); mudou() }
@@ -146,12 +148,14 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
 
   return (
     <Cartao
-      titulo="Anamnese"
+      titulo={retorno ? 'Evolução' : 'Anamnese'}
       cabecalho={
         <div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-3">
-          <button type="button" onClick={() => setModo('formulario')} aria-pressed={modo === 'formulario'} className={botaoModo(modo === 'formulario')}>
-            Formulário
-          </button>
+          {!retorno && (
+            <button type="button" onClick={() => setModo('formulario')} aria-pressed={modo === 'formulario'} className={botaoModo(modo === 'formulario')}>
+              Formulário
+            </button>
+          )}
           <button type="button" onClick={alternar} disabled={!podeGravar} aria-pressed={gravando} className="flex items-center gap-2 bg-tinta px-3 py-1.5 text-[14px] font-bold text-papel disabled:opacity-40">
             <span className={`inline-block size-2.5 rounded-full! bg-alerta-clinico ${gravando ? 'animate-pulse' : ''}`} />
             {gravando ? 'Pausar' : segundos > 0 ? 'Continuar' : 'Gravar'}
@@ -168,7 +172,7 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
       legenda={alertas.length > 0 && RESPOSTAS.map((x) => `${x.icone} = ${x.nome.toLowerCase()}`).join(" · ")}
       rodape={
         <BotaoOficializar
-          rotulo="Salvar anamnese"
+          rotulo={retorno ? 'Salvar evolução' : 'Salvar anamnese'}
           oficializado={oficializado}
           bloqueado={!texto.trim()}
           motivo={!tentou ? undefined : pendencias > 0 ? `${pendencias === 1 ? 'Falta 1 sinal' : `Faltam ${pendencias} sinais`}` : gravando ? 'Pause a gravação' : undefined}
@@ -196,8 +200,8 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
           {...SEM_CORRETOR}
           value={texto}
           onChange={(e) => { setTexto(e.target.value); mudou() }}
-          placeholder="Queixa, história, antecedentes…"
-          aria-label="Anamnese"
+          placeholder={retorno ? 'Como está desde a consulta anterior: melhora, piora, uso do remédio, efeitos…' : 'Queixa, história, antecedentes…'}
+          aria-label={retorno ? 'Evolução' : 'Anamnese'}
           className={`${modo === 'formulario' ? 'hidden' : 'block'} min-h-0 w-full flex-1 resize-none bg-branco px-3 py-2 text-[14.5px] leading-snug focus:outline-none`}
         />
       </div>

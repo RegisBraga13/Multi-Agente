@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { dataLocal } from '../medico/exemplo'
 import { buscarPaciente } from '../modulo/exemplo'
-import { JOAO_ID, entradas, salvarEntrada, tituloDaConsulta, tituloNovaEntrada, type DadosEntrada, type NovaEntrada } from './registro'
+import { ANTONIO_ID, JOAO_ID, entradas, salvarEntrada, tituloDaConsulta, tituloNovaEntrada, type DadosEntrada, type NovaEntrada } from './registro'
 
 // localStorage de mentira (o teste roda fora do navegador)
 const mem = new Map<string, string>()
@@ -64,5 +65,15 @@ describe('prontuário do paciente', () => {
     expect(entradas(MARIANA)).toEqual([])
     mem.set(`especialista:prontuario:${MARIANA}`, '{quebrado')
     expect(entradas(MARIANA)).toEqual([])
+  })
+})
+
+describe('Antônio Barbosa: prontuário pronto de exemplo', () => {
+  it('tem a consulta de hoje salva, com 3 diagnósticos e a conduta (biópsia)', () => {
+    const [e] = entradas(ANTONIO_ID)
+    expect(e).toMatchObject({ titulo: 'Consulta 1', tipo: 'consulta', hora: '08:00' })
+    expect(e.data).toBe(dataLocal(new Date()))
+    expect(e.dados.diagnosticos).toHaveLength(3)
+    expect(e.dados.solicitado).toEqual(['biópsia da lesão (anatomopatológico)'])
   })
 })

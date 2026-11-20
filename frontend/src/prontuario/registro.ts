@@ -6,6 +6,7 @@
 // a mais recente no topo. Entrada salva nunca muda; depois do fim só recebe adendo.
 // SIMULAÇÃO (sem servidor ainda): as entradas ficam no navegador (localStorage), chaveadas pelo id do paciente.
 import type { ItemReceita } from '../consulta/conduta'
+import { dataLocal } from '../medico/exemplo'
 import type { Modalidade } from '../medico/tipos'
 import type { TipoAtendimento } from '../modulo/tipos'
 
@@ -90,7 +91,7 @@ const ordem = (a: { data: string; hora: string }) => `${a.data} ${a.hora}`
 
 /** Todas as entradas do paciente (exemplo + salvas), a mais recente no topo. */
 export function entradas(pacienteId: string): EntradaProntuario[] {
-  return [...(EXEMPLOS[pacienteId] ?? []), ...salvas(pacienteId)].sort((a, b) => ordem(b).localeCompare(ordem(a)))
+  return [...(exemplos()[pacienteId] ?? []), ...salvas(pacienteId)].sort((a, b) => ordem(b).localeCompare(ordem(a)))
 }
 
 /**
@@ -137,6 +138,10 @@ export function abrirJanelaProntuario(slug: string, pacienteId: string): Window 
 
 // Exemplo: João Pedro Lima já teve a Consulta 1 (psoríase); no dia 13/11 ele vem para o retorno das 08:30.
 export const JOAO_ID = '8715f152-846a-467d-a995-91ea384312b6'
+// Exemplo: Antônio Barbosa (8h) foi atendido hoje e o prontuário da Consulta 1 está pronto para ler.
+export const ANTONIO_ID = 'd17f3be7-5155-4d72-b178-05776e2a3bc0'
+const exemplos = (): Record<string, EntradaProntuario[]> => ({ ...EXEMPLOS, [ANTONIO_ID]: [consultaDoAntonio(dataLocal(new Date()))] })
+
 const EXEMPLOS: Record<string, EntradaProntuario[]> = {
   [JOAO_ID]: [{
     id: '0b7c2f0e-3f4d-4f43-9a51-1d7e3b0c9a10', pacienteId: JOAO_ID,
@@ -166,4 +171,28 @@ const EXEMPLOS: Record<string, EntradaProntuario[]> = {
     },
     edicoes: {}, adendos: [],
   }],
+}
+
+function consultaDoAntonio(data: string): EntradaProntuario {
+  return {
+    id: '5d1f6b7a-2c0e-4a3b-9e84-0a5c7d9e1b22', pacienteId: ANTONIO_ID,
+    titulo: 'Consulta 1', tipo: 'consulta', modalidade: 'presencial', data, hora: '08:00',
+    dados: {
+      qp: 'Ferida no nariz que não cicatriza há 3 meses.',
+      hda: 'Paciente, 73 anos, refere ferida na asa nasal esquerda há 3 meses, que sangra ao toque e não cicatriza. Sem dor. Trabalhou muitos anos exposto ao sol.',
+      ap: 'Hipertensão arterial e infarto do miocárdio em 2019. Em uso de AAS 100 mg e atenolol 25 mg. Alergia a sulfa (falta de ar).',
+      hp: '', hf: '',
+      exameFisico: 'Pápula perolada com ulceração central e telangiectasias na asa nasal esquerda, lesão única de cerca de 6 mm. Pele com dano solar crônico.',
+      examesTexto: '', exames: [],
+      diagnosticos: [{ nome: 'Carcinoma basocelular', cid: 'C44.3', pct: 80, situacao: 'assinalado' }, { nome: 'Ceratose actínica', cid: 'L57.0', pct: 12, situacao: 'sugerido' }, { nome: 'Carcinoma espinocelular', cid: 'C44.3', pct: 8, situacao: 'sugerido' }],
+      receita: null,
+      condutaTexto: 'Biópsia da lesão para confirmar o diagnóstico e planejar a retirada.',
+      solicitado: ['biópsia da lesão (anatomopatológico)'], encaminhado: [],
+      orientacoes: 'Proteger a lesão do sol. Procurar atendimento se sangrar muito ou crescer rápido.',
+      retorno: 'em 2 semanas, com o resultado da biópsia.',
+      documentos: [],
+      fotos: [{ n: 1, src: null }, { n: 2, src: null }],
+    },
+    edicoes: {}, adendos: [],
+  }
 }

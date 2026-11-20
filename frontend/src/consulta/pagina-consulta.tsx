@@ -11,7 +11,7 @@ import type { Atendimento } from '../modulo/tipos'
 import { Anamnese } from './anamnese'
 import { ETAPAS, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
 import { Exame } from './exame'
-import { atualizarHistoria, montarHistoria, type SecaoHistoria } from './historia'
+import { atualizarHistoria, montarHistoria, montarHistoriaEvolucao, type SecaoHistoria } from './historia'
 import { PaginaHistoria } from './historia-pagina'
 import { atualizarComReserva, chamarMais, iniciarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, type Hipotese, type ItemDD, type NaoPerder } from './diagnosticos'
 import { atualizarResumo, marcarResumo, montarResumo, type ItemResumo } from './resumo'
@@ -22,7 +22,7 @@ import { alternarEmitir, atualizarAnexos, avancar, definirCampos, editarAnexo, m
 import { PaginaAnexos } from './anexos-pagina'
 import { aplicarEdicoes, atualizarProntuario, cabecalhoProntuario, chave, dadosDaConsulta, secoesDosDados, type SecaoProntuario } from './prontuario'
 import { PaginaProntuario } from './prontuario-pagina'
-import { abrirJanelaProntuario, salvarEntrada, tituloDaConsulta, type DadosEntrada } from '../prontuario/registro'
+import { abrirJanelaProntuario, entradas, salvarEntrada, tituloDaConsulta, type DadosEntrada } from '../prontuario/registro'
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import { FORMULARIO_VAZIO, type FormularioConsulta } from './formulario-consulta'
 import { partesPreConsulta } from '../medico/pre-consulta'
@@ -75,6 +75,10 @@ function reduzir(e: EstadoConsulta, a: Acao): EstadoConsulta {
 
 function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Atendimento; etapa: EtapaId; formulario: FormularioConsulta | null }) {
   const conteudo = useMemo(() => conteudoDaConsulta(at, esp.slug), [at, esp.slug])
+  /** retorno: a consulta anterior do prontuário (suas fotos aparecem ao lado das de hoje) */
+  /** no retorno a primeira página é a Evolução (regra 14.1) */
+  const nomeDaEtapa = (id: string, nome: string) => (at.tipo === 'retorno' ? ({ 'anamnese-exame': 'Evolução', historia: 'História da evolução' } as Record<string, string>)[id] ?? nome : nome)
+  const consultaAnterior = at.tipo === 'retorno' ? entradas(at.paciente.id).find((e) => e.tipo === 'consulta') : undefined
   const [estado, despachar] = useReducer(reduzir, conteudo.alertas.map((a) => a.id), inicial)
   const [anexos, setAnexos] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
@@ -121,7 +125,10 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
       const f = fontes.current
       // sinais de alerta da anamnese, com a resposta do médico, entram em "Antecedentes e alertas"
       const sinais = conteudo.alertas.filter((x) => x.tipo === 'sinal').map((x) => ({ texto: x.texto, resposta: novo.alertas[x.id] }))
-      const novas = montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais, perguntas: f.perguntas, formulario: f.formulario ? { ...f.formulario, partes: partesPreConsulta(esp.slug) } : undefined })
+      // retorno: História da evolução (sem identificação, abre com "Paciente relata..."); primeira consulta: história clínica
+      const novas = at.tipo === 'retorno'
+        ? montarHistoriaEvolucao(f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais: [], perguntas: f.perguntas })
+        : montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais, perguntas: f.perguntas, formulario: f.formulario ? { ...f.formulario, partes: partesPreConsulta(esp.slug) } : undefined })
       // primeira vez: tudo novo; depois: a IA mexe só no que mudou
       setHistoria((h) => h
         ? { versao: h.versao + 1, geradas: novas, ...atualizarHistoria(h.geradas, h.textos, novas) }
@@ -249,13 +256,13 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
         )
         // a etapa atual é o título da página (sem número); as liberadas viram atalhos ao lado
         if (aqui) return (
-          <h1 key={x.id} className="flex h-[38px] items-center gap-3 pr-2 text-[24px] font-semibold">{x.rotulo}{marca}</h1>
+          <h1 key={x.id} className="flex h-[38px] items-center gap-3 pr-2 text-[24px] font-semibold">{nomeDaEtapa(x.id, x.rotulo)}{marca}</h1>
         )
         return (
           <Link key={x.id} to={`${base}/${x.id}`}
             className="flex h-[38px] min-w-0 items-center gap-3 border border-linha bg-branco px-3 no-underline transition hover:bg-(--esp-claro)">
             <span className="flex min-w-0 items-baseline gap-3">
-              <span className="truncate text-[15px] font-semibold">{curtos ? x.curto : x.rotulo}</span>
+              <span className="truncate text-[15px] font-semibold">{nomeDaEtapa(x.id, curtos ? x.curto : x.rotulo)}</span>
               {marca}
             </span>
           </Link>
@@ -278,11 +285,14 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
               <b className="mr-1.5 text-[11px] tracking-[0.14em] uppercase">Alergia</b><b>{a.substancia}</b>
             </span>
           ))}
-          <button type="button" onClick={alternarJanela} aria-pressed={janelaAberta} title="Abre numa janela separada (só leitura)"
-            className={`ml-auto border-[1.5px] border-tinta px-3 py-1 text-[14px] font-semibold ${janelaAberta ? 'bg-tinta text-papel' : 'hover:bg-tinta hover:text-papel'}`}>
-            {janelaAberta ? 'Fechar prontuário' : 'Prontuário'}
-          </button>
-          <button type="button" onClick={() => setAnexos(true)} className="border-[1.5px] border-tinta px-3 py-1 text-[14px] font-semibold hover:bg-tinta hover:text-papel">
+          {/* o prontuário só existe a partir do retorno (regra 13.2) */}
+          {at.temHistorico && (
+            <button type="button" onClick={alternarJanela} aria-pressed={janelaAberta} title="Abre numa janela separada (só leitura)"
+              className={`ml-auto border-[1.5px] border-tinta px-3 py-1 text-[14px] font-semibold ${janelaAberta ? 'bg-tinta text-papel' : 'hover:bg-tinta hover:text-papel'}`}>
+              {janelaAberta ? 'Fechar prontuário' : 'Prontuário'}
+            </button>
+          )}
+          <button type="button" onClick={() => setAnexos(true)} className={`${at.temHistorico ? '' : 'ml-auto '}border-[1.5px] border-tinta px-3 py-1 text-[14px] font-semibold hover:bg-tinta hover:text-papel`}>
             Anexos
           </button>
         </div>
@@ -306,13 +316,14 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
               podeGravar={podeGravar(f)}
               partes={partesPreConsulta(esp.slug)}
               formulario={formulario}
+              retorno={at.tipo === 'retorno'}
               onEditar={() => fazer('editar', 'anamnese')}
               onResponder={(id, r) => despachar({ tipo: 'alerta', id, r })}
               onOficializar={(texto, perguntas, formulario) => { fontes.current.anamnese = texto; fontes.current.perguntas = perguntas; fontes.current.formulario = formulario; salvarPagina1('anamnese') }}
             />
           </div>
           <div className="flex min-w-0 flex-col gap-3 [&>section]:flex-1">
-            <h2 className="flex h-[38px] items-center text-[24px] font-semibold">Exame físico e complementar</h2>
+            <h2 className="flex h-[38px] items-center text-[24px] font-semibold">{at.tipo === 'retorno' ? 'Fotos e exames' : 'Exame físico e complementar'}</h2>
             <Exame
               campos={conteudo.exame}
               fotos={conteudo.fotos}
@@ -321,6 +332,7 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
               complementares={conteudo.complementares}
               fotosPaciente={Object.entries(formulario?.fotos ?? {}).filter(([k]) => !k.startsWith('documentos_')).map(([, url]) => url)}
               documentos={Object.entries(formulario?.fotos ?? {}).filter(([k]) => k.startsWith('documentos_')).map(([k, url]) => ({ nome: `Documento ${k.slice('documentos_'.length)}`, url }))}
+              retorno={consultaAnterior ? { data: consultaAnterior.data.split('-').reverse().slice(0, 2).join('/'), fotos: consultaAnterior.dados.fotos.length } : undefined}
               situacao={estado.blocos.exame.estado}
               onEditar={() => fazer('editar', 'exame')}
               onOficializar={(valores) => { fontes.current.exame = valores; salvarPagina1('exame') }}

@@ -40,3 +40,23 @@ describe('agendaDoDia', () => {
     expect(agendaDoDia('2026-11-18', AGORA)).toEqual(agendaDoDia('2026-11-18', AGORA))
   })
 })
+
+describe('exemplos fixos: retorno e prontuário pronto', () => {
+  const dia = agendaDoDia('2026-11-18', AGORA)
+  it('o único retorno é João Pedro Lima (10h), com a Consulta 1 no prontuário', () => {
+    const retornos = dia.filter((x) => x.tipo === 'retorno')
+    expect(retornos.map((x) => [x.inicio, x.paciente.nome, x.temHistorico])).toEqual([['10:00', 'João Pedro Lima', true]])
+  })
+  it('Antônio Barbosa (8h) tem o prontuário da consulta pronto; os outros não mostram prontuário vazio', () => {
+    const antonio = dia.find((x) => x.inicio === '08:00')!
+    expect([antonio.paciente.nome, antonio.tipo, antonio.temHistorico]).toEqual(['Antônio Barbosa', 'consulta', true])
+    expect(dia.filter((x) => x.temHistorico).map((x) => x.paciente.nome).sort()).toEqual(['Antônio Barbosa', 'João Pedro Lima'])
+  })
+  it('os fixos aparecem em qualquer dia útil e ninguém repete no mesmo dia', () => {
+    for (const d of ['2026-11-16', '2026-11-19', '2026-12-02']) {
+      const lista = agendaDoDia(d, AGORA)
+      expect(lista.find((x) => x.inicio === '10:00')?.paciente.nome).toBe('João Pedro Lima')
+      expect(new Set(lista.map((x) => x.paciente.id)).size).toBe(lista.length)
+    }
+  })
+})

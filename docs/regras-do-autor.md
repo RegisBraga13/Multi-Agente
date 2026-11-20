@@ -60,7 +60,8 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 1. **O pedido da página aparece na agenda do médico como "Pedido novo",** e o horário some para os outros pacientes.
 2. **Mensagens ao paciente = mensagem pronta:** o app abre o WhatsApp com o texto escrito e a pessoa toca em enviar. Sem WhatsApp oficial por enquanto.
    O link do formulário chega **azul, de um toque**: o paciente toca, a página abre e ele envia ali mesmo (experiência confortável). Por enquanto via endereço de internet temporário, que só deixa passar a página de agendar e o formulário; a agenda e a consulta ficam só no computador.
-3. **No cartão do paciente:** Confirmar, Mandar formulário (mensagem com o link), Abrir consulta. **Confirmar:** a etiqueta "Pedido novo" some e o WhatsApp abre com "Olá, Maria! Sua consulta com Dra. Ana Souza está confirmada: sexta-feira, 20 de novembro, às 10h (presencial)." **Avisar** (quando o médico não pode atender): pede confirmação ("Sim, avisar"); o horário é cancelado, sai da agenda, volta a ficar livre na página, e o WhatsApp abre com "Olá, Maria! Infelizmente não será possível atender sexta-feira, 20 de novembro, às 10h. Escolha outro horário: (link da página de agendar)". *(feitos)*
+3. **A ficha (queixa, alergia, medicamentos...) só aparece para o médico** se o paciente preencheu o formulário, ou no retorno (pois já existe informação). Sem formulário e sem retorno, o cartão mostra só nome, horário e situação. *(Os pacientes de exemplo da agenda são fictícios e não seguem esta regra; ficam só como demonstração. Os agendamentos reais seguem.)*
+4. **No cartão do paciente:** Confirmar, Mandar formulário (mensagem com o link), Abrir consulta. **Confirmar:** a etiqueta "Pedido novo" some e o WhatsApp abre com "Olá, Maria! Sua consulta com Dra. Ana Souza está confirmada: sexta-feira, 20 de novembro, às 10h (presencial)." **Avisar** (quando o médico não pode atender): pede confirmação ("Sim, avisar"); o horário é cancelado, sai da agenda, volta a ficar livre na página, e o WhatsApp abre com "Olá, Maria! Infelizmente não será possível atender sexta-feira, 20 de novembro, às 10h. Escolha outro horário: (link da página de agendar)". *(feitos)*
 
 ## 7. Anamnese
 
@@ -122,8 +123,10 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 
 ## 14. Retorno
 
-1. **Evolução** (melhora, piora, uso do remédio, efeitos; fotos e exames comparados) → **História da evolução** (com gráfico comparativo) → diagnósticos, conduta, receita e anexos (podem mudar) → prontuário atualizado.
+1. **Evolução** (melhora, piora, uso do remédio, efeitos; fotos e exames comparados) → **História da evolução** (com gráfico comparativo) → diagnósticos, conduta, receita e anexos (podem mudar) → prontuário atualizado. *(Etapa 1 feita: tela **Evolução** — Gravar/Escrever, sem Formulário; Perguntas do retorno Sim/Não: Melhorou? · Piorou algum ponto? · Usa o remédio direitinho? · Teve efeito colateral?; à direita **Fotos e exames**, com as fotos da consulta anterior ao lado. Faltam: História da evolução, diagnósticos/conduta/anexos do retorno, prontuário atualizado.)*
 2. **No retorno, a IA olha o prontuário,** principalmente o que não muda (alergias, comorbidades, efeitos colaterais anteriores).
+3. **Explorar o que surge:** quando o paciente relata algo novo (efeito colateral, novo sinal ou sintoma), a tela abre perguntas para aprofundar, ou o médico acrescenta gravando ou escrevendo. *(ainda não construído)*
+4. **História da evolução, abertura:** sem identificação (nada de "Paciente, 52 anos, casado, comerciante": já está no prontuário e sabemos de quem se trata). Começa com **"Paciente relata melhora"** (ou "informa" / "piora" / "pouca alteração")... Sem redundâncias. *(Etapa 2 feita, sem o gráfico: três blocos — Evolução, Exame, Exames. Faltam: gráfico comparativo, diagnósticos/conduta/anexos do retorno, prontuário atualizado.)*
 
 ## 15. IA e privacidade
 

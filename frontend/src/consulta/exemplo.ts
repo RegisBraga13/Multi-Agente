@@ -176,7 +176,39 @@ function tempo(s: number): string {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 }
 
+/** Retorno (Evolução): o que cada paciente de exemplo conta; as perguntas do retorno são as mesmas para todos. */
+const PERGUNTAS_RETORNO: Pergunta[] = [
+  { texto: 'Melhorou?', ...hda('Refere melhora desde a consulta anterior.', 'Nega melhora.') },
+  { texto: 'Piorou algum ponto?', ...hda('Refere piora em algum ponto.', 'Nega piora.') },
+  { texto: 'Usa o remédio direitinho?', ...hda('Refere uso regular da medicação prescrita.', 'Refere uso irregular da medicação prescrita.') },
+  { texto: 'Teve efeito colateral?', ...hda('Refere efeito colateral com a medicação.', 'Nega efeitos colaterais.') },
+]
+const RELATO_RETORNO: Record<string, [string, string]> = {
+  'João Pedro Lima': ['Melhorou bastante, as placas dos cotovelos quase sumiram. Passo a pomada toda noite.', 'Melhora importante das placas, com uso regular da pomada à noite.'],
+}
+
+function conteudoDoRetorno(at: Atendimento): ConteudoConsulta {
+  const [fala, clinico] = RELATO_RETORNO[at.paciente.nome] ?? ['Estou melhor.', 'Refere melhora.']
+  return {
+    falas: [
+      { quem: 'Médico', texto: 'Como o senhor está desde a última consulta?', aos: tempo(8) },
+      { quem: 'Paciente', texto: fala, clinico, aos: tempo(34) },
+      { quem: 'Médico', texto: 'Vou olhar como estão as lesões, para comparar com as fotos da outra vez.', aos: tempo(60) },
+    ],
+    perguntas: PERGUNTAS_RETORNO,
+    alertas: [],
+    fotos: 0,
+    marcas: [],
+    exame: [
+      { rotulo: 'Aspecto atual das lesões', valor: '', prov: 'inferido_ia' },
+      { rotulo: 'Comparado à consulta anterior', valor: '', prov: 'inferido_ia' },
+    ],
+    complementares: [],
+  }
+}
+
 export function conteudoDaConsulta(at: Atendimento, slug: string): ConteudoConsulta {
+  if (at.tipo === 'retorno') return conteudoDoRetorno(at)
   const nome = at.paciente.nome
   const r = slug === 'dermatologia' ? (RASCUNHOS[nome] ?? SEM_RASCUNHO) : SEM_RASCUNHO
   const f = at.ficha

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { agendaDoDia } from '../modulo/exemplo'
 import { conteudoDaConsulta } from './exemplo'
-import { atualizarHistoria, identificacaoHda, montarHistoria } from './historia'
+import { atualizarHistoria, identificacaoHda, montarHistoria, montarHistoriaEvolucao } from './historia'
 import { FORMULARIO_VAZIO, textoDoFormulario } from './formulario-consulta'
 import { partesPreConsulta } from '../medico/pre-consulta'
 
@@ -108,7 +108,7 @@ describe('identificação na HDA (dados da ficha)', () => {
   })
   it('o João (ficha: casado, comerciante) abre a HDA assim', () => {
     const joao = agendaDoDia('2026-11-13', agora).find((x) => x.paciente.nome === 'João Pedro Lima')!
-    const cj = conteudoDaConsulta(joao, 'dermatologia')
+    const cj = conteudoDaConsulta({ ...joao, tipo: 'consulta' }, 'dermatologia')
     const fala = 'Paciente: Placas vermelhas com descamação nos cotovelos e joelhos.'
     expect(montarHistoria(joao, agora, fala, [], [], { falas: cj.falas, sinais: [] })[2].texto).toMatch(/^Paciente, 52 anos, casado, comerciante, refere /)
   })
@@ -141,5 +141,39 @@ describe('história com o formulário salvo na anamnese (exemplo aprovado pelo a
   it('o que foi escrito depois do formulário continua na HDA', () => {
     const h = montarHistoria(at, agora, `${caixa}\n\nPiora no verão.`, [], [], { falas: [], sinais: [], formulario: { ...form, partes } })
     expect(h[2].texto.endsWith('nega bronzeamento artificial. Piora no verão.')).toBe(true)
+  })
+})
+
+describe('História da evolução (retorno)', () => {
+  const joao = agendaDoDia('2026-11-18', agora).find((x) => x.tipo === 'retorno')!
+  const cj = conteudoDaConsulta(joao, 'dermatologia')
+  const gravado = 'Médico: Como o senhor está desde a última consulta?\nPaciente: Melhorou bastante, as placas dos cotovelos quase sumiram. Passo a pomada toda noite.\n'
+  const sim = (texto: string) => cj.perguntas.find((p) => p.texto === texto)!
+  const evolucao = (anamnese: string, perguntas: { pergunta: (typeof cj.perguntas)[number]; resposta: 'sim' | 'nao' }[] = [], exame: { rotulo: string; valor: string }[] = []) =>
+    montarHistoriaEvolucao(anamnese, exame, [], { falas: cj.falas, sinais: [], perguntas })
+
+  it('três blocos: Evolução, Exame e Exames', () => {
+    expect(evolucao(gravado).map((s) => s.rotulo)).toEqual(['Evolução', 'Exame', 'Exames'])
+  })
+  it('abre com "Paciente relata ...", sem idade, estado civil nem profissão (já estão no prontuário)', () => {
+    const [e] = evolucao(gravado)
+    expect(e.texto).toBe('Paciente relata melhora importante das placas, com uso regular da pomada à noite.')
+    expect(e.texto).not.toMatch(/anos|casado|comerciante/)
+  })
+  it('anamnese escrita à mão também abre com "Paciente relata"; se o médico já escreveu, não repete', () => {
+    expect(evolucao('melhora das placas, pouca coceira')[0].texto).toBe('Paciente relata melhora das placas, pouca coceira.')
+    expect(evolucao('Paciente informa piora.')[0].texto).toBe('Paciente informa piora.')
+  })
+  it('respostas Sim/Não entram, mas sem repetir "melhora" que o relato já disse', () => {
+    const perguntas = [{ pergunta: sim('Melhorou?'), resposta: 'sim' as const }, { pergunta: sim('Usa o remédio direitinho?'), resposta: 'sim' as const }, { pergunta: sim('Teve efeito colateral?'), resposta: 'nao' as const }]
+    expect(evolucao(gravado, perguntas)[0].texto).toBe(
+      'Paciente relata melhora importante das placas, com uso regular da pomada à noite. Refere uso regular da medicação prescrita. Nega efeitos colaterais.',
+    )
+  })
+  it('Exame compara com a consulta anterior; sem nada colhido, "Não registrado."', () => {
+    expect(evolucao(gravado)[1].texto).toBe('Não registrado.')
+    const exame = [{ rotulo: 'Aspecto atual das lesões', valor: 'Placas residuais, sem descamação' }, { rotulo: 'Comparado à consulta anterior', valor: 'Redução importante' }, { rotulo: 'Observações', valor: '' }]
+    expect(evolucao(gravado, [], exame)[1].texto).toBe('Placas residuais, sem descamação. Em relação à consulta anterior: redução importante.')
+    expect(evolucao(gravado)[2].texto).toBe('Nenhum exame novo.')
   })
 })

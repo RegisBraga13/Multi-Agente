@@ -146,12 +146,7 @@ export function montarHistoria(
       ]
     : ['Ficha da pré-consulta não preenchida.', ...respostas('ant'), ...sinais]).join(' ')
 
-  // como na landing: exame de laboratório, um resultado por linha; outro laudo (biópsia...) numa linha só
-  const item = (i: Complementar['itens'][number]) =>
-    `${i.nome}: ${i.v.status === 'MISSING' ? 'não encontrado no laudo' : `${i.v.valor}${i.v.status === 'INFERRED' ? ' (conferir no laudo)' : ''}`}`
-  const exames = complementares.length
-    ? complementares.flatMap((c) => (/laborat/i.test(c.exame) ? c.itens.map((i) => `${item(i)}.`) : [`${c.exame}: ${c.itens.map(item).join('; ')}.`])).join('\n')
-    : 'Nenhum exame trazido.'
+  const exames = textoExames(complementares, 'Nenhum exame trazido.')
 
   return [
     // história só serve de fonte para DD e tratamento (depois some): sem nome, sem consulta/retorno, sem presencial/online
@@ -161,5 +156,47 @@ export function montarHistoria(
     { rotulo: 'Antecedentes e alertas', texto: antecedentes },
     { rotulo: 'Exame físico', texto: exameFisico(exame) },
     { rotulo: 'Exames complementares', texto: exames },
+  ]
+}
+
+/** Exames complementares em texto: laboratório, um resultado por linha; outro laudo (biópsia...) numa linha só. */
+function textoExames(complementares: Complementar[], vazio: string): string {
+  const item = (i: Complementar['itens'][number]) =>
+    `${i.nome}: ${i.v.status === 'MISSING' ? 'não encontrado no laudo' : `${i.v.valor}${i.v.status === 'INFERRED' ? ' (conferir no laudo)' : ''}`}`
+  return complementares.length
+    ? complementares.flatMap((c) => (/laborat/i.test(c.exame) ? c.itens.map((i) => `${item(i)}.`) : [`${c.exame}: ${c.itens.map(item).join('; ')}.`])).join('\n')
+    : vazio
+}
+
+/**
+ * História da evolução (retorno, regra 14): só o que foi colhido hoje, sem identificação (já está no prontuário).
+ * Evolução abre com "Paciente relata ..."; Exame compara com a consulta anterior; Exames = resultados novos.
+ */
+export function montarHistoriaEvolucao(
+  anamnese: string,
+  exame: { rotulo: string; valor: string }[],
+  complementares: Complementar[],
+  contexto: ContextoHistoria = { falas: [], sinais: [] },
+): SecaoHistoria[] {
+  const linhas = anamnese.split('\n').map((l) => l.trim()).filter(Boolean)
+  const comoEscrever = new Map(contexto.falas.filter((f) => f.quem === 'Paciente' && f.clinico !== undefined).map((f) => [f.texto, f.clinico!]))
+  const relato = linhas.some((l) => /^(Médico|Paciente):/.test(l))
+    // gravado: fala conhecida → como a IA escreve; fala nova → entra como está
+    ? linhas.filter((l) => l.startsWith('Paciente:')).map((l) => l.slice('Paciente:'.length).trim()).map((t) => comoEscrever.get(t) ?? t).filter(Boolean).map((t) => ponto(maiuscula(t))).join(' ')
+    : linhas.join(' ')
+  const semPonto = relato.replace(/[.]$/, '')
+  const abertura = !relato ? '' : /^paciente\b/i.test(relato) ? relato : ponto(`Paciente relata ${/^[A-Z]{2}/.test(semPonto) ? semPonto : minuscula(semPonto)}`)
+  // a resposta Sim/Não entra, mas não repete "melhora" ou "piora" que o relato já disse
+  const repete = (texto: string) => (/^melhorou/i.test(texto) && /melhora/i.test(abertura)) || (/^piorou/i.test(texto) && /piora/i.test(abertura))
+  const respostas = (contexto.perguntas ?? []).filter((x) => !(x.resposta === 'sim' && repete(x.pergunta.texto))).map((x) => (x.resposta === 'sim' ? x.pergunta.sim : x.pergunta.nao))
+  const evolucao = [abertura, ...respostas].filter(Boolean).join(' ') || 'Não registrada.'
+
+  const v = (r: string) => exame.find((x) => x.rotulo === r)?.valor.trim().replace(/\.$/, '') ?? ''
+  const [aspecto, comparado, obs] = ['Aspecto atual das lesões', 'Comparado à consulta anterior', 'Observações'].map(v)
+  const frases = [aspecto, comparado ? `Em relação à consulta anterior: ${minuscula(comparado)}` : '', obs].filter(Boolean)
+  return [
+    { rotulo: 'Evolução', texto: evolucao },
+    { rotulo: 'Exame', texto: frases.length ? frases.map(ponto).join(' ') : 'Não registrado.' },
+    { rotulo: 'Exames', texto: textoExames(complementares, 'Nenhum exame novo.') },
   ]
 }

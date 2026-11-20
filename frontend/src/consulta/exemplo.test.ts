@@ -19,8 +19,8 @@ describe('conteudoDaConsulta', () => {
   // vários dias para passar por todos os pacientes de exemplo
   const todos = ['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19'].flatMap((d) => agendaDoDia(d, agora))
 
-  it('todo paciente tem os 5 campos do exame e ao menos 3 falas', () => {
-    for (const at of todos) {
+  it('todo paciente de consulta tem os 5 campos do exame e ao menos 3 falas', () => {
+    for (const at of todos.filter((x) => x.tipo === 'consulta')) {
       const c = conteudoDaConsulta(at, 'dermatologia')
       expect(c.exame.map((x) => x.rotulo)).toEqual(['Morfologia', 'Localização', 'Extensão', 'Gravidade estimada', 'Achados associados'])
       expect(c.falas.length).toBeGreaterThanOrEqual(3)
@@ -53,5 +53,19 @@ describe('conteudoDaConsulta', () => {
       const ids = conteudoDaConsulta(at, 'dermatologia').alertas.map((a) => a.id)
       expect(new Set(ids).size).toBe(ids.length)
     }
+  })
+})
+
+describe('conteudoDaConsulta: retorno (Evolução)', () => {
+  const joao = agendaDoDia('2026-11-18', new Date(2026, 10, 18, 7, 0)).find((x) => x.tipo === 'retorno')!
+  const c = conteudoDaConsulta(joao, 'dermatologia')
+  it('perguntas do retorno e sem sinais de alerta da primeira consulta', () => {
+    expect(c.perguntas.map((p) => p.texto)).toEqual(['Melhorou?', 'Piorou algum ponto?', 'Usa o remédio direitinho?', 'Teve efeito colateral?'])
+    expect(c.alertas).toEqual([])
+  })
+  it('a conversa é de acompanhamento (não repete a primeira consulta) e o exame compara com a anterior', () => {
+    expect(c.falas[0].texto).toMatch(/desde a última consulta/)
+    expect(c.exame.map((x) => x.rotulo)).toEqual(['Aspecto atual das lesões', 'Comparado à consulta anterior'])
+    expect(c.complementares).toEqual([])
   })
 })

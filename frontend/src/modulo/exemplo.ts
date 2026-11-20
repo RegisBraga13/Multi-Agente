@@ -26,15 +26,20 @@ const PACIENTES: { id: string; nome: string; nascimento: string; ficha: Conteudo
 
 // Cada horário do dia com o tipo, a modalidade, o pagamento, a situação da ficha e se já tem prontuário.
 type Vaga = { inicio: string; tipo: TipoAtendimento; modalidade: Modalidade; pagamento: string; ficha: Ficha['situacao']; historico: boolean }
+// Exemplos fixos (todo dia útil): Antônio Barbosa às 8h = prontuário pronto da consulta; João Pedro Lima às 10h = retorno.
+// Os demais não têm prontuário (nada de prontuário vazio).
+const ANTONIO = 'd17f3be7-5155-4d72-b178-05776e2a3bc0'
+const JOAO = '8715f152-846a-467d-a995-91ea384312b6'
+const FIXOS: Record<string, string> = { '08:00': ANTONIO, '10:00': JOAO }
 const VAGAS: Vaga[] = [
-  { inicio: '08:00', tipo: 'consulta', modalidade: 'presencial', pagamento: 'Unimed', ficha: 'pronta', historico: false },
-  { inicio: '08:30', tipo: 'retorno', modalidade: 'presencial', pagamento: 'Particular', ficha: 'pronta', historico: true },
+  { inicio: '08:00', tipo: 'consulta', modalidade: 'presencial', pagamento: 'Unimed', ficha: 'pronta', historico: true },
+  { inicio: '08:30', tipo: 'consulta', modalidade: 'presencial', pagamento: 'Particular', ficha: 'pronta', historico: false },
   { inicio: '09:00', tipo: 'consulta', modalidade: 'presencial', pagamento: 'Hapvida', ficha: 'link-enviado', historico: false },
-  { inicio: '09:30', tipo: 'consulta', modalidade: 'presencial', pagamento: 'Particular', ficha: 'pronta', historico: true },
+  { inicio: '09:30', tipo: 'consulta', modalidade: 'presencial', pagamento: 'Particular', ficha: 'pronta', historico: false },
   { inicio: '10:00', tipo: 'retorno', modalidade: 'presencial', pagamento: 'SulAmérica', ficha: 'pronta', historico: true },
   { inicio: '11:00', tipo: 'consulta', modalidade: 'presencial', pagamento: 'Particular', ficha: 'pronta', historico: false },
   { inicio: '14:00', tipo: 'consulta', modalidade: 'online', pagamento: 'Particular', ficha: 'link-enviado', historico: false },
-  { inicio: '15:00', tipo: 'retorno', modalidade: 'online', pagamento: 'Camed', ficha: 'sem-ficha', historico: true },
+  { inicio: '15:00', tipo: 'consulta', modalidade: 'online', pagamento: 'Camed', ficha: 'sem-ficha', historico: false },
   { inicio: '16:00', tipo: 'consulta', modalidade: 'presencial', pagamento: 'Bradesco Saúde', ficha: 'pronta', historico: false },
 ]
 
@@ -64,9 +69,10 @@ export function agendaDoDia(data: string, agora: Date): Atendimento[] {
   const hoje = dataLocal(agora)
   const hora = horaLocal(agora)
   const giro = d.getDate() // troca os pacientes de um dia para o outro
+  const rodizio = PACIENTES.filter((x) => !Object.values(FIXOS).includes(x.id))
   return ordenarPorHorario(
     vagas.map((v, i) => {
-      const p = PACIENTES[(i + giro) % PACIENTES.length]
+      const p = PACIENTES.find((x) => x.id === FIXOS[v.inicio]) ?? rodizio[(i + giro) % rodizio.length]
       return {
         id: `${data}-${v.inicio}`,
         inicio: v.inicio,

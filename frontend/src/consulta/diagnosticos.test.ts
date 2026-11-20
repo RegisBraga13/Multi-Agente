@@ -11,7 +11,8 @@ const agenda = Array.from({ length: 28 }, (_, i) => agendaDoDia(`2026-11-${Strin
 /** a história como sairia da página 1 salva sem mudanças */
 function historiaDe(nome: string): SecaoHistoria[] {
   const at = agenda.find((x) => x.paciente.nome === nome && x.ficha.situacao === 'pronta')!
-  const c = conteudoDaConsulta(at, 'dermatologia')
+  // o conteúdo da 1ª consulta (o João aparece na agenda como retorno, que tem conteúdo próprio)
+  const c = conteudoDaConsulta({ ...at, tipo: 'consulta' }, 'dermatologia')
   const anamnese = c.falas.map((f) => `${f.quem}: ${f.texto}`).join('\n')
   return montarHistoria(at, agora, anamnese, c.exame.map((x) => ({ rotulo: x.rotulo, valor: x.valor })), c.complementares)
 }

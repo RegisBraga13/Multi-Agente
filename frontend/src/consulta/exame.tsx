@@ -20,6 +20,8 @@ type Props = {
   fotosPaciente?: string[]
   /** receitas anteriores, exames e laudos que o paciente mandou pelo formulário */
   documentos?: { nome: string; url: string }[]
+  /** retorno: título "Fotos e exames" e, ao lado, as fotos da consulta anterior para comparar */
+  retorno?: { data: string; fotos: number }
   situacao: Situacao
   onEditar: () => void
   /** salva com os valores atuais (a história clínica é montada com eles) */
@@ -27,7 +29,7 @@ type Props = {
   onAviso: (texto: string) => void
 }
 
-export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, fotosPaciente = [], documentos = [], situacao, onEditar, onOficializar, onAviso }: Props) {
+export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, fotosPaciente = [], documentos = [], retorno, situacao, onEditar, onOficializar, onAviso }: Props) {
   const [laudos, setLaudos] = useState(false)
   const fecharLaudos = useCallback(() => setLaudos(false), [])
   const [valores, setValores] = useState(() => campos.map((c) => c.valor))
@@ -64,12 +66,20 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, foto
 
   return (
     <Cartao
-      titulo="Exame físico e complementar"
+      titulo={retorno ? 'Fotos e exames' : 'Exame físico e complementar'}
       cabecalho={inserir}
       legenda={temRascunho ? 'Tracejado = sugestão da IA · clique para editar' : undefined}
-      rodape={<BotaoOficializar rotulo="Salvar exame físico" oficializado={oficializado} onClick={() => onOficializar([...campos.map((c, i) => ({ rotulo: c.rotulo, valor: valores[i] })), { rotulo: 'Observações', valor: observacoes }])} />}
+      rodape={<BotaoOficializar rotulo={retorno ? 'Salvar fotos e exames' : 'Salvar exame físico'} oficializado={oficializado} onClick={() => onOficializar([...campos.map((c, i) => ({ rotulo: c.rotulo, valor: valores[i] })), { rotulo: 'Observações', valor: observacoes }])} />}
     >
       <>
+          {retorno && (
+            <div className="mb-2 flex items-center gap-2">
+              <p className={`${ROTULO} shrink-0`}>Consulta anterior · {retorno.data}</p>
+              {Array.from({ length: retorno.fotos }, (_, i) => (
+                <span key={i} title={`Foto ${i + 1} da consulta anterior`} className="flex size-9 items-center justify-center bg-suave font-titulo text-[14px] font-semibold text-apagado">{i + 1}</span>
+              ))}
+            </div>
+          )}
           <Fotos fotos={fotosPaciente.length || fotos} urls={fotosPaciente} fotoExemplo={fotoExemplo} marcas={marcas} onAdicionar={() => onAviso('Fotos e câmera chegam numa próxima etapa.')} />
           {/* editando um campo, os outros se recolhem; ao sair (clicar fora), todos voltam */}
           <div className="flex min-h-0 flex-1 flex-col" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setAtivo(null) }}>
