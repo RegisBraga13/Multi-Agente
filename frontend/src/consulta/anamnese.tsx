@@ -59,6 +59,8 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
   const [texto, setTexto] = useState('')
   /** pergunta clicada (riscada = foi feita) → resposta do médico (null = ainda sem Sim/Não) */
   const [perguntado, setPerguntado] = useState<Record<string, 'sim' | 'nao' | null>>({})
+  /** o que o médico escreveu nas perguntas abertas (aprofundamento do retorno), pelo texto da pergunta */
+  const [textos, setTextos] = useState<Record<string, string>>({})
   /** respostas dos lembretes do formulário, pela chave da pergunta */
   const [respLembrete, setRespLembrete] = useState<Respostas>({})
   /** o aviso de sinais pendentes só aparece depois de tentar salvar */
@@ -142,7 +144,9 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
       </>
     )
   }
-  const todas = [...perguntas, ...lembretes.filter((l) => !perguntas.some((p) => p.texto === l.texto))]
+  const principais: Pergunta[] = [...perguntas, ...lembretes.filter((l) => !perguntas.some((p) => p.texto === l.texto))]
+  // Sim numa pergunta com aprofundamento (efeito colateral, sinal novo): as perguntas dela aparecem logo abaixo
+  const todas = principais.flatMap((p) => [{ ...p, filho: false }, ...(perguntado[p.texto] === 'sim' ? (p.aprofundar ?? []).map((a) => ({ ...a, filho: true })) : [])])
   const botaoModo = (ativo: boolean) =>
     `border-[1.5px] border-tinta px-3 py-1 text-[14px] font-bold ${ativo ? 'bg-tinta text-papel' : 'hover:bg-tinta hover:text-papel'}`
 
@@ -182,14 +186,22 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
             // só as perguntas com Sim/Não vão para a história (riscada sem resposta = o médico não quis perguntar)
             // lembretes: só os riscados (perguntados) e respondidos
             const lembretesFeitos = Object.fromEntries(camposLembrete.filter((q) => q.rotulo in perguntado && q.id in respLembrete).map((q) => [q.id, respLembrete[q.id]]))
-            onOficializar(texto, perguntas.flatMap((p) => { const r = perguntado[p.texto]; return r && !p.lembrete ? [{ pergunta: p, resposta: r }] : [] }),
+            // as de aprofundamento só entram se a pergunta-mãe foi Sim; as abertas, só com texto escrito
+            const doFilho = (a: Pergunta): RespostaPergunta[] => {
+              if (!(a.texto in perguntado)) return []
+              if (a.aberta) return textos[a.texto]?.trim() ? [{ pergunta: a, resposta: 'sim', texto: textos[a.texto] }] : []
+              const r = perguntado[a.texto]
+              return r ? [{ pergunta: a, resposta: r }] : []
+            }
+            onOficializar(texto, perguntas.flatMap((p) => { const r = perguntado[p.texto]; return r && !p.lembrete ? [{ pergunta: p, resposta: r }, ...(r === 'sim' ? (p.aprofundar ?? []).flatMap(doFilho) : [])] : [] }),
               formularioParaHistoria(formSalvo, form.dados, lembretesFeitos))
           }}
         />
       }
     >
       {/* a caixa ocupa a altura que sobra no cartão (o cartão desce até perto do rodapé) */}
-      <div className="flex min-h-[118px] flex-1 flex-col border-[1.5px] border-linha focus-within:border-tinta lg:min-h-[150px]">
+      {/* no retorno, com as perguntas de aprofundamento abertas, a caixa encolhe para a página caber numa tela */}
+      <div className={`flex flex-1 flex-col border-[1.5px] border-linha focus-within:border-tinta ${retorno ? 'min-h-[90px] lg:min-h-[76px]' : 'min-h-[118px] lg:min-h-[150px]'}`}>
         {modo === 'formulario' && (
           <FormularioMedico partes={partes} valor={form} parte={parte} onParte={setParte} onMudar={(f) => { setForm(f); mudou() }}
             conferidas={conferidas} onConferir={(n) => setConferidas((c) => c.map((x, i) => (i === n ? true : x)))}
@@ -211,13 +223,13 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
           <p className={ROTULO}>Perguntas</p>
           {/* lembretes do formulário lado a lado (cabem numa tela); as da IA, uma por linha com Sim/Não */}
           <div className="mt-1 flex flex-wrap items-start gap-1">
-            {todas.map(({ texto: q, lembrete }) => {
+            {todas.map(({ texto: q, lembrete, aberta, filho }) => {
               const feito = q in perguntado
               const r = perguntado[q]
               const campo = lembrete ? campoDoLembrete(q) : undefined
               return (
                 // clicar risca (a pergunta foi feita) e abre Sim/Não; a resposta vai para a história, não para a anamnese
-                <div key={q} className={`flex max-w-full flex-wrap items-center gap-1.5 ${lembrete && !feito ? '' : 'basis-full'}`}>
+                <div key={q} className={`flex max-w-full flex-wrap items-center gap-1.5 ${(lembrete || filho) && !feito ? '' : 'basis-full'}`}>
                   <button type="button" aria-pressed={feito}
                     onClick={() => {
                       setPerguntado((p) => { const n = { ...p }; if (feito) delete n[q]; else n[q] = null; return n })
@@ -227,7 +239,12 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
                     {q}
                   </button>
                   {feito && campo && respostaLembrete(campo)}
-                  {feito && !lembrete && (['sim', 'nao'] as const).map((op) => (
+                  {feito && aberta && (
+                    <input {...SEM_CORRETOR} value={textos[q] ?? ''} aria-label={`Resposta: ${q}`} placeholder="Escreva"
+                      onChange={(e) => { setTextos((t) => ({ ...t, [q]: e.target.value })); mudou() }}
+                      className="min-w-[10rem] flex-1 border-b-[1.5px] border-linha bg-transparent px-1 py-0.5 text-[13.5px] focus:border-tinta focus:outline-none" />
+                  )}
+                  {feito && !lembrete && !aberta && (['sim', 'nao'] as const).map((op) => (
                     <button key={op} type="button" aria-pressed={r === op}
                       onClick={() => { setPerguntado((p) => ({ ...p, [q]: r === op ? null : op })); mudou() }}
                       className={`shrink-0 border-[1.5px] px-2 py-0.5 text-[13px] font-bold ${r === op ? 'border-tinta bg-tinta text-papel' : 'border-linha hover:bg-suave'}`}>

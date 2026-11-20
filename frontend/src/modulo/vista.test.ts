@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { vistaDoDia } from './vista'
+import { retornoParaAbrir, vistaDoDia } from './vista'
 
 describe('vistaDoDia', () => {
   it('o próximo avança com o relógio', () => {
@@ -28,5 +28,23 @@ describe('vistaDoDia', () => {
     const v = vistaDoDia('2026-11-22', new Date(2026, 10, 22, 9, 0))
     expect(v.lista).toEqual([])
     expect(v.proximo).toBeNull()
+  })
+})
+
+describe('retornoParaAbrir (cartão Retorno da página inicial)', () => {
+  const v = vistaDoDia('2026-11-18', new Date(2026, 10, 18, 7, 0))
+  const joao = v.lista.find((x) => x.tipo === 'retorno')!
+  const outro = v.lista.find((x) => x.tipo === 'consulta')!
+  it('com um retorno aberto na ficha, abre o dele', () => {
+    expect(retornoParaAbrir(v.lista, joao.id)).toBe(joao.id)
+  })
+  it('sem nenhum aberto, ou com uma consulta aberta, abre o próximo retorno de hoje', () => {
+    expect(retornoParaAbrir(v.lista, null)).toBe(joao.id)
+    expect(retornoParaAbrir(v.lista, outro.id)).toBe(joao.id)
+  })
+  it('depois do horário do retorno, abre o do dia mesmo assim; dia sem retorno, nada', () => {
+    const depois = vistaDoDia('2026-11-18', new Date(2026, 10, 18, 12, 0))
+    expect(retornoParaAbrir(depois.lista, null)).toBe(joao.id)
+    expect(retornoParaAbrir(depois.lista.filter((x) => x.tipo !== 'retorno'), null)).toBeNull()
   })
 })

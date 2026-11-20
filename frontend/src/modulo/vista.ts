@@ -35,3 +35,9 @@ export function useAgora(): Date {
   }, [])
   return agora
 }
+
+/** Cartão Retorno: o retorno aberto na ficha; senão, o próximo retorno a seguir; senão, o do dia (null = o dia não tem retorno). */
+export function retornoParaAbrir(lista: Atendimento[], selecionado: string | null): string | null {
+  const aberto = lista.find((x) => x.id === selecionado && x.tipo === 'retorno')
+  return (aberto ?? lista.find((x) => x.tipo === 'retorno' && !x.atendido) ?? lista.find((x) => x.tipo === 'retorno'))?.id ?? null
+}

@@ -60,3 +60,14 @@ describe('exemplos fixos: retorno e prontuário pronto', () => {
     }
   })
 })
+
+describe('retorno de exemplo sempre à vista', () => {
+  it('hoje, o retorno do João continua a seguir mesmo depois das 10h (para a simulação)', () => {
+    const tarde = agendaDoDia('2026-11-18', new Date(2026, 10, 18, 17, 30))
+    expect(tarde.find((x) => x.tipo === 'retorno')?.atendido).toBe(false)
+    expect(tarde.find((x) => x.inicio === '08:00')?.atendido).toBe(true)
+  })
+  it('em dia passado, ele já foi atendido', () => {
+    expect(agendaDoDia('2026-11-17', new Date(2026, 10, 18, 17, 30)).find((x) => x.tipo === 'retorno')?.atendido).toBe(true)
+  })
+})

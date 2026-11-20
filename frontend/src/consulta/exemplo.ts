@@ -37,8 +37,12 @@ const CAMPOS_DERMATO = ['Morfologia', 'Localização', 'Extensão', 'Gravidade e
 type Rascunho = { exame: [string, string, string, string, string]; fotos: number; fala: string; alertas?: string[]; faltou?: string[]; marcas?: [number, number][]; relato?: [string, string][] }
 
 /** Pergunta lembrada pela IA. `sim`/`nao`: como a resposta entra na história; `secao`: em que parte dela. */
-export type Pergunta = { texto: string; sim: string; nao: string; secao: 'hda' | 'ant'; /** pergunta do formulário (em branco, ou Alergias): clicada, abre as opções dela ou uma linha para escrever */ lembrete?: boolean }
-export type RespostaPergunta = { pergunta: Pergunta; resposta: 'sim' | 'nao' }
+export type Pergunta = { texto: string; sim: string; nao: string; secao: 'hda' | 'ant'; /** pergunta do formulário (em branco, ou Alergias): clicada, abre as opções dela ou uma linha para escrever */ lembrete?: boolean
+  /** Sim abre estas perguntas logo abaixo (retorno: efeito colateral, sinal novo) */
+  aprofundar?: Pergunta[]
+  /** a resposta é escrita numa linha (não Sim/Não); `sim` é a frase, com {} no lugar do que foi escrito */
+  aberta?: boolean }
+export type RespostaPergunta = { pergunta: Pergunta; resposta: 'sim' | 'nao'; /** só nas perguntas abertas */ texto?: string }
 
 const hda = (sim: string, nao: string) => ({ sim, nao, secao: 'hda' as const })
 const ant = (sim: string, nao: string) => ({ sim, nao, secao: 'ant' as const })
@@ -181,7 +185,24 @@ const PERGUNTAS_RETORNO: Pergunta[] = [
   { texto: 'Melhorou?', ...hda('Refere melhora desde a consulta anterior.', 'Nega melhora.') },
   { texto: 'Piorou algum ponto?', ...hda('Refere piora em algum ponto.', 'Nega piora.') },
   { texto: 'Usa o remédio direitinho?', ...hda('Refere uso regular da medicação prescrita.', 'Refere uso irregular da medicação prescrita.') },
-  { texto: 'Teve efeito colateral?', ...hda('Refere efeito colateral com a medicação.', 'Nega efeitos colaterais.') },
+  {
+    texto: 'Teve efeito colateral?', ...hda('Refere efeito colateral com a medicação.', 'Nega efeitos colaterais.'),
+    aprofundar: [
+      { texto: 'Qual foi o efeito?', aberta: true, ...hda('Efeito: {}.', '') },
+      { texto: 'Quando começou?', aberta: true, ...hda('Início {}.', '') },
+      { texto: 'Precisou parar o remédio?', ...hda('Precisou suspender o medicamento.', 'Manteve o uso do medicamento.') },
+      { texto: 'Ainda continua?', ...hda('Efeito ainda presente.', 'Efeito já resolvido.') },
+    ],
+  },
+  {
+    texto: 'Surgiu algum sintoma ou sinal novo?', ...hda('Refere surgimento de sintoma ou sinal novo.', 'Nega novos sintomas ou sinais.'),
+    aprofundar: [
+      { texto: 'Onde apareceu?', aberta: true, ...hda('Localização: {}.', '') },
+      { texto: 'Desde quando?', aberta: true, ...hda('Desde {}.', '') },
+      { texto: 'Coça, dói ou sangra?', ...hda('Associado a prurido, dor ou sangramento.', 'Sem prurido, dor ou sangramento.') },
+      { texto: 'Mudou de cor ou tamanho?', ...hda('Houve mudança de cor ou tamanho.', 'Sem mudança de cor ou tamanho.') },
+    ],
+  },
 ]
 const RELATO_RETORNO: Record<string, [string, string]> = {
   'João Pedro Lima': ['Melhorou bastante, as placas dos cotovelos quase sumiram. Passo a pomada toda noite.', 'Melhora importante das placas, com uso regular da pomada à noite.'],

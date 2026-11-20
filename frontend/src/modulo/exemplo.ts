@@ -81,8 +81,10 @@ export function agendaDoDia(data: string, agora: Date): Atendimento[] {
         modalidade: v.modalidade,
         pagamento: v.pagamento,
         ficha: fichaDe(v, p.ficha, i),
-        atendido: data < hoje || (data === hoje && v.inicio < hora),
+        // o retorno de exemplo (João) fica sempre a seguir hoje, para a simulação poder abri-lo a qualquer hora
+        atendido: data < hoje || (data === hoje && v.inicio < hora && p.id !== JOAO),
         temHistorico: v.historico,
+        ...(p.id === JOAO && { sempreDisponivel: true }),
       }
     }),
   )

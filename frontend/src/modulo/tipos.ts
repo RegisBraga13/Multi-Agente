@@ -39,6 +39,8 @@ export type Atendimento = {
   atendido: boolean
   /** já tem prontuário: mostra o link "Prontuário" na ficha */
   temHistorico: boolean
+  /** exemplo que fica sempre a seguir hoje (para a simulação abri-lo a qualquer hora); nunca é o "Próximo" */
+  sempreDisponivel?: boolean
   /** veio de um pedido feito na página do médico (servidor); `novo` = ainda não confirmado */
   pedido?: { id: string; whatsapp: string; token: string; novo: boolean; chegouAs: string }
 }

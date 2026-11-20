@@ -177,3 +177,22 @@ describe('História da evolução (retorno)', () => {
     expect(evolucao(gravado)[2].texto).toBe('Nenhum exame novo.')
   })
 })
+
+describe('História da evolução: aprofundamento', () => {
+  const joao = agendaDoDia('2026-11-18', agora).find((x) => x.tipo === 'retorno')!
+  const cj = conteudoDaConsulta(joao, 'dermatologia')
+  const efeito = cj.perguntas.find((p) => p.texto === 'Teve efeito colateral?')!
+  const [qual, quando, parou, continua] = efeito.aprofundar!
+  it('as respostas de aprofundamento entram em seguida; resposta aberta vazia não entra', () => {
+    const perguntas = [
+      { pergunta: efeito, resposta: 'sim' as const },
+      { pergunta: qual, resposta: 'sim' as const, texto: 'ardência na pele' },
+      { pergunta: quando, resposta: 'sim' as const, texto: '  ' },
+      { pergunta: parou, resposta: 'nao' as const },
+      { pergunta: continua, resposta: 'sim' as const },
+    ]
+    expect(montarHistoriaEvolucao('melhora das placas', [], [], { falas: cj.falas, sinais: [], perguntas })[0].texto).toBe(
+      'Paciente relata melhora das placas. Refere efeito colateral com a medicação. Efeito: ardência na pele. Manteve o uso do medicamento. Efeito ainda presente.',
+    )
+  })
+})

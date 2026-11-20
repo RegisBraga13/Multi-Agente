@@ -8,7 +8,7 @@ import { dataLocal, MEDICO_EXEMPLO } from '../medico/exemplo'
 import { dataPorExtenso, idade, janelaDeHoje, saudacao, somarDias, vistaDoModulo } from './dia'
 import type { Atendimento } from './tipos'
 import { abrirJanelaProntuario } from '../prontuario/registro'
-import { useAgora, vistaDoDia } from './vista'
+import { retornoParaAbrir, useAgora, vistaDoDia } from './vista'
 import { linkWhatsapp } from '../medico/duvidas'
 import { formatarWhatsapp } from '../medico/regras'
 import type { Medico } from '../medico/tipos'
@@ -127,6 +127,13 @@ function Pagina({ esp }: { esp: Especialidade }) {
               {saudacao(agora)}, {medico.tratamento} {medico.nome}
             </h1>
             <Cartoes onEscolher={(o) => {
+              if (o === 'Retorno') {
+                // retorno aberto na ficha; senão, o próximo retorno de hoje: abre na Evolução
+                const retorno = retornoParaAbrir(deHoje.lista, selecionado)
+                if (retorno) navegar(`/modulo/${esp.slug}/consulta/${retorno}/anamnese-exame`)
+                else setAviso('Nenhum retorno a seguir hoje.')
+                return
+              }
               if (o !== 'Consulta') return setAviso(`${o} é a próxima etapa do módulo.`)
               // consulta do paciente aberto na ficha; sem nenhum aberto, do próximo
               const id = selecionado ?? deHoje.proximo

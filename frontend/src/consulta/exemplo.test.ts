@@ -60,12 +60,26 @@ describe('conteudoDaConsulta: retorno (Evolução)', () => {
   const joao = agendaDoDia('2026-11-18', new Date(2026, 10, 18, 7, 0)).find((x) => x.tipo === 'retorno')!
   const c = conteudoDaConsulta(joao, 'dermatologia')
   it('perguntas do retorno e sem sinais de alerta da primeira consulta', () => {
-    expect(c.perguntas.map((p) => p.texto)).toEqual(['Melhorou?', 'Piorou algum ponto?', 'Usa o remédio direitinho?', 'Teve efeito colateral?'])
+    expect(c.perguntas.map((p) => p.texto)).toEqual(['Melhorou?', 'Piorou algum ponto?', 'Usa o remédio direitinho?', 'Teve efeito colateral?', 'Surgiu algum sintoma ou sinal novo?'])
     expect(c.alertas).toEqual([])
   })
   it('a conversa é de acompanhamento (não repete a primeira consulta) e o exame compara com a anterior', () => {
     expect(c.falas[0].texto).toMatch(/desde a última consulta/)
     expect(c.exame.map((x) => x.rotulo)).toEqual(['Aspecto atual das lesões', 'Comparado à consulta anterior'])
     expect(c.complementares).toEqual([])
+  })
+})
+
+describe('retorno: explorar o que surge (regra 14.3)', () => {
+  const joao = agendaDoDia('2026-11-18', new Date(2026, 10, 18, 7, 0)).find((x) => x.tipo === 'retorno')!
+  const por = (t: string) => conteudoDaConsulta(joao, 'dermatologia').perguntas.find((p) => p.texto === t)!
+  it('efeito colateral e sinal novo abrem perguntas de aprofundamento', () => {
+    expect(por('Teve efeito colateral?').aprofundar?.map((p) => p.texto)).toEqual(['Qual foi o efeito?', 'Quando começou?', 'Precisou parar o remédio?', 'Ainda continua?'])
+    expect(por('Surgiu algum sintoma ou sinal novo?').aprofundar?.map((p) => p.texto)).toEqual(['Onde apareceu?', 'Desde quando?', 'Coça, dói ou sangra?', 'Mudou de cor ou tamanho?'])
+    expect(por('Melhorou?').aprofundar).toBeUndefined()
+  })
+  it('perguntas que pedem uma resposta escrita são abertas; as outras são Sim/Não', () => {
+    const efeito = por('Teve efeito colateral?').aprofundar!
+    expect(efeito.map((p) => !!p.aberta)).toEqual([true, true, false, false])
   })
 })

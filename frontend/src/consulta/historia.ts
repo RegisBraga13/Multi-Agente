@@ -188,7 +188,9 @@ export function montarHistoriaEvolucao(
   const abertura = !relato ? '' : /^paciente\b/i.test(relato) ? relato : ponto(`Paciente relata ${/^[A-Z]{2}/.test(semPonto) ? semPonto : minuscula(semPonto)}`)
   // a resposta Sim/Não entra, mas não repete "melhora" ou "piora" que o relato já disse
   const repete = (texto: string) => (/^melhorou/i.test(texto) && /melhora/i.test(abertura)) || (/^piorou/i.test(texto) && /piora/i.test(abertura))
-  const respostas = (contexto.perguntas ?? []).filter((x) => !(x.resposta === 'sim' && repete(x.pergunta.texto))).map((x) => (x.resposta === 'sim' ? x.pergunta.sim : x.pergunta.nao))
+  // pergunta aberta: a frase leva o que o médico escreveu ({}); sem texto, não entra
+  const frase = (x: RespostaPergunta) => (x.pergunta.aberta ? (x.texto?.trim() ? x.pergunta.sim.replace('{}', x.texto.trim()) : '') : x.resposta === 'sim' ? x.pergunta.sim : x.pergunta.nao)
+  const respostas = (contexto.perguntas ?? []).filter((x) => !(x.resposta === 'sim' && repete(x.pergunta.texto))).map(frase).filter(Boolean)
   const evolucao = [abertura, ...respostas].filter(Boolean).join(' ') || 'Não registrada.'
 
   const v = (r: string) => exame.find((x) => x.rotulo === r)?.valor.trim().replace(/\.$/, '') ?? ''
