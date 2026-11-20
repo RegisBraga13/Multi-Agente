@@ -197,10 +197,14 @@ const PERGUNTAS_RETORNO: Pergunta[] = [
   {
     texto: 'Surgiu algum sintoma ou sinal novo?', ...hda('Refere surgimento de sintoma ou sinal novo.', 'Nega novos sintomas ou sinais.'),
     aprofundar: [
+      { texto: 'O que surgiu?', aberta: true, ...hda('Surgiu {}.', '') },
       { texto: 'Onde apareceu?', aberta: true, ...hda('Localização: {}.', '') },
       { texto: 'Desde quando?', aberta: true, ...hda('Desde {}.', '') },
-      { texto: 'Coça, dói ou sangra?', ...hda('Associado a prurido, dor ou sangramento.', 'Sem prurido, dor ou sangramento.') },
-      { texto: 'Mudou de cor ou tamanho?', ...hda('Houve mudança de cor ou tamanho.', 'Sem mudança de cor ou tamanho.') },
+      { texto: 'Coça?', ...hda('Associado a prurido.', 'Sem prurido.') },
+      { texto: 'Dói?', ...hda('Associado a dor.', 'Sem dor.') },
+      { texto: 'Sangra?', ...hda('Associado a sangramento.', 'Sem sangramento.') },
+      { texto: 'Mudou de cor?', ...hda('Houve mudança de cor.', 'Sem mudança de cor.') },
+      { texto: 'Mudou de tamanho?', ...hda('Houve mudança de tamanho.', 'Sem mudança de tamanho.') },
     ],
   },
 ]

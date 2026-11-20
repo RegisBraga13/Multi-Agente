@@ -75,7 +75,7 @@ describe('retorno: explorar o que surge (regra 14.3)', () => {
   const por = (t: string) => conteudoDaConsulta(joao, 'dermatologia').perguntas.find((p) => p.texto === t)!
   it('efeito colateral e sinal novo abrem perguntas de aprofundamento', () => {
     expect(por('Teve efeito colateral?').aprofundar?.map((p) => p.texto)).toEqual(['Qual foi o efeito?', 'Quando começou?', 'Precisou parar o remédio?', 'Ainda continua?'])
-    expect(por('Surgiu algum sintoma ou sinal novo?').aprofundar?.map((p) => p.texto)).toEqual(['Onde apareceu?', 'Desde quando?', 'Coça, dói ou sangra?', 'Mudou de cor ou tamanho?'])
+    expect(por('Surgiu algum sintoma ou sinal novo?').aprofundar?.map((p) => p.texto)).toEqual(['O que surgiu?', 'Onde apareceu?', 'Desde quando?', 'Coça?', 'Dói?', 'Sangra?', 'Mudou de cor?', 'Mudou de tamanho?'])
     expect(por('Melhorou?').aprofundar).toBeUndefined()
   })
   it('perguntas que pedem uma resposta escrita são abertas; as outras são Sim/Não', () => {

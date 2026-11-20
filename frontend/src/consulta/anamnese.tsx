@@ -222,7 +222,7 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
         <div className="mt-3">
           <p className={ROTULO}>Perguntas</p>
           {/* lembretes do formulário lado a lado (cabem numa tela); as da IA, uma por linha com Sim/Não */}
-          <div className="mt-1 flex flex-wrap items-start gap-1">
+          <div className="mt-1 flex max-h-[168px] flex-wrap items-start gap-1 overflow-y-auto">
             {todas.map(({ texto: q, lembrete, aberta, filho }) => {
               const feito = q in perguntado
               const r = perguntado[q]

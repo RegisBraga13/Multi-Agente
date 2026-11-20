@@ -2,7 +2,7 @@
 // Grupos 1–3 e as opções vêm da landing (index.html, CONDG/CONDT). O antigo "Seguimento" virou
 // "4. Orientações": orientações gerais + solicitação de exames, data de retorno e encaminhamento.
 // As regras leem só o "Para relembrar" (texto do item + marca V/F).
-import type { ItemReceita, ModeloConduta } from './conduta'
+import type { ItemReceita, Linha, ModeloConduta } from './conduta'
 
 // itens da receita: nome (DCB), forma (sigla oficial; sem sigla, por extenso), concentração (sem espaço: 300mg),
 // quantidade (n, unidade abreviada, feminino?, controlado?), posologia (via abreviada: VO). Valores de exemplo.
@@ -94,4 +94,104 @@ const ACNE: ModeloConduta = {
   ],
 }
 
-export const CONDUTAS: Record<string, ModeloConduta> = { acne: ACNE }
+// Modelos de conduta de exemplo para o retorno e a lesão nova (simulação; a IA verdadeira virá depois).
+const RETORNO: Linha = { id: 'retorno', rotulo: 'Retorno', opcoes: [
+  { id: '4s', rotulo: '4 semanas', texto: 'Retorno em 4 semanas.', dias: 28 },
+  { id: '8s', rotulo: '8 semanas', texto: 'Retorno em 8 semanas.', dias: 56 },
+  { id: '12s', rotulo: '12 semanas', texto: 'Retorno em 12 semanas.', dias: 84 },
+] }
+const RETORNO_CURTO: Linha = { id: 'retorno', rotulo: 'Retorno', opcoes: [
+  { id: '1s', rotulo: '1 semana', texto: 'Retorno em 1 semana, com o resultado.', dias: 7 },
+  { id: '2s', rotulo: '2 semanas', texto: 'Retorno em 2 semanas, com o resultado.', dias: 14 },
+  { id: '4s', rotulo: '4 semanas', texto: 'Retorno em 4 semanas, com o resultado.', dias: 28 },
+] }
+
+const PSORIASE: ModeloConduta = {
+  grupos: [
+    { id: 'cuidados', rotulo: '1. Cuidados básicos', linhas: [{ id: 'cuidados', rotulo: null, opcoes: [
+      { id: 'hidratacao', rotulo: 'Hidratação e banhos mornos', texto: 'Hidratação diária da pele e banhos mornos e curtos. Evitar traumas e coçar as placas.', receita: [
+        topico('Hidratante corporal com ureia', 'CREM', '10%', [1, 'fr.', false], 'Aplicar no corpo 2 vezes ao dia (manhã e noite). Uso contínuo.'),
+      ] },
+    ] }] },
+    { id: 'topico', rotulo: '2. Tratamento tópico', linhas: [{ id: 'topico', rotulo: null, opcoes: [
+      { id: 'clobetasol', rotulo: 'Clobetasol 0,05%', texto: 'Clobetasol 0,05% nas placas; uso noturno por tempo limitado.',
+        receita: [topico('Propionato de clobetasol', 'CREM', '0,05%', [1, 'bisn. 30g', true], 'Aplicar fina camada nas placas 1 vez ao dia, à noite, por 4 semanas.')] },
+      { id: 'calcipotriol', rotulo: 'Calcipotriol + betametasona', texto: 'Calcipotriol + betametasona nas placas; uso diário.',
+        receita: [topico('Calcipotriol + dipropionato de betametasona', 'POM', '50mcg/g + 0,5mg/g', [1, 'bisn. 30g', true], 'Aplicar fina camada nas placas 1 vez ao dia, por 4 semanas.')] },
+      { id: 'tacrolimo', rotulo: 'Tacrolimo 0,1%', texto: 'Tacrolimo 0,1% em áreas sensíveis.',
+        receita: [topico('Tacrolimo', 'POM', '0,1%', [1, 'bisn. 30g', true], 'Aplicar fina camada nas áreas sensíveis 2 vezes ao dia, por 4 semanas.')] },
+    ] }] },
+    { id: 'sistemico', rotulo: '3. Tratamento sistêmico', linhas: [{ id: 'sistemico', rotulo: null, opcoes: [
+      { id: 'metotrexato', rotulo: 'Metotrexato', texto: 'Metotrexato semanal, com controle laboratorial.',
+        receita: [oral('Metotrexato', 'COMP', '2,5mg', [24, 'COMP', false], 'Tomar 4 COMP VO, 1 vez por semana, sempre no mesmo dia, por 6 semanas.')] },
+      { id: 'acitretina', rotulo: 'Acitretina', texto: 'Acitretina oral.',
+        receita: [oral('Acitretina', 'CAP', '25mg', [30, 'CAP', true, true], 'Tomar 1 CAP VO, 1 vez ao dia, junto com uma refeição, por 30 dias.')] },
+    ] }] },
+    { id: 'orientacoes', rotulo: '4. Orientações', fixo: 'Evitar traumas e manter a pele hidratada.', linhas: [
+      { id: 'exames', rotulo: 'Exames', opcoes: [{ id: 'hepatico', rotulo: 'Função hepática e hemograma', texto: 'Solicito função hepática e hemograma.' }] },
+      RETORNO,
+      { id: 'encaminhamento', rotulo: 'Encaminhamento', prefixo: 'Encaminho para', opcoes: [{ id: 'reumato', rotulo: 'Reumatologia', texto: 'reumatologia' }] },
+    ] },
+  ],
+  regras: [],
+}
+
+/** Lesão nova ou suspeita (melanoma, nevo, ceratose, carcinoma): primeiro investigar; sem tratamento antes do resultado. */
+const INVESTIGACAO: ModeloConduta = {
+  grupos: [
+    { id: 'cuidados', rotulo: '1. Cuidados básicos', linhas: [{ id: 'cuidados', rotulo: null, opcoes: [
+      { id: 'foto', rotulo: 'Fotoproteção e vigilância', texto: 'Fotoproteção rigorosa. Não manipular a lesão e observar mudanças de cor, tamanho ou sangramento.', receita: [
+        topico('Protetor solar facial e corporal', 'loção', 'FPS 50', [1, 'fr.', false], 'Aplicar nas áreas expostas pela manhã; reaplicar a cada 2 - 3h se exposto ao sol. Uso contínuo.'),
+      ] },
+    ] }] },
+    { id: 'topico', rotulo: '2. Tratamento tópico', linhas: [{ id: 'topico', rotulo: null, opcoes: [
+      { id: 'aguardar', rotulo: 'Aguardar o resultado', texto: 'Sem tratamento tópico até o resultado da investigação.' },
+    ] }] },
+    { id: 'sistemico', rotulo: '3. Tratamento sistêmico', linhas: [{ id: 'sistemico', rotulo: null, opcoes: [
+      { id: 'paracetamol', rotulo: 'Paracetamol, se dor', texto: 'Paracetamol, se dor.',
+        receita: [oral('Paracetamol', 'COMP', '750mg', [15, 'COMP', false], 'Tomar 1 COMP VO a cada 8 horas, se dor, por 5 dias.')] },
+    ] }] },
+    { id: 'orientacoes', rotulo: '4. Orientações', fixo: 'Investigar a lesão antes de qualquer tratamento.', linhas: [
+      { id: 'exames', rotulo: 'Exames', opcoes: [
+        { id: 'dermatoscopia', rotulo: 'Dermatoscopia digital', texto: 'Solicito dermatoscopia digital da lesão.' },
+        { id: 'biopsia', rotulo: 'Biópsia da lesão', texto: 'Solicito biópsia da lesão com exame anatomopatológico.' },
+      ] },
+      RETORNO_CURTO,
+      { id: 'encaminhamento', rotulo: 'Encaminhamento', prefixo: 'Encaminho para', opcoes: [
+        { id: 'cirurgia', rotulo: 'Cirurgia dermatológica', texto: 'cirurgia dermatológica' },
+        { id: 'oncologia', rotulo: 'Oncologia', texto: 'oncologia' },
+      ] },
+    ] },
+  ],
+  regras: [],
+}
+
+/** Efeito colateral ou reação ao tratamento (dermatite de contato, irritação, farmacodermia). */
+const REACAO: ModeloConduta = {
+  grupos: [
+    { id: 'cuidados', rotulo: '1. Cuidados básicos', linhas: [{ id: 'cuidados', rotulo: null, opcoes: [
+      { id: 'suspender', rotulo: 'Suspender o produto suspeito', texto: 'Suspender o produto suspeito até a pele melhorar. Evitar novos produtos na área.', receita: [
+        topico('Hidratante calmante sem perfume', 'CREM', '', [1, 'bisn.', true], 'Aplicar na área afetada 2 vezes ao dia. Uso contínuo.'),
+      ] },
+    ] }] },
+    { id: 'topico', rotulo: '2. Tratamento tópico', linhas: [{ id: 'topico', rotulo: null, opcoes: [
+      { id: 'hidrocortisona', rotulo: 'Hidrocortisona 1%', texto: 'Hidrocortisona 1% na área afetada; uso curto.',
+        receita: [topico('Hidrocortisona', 'CREM', '1%', [1, 'bisn. 30g', true], 'Aplicar fina camada na área afetada 2 vezes ao dia, por 7 dias.')] },
+      { id: 'tacrolimo', rotulo: 'Tacrolimo 0,1%', texto: 'Tacrolimo 0,1% na área afetada.',
+        receita: [topico('Tacrolimo', 'POM', '0,1%', [1, 'bisn. 30g', true], 'Aplicar fina camada na área afetada 2 vezes ao dia, por 14 dias.')] },
+    ] }] },
+    { id: 'sistemico', rotulo: '3. Tratamento sistêmico', linhas: [{ id: 'sistemico', rotulo: null, opcoes: [
+      { id: 'loratadina', rotulo: 'Loratadina', texto: 'Loratadina, se coceira.',
+        receita: [oral('Loratadina', 'COMP', '10mg', [10, 'COMP', false], 'Tomar 1 COMP VO, 1 vez ao dia, se coceira, por 10 dias.')] },
+    ] }] },
+    { id: 'orientacoes', rotulo: '4. Orientações', fixo: 'Anotar qual produto ou remédio foi usado antes da reação.', linhas: [RETORNO_CURTO] },
+  ],
+  regras: [],
+}
+
+export const CONDUTAS: Record<string, ModeloConduta> = {
+  acne: ACNE, psoriase: PSORIASE,
+  melanoma: INVESTIGACAO, nevo: INVESTIGACAO, queratose: INVESTIGACAO, cbc: INVESTIGACAO,
+  'novo-melanoma': INVESTIGACAO, 'novo-nevo': INVESTIGACAO, 'novo-queratose': INVESTIGACAO, 'novo-cbc': INVESTIGACAO,
+  'novo-contato': REACAO, 'novo-irritativa': REACAO, 'novo-farmaco': REACAO,
+}

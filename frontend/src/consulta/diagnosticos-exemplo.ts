@@ -177,3 +177,18 @@ export const EXTRAS: Record<string, Extra[]> = {
     { id: 'amiantacea', nome: 'Pitiríase amiantácea', cid: 'L44.8', base: 1, pistas: [a('Descamação no couro cabeludo', EF, /couro cabeludo/i), c('Escamas finas', EF, /fina/i)] },
   ],
 }
+
+/**
+ * Retorno: o que o paciente conta de NOVO na evolução (sinal novo, efeito colateral). Valem para qualquer paciente,
+ * mas só são avaliadas quando a evolução traz uma dessas frases (as pistas leem a história da evolução).
+ */
+export const GATILHO_NOVO = /sinal novo|efeito colateral com a medicação/i
+export const SINAIS_NOVOS: Modelo['hipoteses'] = [
+  { id: 'novo-melanoma', nome: 'Melanoma', cid: 'C43.9', base: 30, pistas: [a('Lesão nova, escura', HDA, /escur|pigment/i), a('Mudou de cor', HDA, /houve mudança de cor/i), a('Mudou de tamanho', HDA, /houve mudança de tamanho/i), a('Sangra', HDA, /associado a sangramento/i), c('Sem mudança de tamanho', HDA, /sem mudança de tamanho/i)] },
+  { id: 'novo-nevo', nome: 'Nevo atípico', cid: 'D22.9', base: 26, pistas: [a('Lesão nova, escura', HDA, /escur|pigment/i), c('Mudou de cor', HDA, /houve mudança de cor/i)] },
+  { id: 'novo-queratose', nome: 'Ceratose seborreica', cid: 'L82', base: 14, pistas: [a('Lesão nova, escura', HDA, /escur|pigment/i), c('Sangra', HDA, /associado a sangramento/i)] },
+  { id: 'novo-cbc', nome: 'Carcinoma basocelular', cid: 'C44.9', base: 12, pistas: [a('Sangra', HDA, /associado a sangramento/i), a('Dói', HDA, /associado a dor/i)] },
+  { id: 'novo-contato', nome: 'Dermatite de contato ao tratamento', cid: 'L25.1', base: 34, pistas: [a('Efeito colateral com a medicação', HDA, /efeito colateral com a medicação/i), a('Coceira', HDA, /associado a prurido/i)] },
+  { id: 'novo-irritativa', nome: 'Dermatite irritativa pelo tratamento tópico', cid: 'L24.5', base: 22, pistas: [a('Efeito colateral com a medicação', HDA, /efeito colateral com a medicação/i), a('Dor ou ardor', HDA, /associado a dor/i)] },
+  { id: 'novo-farmaco', nome: 'Farmacodermia', cid: 'L27.0', base: 8, pistas: [a('Efeito colateral com a medicação', HDA, /efeito colateral com a medicação/i), a('Mudança de cor', HDA, /houve mudança de cor/i)] },
+]

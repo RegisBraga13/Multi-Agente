@@ -2,7 +2,7 @@
 // Simulação da IA: cada hipótese de exemplo tem pistas; a pista só vale se estiver na história salva,
 // citando o trecho. Sem nenhuma pista a favor, a hipótese não é sugerida (evidência obrigatória).
 import type { SecaoHistoria } from './historia'
-import { EXTRAS, MODELOS } from './diagnosticos-exemplo'
+import { EXTRAS, GATILHO_NOVO, MODELOS, SINAIS_NOVOS } from './diagnosticos-exemplo'
 
 export type Evidencia = { lado: 'favor' | 'contra'; texto: string; /** rótulo da seção da história */ secao: string; /** frase da história que justifica */ trecho: string }
 /** `pct` = sinal da IA para ordenar (a calibrar com uso real); null no diagnóstico do médico */
@@ -18,11 +18,13 @@ function trechoCom(texto: string, termo: RegExp): string | null {
 }
 
 export function montarDiagnosticos(slug: string, paciente: string, historia: SecaoHistoria[]): { hipoteses: Hipotese[] } {
-  const modelo = slug === 'dermatologia' ? MODELOS[paciente] : undefined
-  if (!modelo) return { hipoteses: [] }
+  if (slug !== 'dermatologia') return { hipoteses: [] }
   const textoDe = (secao: string) => historia.find((s) => s.rotulo === secao)?.texto ?? ''
+  // retorno: o que surgiu de novo na evolução (sinal novo, efeito colateral) tem hipóteses próprias, para qualquer paciente
+  const novos = GATILHO_NOVO.test(textoDe('História da doença atual')) ? SINAIS_NOVOS : []
+  const candidatas = [...(MODELOS[paciente]?.hipoteses ?? []), ...(EXTRAS[paciente] ?? []), ...novos]
 
-  const hipoteses = [...modelo.hipoteses, ...(EXTRAS[paciente] ?? [])].flatMap((m): Hipotese[] => {
+  const hipoteses = candidatas.flatMap((m): Hipotese[] => {
     const evidencias = m.pistas.flatMap((p): Evidencia[] => {
       const trecho = trechoCom(textoDe(p.secao), p.termo)
       return trecho ? [{ lado: p.lado, texto: p.texto, secao: p.secao, trecho }] : []
