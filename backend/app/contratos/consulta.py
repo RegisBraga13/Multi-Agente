@@ -28,6 +28,21 @@ class Alergia(ModeloApi):
     reacao: str
 
 
+class PerguntaRespondida(ModeloApi):
+    """Pergunta que o médico fez na consulta; `detalhe` só nas perguntas abertas."""
+
+    texto: str
+    resposta: Literal["sim", "nao"]
+    detalhe: str | None = None
+
+
+class FormularioDaConsulta(ModeloApi):
+    """O formulário do paciente como a consulta o usa; `fotos`: ids das perguntas de foto (as imagens ficam no pedido)."""
+
+    respostas: dict[str, str | list[str]]
+    fotos: list[str]
+
+
 class Fala(ModeloApi):
     quem: Literal["Médico", "Paciente"]
     texto: str

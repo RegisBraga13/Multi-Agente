@@ -12,7 +12,15 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field
 
 from app.contratos.base import ModeloApi
-from app.contratos.consulta import Alergia, ExameComplementar, ExameDerm, Fala, SinalRespondido
+from app.contratos.consulta import (
+    Alergia,
+    ExameComplementar,
+    ExameDerm,
+    Fala,
+    FormularioDaConsulta,
+    PerguntaRespondida,
+    SinalRespondido,
+)
 from app.contratos.prontuario import DocumentoRegistro, ItemReceita
 from app.motores.conduta import CondutaProposta, DiagnosticoConfirmado
 from app.motores.diagnosticos import DadosSeguranca, HipoteseIA, NaoPerderIA
@@ -34,11 +42,15 @@ class AnamneseBloco(ModeloApi):
     em_uso: list[str]
     antecedentes: list[str]
     alergias: list[Alergia]
+    texto: str = ""
+    perguntas: list[PerguntaRespondida] = Field(default_factory=list)
+    formulario: FormularioDaConsulta | None = None
 
 
 class ExameBloco(ModeloApi):
     exame: ExameDerm
     complementares: list[ExameComplementar]
+    observacoes: str = ""
 
 
 class HistoriaBloco(ModeloApi):

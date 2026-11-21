@@ -97,3 +97,31 @@ def test_conduta_bloco_exige_4_textos():
 def test_particulas_do_nome_nao_viram_termo():
     p = PACIENTE.model_copy(update={"nome": "José dos Santos de Souza e Silva", "cpf": None, "telefone": None})
     assert termos_do_paciente(p) == ["José", "Santos", "Souza", "Silva"]
+
+
+ANAMNESE_ANTIGA = {"queixa": "Manchas", "falas": [], "sinais": [], "emUso": [], "antecedentes": [], "alergias": []}
+EXAME_ANTIGO = {
+    "exame": {"morfologia": None, "localizacao": None, "extensao": None, "gravidade": None, "achados": None},
+    "complementares": [],
+}
+
+
+def test_anamnese_antiga_continua_valida():
+    b = AnamneseBloco.model_validate(ANAMNESE_ANTIGA)
+    assert (b.texto, b.perguntas, b.formulario) == ("", [], None)
+
+
+def test_anamnese_com_perguntas_e_formulario_ida_e_volta():
+    dados = {
+        **ANAMNESE_ANTIGA,
+        "texto": "Paciente refere manchas.",
+        "perguntas": [{"texto": "Usa protetor solar?", "resposta": "sim", "detalhe": "todo dia"}],
+        "formulario": {"respostas": {"desde_quando": "2 anos", "areas": ["rosto", "mãos"]}, "fotos": ["foto_rosto"]},
+    }
+    b = AnamneseBloco.model_validate(dados)
+    assert AnamneseBloco.model_validate(b.model_dump(by_alias=True, mode="json")) == b
+    assert b.perguntas[0].detalhe == "todo dia" and b.formulario.fotos == ["foto_rosto"]
+
+
+def test_exame_antigo_continua_valido():
+    assert ExameBloco.model_validate(EXAME_ANTIGO).observacoes == ""
