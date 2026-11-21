@@ -23,13 +23,15 @@ type Props = {
   /** retorno: título "Fotos e exames" e, ao lado, as fotos da consulta anterior para comparar */
   retorno?: { data: string; fotos: number }
   situacao: Situacao
+  /** consulta retomada do servidor: as observações que já estavam salvas */
+  observacoesIniciais?: string
   onEditar: () => void
   /** salva com os valores atuais (a história clínica é montada com eles) */
   onOficializar: (valores: { rotulo: string; valor: string }[]) => void
   onAviso: (texto: string) => void
 }
 
-export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, fotosPaciente = [], documentos = [], retorno, situacao, onEditar, onOficializar, onAviso }: Props) {
+export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, fotosPaciente = [], documentos = [], retorno, situacao, observacoesIniciais = '', onEditar, onOficializar, onAviso }: Props) {
   const [laudos, setLaudos] = useState(false)
   const fecharLaudos = useCallback(() => setLaudos(false), [])
   const [valores, setValores] = useState(() => campos.map((c) => c.valor))
@@ -38,7 +40,7 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, foto
   const oficializado = situacao === 'oficializado'
   const temRascunho = campos.some((c) => c.valor)
   /** texto livre do médico, sem depender da IA */
-  const [observacoes, setObservacoes] = useState('')
+  const [observacoes, setObservacoes] = useState(observacoesIniciais)
   /** Enter encerra o campo e pula para o de baixo (o último só encerra) */
   const caixas = useRef<(HTMLInputElement | null)[]>([])
   /** campo aberto no editor de baixo (o último índice = Observações); null = nenhum (todos os campos à vista) */

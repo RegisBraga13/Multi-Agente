@@ -29,7 +29,9 @@ import { FORMULARIO_VAZIO, type FormularioConsulta } from './formulario-consulta
 import { partesPreConsulta } from '../medico/pre-consulta'
 import { atendimentoDoPedido, precisaIdentificacao } from '../modulo/pedidos'
 import { IdentificacaoNaChegada } from './identificacao-chegada'
-import { buscarPedido, enderecoFoto, type PedidoNaAgenda } from '../servidor/agenda'
+import { buscarPedido, enderecoFoto, ErroServidor, type PedidoNaAgenda } from '../servidor/agenda'
+import { abrirConsultaDoPedido, oficializarEtapa, salvarAnamnese, salvarExame, type AnamneseServidor, type ConsultaServidor, type ExameServidor } from '../servidor/consulta'
+import { anamneseDoServidor, anamneseParaServidor, etapasParaOficializar, exameDoServidor, exameParaServidor } from './servidor-mapa'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
 
@@ -48,11 +50,19 @@ export function PaginaConsulta() {
     () => (idPedido ? (doServidor ? atendimentoDoPedido(doServidor, new Date()) : undefined) : buscarAtendimento(atendimento, new Date())),
     [atendimento, idPedido, doServidor],
   )
+  // pedido real de uma primeira consulta: a consulta nasce e vive no servidor (os atendimentos de exemplo seguem simulados)
+  const usaServidor = !!esp && !!doServidor && !precisaIdentificacao(doServidor) && at?.tipo === 'consulta'
+  const [aberta, setAberta] = useState<ConsultaServidor | 'erro' | null>(null)
+  useEffect(() => {
+    if (usaServidor && idPedido) abrirConsultaDoPedido(idPedido, slug).then(setAberta, () => setAberta('erro'))
+  }, [usaServidor, idPedido, slug])
   if (idPedido && pedido === null) return <p className="py-16 text-center text-apagado">Abrindo a consulta…</p>
   if (!esp || esp.status !== 'disponivel' || !at || !ehEtapa(etapa)) return <NaoEncontrada />
   // sem a Identificação a consulta não começa (o médico pode preenchê-la aqui, na chegada)
   if (doServidor && precisaIdentificacao(doServidor)) return <IdentificacaoNaChegada esp={esp} pedido={doServidor} onPronto={setPedido} />
-  return <Consulta key={at.id} esp={esp} at={at} etapa={etapa} formulario={doServidor ? formularioDoPedido(doServidor) : null} />
+  if (usaServidor && aberta === null) return <p className="py-16 text-center text-apagado">Abrindo a consulta…</p>
+  if (aberta === 'erro') return <p className="py-16 text-center text-apagado">Não foi possível abrir a consulta no consultório. Confira a internet e recarregue a página.</p>
+  return <Consulta key={at.id} esp={esp} at={at} etapa={etapa} formulario={doServidor ? formularioDoPedido(doServidor) : null} servidor={usaServidor ? aberta : null} />
 }
 
 /** O formulário que o paciente enviou, para o modo Formulário da anamnese. */
@@ -74,8 +84,20 @@ function reduzir(e: EstadoConsulta, a: Acao): EstadoConsulta {
   return a.tipo === 'oficializar' ? oficializar(e, a.bloco) : editar(e, a.bloco)
 }
 
-function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Atendimento; etapa: EtapaId; formulario: FormularioConsulta | null }) {
-  const conteudo = useMemo(() => conteudoDaConsulta(at, esp.slug), [at, esp.slug])
+function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade; at: Atendimento; etapa: EtapaId; formulario: FormularioConsulta | null; servidor: ConsultaServidor | null }) {
+  const base0 = useMemo(() => conteudoDaConsulta(at, esp.slug), [at, esp.slug])
+  // consulta retomada: o que já estava salvo no servidor volta para os campos (como rascunho: salvar de novo envia e oficializa)
+  const retomada = useMemo(() => {
+    const bloco = (etapa: 'anamnese' | 'exame') => servidor?.blocos.find((b) => b.etapa === etapa)?.conteudo
+    const a = bloco('anamnese') as AnamneseServidor | undefined
+    const x = bloco('exame') as ExameServidor | undefined
+    const exame = x ? Object.fromEntries(exameDoServidor(x).map((c) => [c.rotulo, c.valor])) : null
+    return { anamnese: a ? anamneseDoServidor(a, base0.perguntas) : null, exame }
+  }, [servidor, base0])
+  const conteudo = useMemo(
+    () => (retomada.exame ? { ...base0, exame: base0.exame.map((c) => (retomada.exame![c.rotulo] ? { ...c, valor: retomada.exame![c.rotulo], prov: 'confirmado' as const } : c)) } : base0),
+    [base0, retomada],
+  )
   /** retorno: a consulta anterior do prontuário (suas fotos aparecem ao lado das de hoje) */
   /** no retorno a primeira página é a Evolução (regra 14.1) */
   const nomeDaEtapa = (id: string, nome: string) => (at.tipo === 'retorno' ? ({ 'anamnese-exame': 'Evolução', historia: 'História da evolução' } as Record<string, string>)[id] ?? nome : nome)
@@ -118,8 +140,29 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
   /** geradas = última versão da IA; textos = o que está na tela (com as edições do médico); mudou = seções que a IA reescreveu agora */
   const [historia, setHistoria] = useState<{ versao: number; geradas: SecaoHistoria[]; textos: string[]; mudou: boolean[]; sugestoes: (string | null)[] } | null>(null)
 
-  /** Salvar anamnese ou exame. Quando os dois ficam salvos, a história é montada e a página dela abre. */
+  /** Envia a página 1 ao servidor (gravar e oficializar, na ordem que ele exige). Falha: nada fica marcado como salvo. */
+  const enviarPagina1 = async (id: string, bloco: 'anamnese' | 'exame') => {
+    const f = fontes.current
+    if (bloco === 'anamnese') {
+      await salvarAnamnese(id, anamneseParaServidor({ texto: f.anamnese, falas: conteudo.falas, ficha: at.ficha, alertas: {}, sinais: [], perguntas: f.perguntas, formulario: f.formulario }))
+    } else {
+      await salvarExame(id, exameParaServidor(f.exame))
+    }
+    const outra = bloco === 'anamnese' ? 'exame' : 'anamnese'
+    for (const etapa of etapasParaOficializar(bloco, estado.blocos[outra].estado === 'oficializado')) await oficializarEtapa(id, etapa)
+  }
+
+  /** Salvar anamnese ou exame. Com consulta no servidor, só vale depois que o servidor guardou. */
   const salvarPagina1 = (bloco: 'anamnese' | 'exame') => {
+    if (!servidor) return concluirPagina1(bloco)
+    enviarPagina1(servidor.id, bloco).then(
+      () => concluirPagina1(bloco),
+      (e: unknown) => setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível salvar. Tente de novo.'),
+    )
+  }
+
+  /** Quando a anamnese e o exame ficam salvos, a história é montada e a página dela abre. */
+  const concluirPagina1 = (bloco: 'anamnese' | 'exame') => {
     const novo = oficializar(estado, bloco)
     despachar({ tipo: 'oficializar', bloco })
     if (!podeOficializar(estado, 'historia') && podeOficializar(novo, 'historia')) {
@@ -323,6 +366,8 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
               partes={partesPreConsulta(esp.slug)}
               formulario={formulario}
               retorno={at.tipo === 'retorno'}
+              textoInicial={retomada.anamnese?.texto}
+              perguntasIniciais={retomada.anamnese?.perguntas}
               onEditar={() => fazer('editar', 'anamnese')}
               onResponder={(id, r) => despachar({ tipo: 'alerta', id, r })}
               onOficializar={(texto, perguntas, formulario) => { fontes.current.anamnese = texto; fontes.current.perguntas = perguntas; fontes.current.formulario = formulario; salvarPagina1('anamnese') }}
@@ -340,6 +385,7 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
               documentos={Object.entries(formulario?.fotos ?? {}).filter(([k]) => k.startsWith('documentos_')).map(([k, url]) => ({ nome: `Documento ${k.slice('documentos_'.length)}`, url }))}
               retorno={consultaAnterior ? { data: consultaAnterior.data.split('-').reverse().slice(0, 2).join('/'), fotos: consultaAnterior.dados.fotos.length } : undefined}
               situacao={estado.blocos.exame.estado}
+              observacoesIniciais={retomada.exame?.['Observações']}
               onEditar={() => fazer('editar', 'exame')}
               onOficializar={(valores) => { fontes.current.exame = valores; salvarPagina1('exame') }}
               onAviso={setAviso}

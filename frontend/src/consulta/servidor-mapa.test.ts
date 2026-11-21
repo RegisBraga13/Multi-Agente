@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { anamneseDoServidor, anamneseParaServidor, exameDoServidor, exameParaServidor } from './servidor-mapa'
+import { anamneseDoServidor, anamneseParaServidor, etapasParaOficializar, exameDoServidor, exameParaServidor } from './servidor-mapa'
 import type { Pergunta, RespostaPergunta } from './exemplo'
 import type { Ficha } from '../modulo/tipos'
 
@@ -64,4 +64,11 @@ describe('anamneseParaServidor', () => {
     expect(volta.alertas).toEqual({ angioedema: 'f', virilizacao: 'v' })
     expect(volta.naoReconhecidas).toEqual(['Pergunta que sumiu'])
   })
+})
+
+describe('etapasParaOficializar (o servidor só oficializa o exame depois da anamnese)', () => {
+  it('anamnese salva, exame ainda não: só a anamnese', () => expect(etapasParaOficializar('anamnese', false)).toEqual(['anamnese']))
+  it('anamnese salva com o exame já salvo na tela: anamnese e depois exame', () => expect(etapasParaOficializar('anamnese', true)).toEqual(['anamnese', 'exame']))
+  it('exame salvo com a anamnese já salva: só o exame', () => expect(etapasParaOficializar('exame', true)).toEqual(['exame']))
+  it('exame salvo antes da anamnese: nenhuma (fica gravado como rascunho no servidor)', () => expect(etapasParaOficializar('exame', false)).toEqual([]))
 })

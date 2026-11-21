@@ -73,3 +73,12 @@ export function anamneseDoServidor(b: AnamneseServidor, catalogo: Pergunta[]) {
   const alertas = Object.fromEntries(b.sinais.map((s) => [s.id, s.resposta === 'sim' ? ('v' as const) : ('f' as const)]))
   return { texto: b.texto, perguntas, alertas, naoReconhecidas }
 }
+
+/**
+ * Quais etapas o servidor deve oficializar ao salvar `salva`: ele só oficializa o exame depois da anamnese,
+ * mas a tela deixa salvar as duas em qualquer ordem. `outraOficializada`: a outra metade já foi salva na tela.
+ */
+export function etapasParaOficializar(salva: 'anamnese' | 'exame', outraOficializada: boolean): ('anamnese' | 'exame')[] {
+  if (salva === 'anamnese') return outraOficializada ? ['anamnese', 'exame'] : ['anamnese']
+  return outraOficializada ? ['exame'] : []
+}

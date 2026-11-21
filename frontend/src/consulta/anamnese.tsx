@@ -40,11 +40,14 @@ type Props = {
   formulario: FormularioConsulta | null
   /** retorno: a página vira "Evolução" (sem Formulário; o paciente já passou por ele na consulta) */
   retorno?: boolean
+  /** consulta retomada do servidor: o texto e as respostas que já estavam salvos */
+  textoInicial?: string
+  perguntasIniciais?: RespostaPergunta[]
   /** salva com o texto atual (a história clínica é montada com ele) */
   onOficializar: (texto: string, perguntas: RespostaPergunta[], formulario: FormularioConsulta | null) => void
 }
 
-export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pendencias, podeGravar, partes, formulario, retorno = false, onEditar, onResponder, onOficializar }: Props) {
+export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pendencias, podeGravar, partes, formulario, retorno = false, textoInicial = '', perguntasIniciais = [], onEditar, onResponder, onOficializar }: Props) {
   const [modo, setModo] = useState<'texto' | 'formulario'>('texto')
   const [form, setForm] = useState<FormularioConsulta>(formulario ?? FORMULARIO_VAZIO)
   const [parte, setParte] = useState(0)
@@ -56,11 +59,11 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
   const [gravando, setGravando] = useState(false)
   const [segundos, setSegundos] = useState(0)
   /** a anamnese numa caixa só: a transcrição entra no fim do texto, e o médico escreve e corrige ali mesmo */
-  const [texto, setTexto] = useState('')
+  const [texto, setTexto] = useState(textoInicial)
   /** pergunta clicada (riscada = foi feita) → resposta do médico (null = ainda sem Sim/Não) */
-  const [perguntado, setPerguntado] = useState<Record<string, 'sim' | 'nao' | null>>({})
+  const [perguntado, setPerguntado] = useState<Record<string, 'sim' | 'nao' | null>>(() => Object.fromEntries(perguntasIniciais.map((r) => [r.pergunta.texto, r.resposta])))
   /** o que o médico escreveu nas perguntas abertas (aprofundamento do retorno), pelo texto da pergunta */
-  const [textos, setTextos] = useState<Record<string, string>>({})
+  const [textos, setTextos] = useState<Record<string, string>>(() => Object.fromEntries(perguntasIniciais.flatMap((r) => (r.texto ? [[r.pergunta.texto, r.texto]] : []))))
   /** respostas dos lembretes do formulário, pela chave da pergunta */
   const [respLembrete, setRespLembrete] = useState<Respostas>({})
   /** o aviso de sinais pendentes só aparece depois de tentar salvar */
