@@ -289,3 +289,29 @@ def test_abrir_do_pedido_inexistente_e_404_e_sem_formulario_e_409(mundo):
     )
     r = c.post(f"/consultas/do-pedido/{p.id}", json={"especialidade": "dermatologia"})
     assert r.status_code == 409 and "Identificação" in r.json()["detail"]
+
+
+def test_lista_de_sinais_da_dermatologia_e_a_do_yaml(mundo):
+    r = cliente(mundo).get("/especialidades/dermatologia/sinais")
+    assert r.status_code == 200
+    sinais = r.json()
+    assert len(sinais) == 14 and sinais[0] == {
+        "id": "bolhas-mucosas",
+        "texto": "Bolhas, pele descolando ou lesões em boca/olhos",
+    }
+
+
+def test_especialidade_inexistente_na_lista_de_sinais_e_404(mundo):
+    assert cliente(mundo).get("/especialidades/astrologia/sinais").status_code == 404
+
+
+def test_anamnese_com_sinal_desconhecido_e_422(mundo):
+    c = cliente(mundo)
+    cid = nova_consulta(c)
+    corpo = js(ANAMNESE) | {"sinais": [{"id": "sinal-inventado", "texto": "x", "resposta": "sim"}]}
+    r = c.put(f"/consultas/{cid}/anamnese", json=corpo)
+    assert r.status_code == 422 and "Sinal de alerta desconhecido" in r.json()["detail"]
+    ok = js(ANAMNESE) | {
+        "sinais": [{"id": "angioedema", "texto": "Inchaço de lábios/língua ou falta de ar", "resposta": "nao"}]
+    }
+    assert c.put(f"/consultas/{cid}/anamnese", json=ok).status_code == 200

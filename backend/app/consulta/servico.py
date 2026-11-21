@@ -46,6 +46,10 @@ def exigir_predecessor(consulta: Consulta, etapa: Etapa) -> Bloco:
     return bloco
 
 
+class SinalDesconhecido(Exception):
+    """Sinal de alerta que não está na lista fixa da especialidade da consulta."""
+
+
 def editar(
     repo: RepositorioConsultas, medico_id: UUID, consulta_id: UUID, etapa: Etapa, conteudo: ModeloApi
 ) -> Consulta:

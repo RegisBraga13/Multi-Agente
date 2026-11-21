@@ -17,7 +17,7 @@ from fastapi.responses import StreamingResponse
 from app.api.dependencias import Dependencias, dependencias, medico_atual
 from app.consulta.abertura import abrir_do_pedido
 from app.consulta.geracao import ResultadoGeracao, gerar
-from app.consulta.servico import editar, oficializar
+from app.consulta.servico import SinalDesconhecido, editar, oficializar
 from app.contratos.base import ModeloApi
 from app.contratos.consulta_blocos import (
     AnamneseBloco,
@@ -65,6 +65,9 @@ def buscar_consulta(consulta_id: UUID, dep: Dep, medico: Medico) -> Consulta:
 
 @rotas.put("/{consulta_id}/anamnese", response_model=Consulta)
 def editar_anamnese(consulta_id: UUID, conteudo: AnamneseBloco, dep: Dep, medico: Medico) -> Consulta:
+    conhecidos = {s.id for s in dep.pacote(dep.repo.buscar(medico, consulta_id).especialidade).sinais}
+    if any(s.id not in conhecidos for s in conteudo.sinais):
+        raise SinalDesconhecido
     return editar(dep.repo, medico, consulta_id, "anamnese", conteudo)
 
 
