@@ -1,6 +1,6 @@
 """Repositório de pacientes atrás de interface (Postgres em produção; memória nos testes de API)."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Protocol
 from uuid import UUID, uuid4
 
@@ -15,6 +15,10 @@ class RepositorioPacientes(Protocol):
     def criar(self, medico_id: UUID, novo: NovoPaciente) -> Paciente: ...
 
     def buscar(self, medico_id: UUID, paciente_id: UUID) -> Paciente | None: ...
+
+    def procurar(self, medico_id: UUID, nome: str, nascimento: date) -> Paciente | None:
+        """O paciente do médico com este nome completo e nascimento (a mesma pessoa voltando)."""
+        ...
 
 
 class RepositorioPacientesMemoria:
@@ -33,3 +37,14 @@ class RepositorioPacientesMemoria:
         if registro is None or registro[0] != medico_id:
             return None
         return registro[1]
+
+    def procurar(self, medico_id: UUID, nome: str, nascimento: date) -> Paciente | None:
+        chave = nome.strip().casefold()
+        return next(
+            (
+                p
+                for dono, p in self._dados.values()
+                if dono == medico_id and p.nome.strip().casefold() == chave and p.nascimento == nascimento
+            ),
+            None,
+        )

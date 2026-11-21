@@ -1,0 +1,75 @@
+"""Abrir a consulta do pedido no Postgres: uma consulta e um paciente só, mesmo abrindo duas vezes."""
+
+from datetime import UTC, date, datetime
+
+import psycopg
+import pytest
+
+from app.agenda.repositorio_postgres import RepositorioAgendaPostgres
+from app.agenda.servico import novo_token
+from app.consulta.abertura import abrir_do_pedido
+from app.consulta.repositorio_postgres import RepositorioConsultasPostgres
+from app.contratos.agenda import DadosPessoais, FormularioRecebido, NovoPedido
+from app.pacientes.repositorio_postgres import RepositorioPacientesPostgres
+from tests.banco.conftest import MEDICO_A, MEDICO_B
+
+pytestmark = pytest.mark.banco
+
+
+def _pedido_com_ficha(agenda, inicio):
+    p = agenda.criar_pedido(
+        MEDICO_A,
+        NovoPedido(
+            modalidade="online",
+            data=date(2027, 4, 5),
+            inicio=inicio,
+            nome="Maria Teste",
+            whatsapp="5585999990000",
+            pagamento="Particular",
+            transcricao="aceita",
+            forma="pagina",
+        ),
+        novo_token(),
+    )
+    dados = DadosPessoais(
+        nome_completo="Abertura Banco da Silva",
+        nascimento=date(1990, 5, 2),
+        sexo="I",
+        whatsapp="85",
+        cidade="X",
+        uf="CE",
+        estado_civil="casado",
+    )
+    agenda.gravar_formulario(
+        MEDICO_A,
+        p.id,
+        FormularioRecebido(dados=dados, respostas={}, fotos=[], recebido_em=datetime(2027, 4, 1, tzinfo=UTC)),
+        {},
+    )
+    return p
+
+
+def test_abrir_duas_vezes_e_mesma_pessoa_em_outro_pedido(url_banco):
+    agenda = RepositorioAgendaPostgres(url_banco)
+    pacientes = RepositorioPacientesPostgres(url_banco)
+    consultas = RepositorioConsultasPostgres(url_banco)
+    p1, p2 = _pedido_com_ficha(agenda, "09:00"), _pedido_com_ficha(agenda, "09:30")
+    a = abrir_do_pedido(agenda, pacientes, consultas, MEDICO_A, p1.id, "dermatologia")
+    b = abrir_do_pedido(agenda, pacientes, consultas, MEDICO_A, p1.id, "dermatologia")
+    c = abrir_do_pedido(agenda, pacientes, consultas, MEDICO_A, p2.id, "dermatologia")
+    assert a.id == b.id and a.pedido_id == p1.id and c.id != a.id
+    assert c.paciente_id == a.paciente_id
+    assert pacientes.buscar(MEDICO_A, a.paciente_id).sexo == "I"
+    with psycopg.connect(url_banco) as conn:
+        assert (
+            conn.execute("select count(*) from patients where full_name = 'Abertura Banco da Silva'").fetchone()[0] == 1
+        )
+
+
+def test_outro_medico_nao_acha_o_paciente_nem_a_consulta_do_pedido(url_banco):
+    pacientes = RepositorioPacientesPostgres(url_banco)
+    consultas = RepositorioConsultasPostgres(url_banco)
+    agenda = RepositorioAgendaPostgres(url_banco)
+    a = abrir_do_pedido(agenda, pacientes, consultas, MEDICO_A, _pedido_com_ficha(agenda, "10:00").id, "dermatologia")
+    assert pacientes.procurar(MEDICO_B, "Abertura Banco da Silva", date(1990, 5, 2)) is None
+    assert consultas.do_pedido(MEDICO_B, a.pedido_id) is None

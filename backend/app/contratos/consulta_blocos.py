@@ -114,6 +114,7 @@ class Consulta(NovaConsulta):
     id: UUID
     finalizada_em: datetime | None
     blocos: list[Bloco]
+    pedido_id: UUID | None = None  # o pedido da agenda de onde a consulta nasceu (None: criada sem pedido)
 
     def bloco(self, etapa: Etapa) -> Bloco | None:
         return next((b for b in self.blocos if b.etapa == etapa), None)

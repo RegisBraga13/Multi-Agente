@@ -15,8 +15,10 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import StreamingResponse
 
 from app.api.dependencias import Dependencias, dependencias, medico_atual
+from app.consulta.abertura import abrir_do_pedido
 from app.consulta.geracao import ResultadoGeracao, gerar
 from app.consulta.servico import editar, oficializar
+from app.contratos.base import ModeloApi
 from app.contratos.consulta_blocos import (
     AnamneseBloco,
     CondutaBloco,
@@ -42,6 +44,18 @@ def criar_consulta(nova: NovaConsulta, dep: Dep, medico: Medico) -> Consulta:
     if nova.especialidade not in especialidades_disponiveis():
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "especialidade não disponível")
     return dep.repo.criar(medico, nova)
+
+
+class AberturaDoPedido(ModeloApi):
+    especialidade: str
+
+
+@rotas.post("/do-pedido/{pedido_id}", response_model=Consulta)
+def abrir_consulta_do_pedido(pedido_id: UUID, corpo: AberturaDoPedido, dep: Dep, medico: Medico) -> Consulta:
+    """Cria o paciente e a consulta do pedido da agenda (a mesma consulta se já aberta)."""
+    if corpo.especialidade not in especialidades_disponiveis():
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "especialidade não disponível")
+    return abrir_do_pedido(dep.agenda, dep.pacientes, dep.repo, medico, pedido_id, corpo.especialidade)
 
 
 @rotas.get("/{consulta_id}", response_model=Consulta)

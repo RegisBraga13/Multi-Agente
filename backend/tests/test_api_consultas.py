@@ -206,3 +206,86 @@ def test_especialidade_desconhecida_e_422(mundo):
     }
     assert c.post("/consultas", json={**corpo, "especialidade": "astrologia"}).status_code == 422
     assert c.post("/consultas", json=corpo).json()["especialidade"] == "dermatologia"
+
+
+def _pedido_com_formulario(agenda, medico):
+    from datetime import UTC, date, datetime
+
+    from app.contratos.agenda import DadosPessoais, FormularioRecebido, NovoPedido
+
+    p = agenda.criar_pedido(
+        medico,
+        NovoPedido(
+            modalidade="presencial",
+            data=date(2026, 11, 20),
+            inicio="10:00",
+            nome="Maria Teste",
+            whatsapp="5585999990000",
+            pagamento="Particular",
+            transcricao="aceita",
+            forma="whatsapp",
+        ),
+        "tok",
+    )
+    dados = DadosPessoais(
+        nome_completo="Maria Teste da Silva", nascimento=date(1990, 5, 2), sexo="F", whatsapp="85", cidade="X", uf="CE"
+    )
+    agenda.gravar_formulario(
+        medico,
+        p.id,
+        FormularioRecebido(dados=dados, respostas={}, fotos=[], recebido_em=datetime(2026, 11, 19, tzinfo=UTC)),
+        {},
+    )
+    return p
+
+
+def _cliente_com_agenda(mundo, medico=MEDICO_A):
+    from app.agenda.repositorio import RepositorioAgendaMemoria
+
+    pacientes, consultas = mundo
+    agenda = RepositorioAgendaMemoria()
+    dep = Dependencias(
+        identidade=MedicoLocal(medico), pacientes=pacientes, consultas=consultas, provedor=Roteiro(), agenda=agenda
+    )
+    return TestClient(criar_app(dep)), agenda
+
+
+def test_abrir_do_pedido_cria_a_consulta_e_repete_o_mesmo_id(mundo):
+    c, agenda = _cliente_com_agenda(mundo)
+    p = _pedido_com_formulario(agenda, MEDICO_A)
+    a = c.post(f"/consultas/do-pedido/{p.id}", json={"especialidade": "dermatologia"})
+    b = c.post(f"/consultas/do-pedido/{p.id}", json={"especialidade": "dermatologia"})
+    assert a.status_code == 200 and a.json()["id"] == b.json()["id"] and a.json()["pedidoId"] == str(p.id)
+
+
+def test_abrir_do_pedido_especialidade_desconhecida_e_422(mundo):
+    c, agenda = _cliente_com_agenda(mundo)
+    p = _pedido_com_formulario(agenda, MEDICO_A)
+    assert c.post(f"/consultas/do-pedido/{p.id}", json={"especialidade": "astrologia"}).status_code == 422
+
+
+def test_abrir_do_pedido_inexistente_e_404_e_sem_formulario_e_409(mundo):
+    from uuid import uuid4
+
+    c, agenda = _cliente_com_agenda(mundo)
+    assert c.post(f"/consultas/do-pedido/{uuid4()}", json={"especialidade": "dermatologia"}).status_code == 404
+    from datetime import date
+
+    from app.contratos.agenda import NovoPedido
+
+    p = agenda.criar_pedido(
+        MEDICO_A,
+        NovoPedido(
+            modalidade="presencial",
+            data=date(2026, 11, 20),
+            inicio="11:00",
+            nome="Sem Ficha",
+            whatsapp="5585999990001",
+            pagamento="Particular",
+            transcricao="aceita",
+            forma="whatsapp",
+        ),
+        "tok2",
+    )
+    r = c.post(f"/consultas/do-pedido/{p.id}", json={"especialidade": "dermatologia"})
+    assert r.status_code == 409 and "Identificação" in r.json()["detail"]

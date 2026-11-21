@@ -3,6 +3,7 @@
 import json
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import date
 from typing import Any
 from uuid import UUID
 
@@ -69,4 +70,13 @@ class RepositorioPacientesPostgres:
     def buscar(self, medico_id: UUID, paciente_id: UUID) -> Paciente | None:
         with transacao_do_medico(self.url, medico_id) as conn:
             linha = conn.execute(f"select {_COLUNAS} from patients where id = %s", (paciente_id,)).fetchone()
+        return _paciente(linha) if linha else None
+
+    def procurar(self, medico_id: UUID, nome: str, nascimento: date) -> Paciente | None:
+        with transacao_do_medico(self.url, medico_id) as conn:
+            linha = conn.execute(
+                f"select {_COLUNAS} from patients where lower(btrim(full_name)) = lower(btrim(%s))"
+                " and birth_date = %s order by created_at limit 1",
+                (nome, nascimento),
+            ).fetchone()
         return _paciente(linha) if linha else None

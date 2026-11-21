@@ -34,7 +34,11 @@ class ConsultaAberta(Exception):
 
 
 class RepositorioConsultas(Protocol):
-    def criar(self, medico_id: UUID, nova: NovaConsulta) -> Consulta: ...
+    def criar(self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None = None) -> Consulta: ...
+
+    def do_pedido(self, medico_id: UUID, pedido_id: UUID) -> Consulta | None:
+        """A consulta que já nasceu deste pedido da agenda, se houver."""
+        ...
 
     def buscar(self, medico_id: UUID, consulta_id: UUID) -> Consulta: ...
 
@@ -140,12 +144,18 @@ class RepositorioConsultasMemoria:
             raise ConsultaFinalizada
         return r
 
-    def criar(self, medico_id: UUID, nova: NovaConsulta) -> Consulta:
+    def criar(self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None = None) -> Consulta:
         if self.pacientes.buscar(medico_id, nova.paciente_id) is None:
             raise ConsultaNaoEncontrada
-        consulta = Consulta(**nova.model_dump(), id=uuid4(), finalizada_em=None, blocos=[])
+        consulta = Consulta(**nova.model_dump(), id=uuid4(), finalizada_em=None, blocos=[], pedido_id=pedido_id)
         self._dados[consulta.id] = _Registro(medico_id, consulta)
         return consulta.model_copy(deep=True)
+
+    def do_pedido(self, medico_id: UUID, pedido_id: UUID) -> Consulta | None:
+        achada = next(
+            (r for r in self._dados.values() if r.medico_id == medico_id and r.consulta.pedido_id == pedido_id), None
+        )
+        return achada.consulta.model_copy(deep=True) if achada else None
 
     def buscar(self, medico_id: UUID, consulta_id: UUID) -> Consulta:
         return self._achar(medico_id, consulta_id).consulta.model_copy(deep=True)
