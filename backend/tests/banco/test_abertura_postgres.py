@@ -73,3 +73,18 @@ def test_outro_medico_nao_acha_o_paciente_nem_a_consulta_do_pedido(url_banco):
     a = abrir_do_pedido(agenda, pacientes, consultas, MEDICO_A, _pedido_com_ficha(agenda, "10:00").id, "dermatologia")
     assert pacientes.procurar(MEDICO_B, "Abertura Banco da Silva", date(1990, 5, 2)) is None
     assert consultas.do_pedido(MEDICO_B, a.pedido_id) is None
+
+
+def test_dois_toques_ao_mesmo_tempo_no_mesmo_pedido_dao_a_mesma_consulta(url_banco):
+    from app.contratos.consulta_blocos import NovaConsulta
+
+    agenda = RepositorioAgendaPostgres(url_banco)
+    pacientes = RepositorioPacientesPostgres(url_banco)
+    consultas = RepositorioConsultasPostgres(url_banco)
+    p = _pedido_com_ficha(agenda, "11:00")
+    primeira = abrir_do_pedido(agenda, pacientes, consultas, MEDICO_A, p.id, "dermatologia")
+    nova = NovaConsulta(
+        paciente_id=primeira.paciente_id, tipo="consulta", modalidade="online", agendada_para=primeira.agendada_para
+    )
+    # o segundo toque passou pela checagem antes do primeiro gravar: o banco recusa a duplicata e o repositório devolve a original
+    assert consultas.criar(MEDICO_A, nova, p.id).id == primeira.id

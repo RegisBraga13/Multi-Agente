@@ -89,6 +89,16 @@ class RepositorioConsultasPostgres:
             raise ConsultaFinalizada
 
     def criar(self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None = None) -> Consulta:
+        try:
+            return self._criar(medico_id, nova, pedido_id)
+        except psycopg.errors.UniqueViolation:
+            # dois toques em "Abrir consulta" ao mesmo tempo: o banco guardou o primeiro, devolvemos esse
+            existente = self.do_pedido(medico_id, pedido_id) if pedido_id else None
+            if existente is None:
+                raise
+            return existente
+
+    def _criar(self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None) -> Consulta:
         with self._transacao(medico_id) as conn:
             if conn.execute("select 1 from patients where id = %s", (nova.paciente_id,)).fetchone() is None:
                 raise ConsultaNaoEncontrada
