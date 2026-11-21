@@ -15,7 +15,7 @@ from app.contratos.base import ModeloApi
 class NovoPaciente(ModeloApi):
     nome: str = Field(min_length=1)
     nascimento: date
-    sexo: Literal["F", "M"]
+    sexo: Literal["F", "M", "I"]  # I = intersexo (o formulário do paciente permite)
     estado_civil: str | None = None
     profissao: str | None = None
     cpf: str | None = Field(default=None, pattern=r"^[0-9]{11}$")

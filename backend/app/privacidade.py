@@ -21,8 +21,13 @@ def encontrar_identidade(texto: str) -> list[str]:
     return [tipo for tipo, padrao in PADROES_IDENTIDADE.items() if padrao.search(texto)]
 
 
-def descrever_paciente(idade: int, sexo: Literal["F", "M"], estado_civil: str | None, profissao: str | None) -> str:
+def descrever_paciente(
+    idade: int, sexo: Literal["F", "M", "I"], estado_civil: str | None, profissao: str | None
+) -> str:
     """'Paciente, 52 anos, masculino, casado, comerciante' — o que não foi informado não entra."""
-    partes = [f"Paciente, {idade} {'ano' if idade == 1 else 'anos'}", "feminino" if sexo == "F" else "masculino"]
+    partes = [
+        f"Paciente, {idade} {'ano' if idade == 1 else 'anos'}",
+        {"F": "feminino", "M": "masculino", "I": "intersexo"}[sexo],
+    ]
     partes += [x for x in (estado_civil, profissao) if x]
     return ", ".join(partes)

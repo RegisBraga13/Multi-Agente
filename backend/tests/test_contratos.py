@@ -87,3 +87,7 @@ def test_cpf_com_letras_e_recusado():
 
 def test_cpf_e_opcional():
     assert NovoPaciente(nome="Ana Teste", nascimento="1992-03-14", sexo="F").cpf is None
+
+
+def test_novo_paciente_aceita_sexo_i():
+    assert NovoPaciente(nome="Ana Teste", nascimento="1992-03-14", sexo="I").sexo == "I"

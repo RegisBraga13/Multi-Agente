@@ -25,3 +25,7 @@ def test_numero_clinico_nao_e_identidade():
 
 def test_cpf_com_espacos():
     assert "CPF" in encontrar_identidade("CPF 123 456 789 10")
+
+
+def test_descrever_paciente_intersexo():
+    assert descrever_paciente(40, "I", None, None) == "Paciente, 40 anos, intersexo"
