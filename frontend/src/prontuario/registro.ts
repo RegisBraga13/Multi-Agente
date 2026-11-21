@@ -7,6 +7,7 @@
 // SIMULAÇÃO (sem servidor ainda): as entradas ficam no navegador (localStorage), chaveadas pelo id do paciente.
 import type { ItemReceita } from '../consulta/conduta'
 import { dataLocal } from '../medico/exemplo'
+import { buscarPaciente } from '../modulo/exemplo'
 import type { Modalidade } from '../medico/tipos'
 import type { TipoAtendimento } from '../modulo/tipos'
 
@@ -118,7 +119,7 @@ const anteriores = (pacienteId: string, data: string, hora: string) => entradas(
 export const tituloDaConsulta = (pacienteId: string, tipo: TipoAtendimento, data: string, hora: string) => tituloNovaEntrada(anteriores(pacienteId, data, hora), tipo)
 
 /** Guarda a entrada da consulta (substitui a do mesmo dia e hora, mantendo o id: salvar de novo não duplica). */
-export function salvarEntrada(pacienteId: string, e: NovaEntrada): EntradaProntuario | null {
+export function salvarEntrada(pacienteId: string, e: NovaEntrada, quem?: Cadastro): EntradaProntuario | null {
   const todas = salvas(pacienteId)
   const mesma = todas.find((x) => x.data === e.data && x.hora === e.hora)
   const nova: EntradaProntuario = {
@@ -126,8 +127,45 @@ export function salvarEntrada(pacienteId: string, e: NovaEntrada): EntradaProntu
   }
   try {
     localStorage.setItem(CHAVE(pacienteId), JSON.stringify([...todas.filter((x) => x !== mesma), nova]))
+    // quem é o paciente (pacientes que não são de exemplo não estão em nenhum cadastro local)
+    if (quem) localStorage.setItem(CHAVE_QUEM(pacienteId), JSON.stringify(quem))
     return nova
   } catch { return null }
+}
+
+type Cadastro = { id: string; nome: string; nascimento: string }
+const CHAVE_QUEM = (id: string) => `especialista:prontuario-paciente:${id}`
+
+/** Nome e nascimento do paciente: o cadastro de exemplo ou o que ficou guardado ao salvar o prontuário. */
+export function cadastroDoPaciente(id: string): Cadastro | undefined {
+  const exemplo = buscarPaciente(id)
+  if (exemplo) return exemplo
+  try {
+    const q = JSON.parse(localStorage.getItem(CHAVE_QUEM(id)) ?? 'null') as Cadastro | null
+    return q && texto(q.nome) && texto(q.nascimento) ? { id, nome: q.nome, nascimento: q.nascimento } : undefined
+  } catch { return undefined }
+}
+
+export type PacienteComProntuario = Cadastro & { entradas: number; /** data da entrada mais recente, 'YYYY-MM-DD' */ ultima: string }
+
+/**
+ * Quem tem prontuário: todo paciente que terminou ao menos uma consulta ou um retorno (tem entrada salva).
+ * Mais recente primeiro. O médico acessa a qualquer hora, sem depender da agenda.
+ */
+export function pacientesComProntuario(): PacienteComProntuario[] {
+  const ids = new Set(Object.keys(exemplos()))
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) ?? ''
+      const prefixo = 'especialista:prontuario:'
+      if (k.startsWith(prefixo)) ids.add(k.slice(prefixo.length))
+    }
+  } catch { /* sem armazenamento: só os de exemplo */ }
+  return [...ids].flatMap((id): PacienteComProntuario[] => {
+    const cadastro = cadastroDoPaciente(id)
+    const todas = entradas(id)
+    return cadastro && todas.length ? [{ ...cadastro, entradas: todas.length, ultima: todas[0].data }] : []
+  }).sort((a, b) => b.ultima.localeCompare(a.ultima) || a.nome.localeCompare(b.nome))
 }
 
 const novoId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `e-${Date.now()}-${Math.random().toString(36).slice(2)}`)

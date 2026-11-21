@@ -71,7 +71,8 @@ export function dadosDaConsulta({ historia, itens, conduta, anexos = [], complem
     hp: daHistoria(historia, 'História pessoal'),
     hf: daHistoria(historia, 'História familiar'),
     exameFisico: daHistoria(historia, 'Exame físico') || daHistoria(historia, 'Exame'),
-    examesTexto: daHistoria(historia, 'Exames complementares'),
+    // no retorno a história só aponta para a tabela; no prontuário o resultado fica escrito no próprio evento
+    examesTexto: ['Resultados comparados na tabela abaixo.', 'Nenhum exame novo.'].includes(daHistoria(historia, 'Exames complementares')) ? '' : daHistoria(historia, 'Exames complementares'),
     exames: complementares.flatMap((c) => c.itens.map((i) => ({
       exame: c.exame, nome: i.nome, valor: i.v.status === 'MISSING' ? null : i.v.valor, status: i.v.status, data: c.data, origem: c.origem,
     }))),
@@ -110,6 +111,13 @@ function documento(a: Anexo): DocumentoRegistro[] {
 export const textoDiagnosticos = (ds: DiagnosticoRegistro[]) =>
   ds.map((d) => `${d.nome}${d.cid ? ` (CID-10 ${d.cid})` : ''}${d.pct !== null ? ` — ${d.pct}%` : ''} · ${d.situacao === 'assinalado' ? 'Assinalado' : 'Sugerido'}`).join('\n')
 
+/** Exames trazidos naquele evento, por data: "12/11/2026: Glicemia de jejum 101 mg/dL; TGO 26 U/L." (sem resultado, não entra). */
+export function textoExamesDoRegistro(exames: DadosEntrada['exames']): string {
+  const porData = new Map<string, string[]>()
+  for (const e of exames) if (e.valor) porData.set(e.data, [...(porData.get(e.data) ?? []), `${e.nome} ${e.valor}`])
+  return [...porData].map(([data, itens]) => `${data}: ${itens.join('; ')}.`).join('\n')
+}
+
 /** O texto do prontuário, montado dos dados (QP… HD, CONDUTA). Linha sem dado some; seção sem nada também. */
 export function secoesDosDados(d: DadosEntrada): SecaoProntuario[] {
   const ponto = (xs: string[]) => (xs.length ? `${xs.join(', ')}.` : '')
@@ -125,7 +133,7 @@ export function secoesDosDados(d: DadosEntrada): SecaoProntuario[] {
     { id: 'O', titulo: '', linhas: [
       { id: 'exame', rotulo: 'Ex. físico', texto: d.exameFisico },
       // exames trazidos pelo paciente (ou, no retorno, os resultados dos pedidos): um por linha
-      { id: 'exames', rotulo: 'Exames', texto: d.examesTexto },
+      { id: 'exames', rotulo: 'Exames', texto: d.examesTexto || textoExamesDoRegistro(d.exames) },
     ] },
     { id: 'A', titulo: '', linhas: [{ id: 'hd', rotulo: 'HD', texto: textoDiagnosticos(d.diagnosticos) }] },
     { id: 'P', titulo: 'Conduta', linhas: [

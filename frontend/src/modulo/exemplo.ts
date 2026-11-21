@@ -54,8 +54,8 @@ function fichaDe(v: Vaga, c: Conteudo, i: number): Ficha {
   return { situacao: 'pronta', recebidaAs: chegada(v.inicio), ...c, transcricao: i % 4 === 3 ? 'recusada' : 'aceita' }
 }
 
-/** Sábado: só as manhãs, presencial (como na agenda da página do médico). */
-const VAGAS_SABADO = VAGAS.slice(0, 4)
+/** Sábado: só as manhãs, presencial (como na agenda da página do médico); vai até as 10h para incluir o retorno de exemplo. */
+const VAGAS_SABADO = VAGAS.slice(0, 5)
 
 function horaLocal(d: Date): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`

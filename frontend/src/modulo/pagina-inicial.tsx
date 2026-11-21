@@ -134,6 +134,8 @@ function Pagina({ esp }: { esp: Especialidade }) {
                 else setAviso('Nenhum retorno a seguir hoje.')
                 return
               }
+              // prontuários: de quem já terminou uma consulta ou retorno; o médico acessa a qualquer hora
+              if (o === 'Prontuário') return navegar(`/modulo/${esp.slug}/prontuarios`)
               if (o !== 'Consulta') return setAviso(`${o} é a próxima etapa do módulo.`)
               // consulta do paciente aberto na ficha; sem nenhum aberto, do próximo
               const id = selecionado ?? deHoje.proximo

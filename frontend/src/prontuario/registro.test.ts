@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { tabelaDeExames } from '../consulta/exames-tabela'
 import { dataLocal } from '../medico/exemplo'
 import { buscarPaciente } from '../modulo/exemplo'
-import { ANTONIO_ID, JOAO_ID, entradas, salvarEntrada, tituloDaConsulta, tituloNovaEntrada, type DadosEntrada, type NovaEntrada } from './registro'
+import { ANTONIO_ID, JOAO_ID, cadastroDoPaciente, entradas, pacientesComProntuario, salvarEntrada, tituloDaConsulta, tituloNovaEntrada, type DadosEntrada, type NovaEntrada } from './registro'
 
 // localStorage de mentira (o teste roda fora do navegador)
 const mem = new Map<string, string>()
 globalThis.localStorage = {
   getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v), removeItem: (k: string) => void mem.delete(k),
-  clear: () => mem.clear(), key: () => null, get length() { return mem.size },
+  clear: () => mem.clear(), key: (i: number) => [...mem.keys()][i] ?? null, get length() { return mem.size },
 } as Storage
 
 const MARIANA = '92b99e33-e1c8-46f0-bd6b-d9edcc9d7c36'
@@ -79,7 +79,7 @@ describe('Antônio Barbosa: prontuário pronto de exemplo', () => {
   })
 })
 
-describe('Exames ao longo do tempo (tabela do prontuário)', () => {
+describe('Histórico de exames (tabela montada dos exames de cada evento)', () => {
   it('cada retorno ou consulta salvo acrescenta uma coluna à tabela, sem apagar as anteriores', () => {
     const exame = (data: string, valor: string) => ({ exame: 'Exames laboratoriais', nome: 'Glicemia de jejum', valor, status: 'PRESENT' as const, data, origem: 'x.pdf' })
     const daVez = (data: string, tipo: 'consulta' | 'retorno', valor: string): NovaEntrada => ({ ...nova(tipo, data), dados: { ...DADOS, exames: [exame(data === '2026-11-20' ? '12/11/2026' : '01/01/2027', valor)] } })
@@ -89,5 +89,21 @@ describe('Exames ao longo do tempo (tabela do prontuário)', () => {
     expect(tabela()?.datas).toEqual(['10/09/2026', '12/11/2026'])
     salvarEntrada(JOAO_ID, daVez('2027-01-08', 'retorno', '97 mg/dL'))
     expect(tabela()?.linhas[0]).toEqual({ nome: 'Glicemia de jejum', valores: ['98 mg/dL', '101 mg/dL', '97 mg/dL'] })
+  })
+})
+
+describe('quem tem prontuário (acesso a qualquer hora)', () => {
+  it('só quem terminou consulta ou retorno: os de exemplo e quem salvou; sem entrada, fora', () => {
+    expect(pacientesComProntuario().map((p) => p.id).sort()).toEqual([ANTONIO_ID, JOAO_ID].sort())
+    salvarEntrada(MARIANA, nova('consulta', '2026-11-21'), { id: MARIANA, nome: 'Mariana Costa', nascimento: '1999-01-01' })
+    const m = pacientesComProntuario().find((p) => p.id === MARIANA)
+    expect(m).toMatchObject({ nome: 'Mariana Costa', entradas: 1, ultima: '2026-11-21' })
+  })
+  it('paciente que não é de exemplo mantém nome e nascimento guardados ao salvar', () => {
+    const NOVA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    expect(cadastroDoPaciente(NOVA)).toBeUndefined()
+    salvarEntrada(NOVA, nova('consulta', '2026-11-21'), { id: NOVA, nome: 'Paciente Real', nascimento: '1980-05-05' })
+    expect(cadastroDoPaciente(NOVA)).toEqual({ id: NOVA, nome: 'Paciente Real', nascimento: '1980-05-05' })
+    expect(pacientesComProntuario().map((p) => p.id)).toContain(NOVA)
   })
 })

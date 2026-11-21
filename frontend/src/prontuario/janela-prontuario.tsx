@@ -8,9 +8,8 @@ import { secoesDaEntrada } from '../consulta/prontuario'
 import { TabelaDeExames } from '../consulta/tabela-exames'
 import { buscarEspecialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
-import { buscarPaciente } from '../modulo/exemplo'
 import { NaoEncontrada } from '../nao-encontrada'
-import { entradas, type EntradaProntuario, type FotoRegistro } from './registro'
+import { cadastroDoPaciente, entradas, type EntradaProntuario, type FotoRegistro } from './registro'
 
 const TITULO_SECAO = 'text-[11px] font-bold tracking-[0.14em] text-historia-rotulo uppercase'
 const TEXTO = 'text-[14.5px] leading-[1.45] text-tinta'
@@ -20,9 +19,11 @@ export function JanelaProntuario() {
   const { slug = '', paciente = '' } = useParams()
   const esp = buscarEspecialidade(slug)
   // nome e nascimento vêm do cadastro do paciente (não mudam)
-  const cadastro = buscarPaciente(paciente)
+  const cadastro = cadastroDoPaciente(paciente)
   const id = cadastro?.id ?? paciente
   const [lista, setLista] = useState(() => entradas(id))
+  // o histórico de exames não aparece sozinho: só é montado quando o médico pede
+  const [historico, setHistorico] = useState(false)
 
   useEffect(() => { if (cadastro) document.title = `Prontuário · ${cadastro.nome}` }, [cadastro])
   // a consulta salva noutra janela: a lista se atualiza
@@ -48,10 +49,15 @@ export function JanelaProntuario() {
         ) : (
           <>
             {tabela && (
-              // o prontuário guarda e atualiza os exames ao longo do tempo: uma coluna por data (regra 13.8)
-              <section className="border border-historia-borda bg-historia px-5 py-3" aria-label="Exames ao longo do tempo">
-                <h2 className="mb-1 text-[16px] font-bold">Exames ao longo do tempo</h2>
-                <TabelaDeExames tabela={tabela} />
+              // gerado a pedido, a partir dos exames de cada consulta e retorno: uma coluna por data (regra 13.7)
+              <section className="border border-historia-borda bg-historia px-5 py-3" aria-label="Histórico de exames">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 className="text-[16px] font-bold">Histórico de exames</h2>
+                  <button type="button" onClick={() => setHistorico((x) => !x)} aria-expanded={historico} className="border-[1.5px] border-tinta px-3 py-1 text-[13.5px] font-bold hover:bg-tinta hover:text-papel">
+                    {historico ? 'Ocultar' : 'Gerar histórico'}
+                  </button>
+                </div>
+                {historico && <TabelaDeExames tabela={tabela} className="mt-2" />}
               </section>
             )}
             {lista.map((e) => <Entrada key={e.id} e={e} />)}

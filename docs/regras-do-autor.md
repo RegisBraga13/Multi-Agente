@@ -118,8 +118,10 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 4. **Linhas:** QP, HDA, AP, HP, HF, Ex. físico, Exames, HD; depois CONDUTA (tratamento, Solicitado, Encaminhado para, Orientações, Retorno, Atestado/Laudo). Campo não colhido some.
 5. **HD:** sempre 3. Os clicados pelo médico = "Assinalado"; completam até 3 os da IA = "Sugerido". Descartado não entra.
 6. **Gravado como dados organizados** (diagnósticos, remédios, exames, fotos). Fotos em miniatura.
-7. **Exames em tabela, ao longo do tempo:** o prontuário guarda e atualiza os exames complementares numa tabela (uma coluna por data, uma linha por exame), sempre que recebe um retorno ou uma nova consulta. *(feito: tabela no topo da janela do prontuário, atualizada a cada retorno salvo)*
+7. **Histórico de exames (tabela longitudinal):** não aparece sozinha. Só é **gerada quando o médico pede** (botão "Gerar histórico" no prontuário), juntando os exames de cada consulta e retorno numa tabela (uma coluna por data, uma linha por exame). O botão fica **sempre na cabeça do prontuário**, acima das entradas. Cada exame trazido fica também **escrito no próprio evento** (consulta ou retorno), junto das fotos. *(feito)*
 8. **O app não guarda por 20 anos:** o médico recebe a cópia e guarda.
+
+8. **Quem tem prontuário:** todo paciente que já se consultou ou retornou e **terminou** a consulta ou o retorno (evolução). O **cartão Prontuário** da página inicial abre a lista desses pacientes, com busca pelo nome; o médico **acessa a qualquer hora**, sem depender da agenda. *(feito)*
 
 ## 14. Retorno
 

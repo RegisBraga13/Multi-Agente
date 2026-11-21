@@ -236,7 +236,7 @@ function Consulta({ esp, at, etapa, formulario }: { esp: Especialidade; at: Aten
   const salvarProntuario = () => {
     fazer('oficializar', 'prontuario')
     // a entrada desta consulta vai para o prontuário do paciente (com as edições do médico)
-    if (prontuario) salvarEntrada(at.paciente.id, { tipo: at.tipo, modalidade: at.modalidade, data: at.id.slice(0, 10), hora: at.inicio, ...aplicarEdicoes(prontuario.dados, prontuario.textos) })
+    if (prontuario) salvarEntrada(at.paciente.id, { tipo: at.tipo, modalidade: at.modalidade, data: at.id.slice(0, 10), hora: at.inicio, ...aplicarEdicoes(prontuario.dados, prontuario.textos) }, at.paciente)
     navegar(`/modulo/${esp.slug}`, { state: { aviso: `Consulta finalizada. Prontuário de ${at.paciente.nome} salvo.` } })
   }
 
