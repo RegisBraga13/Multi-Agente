@@ -11,7 +11,8 @@ from app.contratos.consulta import Fala, SinalRespondido
 from app.contratos.consulta_blocos import NovaConsulta
 from app.contratos.paciente import NovoPaciente
 from app.especialidades.condutas import carregar_protocolos
-from app.especialidades.pacote import carregar_sinais
+from app.especialidades.pacote import PacoteInvalido, carregar_sinais
+from app.especialidades.registro import Pacote
 from app.motores.chamada import ErroPrivacidade
 from app.pacientes.repositorio import RepositorioPacientesMemoria
 from app.provedores.ia import PedidoIA, RespostaIA
@@ -90,8 +91,7 @@ def contexto(cenario, provedor):
         pacientes=pacientes,
         provedor=provedor,
         relogio=RelogioFixo(QUANDO),
-        sinais=LISTA,
-        protocolos=carregar_protocolos("dermatologia"),
+        pacote=lambda _esp: Pacote(sinais=LISTA, protocolos=carregar_protocolos("dermatologia")),
     )
 
 
@@ -283,3 +283,33 @@ def test_idade_pelo_dia_da_consulta_no_fuso_do_consultorio():
     provedor = Roteiro()
     gerar(contexto(cen, provedor), medico, c.id, "historia")
     assert provedor.pedidos[0].dados["consulta"]["paciente"].startswith("Paciente, 33 anos")
+
+
+def test_a_especialidade_da_consulta_escolhe_o_pacote():
+    pedidas: list[str] = []
+    pacientes = RepositorioPacientesMemoria()
+    medico = uuid4()
+    p = pacientes.criar(
+        medico,
+        NovoPaciente(nome="Ana Lima", nascimento=date(1990, 1, 1), sexo="F", cpf="12345678909", telefone="11987654321"),
+    )
+    repo = RepositorioConsultasMemoria(pacientes)
+    c = repo.criar(
+        medico,
+        NovaConsulta(
+            paciente_id=p.id, tipo="consulta", modalidade="presencial", agendada_para=QUANDO, especialidade="geriatria"
+        ),
+    )
+
+    def pacote(esp):
+        pedidas.append(esp)
+        return Pacote(sinais=LISTA, protocolos={})
+
+    ctx = Contexto(repo=repo, pacientes=pacientes, provedor=Roteiro(), relogio=RelogioFixo(QUANDO), pacote=pacote)
+    editar(repo, medico, c.id, "anamnese", ANAMNESE)
+    oficializar(repo, medico, c.id, "anamnese", QUANDO)
+    editar(repo, medico, c.id, "exame", EXAME)
+    oficializar(repo, medico, c.id, "exame", QUANDO)
+    with pytest.raises(PacoteInvalido):  # Geriatria ainda não tem prompts: o servidor pediu a pasta dela
+        gerar(ctx, medico, c.id, "historia")
+    assert pedidas == ["geriatria"]

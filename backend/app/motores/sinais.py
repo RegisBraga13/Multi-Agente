@@ -13,7 +13,7 @@ from typing import Literal
 from app.contratos.base import ModeloApi
 from app.contratos.consulta import EntradaConsulta
 from app.contratos.motor import RegistroDecisao
-from app.especialidades.pacote import Prazo, SinalAlerta, TipoSinal
+from app.especialidades.pacote import ESPECIALIDADE_PADRAO, Prazo, SinalAlerta, TipoSinal
 from app.especialidades.prompts import carregar_prompt
 from app.motores.chamada import ErroPrivacidade, chamar_motor
 from app.provedores.ia import PedidoIA, ProvedorIA
@@ -81,9 +81,10 @@ def motor_sinais(
     relogio: Relogio,
     registrar: Callable[[RegistroDecisao], None],
     termos_proibidos: Sequence[str] = (),
+    especialidade: str = ESPECIALIDADE_PADRAO,
 ) -> SinaisConsulta:
     disparados = sinais_respondidos(entrada, lista)
-    prompt = carregar_prompt("dermatologia", "sinais")
+    prompt = carregar_prompt(especialidade, "sinais")
     pedido = PedidoIA(
         motor="sinais",
         versao_prompt=prompt.versao,

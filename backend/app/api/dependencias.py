@@ -1,5 +1,6 @@
 """Dependências injetadas nas rotas (trocáveis nos testes)."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from uuid import UUID
 
@@ -8,8 +9,7 @@ from fastapi import Request
 from app.agenda.repositorio import RepositorioAgenda, RepositorioAgendaMemoria
 from app.consulta.geracao import Contexto
 from app.consulta.repositorio import RepositorioConsultas, RepositorioConsultasMemoria
-from app.especialidades.condutas import Protocolo, carregar_protocolos
-from app.especialidades.pacote import SinalAlerta, carregar_sinais
+from app.especialidades.registro import Pacote, carregar_pacote
 from app.identidade import Identidade
 from app.pacientes.repositorio import RepositorioPacientes
 from app.provedores.ia import ProvedorIA
@@ -24,8 +24,7 @@ class Dependencias:
     consultas: RepositorioConsultas | None = None  # None → em memória, ligado aos pacientes
     provedor: ProvedorIA = field(default_factory=lambda: ProvedorIAFalso({}))
     relogio: Relogio = field(default_factory=RelogioSistema)
-    sinais: list[SinalAlerta] = field(default_factory=lambda: carregar_sinais("dermatologia"))
-    protocolos: dict[str, Protocolo] = field(default_factory=lambda: carregar_protocolos("dermatologia"))
+    pacote: Callable[[str], Pacote] = carregar_pacote
     agenda: RepositorioAgenda = field(default_factory=RepositorioAgendaMemoria)
 
     def __post_init__(self) -> None:
@@ -43,8 +42,7 @@ class Dependencias:
             pacientes=self.pacientes,
             provedor=self.provedor,
             relogio=self.relogio,
-            sinais=self.sinais,
-            protocolos=self.protocolos,
+            pacote=self.pacote,
         )
 
 

@@ -30,6 +30,7 @@ from app.contratos.consulta_blocos import (
     NovaConsulta,
     TipoDocumento,
 )
+from app.especialidades.registro import especialidades_disponiveis
 
 rotas = APIRouter(prefix="/consultas", tags=["consultas"])
 Dep = Annotated[Dependencias, Depends(dependencias)]
@@ -38,6 +39,8 @@ Medico = Annotated[UUID, Depends(medico_atual)]
 
 @rotas.post("", status_code=status.HTTP_201_CREATED, response_model=Consulta)
 def criar_consulta(nova: NovaConsulta, dep: Dep, medico: Medico) -> Consulta:
+    if nova.especialidade not in especialidades_disponiveis():
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "especialidade não disponível")
     return dep.repo.criar(medico, nova)
 
 

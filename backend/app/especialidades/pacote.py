@@ -17,6 +17,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 PASTA_ESPECIALIDADES = Path(__file__).parent
+ESPECIALIDADE_PADRAO = "dermatologia"  # só para quem ainda não informa a especialidade (testes e medição)
 
 
 class PacoteInvalido(Exception):

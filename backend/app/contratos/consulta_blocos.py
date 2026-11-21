@@ -95,6 +95,7 @@ class NovaConsulta(ModeloApi):
     tipo: Literal["consulta", "retorno"]
     modalidade: Literal["presencial", "online"]
     agendada_para: AwareDatetime  # com fuso: a data/hora do consultório sai daqui
+    especialidade: str = Field(default="dermatologia", pattern=r"^[a-z]+$")  # pasta em app/especialidades/
 
 
 class Consulta(NovaConsulta):

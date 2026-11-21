@@ -10,6 +10,7 @@ from typing import Any
 from app.contratos.base import ModeloApi
 from app.contratos.consulta import EntradaConsulta
 from app.contratos.motor import PropostaIA, RegistroDecisao
+from app.especialidades.pacote import ESPECIALIDADE_PADRAO
 from app.especialidades.prompts import carregar_prompt
 from app.motores.chamada import chamar_motor
 from app.provedores.ia import PedidoIA, ProvedorIA
@@ -35,8 +36,9 @@ def motor_historia(
     registrar: Callable[[RegistroDecisao], None],
     termos_proibidos: Sequence[str] = (),
     ao_escrever: Callable[[dict[str, Any]], None] | None = None,
+    especialidade: str = ESPECIALIDADE_PADRAO,
 ) -> PropostaIA[HistoriaClinica]:
-    prompt = carregar_prompt("dermatologia", "historia")
+    prompt = carregar_prompt(especialidade, "historia")
     pedido = PedidoIA(
         motor="historia",
         versao_prompt=prompt.versao,

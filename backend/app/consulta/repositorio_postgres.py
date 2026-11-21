@@ -45,7 +45,7 @@ TABELA: dict[str, str] = {
     "diagnosticos": "diagnostic_hypotheses",
     "conduta": "care_plans",
 }
-_COLUNAS_CONSULTA = "id, patient_id, kind, modality, scheduled_at, finalized_at"
+_COLUNAS_CONSULTA = "id, patient_id, kind, modality, scheduled_at, finalized_at, specialty_slug"
 
 
 def _consulta(linha: dict[str, Any], blocos: list[Bloco]) -> Consulta:
@@ -54,6 +54,7 @@ def _consulta(linha: dict[str, Any], blocos: list[Bloco]) -> Consulta:
         paciente_id=linha["patient_id"],
         tipo=linha["kind"],
         modalidade=linha["modality"],
+        especialidade=linha["specialty_slug"],
         agendada_para=linha["scheduled_at"],
         finalizada_em=linha["finalized_at"],
         blocos=blocos,
@@ -91,9 +92,9 @@ class RepositorioConsultasPostgres:
             if conn.execute("select 1 from patients where id = %s", (nova.paciente_id,)).fetchone() is None:
                 raise ConsultaNaoEncontrada
             linha = conn.execute(
-                "insert into encounters (doctor_id, patient_id, kind, modality, scheduled_at)"
-                f" values (%s, %s, %s, %s, %s) returning {_COLUNAS_CONSULTA}",
-                (medico_id, nova.paciente_id, nova.tipo, nova.modalidade, nova.agendada_para),
+                "insert into encounters (doctor_id, patient_id, kind, modality, scheduled_at, specialty_slug)"
+                f" values (%s, %s, %s, %s, %s, %s) returning {_COLUNAS_CONSULTA}",
+                (medico_id, nova.paciente_id, nova.tipo, nova.modalidade, nova.agendada_para, nova.especialidade),
             ).fetchone()
         assert linha is not None
         return _consulta(linha, [])

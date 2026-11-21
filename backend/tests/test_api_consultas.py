@@ -1,9 +1,11 @@
 import json
+from datetime import date
 from uuid import UUID
 
 from fastapi.testclient import TestClient
 
 from app.aplicacao import Dependencias, criar_app
+from app.contratos.paciente import NovoPaciente
 from app.identidade import MedicoLocal
 from tests.fabrica import ANAMNESE, DADOS_MINIMOS, EXAME, diagnosticos
 from tests.test_geracao_consulta import Roteiro
@@ -187,3 +189,20 @@ def test_horario_sem_fuso_e_422(mundo):
         },
     )
     assert r.status_code == 422
+
+
+def test_especialidade_desconhecida_e_422(mundo):
+    pacientes, _ = mundo
+    c = cliente(mundo)
+    paciente = pacientes.criar(
+        MEDICO_A,
+        NovoPaciente(nome="Ana Lima", nascimento=date(1990, 1, 1), sexo="F", cpf="12345678909", telefone="11987654321"),
+    )
+    corpo = {
+        "pacienteId": str(paciente.id),
+        "tipo": "consulta",
+        "modalidade": "presencial",
+        "agendadaPara": "2026-11-18T13:00:00Z",
+    }
+    assert c.post("/consultas", json={**corpo, "especialidade": "astrologia"}).status_code == 422
+    assert c.post("/consultas", json=corpo).json()["especialidade"] == "dermatologia"

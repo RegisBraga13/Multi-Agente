@@ -29,8 +29,7 @@ from app.contratos.consulta_blocos import (
 )
 from app.contratos.motor import Acao, RegistroDecisao
 from app.contratos.paciente import Paciente
-from app.especialidades.condutas import Protocolo
-from app.especialidades.pacote import SinalAlerta
+from app.especialidades.registro import Pacote
 from app.fuso import no_consultorio
 from app.motores.conduta import DiagnosticoConfirmado, motor_conduta
 from app.motores.diagnosticos import motor_diagnosticos, seguranca_de
@@ -53,8 +52,7 @@ class Contexto:
     pacientes: RepositorioPacientes
     provedor: ProvedorIA
     relogio: Relogio
-    sinais: list[SinalAlerta]
-    protocolos: dict[str, Protocolo]
+    pacote: Callable[[str], Pacote]  # a especialidade da consulta escolhe sinais e protocolos
 
 
 class ResultadoGeracao(ModeloApi):
@@ -84,9 +82,19 @@ def _historia(
     anamnese = AnamneseBloco.model_validate(_bloco(consulta, "anamnese"))
     exame = ExameBloco.model_validate(_bloco(consulta, "exame"))
     entrada = entrada_da_consulta(paciente, anamnese, exame, no_consultorio(consulta.agendada_para).date())
-    sinais = motor_sinais(ctx.provedor, entrada, ctx.sinais, ctx.relogio, reg, termos)
+    sinais = motor_sinais(
+        ctx.provedor,
+        entrada,
+        ctx.pacote(consulta.especialidade).sinais,
+        ctx.relogio,
+        reg,
+        termos,
+        especialidade=consulta.especialidade,
+    )
     conteudos["sinais"] = sinais.model_dump(by_alias=True, mode="json")
-    p = motor_historia(ctx.provedor, entrada, ctx.relogio, reg, termos, ao_escrever=ao_escrever)
+    p = motor_historia(
+        ctx.provedor, entrada, ctx.relogio, reg, termos, ao_escrever=ao_escrever, especialidade=consulta.especialidade
+    )
     conteudos["historia"] = p.resultado.model_dump(by_alias=True, mode="json") if p.resultado else None
     if p.resultado is None:
         return None, [*sinais.avisos, *p.avisos]
@@ -122,7 +130,9 @@ def gerar(
             novo, avisos = _historia(ctx, consulta, paciente, reg, termos, conteudos, ao_escrever)
         elif etapa == "diagnosticos":
             h = HistoriaBloco.model_validate(_bloco(consulta, "historia"))
-            p = motor_diagnosticos(ctx.provedor, h.historia, h.seguranca, ctx.relogio, reg, termos, ao_escrever)
+            p = motor_diagnosticos(
+                ctx.provedor, h.historia, h.seguranca, ctx.relogio, reg, termos, ao_escrever, consulta.especialidade
+            )
             conteudos["diagnosticos"] = p.resultado.model_dump(by_alias=True, mode="json") if p.resultado else None
             avisos = p.avisos
             novo = (
@@ -139,7 +149,17 @@ def gerar(
             dd = DiagnosticosBloco.model_validate(_bloco(consulta, "diagnosticos"))
             principal = next(i.hipotese for i in dd.itens if i.decisao == "confirmada")
             dx = DiagnosticoConfirmado(nome=principal.nome, cid=principal.cid, certeza=principal.certeza)
-            c = motor_conduta(ctx.provedor, dx, h.seguranca, ctx.protocolos, ctx.relogio, reg, termos, ao_escrever)
+            c = motor_conduta(
+                ctx.provedor,
+                dx,
+                h.seguranca,
+                ctx.pacote(consulta.especialidade).protocolos,
+                ctx.relogio,
+                reg,
+                termos,
+                ao_escrever,
+                consulta.especialidade,
+            )
             conteudos["conduta"] = c.model_dump(by_alias=True, mode="json")
             avisos = c.avisos
             novo = (

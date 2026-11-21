@@ -28,6 +28,7 @@ from app.especialidades.condutas import (
     protocolo_do_cid,
     urgencia_por_sinais,
 )
+from app.especialidades.pacote import ESPECIALIDADE_PADRAO
 from app.especialidades.prompts import carregar_prompt
 from app.motores.chamada import ErroPrivacidade, chamar_motor
 from app.motores.diagnosticos import Certeza, DadosSeguranca
@@ -86,11 +87,12 @@ def motor_conduta(
     registrar: Callable[[RegistroDecisao], None],
     termos_proibidos: Sequence[str] = (),
     ao_escrever: Callable[[dict[str, Any]], None] | None = None,
+    especialidade: str = ESPECIALIDADE_PADRAO,
 ) -> CondutaProposta:
     urgencia = urgencia_por_sinais(seguranca.sinais)
     emergencia = emergencia_por_sinais(seguranca.sinais)
     protocolo = protocolo_do_cid(protocolos, dx.cid)
-    prompt = carregar_prompt("dermatologia", "conduta")
+    prompt = carregar_prompt(especialidade, "conduta")
     dados = {
         "diagnostico": dx.model_dump(by_alias=True, mode="json"),
         "seguranca": seguranca.model_dump(by_alias=True, mode="json"),
