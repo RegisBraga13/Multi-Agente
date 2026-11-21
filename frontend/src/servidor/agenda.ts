@@ -45,7 +45,7 @@ export class ErroServidor extends Error {
 
 const SEM_CONEXAO = 'Não foi possível falar com o consultório. Confira a internet e tente de novo.'
 
-async function chamar<T>(caminho: string, init?: RequestInit): Promise<T> {
+export async function chamar<T>(caminho: string, init?: RequestInit): Promise<T> {
   let r: Response
   try {
     r = await fetch(BASE + caminho, { ...init, headers: { 'Content-Type': 'application/json', ...init?.headers } })
