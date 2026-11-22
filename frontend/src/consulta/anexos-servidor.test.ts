@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { DocumentoServidor } from '../servidor/consulta'
-import type { Anexo, TipoAnexo } from './anexos'
+import { atualizarAnexos, type Anexo, type TipoAnexo } from './anexos'
 import { aplicarDocumentos, documentoParaServidor, virouEnviado } from './anexos-servidor'
 
 const anexo = (tipo: TipoAnexo, extra: Partial<Anexo> = {}): Anexo => ({
@@ -54,5 +54,14 @@ describe('virouEnviado', () => {
     expect(virouEnviado(antes, [anexo('receita', { estado: 'enviado' })], 'receita')).toBe(true)
     expect(virouEnviado(antes, [anexo('receita', { estado: 'assinado' })], 'receita')).toBe(false)
     expect(virouEnviado([anexo('receita', { estado: 'enviado' })], [anexo('receita', { estado: 'enviado' })], 'receita')).toBe(false)
+  })
+})
+
+describe('conduta refeita depois de enviar um anexo', () => {
+  it('o anexo enviado, cuja base não mudou, não é refeito nem perdido', () => {
+    const enviado = anexo('receita', { estado: 'enviado', texto: 'Receita final.' })
+    const refeitos = atualizarAnexos([enviado, anexo('exames')], [anexo('receita'), anexo('exames')])
+    expect(refeitos[0]).toEqual(enviado)
+    expect(aplicarDocumentos(refeitos, [documentoParaServidor(enviado)])[0]).toMatchObject({ estado: 'enviado', texto: 'Receita final.' })
   })
 })

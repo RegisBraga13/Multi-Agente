@@ -30,11 +30,12 @@ import { partesPreConsulta } from '../medico/pre-consulta'
 import { atendimentoDoPedido, precisaIdentificacao } from '../modulo/pedidos'
 import { IdentificacaoNaChegada } from './identificacao-chegada'
 import { buscarPedido, enderecoFoto, ErroServidor, type PedidoNaAgenda } from '../servidor/agenda'
-import { abrirConsultaDoPedido, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, gerarConduta, salvarConduta as enviarConduta, sinaisDaEspecialidade, type AnamneseServidor, type CondutaServidor, type ConsultaServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
+import { abrirConsultaDoPedido, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, gerarConduta, salvarConduta as enviarConduta, listarDocumentos, salvarDocumento, sinaisDaEspecialidade, type AnamneseServidor, type CondutaServidor, type ConsultaServidor, type DocumentoServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
 import { adicionarPergunta, atualizarSecoes, avisosDeUrgencia, historiaParaServidor, juntarPerguntas, responder, secoesDoServidor } from './historia-servidor'
 import { BuscaCid } from './busca-cid'
 import { PerguntasHistoria } from './perguntas-historia'
 import { diagnosticosParaServidor, hipotesesDoServidor, idDaHipotese, itensDoServidor } from './diagnosticos-servidor'
+import { aplicarDocumentos, documentoParaServidor, virouEnviado } from './anexos-servidor'
 import { bloqueadasDaConduta, condutaDoServidor, condutaParaServidor, urgenciaDaConduta } from './conduta-servidor'
 import { anamneseDoServidor, anamneseParaServidor, etapasParaOficializar, exameDoServidor, exameParaServidor } from './servidor-mapa'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
@@ -183,6 +184,11 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   /** consulta real: o último bloco da conduta que o servidor devolveu (proposta, diagnóstico e urgência) */
   const [condBase, setCondBase] = useState<CondutaServidor | null>(retomada.conduta)
   const [montandoConduta, setMontandoConduta] = useState(false)
+  /** consulta real: os anexos que o servidor guardou como enviados (voltam como enviados ao recarregar) */
+  const [docsServidor, setDocsServidor] = useState<DocumentoServidor[]>([])
+  useEffect(() => {
+    if (servidor) listarDocumentos(servidor.id).then(setDocsServidor, () => setDocsServidor([]))
+  }, [servidor])
   useEffect(() => {
     if (servidor) sinaisDaEspecialidade(esp.slug).then(setCatalogo, () => setCatalogo([]))
   }, [servidor, esp.slug])
@@ -423,7 +429,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     const novo = oficializar(estado, 'conduta')
     despachar({ tipo: 'oficializar', bloco: 'conduta' })
     if (!conduta || podeOficializar(estado, 'anexos') || !podeOficializar(novo, 'anexos')) return
-    const novos = montarAnexos(conduta.c, dados)
+    const novos = aplicarDocumentos(montarAnexos(conduta.c, dados), docsServidor)
     setDocs((x) => (x ? { versao: x.versao + 1, itens: atualizarAnexos(x.itens, novos) } : { versao: 1, itens: novos }))
     navegar(`${base}/anexos`)
   }
@@ -691,8 +697,18 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
               onCampos={(tipo, campos) => mexerDocs((xs) => definirCampos(xs, tipo, campos))}
               onAvancar={(tipo) => {
                 const antes = docs.itens.find((x) => x.tipo === tipo)
-                mexerDocs((xs) => avancar(xs, tipo))
-                if (antes && (antes.estado === 'assinado' || (antes.estado === 'revisado' && !antes.assinatura))) setAviso(`${antes.titulo} enviado ao paciente (simulação).`)
+                const aplicar = () => {
+                  mexerDocs((xs) => avancar(xs, tipo))
+                  if (antes && (antes.estado === 'assinado' || (antes.estado === 'revisado' && !antes.assinatura))) setAviso(`${antes.titulo} enviado ao paciente (simulação).`)
+                }
+                const enviado = servidor && virouEnviado(docs.itens, avancar(docs.itens, tipo), tipo) ? avancar(docs.itens, tipo).find((x) => x.tipo === tipo) : undefined
+                if (!servidor || !enviado) return aplicar()
+                // consulta real: o servidor grava primeiro; se falhar, o anexo não fica como enviado
+                const doc = documentoParaServidor(enviado)
+                salvarDocumento(servidor.id, doc).then(
+                  () => { setDocsServidor((ds) => [...ds.filter((x) => x.tipo !== tipo), doc]); aplicar() },
+                  (e: unknown) => setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível enviar. Tente de novo.'),
+                )
               }}
               onSalvar={salvarAnexos}
             />
