@@ -16,7 +16,7 @@ from fastapi.responses import StreamingResponse
 
 from app.api.dependencias import Dependencias, dependencias, medico_atual
 from app.consulta.abertura import abrir_do_pedido
-from app.consulta.geracao import ResultadoGeracao, gerar
+from app.consulta.geracao import ResultadoGeracao, gerar, gerar_perguntas
 from app.consulta.servico import SinalDesconhecido, editar, oficializar
 from app.contratos.base import ModeloApi
 from app.contratos.consulta_blocos import (
@@ -33,6 +33,7 @@ from app.contratos.consulta_blocos import (
     TipoDocumento,
 )
 from app.especialidades.registro import especialidades_disponiveis
+from app.motores.perguntas import PerguntasProposta
 
 rotas = APIRouter(prefix="/consultas", tags=["consultas"])
 Dep = Annotated[Dependencias, Depends(dependencias)]
@@ -98,6 +99,12 @@ def oficializar_etapa(consulta_id: UUID, etapa: Etapa, dep: Dep, medico: Medico)
 
 def _sse(evento: str, dados: str) -> str:
     return f"event: {evento}\ndata: {dados}\n\n"
+
+
+@rotas.post("/{consulta_id}/perguntas/gerar", response_model=PerguntasProposta)
+def gerar_perguntas_da_consulta(consulta_id: UUID, dep: Dep, medico: Medico) -> PerguntasProposta:
+    """Perguntas de segurança escritas para este paciente, depois da história. Não grava: a tela salva com a história."""
+    return gerar_perguntas(dep.contexto(), medico, consulta_id)
 
 
 @rotas.post(

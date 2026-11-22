@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.consulta.geracao import Contexto, gerar
+from app.consulta.geracao import Contexto, gerar, gerar_perguntas
 from app.consulta.repositorio import RepositorioConsultasMemoria
 from app.consulta.servico import ErroEtapa, editar, oficializar
 from app.contratos.consulta import Fala, SinalRespondido
@@ -18,6 +18,7 @@ from app.pacientes.repositorio import RepositorioPacientesMemoria
 from app.provedores.ia import PedidoIA, RespostaIA
 from app.provedores.relogio import RelogioFixo
 from tests.fabrica import ANAMNESE, EXAME, conduta, diagnosticos
+from tests.fabrica import HISTORIA as HISTORIA_BLOCO
 
 QUANDO = datetime(2026, 11, 13, 8, 0, tzinfo=UTC)
 META = {"confianca": 0.9, "evidencias": [], "avisos": [], "origem": "sugestão da IA"}
@@ -43,7 +44,18 @@ def dd_ia(p):
     return {"resultado": {"hipoteses": [hip], "naoPodePerder": None, "rastrear": []}, "meta": META}
 
 
+def perguntas_ia(p):
+    q = {
+        "texto": "A ferida sangra ao toque leve?",
+        "seSim": "Refere sangramento ao toque leve.",
+        "seNao": "Nega sangramento.",
+        "sinalId": "lesao-sangra-facil",
+    }
+    return {"resultado": {"perguntas": [q]}, "meta": META}
+
+
 PADRAO = {
+    "perguntas": perguntas_ia,
     "sinais": lambda p: {"resultado": {"detectados": [], "extras": []}, "meta": META},
     "historia": historia_ia,
     "diagnosticos": dd_ia,
@@ -312,4 +324,33 @@ def test_a_especialidade_da_consulta_escolhe_o_pacote():
     oficializar(repo, medico, c.id, "exame", QUANDO)
     with pytest.raises(PacoteInvalido):  # Geriatria ainda não tem prompts: o servidor pediu a pasta dela
         gerar(ctx, medico, c.id, "historia")
+    assert pedidas == ["geriatria"]
+
+
+def test_perguntas_usam_a_especialidade_da_consulta():
+    pedidas: list[str] = []
+    pacientes = RepositorioPacientesMemoria()
+    medico = uuid4()
+    p = pacientes.criar(
+        medico,
+        NovoPaciente(nome="Ana Lima", nascimento=date(1990, 1, 1), sexo="F", cpf="12345678909", telefone="11987654321"),
+    )
+    repo = RepositorioConsultasMemoria(pacientes)
+    c = repo.criar(
+        medico,
+        NovaConsulta(
+            paciente_id=p.id, tipo="consulta", modalidade="presencial", agendada_para=QUANDO, especialidade="geriatria"
+        ),
+    )
+    editar(repo, medico, c.id, "anamnese", ANAMNESE)
+    editar(repo, medico, c.id, "exame", EXAME)
+    repo.gravar_bloco(medico, c.id, "historia", "rascunho_ia", HISTORIA_BLOCO, None)
+
+    def pacote(esp):
+        pedidas.append(esp)
+        return Pacote(sinais=LISTA, protocolos={})
+
+    ctx = Contexto(repo=repo, pacientes=pacientes, provedor=Roteiro(), relogio=RelogioFixo(QUANDO), pacote=pacote)
+    with pytest.raises(PacoteInvalido):  # Geriatria ainda não tem prompts: o servidor pediu a pasta dela
+        gerar_perguntas(ctx, medico, c.id)
     assert pedidas == ["geriatria"]

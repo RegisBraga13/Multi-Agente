@@ -315,3 +315,45 @@ def test_anamnese_com_sinal_desconhecido_e_422(mundo):
         "sinais": [{"id": "angioedema", "texto": "Inchaço de lábios/língua ou falta de ar", "resposta": "nao"}]
     }
     assert c.put(f"/consultas/{cid}/anamnese", json=ok).status_code == 200
+
+
+def _com_historia(c):
+    cid = nova_consulta(c)
+    ate_exame(c, cid)
+    assert eventos(c.post(f"/consultas/{cid}/historia/gerar").text)[-1][1]["gravado"] is True
+    return cid
+
+
+def test_gerar_perguntas_devolve_a_proposta_sem_gravar(mundo):
+    c = cliente(mundo)
+    cid = _com_historia(c)
+    r = c.post(f"/consultas/{cid}/perguntas/gerar")
+    assert r.status_code == 200
+    [p] = r.json()["perguntas"]
+    assert (p["id"], p["sinalId"], p["resposta"]) == ("p1", "lesao-sangra-facil", None)
+    historia = next(b for b in c.get(f"/consultas/{cid}").json()["blocos"] if b["etapa"] == "historia")
+    assert historia["conteudo"].get("perguntas", []) == []  # a tela salva depois, com o PUT /historia
+
+
+def test_gerar_perguntas_sem_historia_e_409(mundo):
+    c = cliente(mundo)
+    cid = nova_consulta(c)
+    ate_exame(c, cid)
+    r = c.post(f"/consultas/{cid}/perguntas/gerar")
+    assert r.status_code == 409 and "história" in r.json()["detail"]
+
+
+def test_gerar_perguntas_registra_a_decisao(mundo):
+    c = cliente(mundo)
+    cid = _com_historia(c)
+    c.post(f"/consultas/{cid}/perguntas/gerar")
+    assert "perguntas" in [reg.motor for reg, _ in mundo[1]._dados[UUID(cid)].propostas]
+
+
+def test_nome_do_paciente_na_historia_bloqueia_as_perguntas_com_422(mundo):
+    c = cliente(mundo)
+    cid = _com_historia(c)
+    historia = next(b for b in c.get(f"/consultas/{cid}").json()["blocos"] if b["etapa"] == "historia")["conteudo"]
+    historia["historia"]["hda"] = "Mariana refere manchas."
+    assert c.put(f"/consultas/{cid}/historia", json=historia).status_code == 200
+    assert c.post(f"/consultas/{cid}/perguntas/gerar").status_code == 422

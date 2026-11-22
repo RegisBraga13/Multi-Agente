@@ -14,7 +14,7 @@ from typing import Any
 from uuid import UUID
 
 from app.consulta.repositorio import ConsultaFinalizada, ConsultaNaoEncontrada, RepositorioConsultas
-from app.consulta.servico import exigir_predecessor
+from app.consulta.servico import ErroEtapa, exigir_predecessor
 from app.contratos.base import ModeloApi
 from app.contratos.consulta import entrada_da_consulta, termos_do_paciente
 from app.contratos.consulta_blocos import (
@@ -29,11 +29,13 @@ from app.contratos.consulta_blocos import (
 )
 from app.contratos.motor import Acao, RegistroDecisao
 from app.contratos.paciente import Paciente
+from app.especialidades.guias import carregar_guias
 from app.especialidades.registro import Pacote
 from app.fuso import no_consultorio
 from app.motores.conduta import DiagnosticoConfirmado, motor_conduta
 from app.motores.diagnosticos import motor_diagnosticos, seguranca_de
 from app.motores.historia import motor_historia
+from app.motores.perguntas import PerguntasProposta, motor_perguntas
 from app.motores.sinais import motor_sinais
 from app.pacientes.repositorio import RepositorioPacientes
 from app.provedores.ia import ProvedorIA
@@ -182,3 +184,41 @@ def gerar(
     return ResultadoGeracao(
         acao="HUMAN_REVIEW", gravado=situacao == "gravado", conteudo=conteudo, avisos=avisos, mensagem=mensagem
     )
+
+
+HISTORIA_AUSENTE = "Monte a história antes das perguntas"
+
+
+def gerar_perguntas(ctx: Contexto, medico_id: UUID, consulta_id: UUID) -> PerguntasProposta:
+    """Propõe as perguntas contextuais da consulta. Não grava no bloco: a tela as põe na história e salva com ela."""
+    consulta = ctx.repo.buscar(medico_id, consulta_id)
+    if consulta.finalizada_em is not None:
+        raise ConsultaFinalizada
+    blocos = {e: consulta.bloco(e) for e in ("anamnese", "exame", "historia")}
+    if any(b is None for b in blocos.values()):
+        raise ErroEtapa(HISTORIA_AUSENTE)
+    catalogo = ctx.pacote(consulta.especialidade).sinais
+    paciente = _paciente(ctx, medico_id, consulta)
+    anamnese = AnamneseBloco.model_validate(_bloco(consulta, "anamnese"))
+    exame = ExameBloco.model_validate(_bloco(consulta, "exame"))
+    historia = HistoriaBloco.model_validate(_bloco(consulta, "historia")).historia
+    entrada = entrada_da_consulta(paciente, anamnese, exame, no_consultorio(consulta.agendada_para).date())
+    registros: list[RegistroDecisao] = []
+    proposta: PerguntasProposta | None = None
+    try:
+        proposta = motor_perguntas(
+            ctx.provedor,
+            entrada,
+            historia,
+            catalogo,
+            carregar_guias(consulta.especialidade),
+            ctx.relogio,
+            registros.append,
+            termos_do_paciente(paciente),
+            consulta.especialidade,
+        )
+    finally:
+        conteudo = proposta.model_dump(by_alias=True, mode="json") if proposta else None
+        for r in registros:
+            ctx.repo.registrar_proposta(medico_id, consulta_id, r, conteudo)
+    return proposta
