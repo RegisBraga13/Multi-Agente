@@ -1,6 +1,6 @@
 titulo: Acne
-situacao: pendente
-Rascunho para revisão do médico. Numa queixa de acne, vale perguntar sobre:
+situacao: aprovado
+Numa queixa de acne, vale perguntar sobre:
 - início, piora com ciclo menstrual, estresse, alimentação ou produtos no rosto;
 - tratamentos já feitos (antibiótico, isotretinoína, pílula) e como responderam;
 - gestação, suspeita de gravidez, amamentação ou plano de engravidar (muda o tratamento);

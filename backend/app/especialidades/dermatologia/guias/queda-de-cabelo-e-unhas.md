@@ -1,6 +1,6 @@
 titulo: Queda de cabelo e unhas
-situacao: pendente
-Rascunho para revisão do médico. Na queda de cabelo ou alterações nas unhas, vale perguntar sobre:
+situacao: aprovado
+Na queda de cabelo ou alterações nas unhas, vale perguntar sobre:
 - início, quantidade, queda difusa ou em falhas, e se foi súbita;
 - febre, cirurgia, parto, dieta restritiva ou estresse nos últimos meses;
 - doença da tireoide, anemia, lúpus ou outros problemas de saúde;

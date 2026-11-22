@@ -1,6 +1,6 @@
 titulo: Infecções da pele
-situacao: pendente
-Rascunho para revisão do médico. Em lesões que podem ser infecção (bactéria, fungo, vírus, parasita), vale perguntar sobre:
+situacao: aprovado
+Em lesões que podem ser infecção (bactéria, fungo, vírus, parasita), vale perguntar sobre:
 - início, pus, dor, calor local, vermelhidão que se espalha, febre;
 - ferimento, picada, contato com animais, piscina, academia ou viagem;
 - diabetes, má circulação ou feridas nos pés;

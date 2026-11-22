@@ -20,6 +20,9 @@ const BLOCOS: Bloco[] = ['anamnese', 'exame', 'historia', 'diagnosticos', 'condu
 /** Posição no fluxo: anamnese e exame juntos alimentam a história. */
 const NIVEL: Record<Bloco, number> = { anamnese: 0, exame: 0, historia: 1, diagnosticos: 2, conduta: 3, anexos: 4, prontuario: 5 }
 
+/** A página 1 só pergunta as alergias: os sinais de alerta (red flags) vêm depois da história, como perguntas contextuais. */
+export const soAlergias = <T extends { tipo: string }>(alertas: T[]): T[] => alertas.filter((a) => a.tipo === 'alergia')
+
 export function inicial(alertas: string[]): EstadoConsulta {
   const blocos = Object.fromEntries(BLOCOS.map((b) => [b, { estado: 'rascunho_ia', desatualizado: false }])) as EstadoConsulta['blocos']
   return { blocos, alertas: Object.fromEntries(alertas.map((id) => [id, null])), alcancadas: [] }

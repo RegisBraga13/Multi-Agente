@@ -14,7 +14,8 @@ def test_carrega_os_guias_da_dermatologia():
         "queda-de-cabelo-e-unhas",
         "urticaria-e-reacao-a-medicamento",
     ]
-    assert all(g.situacao == "pendente" and g.titulo and g.texto for g in guias)  # o autor ainda não aprovou
+    assert all(g.situacao == "aprovado" and g.titulo and g.texto for g in guias)  # revisados pelo autor em 22/11/2026
+    assert not any("Rascunho" in g.texto for g in guias)  # a IA lê o texto: nada de aviso de rascunho nele
 
 
 def test_guia_sem_titulo_e_invalido(tmp_path):

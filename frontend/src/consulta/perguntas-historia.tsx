@@ -6,8 +6,6 @@ import { perguntaDoCatalogo, rotuloDoBloco, type AvisoUrgencia } from './histori
 
 const ROTULO_SECAO = 'text-[10.5px] font-bold tracking-[0.14em] text-historia-rotulo uppercase'
 const RESPOSTAS = [{ id: 'sim', nome: 'Sim' }, { id: 'nao', nome: 'Não' }] as const
-/** com mais perguntas que isto, o bloco rola dentro do cartão (o número de perguntas é livre) */
-const VISIVEIS = 4
 
 type Props = {
   perguntas: PerguntaServidor[]
@@ -56,7 +54,7 @@ export function PerguntasHistoria({ perguntas, urgencias, catalogo, carregando, 
         </ul>
       )}
       {perguntas.length > 0 && (
-        <div className={`flex flex-col gap-1 ${perguntas.length > VISIVEIS ? 'max-h-[124px] overflow-y-auto' : ''}`}>
+        <div className="flex flex-col gap-1">
           {perguntas.map((p) => (
             <div key={p.id} className="flex items-center gap-3 border-[1.5px] border-linha bg-branco py-0.5 pr-1 pl-3 text-[14px] text-alerta-clinico">
               <span title={p.texto} className="min-w-0 flex-1 truncate">{p.texto}</span>

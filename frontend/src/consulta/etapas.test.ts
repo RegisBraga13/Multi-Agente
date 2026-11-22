@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { editar, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
+import { soAlergias, editar, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
 import type { EstadoConsulta } from './tipos'
 
 const tudoOficializado = (): EstadoConsulta =>
@@ -93,5 +93,16 @@ describe('podeGravar', () => {
     expect(podeGravar({ ...pronta, transcricao: 'recusada' })).toBe(false)
     expect(podeGravar({ situacao: 'link-enviado' })).toBe(false)
     expect(podeGravar({ situacao: 'sem-ficha' })).toBe(false)
+  })
+})
+
+
+describe('soAlergias (a página 1 não pergunta mais os sinais de alerta)', () => {
+  it('deixa só as alergias, na mesma ordem', () => {
+    const alertas = [{ id: 'alergia-0', tipo: 'alergia' }, { id: 'sinal-0', tipo: 'sinal' }, { id: 'alergia-1', tipo: 'alergia' }]
+    expect(soAlergias(alertas).map((a) => a.id)).toEqual(['alergia-0', 'alergia-1'])
+  })
+  it('sem alergia a lista fica vazia', () => {
+    expect(soAlergias([{ id: 'sinal-0', tipo: 'sinal' }])).toEqual([])
   })
 })

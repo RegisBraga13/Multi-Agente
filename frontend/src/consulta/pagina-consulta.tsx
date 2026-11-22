@@ -9,7 +9,7 @@ import { NaoEncontrada } from '../nao-encontrada'
 import { idade } from '../modulo/dia'
 import type { Atendimento } from '../modulo/tipos'
 import { Anamnese } from './anamnese'
-import { ETAPAS, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
+import { ETAPAS, soAlergias, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
 import { Exame } from './exame'
 import { atualizarHistoria, montarHistoria, montarHistoriaEvolucao, secoesDaConsultaAnterior, secoesDaEvolucaoParaDD, type SecaoHistoria } from './historia'
 import { PaginaHistoria } from './historia-pagina'
@@ -116,7 +116,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   /** no retorno a primeira página é a Evolução (regra 14.1) */
   const nomeDaEtapa = (id: string, nome: string) => (at.tipo === 'retorno' ? ({ 'anamnese-exame': 'Evolução', historia: 'História da evolução' } as Record<string, string>)[id] ?? nome : nome)
   const consultaAnterior = at.tipo === 'retorno' ? entradas(at.paciente.id).find((e) => e.tipo === 'consulta') : undefined
-  const [estado, despachar] = useReducer(reduzir, conteudo.alertas.map((a) => a.id), inicial)
+  const [estado, despachar] = useReducer(reduzir, soAlergias(conteudo.alertas).map((a) => a.id), inicial)
   const [anexos, setAnexos] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const navegar = useNavigate()
@@ -228,8 +228,8 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     if (!podeOficializar(estado, 'historia') && podeOficializar(novo, 'historia')) {
       if (servidor) { void montarDoServidor(servidor.id); navegar(`${base}/historia`); return }
       const f = fontes.current
-      // sinais de alerta da anamnese, com a resposta do médico, entram em "Antecedentes e alertas"
-      const sinais = conteudo.alertas.filter((x) => x.tipo === 'sinal').map((x) => ({ texto: x.texto, resposta: novo.alertas[x.id] }))
+      // os sinais de alerta não saem mais da página 1 (vêm depois da história, como perguntas contextuais)
+      const sinais: { texto: string; resposta: RespostaAlerta | null }[] = []
       // retorno: História da evolução (sem identificação, abre com "Paciente relata..."); primeira consulta: história clínica
       const novas = at.tipo === 'retorno'
         ? montarHistoriaEvolucao(f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais: [], perguntas: f.perguntas, anteriores: entradas(at.paciente.id).map((e) => ({ data: e.data, exameFisico: e.dados.exameFisico, extensaoPct: e.dados.extensaoPct })) })
@@ -437,7 +437,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
             <Anamnese
               falas={conteudo.falas}
               perguntas={conteudo.perguntas}
-              alertas={conteudo.alertas}
+              alertas={soAlergias(conteudo.alertas)}
               respostas={estado.alertas}
               situacao={estado.blocos.anamnese.estado}
               pendencias={pendenciasAnamnese(estado)}

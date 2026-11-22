@@ -1,6 +1,6 @@
 titulo: Psoríase e dermatites
-situacao: pendente
-Rascunho para revisão do médico. Em placas descamativas, coceira ou eczema, vale perguntar sobre:
+situacao: aprovado
+Em placas descamativas, coceira ou eczema, vale perguntar sobre:
 - início, locais, piora no frio, no calor ou com estresse;
 - dor ou inchaço nas articulações e alterações nas unhas;
 - contato com produtos, metais, plantas ou trabalho com as mãos molhadas;
