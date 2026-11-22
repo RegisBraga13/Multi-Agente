@@ -8,7 +8,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import Field
+from pydantic import StringConstraints
 
 from app.api.dependencias import Dependencias, dependencias, medico_atual
 from app.consulta.repositorio import ConsultaFinalizada
@@ -35,9 +35,12 @@ class Finalizacao(ModeloApi):
     edicoes: dict[str, str]
 
 
+# a coluna `reason` do banco é obrigatória; o médico escreve só o texto
+MOTIVO_PADRAO = "adendo do médico"
+
+
 class NovoAdendo(ModeloApi):
-    texto: str = Field(min_length=1)
-    motivo: str = Field(min_length=1)
+    texto: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 def _proposto(dep: Dependencias, medico: UUID, consulta_id: UUID) -> DadosEntrada:
@@ -81,7 +84,7 @@ def finalizar(consulta_id: UUID, corpo: Finalizacao, dep: Dep, medico: Medico) -
 
 @rotas.post("/consultas/{consulta_id}/adendos", status_code=status.HTTP_201_CREATED)
 def adicionar_adendo(consulta_id: UUID, corpo: NovoAdendo, dep: Dep, medico: Medico) -> None:
-    dep.repo.adicionar_adendo(medico, consulta_id, corpo.texto, corpo.motivo, dep.relogio.agora())
+    dep.repo.adicionar_adendo(medico, consulta_id, corpo.texto, MOTIVO_PADRAO, dep.relogio.agora())
 
 
 @rotas.get("/pacientes/{paciente_id}/prontuario", response_model=list[EntradaProntuario])

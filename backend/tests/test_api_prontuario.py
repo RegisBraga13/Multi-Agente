@@ -73,14 +73,14 @@ def test_finalizar_com_documento_nao_enviado_e_409(mundo):
 def test_adendo_so_depois_de_finalizar(mundo):
     c = cliente(mundo)
     cid = consulta_pronta(c)
-    adendo = {"texto": "Biópsia confirmou.", "motivo": "resultado de exame"}
+    adendo = {"texto": "Biópsia confirmou."}
     r = c.post(f"/consultas/{cid}/adendos", json=adendo)
     assert r.status_code == 409 and r.json()["detail"] == "adendo só em consulta finalizada"
     c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}})
     assert c.post(f"/consultas/{cid}/adendos", json=adendo).status_code == 201
     paciente = c.get(f"/consultas/{cid}").json()["pacienteId"]
     assert c.get(f"/pacientes/{paciente}/prontuario").json()[0]["adendos"][0]["texto"] == "Biópsia confirmou."
-    assert c.post(f"/consultas/{cid}/adendos", json={"texto": " ", "motivo": "x"}).status_code == 422
+    assert c.post(f"/consultas/{cid}/adendos", json={"texto": "   "}).status_code == 422
 
 
 def test_entrada_finalizada_nao_muda(mundo):
