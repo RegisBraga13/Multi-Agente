@@ -128,6 +128,7 @@ def gerar(
     registros: list[RegistroDecisao] = []
     conteudos: dict[str, Any] = {}
     reg = registros.append
+    sem_gravar: ModeloApi | None = None
     try:
         novo: ModeloApi | None
         if etapa == "historia":
@@ -178,17 +179,21 @@ def gerar(
             )
             conteudos["conduta"] = c.model_dump(by_alias=True, mode="json")
             avisos = c.avisos
-            novo = (
-                CondutaBloco(proposta=c, diagnostico=dx, escolha={}, textos=["", "", "", ""], receita=[], livres=[])
-                if c.acao == "HUMAN_REVIEW"
-                else None
+            bloco_conduta = CondutaBloco(
+                proposta=c, diagnostico=dx, escolha={}, textos=["", "", "", ""], receita=[], livres=[]
             )
+            novo = bloco_conduta if c.acao == "HUMAN_REVIEW" else None
+            # sem conduta a revisar nada é gravado, mas a urgência e a emergência (regra fixa) chegam à tela
+            sem_gravar = bloco_conduta if novo is None else None
     finally:
         for r in registros:
             ctx.repo.registrar_proposta(medico_id, consulta_id, r, conteudos.get(r.motor))
 
     if novo is None:
-        return ResultadoGeracao(acao="REJECT", gravado=False, conteudo=None, avisos=avisos, mensagem=FALHOU)
+        conteudo_rejeitado = sem_gravar.model_dump(by_alias=True, mode="json") if sem_gravar else None
+        return ResultadoGeracao(
+            acao="REJECT", gravado=False, conteudo=conteudo_rejeitado, avisos=avisos, mensagem=FALHOU
+        )
     conteudo = novo.model_dump(by_alias=True, mode="json")
     # a IA levou segundos: grava só se a anterior continua como estava e a etapa não foi mexida (uma gravação só)
     situacao = ctx.repo.gravar_rascunho_ia(

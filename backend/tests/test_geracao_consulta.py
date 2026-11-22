@@ -431,3 +431,39 @@ def test_diagnostico_do_medico_sem_cid_pede_a_conduta_sem_protocolo(cenario):
     r = gerar(ctx, medico, cid, "conduta")
     assert r.acao == "HUMAN_REVIEW" and r.conteudo["proposta"]["tabela"] is None
     assert r.conteudo["diagnostico"]["cid"] == ""
+
+
+def _psoriase_confirmada():
+    h = HipoteseItem(nome="Psoríase vulgar", cid="L40.0", certeza="clinico", pct=70, evidencias=[])
+    return DiagnosticosBloco(
+        itens=[ItemDD(hipotese=h, decisao="confirmada", propria=False)], nao_pode_perder=None, rastrear=[]
+    )
+
+
+def test_ia_da_conduta_falha_mas_a_emergencia_fixa_continua_visivel(cenario):
+    sinal = next(s for s in LISTA if s.id == "angioedema")
+    repo, medico, cid, ctx = _ate_historia_com_perguntas(cenario, [_pergunta("p1", "angioedema", "sim")])
+    gerar(ctx, medico, cid, "diagnosticos")
+    editar(repo, medico, cid, "diagnosticos", _psoriase_confirmada())
+    oficializar(repo, medico, cid, "diagnosticos", QUANDO)
+    r = gerar(contexto(cenario, Roteiro(conduta=lambda p: "timeout")), medico, cid, "conduta")
+    # a conduta não é gravada (não há o que revisar), mas a urgência e a ação de emergência chegam à tela
+    assert (r.acao, r.gravado) == ("REJECT", False) and repo.buscar(medico, cid).bloco("conduta") is None
+    assert r.conteudo["proposta"]["urgencia"] == "imediata" and r.conteudo["proposta"]["emergencia"] == sinal.acao
+    assert r.conteudo["proposta"]["ia"] is None and r.conteudo["proposta"]["iaFalhou"] is True
+
+
+def test_conduta_sem_urgencia_e_sem_ia_devolve_a_proposta_para_a_tela_abrir_em_branco(cenario):
+    oficializar_ate_exame(cenario)
+    repo, _, medico, cid = cenario
+    ctx = contexto(cenario, Roteiro())
+    gerar(ctx, medico, cid, "historia")
+    oficializar(repo, medico, cid, "historia", QUANDO)
+    editar(repo, medico, cid, "diagnosticos", _psoriase_confirmada())
+    oficializar(repo, medico, cid, "diagnosticos", QUANDO)
+    r = gerar(contexto(cenario, Roteiro(conduta=lambda p: "timeout")), medico, cid, "conduta")
+    assert (
+        r.acao == "REJECT"
+        and r.conteudo["proposta"]["urgencia"] == "rotina"
+        and r.conteudo["diagnostico"]["cid"] == "L40.0"
+    )
