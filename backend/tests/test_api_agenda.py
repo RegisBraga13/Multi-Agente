@@ -236,3 +236,30 @@ def test_avisar_cancela_o_pedido_e_o_horario_volta_a_ficar_livre(agenda):
     assert r.status_code == 200 and r.json()["status"] == "cancelado"
     assert c.get("/publico/medicos/ana-souza/ocupados", params={"de": "2026-11-20", "ate": "2026-11-20"}).json() == []
     assert pedir(c).status_code == 201  # outro paciente pode pegar o mesmo horário
+
+
+def test_retornos_do_periodo_so_do_medico_e_do_periodo(agenda):
+    from uuid import uuid4
+
+    from app.contratos.agenda import RetornoMarcado
+
+    paciente, origem = uuid4(), uuid4()
+    agenda.criar_retorno(
+        MEDICO_A, paciente, "João Lima", origem, RetornoMarcado(data="2026-11-20", inicio="14:00", modalidade="online")
+    )
+    agenda.criar_retorno(
+        MEDICO_A, paciente, "João Lima", uuid4(), RetornoMarcado(data="2026-12-20", inicio="14:00", modalidade="online")
+    )
+    agenda.criar_retorno(
+        MEDICO_B, uuid4(), "Outra", uuid4(), RetornoMarcado(data="2026-11-20", inicio="15:00", modalidade="presencial")
+    )
+    r = cliente(agenda).get("/agenda/retornos", params={"de": "2026-11-20", "ate": "2026-11-21"})
+    assert r.status_code == 200
+    assert [(x["pacienteNome"], x["inicio"], x["modalidade"], x["consultaOrigemId"]) for x in r.json()] == [
+        ("João Lima", "14:00", "online", str(origem))
+    ]
+
+
+def test_retornos_periodo_longo_demais_e_recusado_como_os_pedidos(agenda):
+    r = cliente(agenda).get("/agenda/retornos", params={"de": "2026-01-01", "ate": "2026-12-31"})
+    assert r.status_code == 422

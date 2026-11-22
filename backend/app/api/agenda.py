@@ -21,6 +21,7 @@ from app.contratos.agenda import (
     Pedido,
     PedidoCriado,
     PedidoParaPaciente,
+    Retorno,
 )
 
 publico = APIRouter(prefix="/publico", tags=["agenda (paciente)"])
@@ -64,6 +65,12 @@ def enviar_formulario(token: str, enviado: FormularioEnviado, dep: Dep) -> Respo
 def pedidos(de: date, ate: date, dep: Dep, medico: Medico) -> list[Pedido]:
     servico.periodo_valido(de, ate)
     return dep.agenda.pedidos(medico, de, ate)
+
+
+@medico_rotas.get("/retornos", response_model=list[Retorno])
+def retornos(de: date, ate: date, dep: Dep, medico: Medico) -> list[Retorno]:
+    servico.periodo_valido(de, ate)
+    return dep.agenda.retornos(medico, de, ate)
 
 
 @medico_rotas.get("/pedidos/{pedido_id}", response_model=Pedido)
