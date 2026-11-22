@@ -3,7 +3,7 @@
 import type { DadosPessoais, FormaFormulario, Transcricao } from '../medico/regras'
 import type { Modalidade } from '../medico/tipos'
 
-const BASE = '/api'
+export const BASE = '/api'
 
 export type SituacaoFicha = 'sem-ficha' | 'link-enviado' | 'pronta'
 export type HorarioOcupado = { data: string; inicio: string }

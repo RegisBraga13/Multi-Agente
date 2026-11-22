@@ -1,0 +1,18 @@
+import { describe, expect, it } from 'vitest'
+import { lerEventos } from './consulta'
+
+describe('lerEventos (fluxo de eventos do servidor)', () => {
+  it('lê os eventos na ordem, com o JSON de cada um', () => {
+    const texto = 'event: parcial\ndata: {"qp":"Esp"}\n\nevent: pronto\ndata: {"gravado":true}\n\n'
+    expect(lerEventos(texto)).toEqual([
+      { evento: 'parcial', dados: { qp: 'Esp' } },
+      { evento: 'pronto', dados: { gravado: true } },
+    ])
+  })
+  it('ignora o bloco incompleto no fim', () => {
+    expect(lerEventos('event: parcial\ndata: {"a":1}\n\nevent: pronto\ndata: {"gra')).toEqual([{ evento: 'parcial', dados: { a: 1 } }])
+  })
+  it('texto vazio não tem eventos', () => {
+    expect(lerEventos('')).toEqual([])
+  })
+})
