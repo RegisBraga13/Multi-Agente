@@ -32,7 +32,7 @@ export type Opcao = { id: string; rotulo: string; texto: string; dias?: number; 
  * `prefixo`: as opções marcadas viram uma frase só ("Encaminho para" + "ginecologia e cardiologia.").
  * `outro`: como o texto do "Outro" entra na frase ('{}' = o que o médico escreveu; padrão: a frase dele).
  */
-export type Linha = { id: string; rotulo: string | null; opcoes: Opcao[]; prefixo?: string; outro?: string }
+export type Linha = { id: string; rotulo: string | null; opcoes: Opcao[]; prefixo?: string; outro?: string; /** a linha aceita mais de uma opção (vem do servidor); sem isto vale a regra por id (`ehMultipla`) */ multipla?: boolean }
 
 /** Um "Outro" por grupo, no fim: marcado, abre um campo para o médico escrever.
  *  No grupo de uma linha, é a última opção dela; no de várias (Orientações), uma linha própria no fim. */
@@ -181,7 +181,8 @@ export function escolherOpcao(c: Conduta, linha: string, opcao: string): Conduta
   const i = c.grupos.findIndex((g) => g.linhas.some((l) => l.id === linha))
   if (i < 0 || !c.grupos[i].linhas.find((l) => l.id === linha)!.opcoes.some((o) => o.id === opcao)) return c
   const antes = c.escolha[linha] ?? []
-  const marcadas = antes.includes(opcao) ? antes.filter((id) => id !== opcao) : ehMultipla(linha) ? [...antes, opcao] : [opcao]
+  const multipla = c.grupos[i].linhas.find((l) => l.id === linha)!.multipla ?? ehMultipla(linha)
+  const marcadas = antes.includes(opcao) ? antes.filter((id) => id !== opcao) : multipla ? [...antes, opcao] : [opcao]
   return refazer({ ...c, escolha: { ...c.escolha, [linha]: marcadas } }, i)
 }
 
