@@ -43,8 +43,9 @@ export const salvarExame = (id: string, corpo: ExameServidor) => chamar<Consulta
 export const oficializarEtapa = (id: string, etapa: 'anamnese' | 'exame' | 'historia') =>
   chamar<ConsultaServidor>(`/consultas/${id}/${etapa}/oficializar`, { method: 'POST' })
 
-/** A lista fixa de sinais de alerta da especialidade (sempre checada pelo servidor). */
-export const sinaisDaEspecialidade = (slug: string) => chamar<{ id: string; texto: string }[]>(`/especialidades/${encodeURIComponent(slug)}/sinais`)
+/** O catálogo de sinais de alerta da especialidade (a IA escolhe os que servem ao caso; o médico pode abrir todos). */
+export type SinalDoCatalogo = { id: string; texto: string; tipo: SinalDisparadoServidor['tipo']; acao: string[]; prazo: string }
+export const sinaisDaEspecialidade = (slug: string) => chamar<SinalDoCatalogo[]>(`/especialidades/${encodeURIComponent(slug)}/sinais`)
 
 // ---------- História e perguntas contextuais ----------
 
