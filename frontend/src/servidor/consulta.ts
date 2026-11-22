@@ -1,6 +1,6 @@
 // Conversa com o servidor da consulta (FastAPI). Formatos iguais aos contratos do servidor
 // (backend/app/contratos/consulta_blocos.py), em camelCase.
-import type { DadosEntrada, EntradaProntuario } from '../prontuario/registro'
+import type { DadosEntrada, EntradaProntuario, PacienteComProntuario } from '../prontuario/registro'
 import { BASE, chamar, ErroServidor } from './agenda'
 
 export type SinalServidor = { id: string; texto: string; resposta: 'sim' | 'nao' }
@@ -182,3 +182,12 @@ export const finalizarConsulta = (id: string, edicoes: Record<string, string>) =
 
 /** As entradas já finalizadas do paciente (a mais recente no topo). */
 export const prontuarioDoPaciente = (pacienteId: string) => chamar<EntradaProntuario[]>(`/pacientes/${pacienteId}/prontuario`)
+
+/** Adendo: o médico escreve depois da consulta finalizada; o servidor registra o texto com data e hora. */
+export const adicionarAdendo = (consultaId: string, texto: string) => chamar<void>(`/consultas/${consultaId}/adendos`, json({ texto }))
+
+/** Quem já terminou ao menos uma consulta (lista de prontuários). */
+export const prontuariosDoMedico = () => chamar<PacienteComProntuario[]>('/prontuarios')
+
+/** Nome e nascimento de um paciente do médico (a janela do prontuário de um paciente real). */
+export const pacienteDoServidor = (id: string) => chamar<{ id: string; nome: string; nascimento: string }>(`/pacientes/${id}`)

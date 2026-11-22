@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { lerEventos, urlDaFinalizacao, urlDaGeracao, urlDoDocumento } from './consulta'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { adicionarAdendo, lerEventos, urlDaFinalizacao, urlDaGeracao, urlDoDocumento } from './consulta'
 
 describe('lerEventos (fluxo de eventos do servidor)', () => {
   it('lê os eventos na ordem, com o JSON de cada um', () => {
@@ -39,4 +39,14 @@ describe('urlDoDocumento', () => {
 
 describe('urlDaFinalizacao', () => {
   it('monta o endereço de finalizar a consulta', () => expect(urlDaFinalizacao('abc')).toBe('/api/consultas/abc/finalizar'))
+})
+
+describe('adicionarAdendo', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  it('envia só o texto, por POST, ao endereço dos adendos da consulta', async () => {
+    const f = vi.fn().mockResolvedValue(new Response('null', { status: 201 }))
+    vi.stubGlobal('fetch', f)
+    await adicionarAdendo('abc', 'Biópsia confirmou.')
+    expect(f).toHaveBeenCalledWith('/api/consultas/abc/adendos', expect.objectContaining({ method: 'POST', body: JSON.stringify({ texto: 'Biópsia confirmou.' }) }))
+  })
 })
