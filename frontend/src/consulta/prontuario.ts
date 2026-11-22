@@ -86,25 +86,25 @@ export function dadosDaConsulta({ historia, itens, conduta, anexos = [], complem
     encaminhado: orient.filter((f) => /^Encaminho para /.test(f)).map((f) => f.replace(/^Encaminho para /, '').replace(/\.$/, '')),
     orientacoes: orient.filter((f) => !/^(Solicito|Encaminho|Retorno) /.test(f)).join(' '),
     retorno: orient.filter((f) => /^Retorno /.test(f)).map((f) => f.replace(/^Retorno /, '')).join(' '),
-    documentos: anexos.filter((x) => x.emitir).flatMap(documento),
+    documentos: anexos.filter((x) => x.emitir).flatMap((x) => registroDoAnexo(x) ?? []),
     fotos,
   }
 }
 
 /** Atestado: "de 13/11 a 15/11/2026." (sem período: "comparecimento à consulta."). Laudo: "para o INSS." */
-function documento(a: Anexo): DocumentoRegistro[] {
+export function registroDoAnexo(a: Anexo): DocumentoRegistro | null {
   if (a.tipo === 'atestado') {
     const de = a.periodo?.de || null
     const ate = a.periodo?.ate || null
-    if (!de || !ate) return [{ tipo: 'atestado', de: null, ate: null, resumo: 'comparecimento à consulta.' }]
+    if (!de || !ate) return { tipo: 'atestado', de: null, ate: null, resumo: 'comparecimento à consulta.' }
     const curta = de.slice(0, 4) === ate.slice(0, 4) ? dataBr(de).slice(0, 5) : dataBr(de)
-    return [{ tipo: 'atestado', de, ate, resumo: `de ${curta} a ${dataBr(ate)}.` }]
+    return { tipo: 'atestado', de, ate, resumo: `de ${curta} a ${dataBr(ate)}.` }
   }
   if (a.tipo === 'laudo') {
     const f = textoFinalidade(a.finalidade)
-    return [{ tipo: 'laudo', finalidade: f, resumo: f ? `${f}.` : 'emitido.' }]
+    return { tipo: 'laudo', finalidade: f, resumo: f ? `${f}.` : 'emitido.' }
   }
-  return []
+  return null
 }
 
 /** Um por linha: "Acne vulgar (CID-10 L70.0) — 85% · Assinalado". */
