@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lerEventos, urlDaGeracao } from './consulta'
+import { lerEventos, urlDaGeracao, urlDoDocumento } from './consulta'
 
 describe('lerEventos (fluxo de eventos do servidor)', () => {
   it('lê os eventos na ordem, com o JSON de cada um', () => {
@@ -27,5 +27,12 @@ describe('urlDaGeracao', () => {
 describe('urlDaGeracao da conduta', () => {
   it('monta o endereço da conduta', () => {
     expect(urlDaGeracao('abc', 'conduta')).toBe('/api/consultas/abc/conduta/gerar')
+  })
+})
+
+describe('urlDoDocumento', () => {
+  it('monta o endereço de cada documento da consulta', () => {
+    expect(urlDoDocumento('abc', 'atestado')).toBe('/api/consultas/abc/documentos/atestado')
+    expect(urlDoDocumento('abc', 'receita')).toBe('/api/consultas/abc/documentos/receita')
   })
 })

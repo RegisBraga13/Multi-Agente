@@ -150,3 +150,20 @@ export type CondutaServidor = {
 export const gerarConduta = (id: string) => gerarEtapa<CondutaServidor>(id, 'conduta')
 
 export const salvarConduta = (id: string, bloco: CondutaServidor) => chamar<ConsultaServidor>(`/consultas/${id}/conduta`, put(bloco))
+
+// ---------- Documentos (anexos enviados) ----------
+
+export type TipoDocumento = 'receita' | 'exames' | 'encaminhamento' | 'orientacoes' | 'atestado' | 'laudo'
+export type DocumentoServidor = {
+  tipo: TipoDocumento
+  estado: 'rascunho' | 'revisado' | 'assinado' | 'enviado'
+  texto: string
+  registro: { tipo: 'atestado'; de: string | null; ate: string | null; resumo: string } | { tipo: 'laudo'; finalidade: string; resumo: string } | null
+}
+
+export const urlDoDocumento = (id: string, tipo: TipoDocumento) => `${BASE}/consultas/${id}/documentos/${tipo}`
+
+/** Grava (ou troca) o documento do tipo: um por tipo em cada consulta. */
+export const salvarDocumento = (id: string, doc: DocumentoServidor) => chamar<void>(`/consultas/${id}/documentos/${doc.tipo}`, put(doc))
+
+export const listarDocumentos = (id: string) => chamar<DocumentoServidor[]>(`/consultas/${id}/documentos`)
