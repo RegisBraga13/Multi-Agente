@@ -23,3 +23,9 @@ describe('urlDaGeracao', () => {
     expect(urlDaGeracao('abc', 'diagnosticos')).toBe('/api/consultas/abc/diagnosticos/gerar')
   })
 })
+
+describe('urlDaGeracao da conduta', () => {
+  it('monta o endereço da conduta', () => {
+    expect(urlDaGeracao('abc', 'conduta')).toBe('/api/consultas/abc/conduta/gerar')
+  })
+})

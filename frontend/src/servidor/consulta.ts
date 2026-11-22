@@ -40,7 +40,7 @@ export const salvarAnamnese = (id: string, corpo: AnamneseServidor) => chamar<Co
 
 export const salvarExame = (id: string, corpo: ExameServidor) => chamar<ConsultaServidor>(`/consultas/${id}/exame`, put(corpo))
 
-export const oficializarEtapa = (id: string, etapa: 'anamnese' | 'exame' | 'historia' | 'diagnosticos') =>
+export const oficializarEtapa = (id: string, etapa: 'anamnese' | 'exame' | 'historia' | 'diagnosticos' | 'conduta') =>
   chamar<ConsultaServidor>(`/consultas/${id}/${etapa}/oficializar`, { method: 'POST' })
 
 /** O catálogo de sinais de alerta da especialidade (a IA escolhe os que servem ao caso; o médico pode abrir todos). */
@@ -76,12 +76,12 @@ export function lerEventos(texto: string): { evento: string; dados: unknown }[] 
 
 const SEM_CONEXAO = 'Não foi possível falar com o consultório. Confira a internet e tente de novo.'
 
-export const urlDaGeracao = (id: string, etapa: 'historia' | 'diagnosticos') => `${BASE}/consultas/${id}/${etapa}/gerar`
+export const urlDaGeracao = (id: string, etapa: 'historia' | 'diagnosticos' | 'conduta') => `${BASE}/consultas/${id}/${etapa}/gerar`
 
 export type ResultadoEtapa<T> = { gravado: boolean; conteudo: T | null; avisos: string[]; mensagem: string }
 
 /** Pede ao servidor uma etapa escrita pela IA e espera o evento final. Falha da IA ou da rede lança ErroServidor. */
-export async function gerarEtapa<T>(id: string, etapa: 'historia' | 'diagnosticos'): Promise<ResultadoEtapa<T>> {
+export async function gerarEtapa<T>(id: string, etapa: 'historia' | 'diagnosticos' | 'conduta'): Promise<ResultadoEtapa<T>> {
   let r: Response
   try { r = await fetch(urlDaGeracao(id, etapa), { method: 'POST' }) } catch { throw new ErroServidor(0, SEM_CONEXAO) }
   if (!r.ok) {
@@ -115,3 +115,38 @@ export const salvarHistoria = (id: string, bloco: HistoriaServidor) => chamar<Co
 /** Perguntas de segurança escritas para este paciente (não grava: a tela salva junto com a história). */
 export const gerarPerguntas = (id: string) =>
   chamar<{ perguntas: PerguntaServidor[]; avisos: string[]; iaFalhou: boolean }>(`/consultas/${id}/perguntas/gerar`, { method: 'POST' })
+
+// ---------- Conduta ----------
+
+export type ItemReceitaServidor = {
+  nome: string; forma: string; concentracao: string
+  quantidade: { n: number; unidade: string; feminino: boolean }
+  via: 'topico' | 'oral'; posologia: string; duracao: string; controlado?: boolean | null
+}
+export type OpcaoServidor = { id: string; rotulo: string; texto: string; dias: number | null; receita: ItemReceitaServidor[] }
+export type LinhaServidor = { id: string; rotulo: string | null; opcoes: OpcaoServidor[]; prefixo: string | null; multipla: boolean }
+export type GrupoId = 'cuidados' | 'topico' | 'sistemico' | 'orientacoes'
+export type GrupoServidor = { id: GrupoId; rotulo: string; linhas: LinhaServidor[]; fixo: string | null }
+export type OpcaoIAServidor = { rotulo: string; texto: string; receita: ItemReceitaServidor[] }
+export type PropostaCondutaServidor = {
+  urgencia: 'rotina' | 'prioritaria' | 'imediata'
+  emergencia: string[]
+  tabela: { chave: string; origem: string; grupos: GrupoServidor[]; bloqueadas: { opcao: string; rotulo: string; motivo: string }[]; motivosOrdem: Record<string, string> } | null
+  ia: { grupos: { id: GrupoId; opcoes: OpcaoIAServidor[] }[] } | null
+  origem: string
+  avisos: string[]
+  acao: string
+  iaFalhou: boolean
+}
+export type CondutaServidor = {
+  proposta: PropostaCondutaServidor
+  diagnostico: { nome: string; cid: string; certeza: string }
+  escolha: Record<string, string[]>
+  textos: string[]
+  receita: ItemReceitaServidor[]
+  livres: string[]
+}
+
+export const gerarConduta = (id: string) => gerarEtapa<CondutaServidor>(id, 'conduta')
+
+export const salvarConduta = (id: string, bloco: CondutaServidor) => chamar<ConsultaServidor>(`/consultas/${id}/conduta`, put(bloco))
