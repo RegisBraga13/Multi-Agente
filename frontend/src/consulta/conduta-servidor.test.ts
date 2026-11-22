@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CondutaServidor, GrupoServidor, ItemReceitaServidor, PropostaCondutaServidor } from '../servidor/consulta'
-import { escolherOpcao, escreverOutro, OUTRO } from './conduta'
+import { atualizarConduta, editarTexto, escolherOpcao, escreverOutro, OUTRO } from './conduta'
 import { bloqueadasDaConduta, condutaDoServidor, condutaParaServidor, textoDaFaixa, textoDaRetirada, urgenciaDaConduta } from './conduta-servidor'
 
 const receita = (nome: string, via: 'topico' | 'oral' = 'topico'): ItemReceitaServidor => ({
@@ -118,5 +118,20 @@ describe('urgência e opções retiradas', () => {
     expect(bloqueadasDaConduta(tabela)).toEqual([{ rotulo: 'Isotretinoína', motivo: 'gestação ou tentativa de gravidez' }])
     expect(bloqueadasDaConduta(ia)).toEqual([])
     expect(textoDaRetirada({ rotulo: 'Isotretinoína', motivo: 'gestação ou tentativa de gravidez.' })).toBe('Não sugerido: Isotretinoína — gestação ou tentativa de gravidez.')
+  })
+})
+
+describe('regerar a conduta', () => {
+  it('mesmo diagnóstico: mantém as escolhas e os textos do médico; outro diagnóstico: conduta nova', () => {
+    const base = bloco(ia)
+    let antes = condutaDoServidor(base, DX, DIA, sinal)
+    antes = editarTexto(escolherOpcao(antes, 'topico', 'topico-1'), 1, 'Meu texto do tópico.')
+    const mantida = atualizarConduta(antes, condutaDoServidor(base, DX, DIA, sinal))
+    expect(mantida.escolha.topico).toEqual(['topico-1'])
+    expect(mantida.textos[1]).toBe('Meu texto do tópico.')
+    const outroDx = { id: 'l70-0-acne-vulgar', nome: 'Acne vulgar', cid: 'L70.0' }
+    const nova = atualizarConduta(antes, condutaDoServidor(base, outroDx, DIA, sinal))
+    expect(nova.escolha.topico).toBeUndefined()
+    expect(nova.diagnostico.id).toBe('l70-0-acne-vulgar')
   })
 })

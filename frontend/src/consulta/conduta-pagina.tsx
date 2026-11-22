@@ -94,7 +94,7 @@ export function PaginaConduta(p: Props) {
       }
     >
       {p.urgencia && (
-        <p role="alert" title={p.urgencia.acoes.join('. ')} className="mb-2 truncate bg-alerta-clinico px-3 py-1 text-[14px] font-semibold text-papel">{textoDaFaixa(p.urgencia)}</p>
+        <p role="alert" className="mb-2 bg-alerta-clinico px-3 py-1 text-[14px] leading-snug font-semibold text-papel">{textoDaFaixa(p.urgencia)}</p>
       )}
       {p.retiradas?.map((r) => <p key={r.rotulo} className="mb-1 text-[12.5px] text-apagado">{textoDaRetirada(r)}</p>)}
       {/* como na landing: especialidade / conduta · diagnóstico, e a alergia ao lado */}

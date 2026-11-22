@@ -30,11 +30,12 @@ import { partesPreConsulta } from '../medico/pre-consulta'
 import { atendimentoDoPedido, precisaIdentificacao } from '../modulo/pedidos'
 import { IdentificacaoNaChegada } from './identificacao-chegada'
 import { buscarPedido, enderecoFoto, ErroServidor, type PedidoNaAgenda } from '../servidor/agenda'
-import { abrirConsultaDoPedido, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, sinaisDaEspecialidade, type AnamneseServidor, type ConsultaServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
+import { abrirConsultaDoPedido, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, gerarConduta, salvarConduta as enviarConduta, sinaisDaEspecialidade, type AnamneseServidor, type CondutaServidor, type ConsultaServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
 import { adicionarPergunta, atualizarSecoes, avisosDeUrgencia, historiaParaServidor, juntarPerguntas, responder, secoesDoServidor } from './historia-servidor'
 import { BuscaCid } from './busca-cid'
 import { PerguntasHistoria } from './perguntas-historia'
-import { diagnosticosParaServidor, hipotesesDoServidor, itensDoServidor } from './diagnosticos-servidor'
+import { diagnosticosParaServidor, hipotesesDoServidor, idDaHipotese, itensDoServidor } from './diagnosticos-servidor'
+import { bloqueadasDaConduta, condutaDoServidor, condutaParaServidor, urgenciaDaConduta } from './conduta-servidor'
 import { anamneseDoServidor, anamneseParaServidor, etapasParaOficializar, exameDoServidor, exameParaServidor } from './servidor-mapa'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
@@ -99,17 +100,26 @@ function historiaVazia(base: HistoriaServidor | null, ficha: Atendimento['ficha'
   }
 }
 
+/** Sem proposta do servidor (falha): as 4 seções abrem em branco para o médico escrever. */
+function semProposta(nome: string, cid: string): CondutaServidor {
+  return {
+    proposta: { urgencia: 'rotina', emergencia: [], tabela: null, ia: null, origem: '', avisos: [], acao: 'REJECT', iaFalhou: true },
+    diagnostico: { nome, cid, certeza: 'clinico' }, escolha: {}, textos: ['', '', '', ''], receita: [], livres: [],
+  }
+}
+
 function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade; at: Atendimento; etapa: EtapaId; formulario: FormularioConsulta | null; servidor: ConsultaServidor | null }) {
   const base0 = useMemo(() => conteudoDaConsulta(at, esp.slug), [at, esp.slug])
   // consulta retomada: o que já estava salvo no servidor volta para os campos (como rascunho: salvar de novo envia e oficializa)
   const retomada = useMemo(() => {
-    const bloco = (etapa: 'anamnese' | 'exame' | 'historia' | 'diagnosticos') => servidor?.blocos.find((b) => b.etapa === etapa)?.conteudo
+    const bloco = (etapa: 'anamnese' | 'exame' | 'historia' | 'diagnosticos' | 'conduta') => servidor?.blocos.find((b) => b.etapa === etapa)?.conteudo
     const a = bloco('anamnese') as AnamneseServidor | undefined
     const x = bloco('exame') as ExameServidor | undefined
     const exame = x ? Object.fromEntries(exameDoServidor(x).map((c) => [c.rotulo, c.valor])) : null
     const h = bloco('historia') as HistoriaServidor | undefined
     const d = bloco('diagnosticos') as DiagnosticosServidor | undefined
-    return { anamnese: a ? anamneseDoServidor(a, base0.perguntas) : null, exame, historia: h ?? null, diagnosticos: d ?? null }
+    const k = bloco('conduta') as CondutaServidor | undefined
+    return { anamnese: a ? anamneseDoServidor(a, base0.perguntas) : null, exame, historia: h ?? null, diagnosticos: d ?? null, conduta: k ?? null }
   }, [servidor, base0])
   const conteudo = useMemo(
     () => (retomada.exame ? { ...base0, exame: base0.exame.map((c) => (retomada.exame![c.rotulo] ? { ...c, valor: retomada.exame![c.rotulo], prov: 'confirmado' as const } : c)) } : base0),
@@ -170,6 +180,9 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   /** consulta real: o último bloco dos diagnósticos que o servidor devolveu (dele vêm a certeza, o "não pode perder" e o "rastrear") */
   const [ddBase, setDdBase] = useState<DiagnosticosServidor | null>(retomada.diagnosticos)
   const [montandoDD, setMontandoDD] = useState(false)
+  /** consulta real: o último bloco da conduta que o servidor devolveu (proposta, diagnóstico e urgência) */
+  const [condBase, setCondBase] = useState<CondutaServidor | null>(retomada.conduta)
+  const [montandoConduta, setMontandoConduta] = useState(false)
   useEffect(() => {
     if (servidor) sinaisDaEspecialidade(esp.slug).then(setCatalogo, () => setCatalogo([]))
   }, [servidor, esp.slug])
@@ -331,7 +344,13 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   const nosItens = (f: (itens: ItemDD[]) => ItemDD[]) => mexerDd((d) => ({ ...d, itens: f(d.itens) }))
 
   /** Conduta: sugerida só com os diagnósticos salvos (confirmados) + "Para relembrar". */
-  const [conduta, setConduta] = useState<{ versao: number; c: Conduta } | null>(null)
+  const [conduta, setConduta] = useState<{ versao: number; c: Conduta } | null>(() => {
+    // consulta retomada: a conduta guardada volta como rascunho, com as escolhas e os textos de antes
+    const b = retomada.conduta
+    if (!b) return null
+    const c = condutaDoServidor(b, { id: idDaHipotese(b.diagnostico), nome: b.diagnostico.nome, cid: b.diagnostico.cid }, at.id.slice(0, 10), (id) => id)
+    return { versao: 1, c: { ...c, escolha: b.escolha, textos: b.textos, editado: b.textos.map(() => true), revelado: b.textos.map(() => true) } }
+  })
 
   /** Salvar diagnósticos. Consulta real: o servidor guarda e oficializa primeiro; só então a tela segue. */
   const salvarDiagnosticos = () => {
@@ -344,11 +363,34 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
       )
   }
 
+  /** Consulta real: o servidor monta a conduta (tabela de protocolo ou IA). Falha: as 4 seções abrem em branco para o médico escrever. */
+  const montarCondutaDoServidor = async (id: string) => {
+    setMontandoConduta(true)
+    let recebido: CondutaServidor | null = null
+    try {
+      const r = await gerarConduta(id)
+      recebido = r.conteudo // mesmo sem conduta a revisar, a urgência e a emergência (regra fixa) vêm aqui
+      if (!r.gravado && (!recebido || recebido.proposta.iaFalhou)) setAviso('A IA não conseguiu; escreva a conduta')
+    } catch (e) {
+      setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível montar a conduta. Tente de novo.')
+    }
+    const principal = dd?.itens.find((x) => x.decisao === 'confirmada')
+    const base: CondutaServidor | null = recebido ?? (principal ? semProposta(principal.hip.nome, principal.hip.cid) : null)
+    if (base) {
+      setCondBase(base)
+      const nomeDoSinal = (sid: string) => catalogo.find((x) => x.id === sid)?.texto ?? sid
+      const nova = condutaDoServidor(base, { id: idDaHipotese(base.diagnostico), nome: base.diagnostico.nome, cid: base.diagnostico.cid }, at.id.slice(0, 10), nomeDoSinal)
+      setConduta((x) => (x ? { versao: x.versao + 1, c: atualizarConduta(x.c, nova) } : { versao: 1, c: nova }))
+    }
+    setMontandoConduta(false)
+  }
+
   /** Ao liberar a conduta, a IA sugere (ou atualiza só o que mudou) e a página dela abre. */
   const concluirDiagnosticos = () => {
     const novo = oficializar(estado, 'diagnosticos')
     despachar({ tipo: 'oficializar', bloco: 'diagnosticos' })
     if (!dd || podeOficializar(estado, 'conduta') || !podeOficializar(novo, 'conduta')) return
+    if (servidor) { void montarCondutaDoServidor(servidor.id); navegar(`${base}/conduta`); return }
     const nova = montarConduta(dd.itens, dd.resumo, at.id.slice(0, 10))
     if (!nova) return
     setConduta((x) => (x ? { versao: x.versao + 1, c: atualizarConduta(x.c, nova) } : { versao: 1, c: nova }))
@@ -365,8 +407,19 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     hora: at.inicio,
   }
 
-  /** Salvar conduta. Ao liberar os anexos, a IA monta (ou refaz só o que mudou) e a página deles abre. */
+  /** Salvar conduta. Consulta real: o servidor guarda e oficializa primeiro; só então a tela segue. */
   const salvarConduta = () => {
+    if (!servidor || !conduta || !condBase) return concluirConduta()
+    enviarConduta(servidor.id, condutaParaServidor(conduta.c, condBase))
+      .then(() => oficializarEtapa(servidor.id, 'conduta'))
+      .then(
+        () => concluirConduta(),
+        (e: unknown) => setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível salvar. Tente de novo.'),
+      )
+  }
+
+  /** Ao liberar os anexos, a IA monta (ou refaz só o que mudou) e a página deles abre. */
+  const concluirConduta = () => {
     const novo = oficializar(estado, 'conduta')
     despachar({ tipo: 'oficializar', bloco: 'conduta' })
     if (!conduta || podeOficializar(estado, 'anexos') || !podeOficializar(novo, 'anexos')) return
@@ -595,6 +648,8 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
               onSalvar={salvarDiagnosticos}
             />
           </div>
+        ) : etapa === 'conduta' && montandoConduta ? (
+          <p className="py-16 text-center text-apagado">A IA está montando a conduta com os diagnósticos salvos…</p>
         ) : etapa === 'conduta' && conduta && dd && situacaoDaEtapa(estado, 'conduta') !== 'bloqueado' ? (
           <div className="flex flex-1 flex-col [&>section]:flex-1">
             {situacaoDaEtapa(estado, 'conduta') === 'desatualizado' && !podeOficializar(estado, 'conduta') && (
@@ -615,6 +670,8 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
               onRevelar={(i) => setConduta((x) => x && { ...x, c: revelar(x.c, i) })}
               onEditar={(i, texto) => mexerConduta((c) => editarTexto(c, i, texto))}
               onSalvar={salvarConduta}
+              urgencia={servidor && condBase ? urgenciaDaConduta(condBase.proposta) : null}
+              retiradas={servidor && condBase ? bloqueadasDaConduta(condBase.proposta) : undefined}
             />
           </div>
         ) : etapa === 'anexos' && docs && situacaoDaEtapa(estado, 'anexos') !== 'bloqueado' ? (

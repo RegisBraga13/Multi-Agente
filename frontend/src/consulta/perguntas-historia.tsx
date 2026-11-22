@@ -25,8 +25,8 @@ export function PerguntasHistoria({ perguntas, urgencias, catalogo, carregando, 
   return (
     <div className="mt-2 flex flex-col gap-1.5">
       {urgencias.map((u) => (
-        <p key={u.id} role="alert" title={`${u.acao.join('. ')} (${u.prazo})`} className="truncate bg-alerta-clinico px-3 py-1 text-[14px] font-semibold text-papel">
-          Urgência: {u.texto}. {u.acao[0]}{u.prazo ? ` (${u.prazo})` : ''}
+        <p key={u.id} role="alert" className="bg-alerta-clinico px-3 py-1 text-[14px] leading-snug font-semibold text-papel">
+          Urgência: {u.texto}. {u.acao.join('. ')}{u.prazo ? ` (${u.prazo})` : ''}
         </p>
       ))}
       <div className="flex items-center justify-between">
