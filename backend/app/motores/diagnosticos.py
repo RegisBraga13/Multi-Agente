@@ -67,6 +67,13 @@ class DadosSeguranca(ModeloApi):
     sinais: list[SinalDisparado]
 
 
+class RespostaDeAlerta(ModeloApi):
+    """Uma pergunta contextual que o médico respondeu (o DD lê só as respondidas)."""
+
+    texto: str
+    resposta: Literal["sim", "nao"]
+
+
 def seguranca_de(entrada: EntradaConsulta, sinais: SinaisConsulta) -> DadosSeguranca:
     return DadosSeguranca(alergias=entrada.alergias, em_uso=entrada.em_uso, sinais=sinais.disparados)
 
@@ -104,16 +111,20 @@ def motor_diagnosticos(
     termos_proibidos: Sequence[str] = (),
     ao_escrever: Callable[[dict[str, Any]], None] | None = None,
     especialidade: str = ESPECIALIDADE_PADRAO,
+    respostas: Sequence[RespostaDeAlerta] = (),
 ) -> PropostaIA[DiagnosticosIA]:
     prompt = carregar_prompt(especialidade, "diagnosticos")
+    dados: dict[str, Any] = {
+        "historia": historia.model_dump(by_alias=True, mode="json"),
+        "seguranca": seguranca.model_dump(by_alias=True, mode="json"),
+    }
+    if respostas:  # só quando há; sem perguntas respondidas o pedido é o de antes
+        dados["respostasDeAlerta"] = [r.model_dump(by_alias=True, mode="json") for r in respostas]
     pedido = PedidoIA(
         motor="diagnosticos",
         versao_prompt=prompt.versao,
         instrucoes=prompt.texto,
-        dados={
-            "historia": historia.model_dump(by_alias=True, mode="json"),
-            "seguranca": seguranca.model_dump(by_alias=True, mode="json"),
-        },
+        dados=dados,
         esforco="high",
     )
     return chamar_motor(

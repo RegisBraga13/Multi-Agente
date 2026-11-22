@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
+from app.consulta.perguntas import respostas_de_alerta, seguranca_com_respostas
 from app.consulta.repositorio import ConsultaFinalizada, ConsultaNaoEncontrada, RepositorioConsultas
 from app.consulta.servico import ErroEtapa, exigir_predecessor
 from app.contratos.base import ModeloApi
@@ -132,8 +133,17 @@ def gerar(
             novo, avisos = _historia(ctx, consulta, paciente, reg, termos, conteudos, ao_escrever)
         elif etapa == "diagnosticos":
             h = HistoriaBloco.model_validate(_bloco(consulta, "historia"))
+            seguranca = seguranca_com_respostas(h.seguranca, h.perguntas, ctx.pacote(consulta.especialidade).sinais)
             p = motor_diagnosticos(
-                ctx.provedor, h.historia, h.seguranca, ctx.relogio, reg, termos, ao_escrever, consulta.especialidade
+                ctx.provedor,
+                h.historia,
+                seguranca,
+                ctx.relogio,
+                reg,
+                termos,
+                ao_escrever,
+                consulta.especialidade,
+                respostas_de_alerta(h.perguntas),
             )
             conteudos["diagnosticos"] = p.resultado.model_dump(by_alias=True, mode="json") if p.resultado else None
             avisos = p.avisos
@@ -154,7 +164,7 @@ def gerar(
             c = motor_conduta(
                 ctx.provedor,
                 dx,
-                h.seguranca,
+                seguranca_com_respostas(h.seguranca, h.perguntas, ctx.pacote(consulta.especialidade).sinais),
                 ctx.pacote(consulta.especialidade).protocolos,
                 ctx.relogio,
                 reg,

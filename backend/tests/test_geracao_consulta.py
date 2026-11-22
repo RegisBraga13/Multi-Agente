@@ -8,7 +8,7 @@ from app.consulta.geracao import Contexto, gerar, gerar_perguntas
 from app.consulta.repositorio import RepositorioConsultasMemoria
 from app.consulta.servico import ErroEtapa, editar, oficializar
 from app.contratos.consulta import Fala, SinalRespondido
-from app.contratos.consulta_blocos import NovaConsulta
+from app.contratos.consulta_blocos import HistoriaBloco, NovaConsulta
 from app.contratos.paciente import NovoPaciente
 from app.especialidades.condutas import carregar_protocolos
 from app.especialidades.pacote import PacoteInvalido, carregar_sinais
@@ -354,3 +354,57 @@ def test_perguntas_usam_a_especialidade_da_consulta():
     with pytest.raises(PacoteInvalido):  # Geriatria ainda não tem prompts: o servidor pediu a pasta dela
         gerar_perguntas(ctx, medico, c.id)
     assert pedidas == ["geriatria"]
+
+
+def _ate_historia_com_perguntas(cenario, perguntas):
+    oficializar_ate_exame(cenario)
+    repo, _, medico, cid = cenario
+    ctx = contexto(cenario, Roteiro())
+    gerar(ctx, medico, cid, "historia")
+    h = repo.buscar(medico, cid).bloco("historia").conteudo
+    editar(repo, medico, cid, "historia", HistoriaBloco.model_validate(h | {"perguntas": perguntas}))
+    oficializar(repo, medico, cid, "historia", QUANDO)
+    return repo, medico, cid, ctx
+
+
+def _pergunta(id_, sinal_id, resposta, texto="A?"):
+    return {"id": id_, "texto": texto, "seSim": "Refere.", "seNao": "Nega.", "sinalId": sinal_id, "resposta": resposta}
+
+
+def test_dd_recebe_so_as_respondidas_e_a_historia_nao_e_reescrita(cenario):
+    perguntas = [_pergunta("p1", None, "sim", "Sangra?"), _pergunta("p2", None, None, "Dói?")]
+    repo, medico, cid, ctx = _ate_historia_com_perguntas(cenario, perguntas)
+    antes = repo.buscar(medico, cid).bloco("historia").conteudo
+    provedor = Roteiro()
+    gerar(contexto(cenario, provedor), medico, cid, "diagnosticos")
+    dd = next(p for p in provedor.pedidos if p.motor == "diagnosticos")
+    assert dd.dados["respostasDeAlerta"] == [{"texto": "Sangra?", "resposta": "sim"}]
+    assert repo.buscar(medico, cid).bloco("historia").conteudo == antes
+
+
+def test_dd_sem_respostas_nao_leva_a_chave_nova(cenario):
+    repo, medico, cid, ctx = _ate_historia_com_perguntas(cenario, [_pergunta("p1", None, None)])
+    provedor = Roteiro()
+    gerar(contexto(cenario, provedor), medico, cid, "diagnosticos")
+    assert "respostasDeAlerta" not in next(p for p in provedor.pedidos if p.motor == "diagnosticos").dados
+
+
+def test_urgencia_respondida_sim_vai_para_a_conduta_com_a_resposta_fixa(cenario):
+    sinal = next(s for s in LISTA if s.id == "angioedema")
+    repo, medico, cid, ctx = _ate_historia_com_perguntas(cenario, [_pergunta("p1", "angioedema", "sim")])
+    gerar(ctx, medico, cid, "diagnosticos")
+    editar(repo, medico, cid, "diagnosticos", diagnosticos("confirmada"))
+    oficializar(repo, medico, cid, "diagnosticos", QUANDO)
+    r = gerar(ctx, medico, cid, "conduta")
+    assert r.conteudo["proposta"]["urgencia"] == "imediata" and r.conteudo["proposta"]["emergencia"] == sinal.acao
+
+
+def test_nao_ou_sem_resposta_nao_mudam_a_conduta(cenario):
+    repo, medico, cid, ctx = _ate_historia_com_perguntas(
+        cenario, [_pergunta("p1", "angioedema", "nao"), _pergunta("p2", "virilizacao", None)]
+    )
+    gerar(ctx, medico, cid, "diagnosticos")
+    editar(repo, medico, cid, "diagnosticos", diagnosticos("confirmada"))
+    oficializar(repo, medico, cid, "diagnosticos", QUANDO)
+    r = gerar(ctx, medico, cid, "conduta")
+    assert r.conteudo["proposta"]["urgencia"] != "imediata"

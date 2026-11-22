@@ -89,5 +89,5 @@ def test_pedido_leva_so_historia_e_seguranca():
     _, _, falso = rodar([ACNE])
     [p] = falso.pedidos
     assert sorted(p.dados) == ["historia", "seguranca"]
-    assert (p.motor, p.esforco, p.versao_prompt) == ("diagnosticos", "high", "diagnosticos-derm-1")
+    assert (p.motor, p.esforco, p.versao_prompt) == ("diagnosticos", "high", "diagnosticos-derm-2")
     assert p.dados["seguranca"]["alergias"][0]["substancia"] == "Dipirona"
