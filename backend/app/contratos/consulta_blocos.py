@@ -53,11 +53,25 @@ class ExameBloco(ModeloApi):
     observacoes: str = ""
 
 
+class PerguntaContextual(ModeloApi):
+    """Pergunta de segurança escrita para este paciente. `se_sim`/`se_nao`: a frase que entra na HDA do prontuário
+    conforme a resposta. `sinal_id`: só quando a pergunta é exatamente um sinal do catálogo da especialidade (a
+    resposta Sim dispara as regras desse sinal). `resposta` None = o médico não respondeu (não vira "nega")."""
+
+    id: str = Field(min_length=1)
+    texto: str = Field(min_length=1)
+    se_sim: str = Field(min_length=1)
+    se_nao: str = Field(min_length=1)
+    sinal_id: str | None = None
+    resposta: Literal["sim", "nao"] | None = None
+
+
 class HistoriaBloco(ModeloApi):
     historia: HistoriaClinica
     seguranca: DadosSeguranca
     conflitos: list[SinalDisparado]
     extras_ia: list[str]
+    perguntas: list[PerguntaContextual] = Field(default_factory=list)
 
 
 class ItemDD(ModeloApi):

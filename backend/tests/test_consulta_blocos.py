@@ -12,8 +12,11 @@ from app.contratos.consulta_blocos import (
     AnamneseBloco,
     CondutaBloco,
     ExameBloco,
+    HistoriaBloco,
+    PerguntaContextual,
 )
 from app.contratos.paciente import Paciente
+from tests.fabrica import HISTORIA
 
 PACIENTE = Paciente(
     id=uuid4(),
@@ -125,3 +128,29 @@ def test_anamnese_com_perguntas_e_formulario_ida_e_volta():
 
 def test_exame_antigo_continua_valido():
     assert ExameBloco.model_validate(EXAME_ANTIGO).observacoes == ""
+
+
+def test_historia_antiga_continua_valida():
+    antiga = HISTORIA.model_dump(by_alias=True, mode="json")
+    antiga.pop("perguntas", None)
+    assert HistoriaBloco.model_validate(antiga).perguntas == []
+
+
+def test_pergunta_contextual_ida_e_volta():
+    p = PerguntaContextual(
+        id="p1",
+        texto="A ferida sangra ao toque leve?",
+        se_sim="Refere sangramento ao toque leve.",
+        se_nao="Nega sangramento ao toque.",
+        sinal_id="lesao-sangra-facil",
+        resposta="sim",
+    )
+    assert PerguntaContextual.model_validate(p.model_dump(by_alias=True, mode="json")) == p
+    assert PerguntaContextual(id="p2", texto="x?", se_sim="a.", se_nao="b.").resposta is None
+
+
+@pytest.mark.parametrize("campo", ["texto", "se_sim", "se_nao"])
+def test_pergunta_sem_texto_ou_frase_e_invalida(campo):
+    dados = {"id": "p1", "texto": "x?", "se_sim": "a.", "se_nao": "b.", campo: ""}
+    with pytest.raises(ValidationError):
+        PerguntaContextual(**dados)
