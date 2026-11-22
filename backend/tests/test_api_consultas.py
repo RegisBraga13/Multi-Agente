@@ -295,10 +295,11 @@ def test_lista_de_sinais_da_dermatologia_e_a_do_yaml(mundo):
     r = cliente(mundo).get("/especialidades/dermatologia/sinais")
     assert r.status_code == 200
     sinais = r.json()
-    assert len(sinais) == 14 and sinais[0] == {
-        "id": "bolhas-mucosas",
-        "texto": "Bolhas, pele descolando ou lesões em boca/olhos",
-    }
+    assert len(sinais) == 14
+    primeiro = sinais[0]
+    assert primeiro["id"] == "bolhas-mucosas" and primeiro["texto"].startswith("Bolhas, pele descolando")
+    # a tela precisa do tipo, da ação e do prazo para o aviso vermelho de urgência
+    assert primeiro["tipo"] == "urgencia_imediata" and primeiro["prazo"] == "imediato" and primeiro["acao"]
 
 
 def test_especialidade_inexistente_na_lista_de_sinais_e_404(mundo):
