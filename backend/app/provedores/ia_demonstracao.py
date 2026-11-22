@@ -18,6 +18,22 @@ class ProvedorDemonstracao:
 
     HDA = "Quadro em avaliação."
 
+    @staticmethod
+    def _item(nome: str, forma: str, concentracao: str, via: str, posologia: str, duracao: str) -> dict[str, Any]:
+        return {
+            "nome": nome,
+            "forma": forma,
+            "concentracao": concentracao,
+            "quantidade": {"n": 1, "unidade": "bisn. 30g" if via == "topico" else "cx.", "feminino": True},
+            "via": via,
+            "posologia": posologia,
+            "duracao": duracao,
+        }
+
+    @staticmethod
+    def _opcao(rotulo: str, texto: str, *receita: dict[str, Any]) -> dict[str, Any]:
+        return {"rotulo": rotulo, "texto": texto, "receita": list(receita)}
+
     def gerar(
         self, pedido: PedidoIA, esquema: type[BaseModel], ao_escrever: Callable[[str], None] | None = None
     ) -> RespostaIA:
@@ -49,7 +65,56 @@ class ProvedorDemonstracao:
                 "rastrear": [],
             }
         elif pedido.motor == "conduta":
-            resultado = {"grupos": []}
+            resultado = {
+                "grupos": [
+                    {
+                        "id": "cuidados",
+                        "opcoes": [self._opcao("Rotina de cuidados com a pele", "Rotina de cuidados com a pele.")],
+                    },
+                    {
+                        "id": "topico",
+                        "opcoes": [
+                            self._opcao(
+                                "Corticoide tópico",
+                                "Corticoide tópico nas placas.",
+                                self._item(
+                                    "Propionato de clobetasol",
+                                    "CREM",
+                                    "0,05%",
+                                    "topico",
+                                    "Aplicar fina camada nas placas 1 vez ao dia, à noite.",
+                                    "4sem",
+                                ),
+                            ),
+                            self._opcao(
+                                "Calcipotriol",
+                                "Calcipotriol nas placas.",
+                                self._item(
+                                    "Calcipotriol",
+                                    "POM",
+                                    "0,005%",
+                                    "topico",
+                                    "Aplicar nas placas 1 vez ao dia.",
+                                    "8sem",
+                                ),
+                            ),
+                        ],
+                    },
+                    {
+                        "id": "sistemico",
+                        "opcoes": [
+                            self._opcao(
+                                "Anti-histamínico",
+                                "Anti-histamínico oral.",
+                                self._item(
+                                    "Loratadina", "COMP", "10 mg", "oral", "Tomar 1 COMP VO 1 vez ao dia.", "14 dias"
+                                ),
+                            )
+                        ],
+                    },
+                    {"id": "orientacoes", "opcoes": [self._opcao("Fotoproteção", "Fotoproteção diária.")]},
+                ]
+            }
         elif pedido.motor == "perguntas":
             resultado = {
                 "perguntas": [

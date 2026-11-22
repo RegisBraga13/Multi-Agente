@@ -8,7 +8,7 @@ from app.consulta.geracao import Contexto, gerar, gerar_perguntas
 from app.consulta.repositorio import RepositorioConsultasMemoria
 from app.consulta.servico import ErroEtapa, editar, oficializar
 from app.contratos.consulta import Fala, SinalRespondido
-from app.contratos.consulta_blocos import HistoriaBloco, NovaConsulta
+from app.contratos.consulta_blocos import DiagnosticosBloco, HipoteseItem, HistoriaBloco, ItemDD, NovaConsulta
 from app.contratos.paciente import NovoPaciente
 from app.especialidades.condutas import carregar_protocolos
 from app.especialidades.pacote import PacoteInvalido, carregar_sinais
@@ -417,3 +417,17 @@ def test_diagnosticos_gerados_viram_itens_com_os_mesmos_valores(cenario):
     h = item["hipotese"]
     assert (h["nome"], h["cid"], h["certeza"], h["pct"]) == ("Acne vulgar", "L70.0", "clinico", 85)
     assert item["decisao"] == "pendente" and item["propria"] is False and h["evidencias"][0]["secao"] == "exameFisico"
+
+
+def test_diagnostico_do_medico_sem_cid_pede_a_conduta_sem_protocolo(cenario):
+    repo, medico, cid, ctx = _ate_historia_com_perguntas(cenario, [])
+    meu = ItemDD(
+        hipotese=HipoteseItem(nome="Meu diagnóstico", cid="", certeza="clinico", pct=None, evidencias=[]),
+        decisao="confirmada",
+        propria=True,
+    )
+    editar(repo, medico, cid, "diagnosticos", DiagnosticosBloco(itens=[meu], nao_pode_perder=None, rastrear=[]))
+    oficializar(repo, medico, cid, "diagnosticos", QUANDO)
+    r = gerar(ctx, medico, cid, "conduta")
+    assert r.acao == "HUMAN_REVIEW" and r.conteudo["proposta"]["tabela"] is None
+    assert r.conteudo["diagnostico"]["cid"] == ""
