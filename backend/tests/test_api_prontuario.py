@@ -99,3 +99,13 @@ def test_prontuario_de_paciente_de_outro_medico_e_vazio(mundo):
     c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}})
     paciente = c.get(f"/consultas/{cid}").json()["pacienteId"]
     assert cliente(mundo, MEDICO_B).get(f"/pacientes/{paciente}/prontuario").status_code == 404
+
+
+def test_finalizar_aplica_a_edicao_da_hda_e_guarda_a_do_diagnostico(mundo):
+    c = cliente(mundo)
+    cid = consulta_pronta(c)
+    r = c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {"S.hda": "HDA editada.", "A.hd": "Linha do HD"}})
+    assert r.status_code == 200
+    paciente = c.get(f"/consultas/{cid}").json()["pacienteId"]
+    [e] = c.get(f"/pacientes/{paciente}/prontuario").json()
+    assert e["dados"]["hda"] == "HDA editada." and e["edicoes"] == {"A.hd": "Linha do HD"}

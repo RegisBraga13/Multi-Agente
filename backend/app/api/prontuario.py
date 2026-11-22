@@ -22,7 +22,7 @@ from app.contratos.consulta_blocos import (
     HistoriaBloco,
 )
 from app.contratos.prontuario import DadosEntrada, EntradaProntuario
-from app.prontuario.montar import dados_da_consulta
+from app.prontuario.montar import aplicar_edicoes_narrativas, dados_da_consulta
 
 rotas = APIRouter(tags=["prontuário"])
 Dep = Annotated[Dependencias, Depends(dependencias)]
@@ -73,7 +73,8 @@ def finalizar(consulta_id: UUID, corpo: Finalizacao, dep: Dep, medico: Medico) -
     dados = _proposto(dep, medico, consulta_id)
     if any(d.estado != "enviado" for d in dep.repo.documentos(medico, consulta_id)):
         raise ErroEtapa("Envie os documentos antes de finalizar")
-    dep.repo.finalizar(medico, consulta_id, dados, corpo.edicoes, dep.relogio.agora())
+    dados, edicoes = aplicar_edicoes_narrativas(dados, corpo.edicoes)
+    dep.repo.finalizar(medico, consulta_id, dados, edicoes, dep.relogio.agora())
     paciente = dep.repo.buscar(medico, consulta_id).paciente_id
     return next(e for e in dep.repo.prontuario(medico, paciente) if e.id == consulta_id)
 

@@ -3,8 +3,8 @@ from datetime import date
 from app.contratos.consulta import ExameComplementar, ItemComplementar
 from app.contratos.consulta_blocos import Documento, HipoteseItem, ItemDD, PerguntaContextual
 from app.contratos.prontuario import Atestado, ItemReceita, Laudo, Quantidade
-from app.prontuario.montar import dados_da_consulta, diagnosticos_do_prontuario
-from tests.fabrica import EXAME, HISTORIA, conduta, diagnosticos, hipotese
+from app.prontuario.montar import aplicar_edicoes_narrativas, dados_da_consulta, diagnosticos_do_prontuario
+from tests.fabrica import DADOS_MINIMOS, EXAME, HISTORIA, conduta, diagnosticos, hipotese
 
 ITEM = ItemReceita(
     nome="Ácido azelaico",
@@ -170,3 +170,37 @@ def test_diagnostico_do_medico_sem_pct_vai_para_o_fim_dos_assinalados():
     )
     ds = diagnosticos_do_prontuario([meu, item("B", "L71.9", 90, "confirmada")])
     assert [(d.nome, d.pct) for d in ds] == [("B", 90), ("Meu", None)]
+
+
+def test_edicao_narrativa_vai_para_o_dado_e_sai_das_edicoes():
+    dados, resto = aplicar_edicoes_narrativas(
+        DADOS_MINIMOS, {"S.hda": " HDA nova. ", "O.exame": "Exame novo.", "P.orientacoes": "Proteger do sol."}
+    )
+    assert (dados.hda, dados.exame_fisico, dados.orientacoes) == (
+        "HDA nova.",
+        "Exame novo.",
+        "Proteger do sol.",
+    ) and resto == {}
+
+
+def test_linha_estruturada_fica_em_edicoes_e_os_dados_nao_mudam():
+    dados, resto = aplicar_edicoes_narrativas(DADOS_MINIMOS, {"A.hd": "Meu texto do HD", "P.conduta": "Minha conduta"})
+    assert resto == {"A.hd": "Meu texto do HD", "P.conduta": "Minha conduta"} and dados == DADOS_MINIMOS
+
+
+def test_texto_vazio_apaga_a_narrativa():
+    dados, resto = aplicar_edicoes_narrativas(DADOS_MINIMOS.model_copy(update={"ap": "Hipertensão."}), {"S.ap": "   "})
+    assert dados.ap == "" and resto == {}
+
+
+def test_chave_desconhecida_fica_em_edicoes():
+    assert aplicar_edicoes_narrativas(DADOS_MINIMOS, {"hda": "x", "S.evolucao": "y"})[1] == {
+        "hda": "x",
+        "S.evolucao": "y",
+    }
+
+
+def test_nao_muda_o_objeto_original():
+    antes = DADOS_MINIMOS.model_copy(deep=True)
+    aplicar_edicoes_narrativas(DADOS_MINIMOS, {"S.qp": "Outra queixa."})
+    assert DADOS_MINIMOS == antes

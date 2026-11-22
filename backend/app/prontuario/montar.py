@@ -96,3 +96,24 @@ def dados_da_consulta(
         documentos=[d.registro for d in enviados if d.registro is not None],
         fotos=[],
     )
+
+
+# As linhas narrativas do prontuário (mesmas chaves da tela): a edição do médico vai para o próprio dado.
+# As outras (diagnósticos, conduta, solicitado…) guardam a edição à parte, em `edicoes`.
+NARRATIVAS: dict[str, str] = {
+    "S.qp": "qp",
+    "S.hda": "hda",
+    "S.ap": "ap",
+    "S.hp": "hp",
+    "S.hf": "hf",
+    "O.exame": "exame_fisico",
+    "O.exames": "exames_texto",
+    "P.orientacoes": "orientacoes",
+}
+
+
+def aplicar_edicoes_narrativas(dados: DadosEntrada, edicoes: dict[str, str]) -> tuple[DadosEntrada, dict[str, str]]:
+    """Os dados com as edições narrativas do médico aplicadas (texto vazio apaga a linha) e as edições que sobram."""
+    troca = {NARRATIVAS[k]: v.strip() for k, v in edicoes.items() if k in NARRATIVAS}
+    resto = {k: v for k, v in edicoes.items() if k not in NARRATIVAS}
+    return dados.model_copy(update=troca, deep=True), resto
