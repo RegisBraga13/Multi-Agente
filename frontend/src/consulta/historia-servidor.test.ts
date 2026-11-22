@@ -65,6 +65,11 @@ describe('perguntas', () => {
     const r = juntarPerguntas([q('p1', 'Sangra?', 'sim'), q('p2', 'Dói?', 'nao')], [q('p1', 'Dói?'), q('p2', 'Coça?'), q('p3', 'Sangra?')])
     expect(r.map((x) => [x.id, x.texto, x.resposta])).toEqual([['p1', 'Dói?', 'nao'], ['p2', 'Coça?', null], ['p3', 'Sangra?', 'sim']])
   })
+  it('juntarPerguntas não perde a pergunta que o médico adicionou do catálogo, nem a duplica se a IA a escreveu', () => {
+    const doCatalogo = { ...q('c-lesao-sangra-facil', 'Lesão que sangra ao toque leve', 'sim', 'lesao-sangra-facil') }
+    expect(juntarPerguntas([doCatalogo], [q('p1', 'Dói?')]).map((x) => [x.id, x.resposta])).toEqual([['p1', null], ['c-lesao-sangra-facil', 'sim']])
+    expect(juntarPerguntas([doCatalogo], [q('p1', 'Outro texto?', null, 'lesao-sangra-facil')]).map((x) => x.id)).toEqual(['p1'])
+  })
   it('perguntaDoCatalogo escreve as frases com a primeira letra em minúscula', () => {
     expect(perguntaDoCatalogo(catalogo[1])).toEqual({ id: 'c-lesao-sangra-facil', texto: 'Lesão que sangra ao toque leve', seSim: 'Refere: lesão que sangra ao toque leve.', seNao: 'Nega: lesão que sangra ao toque leve.', sinalId: 'lesao-sangra-facil', resposta: null })
   })

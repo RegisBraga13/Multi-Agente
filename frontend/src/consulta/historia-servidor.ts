@@ -40,9 +40,14 @@ export function atualizarSecoes(antes: SecaoHistoria[], atuais: string[], novas:
 
 const renumerar = (lista: PerguntaServidor[]) => lista.map((p, i) => ({ ...p, id: p.id.startsWith('c-') ? p.id : `p${i + 1}` }))
 
-/** As perguntas novas, mantendo a resposta da antiga de mesmo texto (a IA reescreve a lista quando a anamnese muda). */
+/**
+ * As perguntas novas, mantendo a resposta da antiga de mesmo texto (a IA reescreve a lista quando a anamnese muda).
+ * As que o médico adicionou do catálogo ficam, a menos que a IA já tenha escrito a mesma pergunta (mesmo sinal ou texto).
+ */
 export function juntarPerguntas(antigas: PerguntaServidor[], novas: PerguntaServidor[]): PerguntaServidor[] {
-  return renumerar(novas.map((n) => ({ ...n, resposta: antigas.find((a) => a.texto === n.texto)?.resposta ?? null })))
+  const daIa = novas.map((n) => ({ ...n, resposta: antigas.find((a) => a.texto === n.texto)?.resposta ?? null }))
+  const doMedico = antigas.filter((a) => a.id.startsWith('c-') && !daIa.some((n) => n.texto === a.texto || (a.sinalId !== null && n.sinalId === a.sinalId)))
+  return renumerar([...daIa, ...doMedico])
 }
 
 const minuscula = (t: string) => t.charAt(0).toLowerCase() + t.slice(1)

@@ -30,7 +30,9 @@ import { partesPreConsulta } from '../medico/pre-consulta'
 import { atendimentoDoPedido, precisaIdentificacao } from '../modulo/pedidos'
 import { IdentificacaoNaChegada } from './identificacao-chegada'
 import { buscarPedido, enderecoFoto, ErroServidor, type PedidoNaAgenda } from '../servidor/agenda'
-import { abrirConsultaDoPedido, oficializarEtapa, salvarAnamnese, salvarExame, type AnamneseServidor, type ConsultaServidor, type ExameServidor } from '../servidor/consulta'
+import { abrirConsultaDoPedido, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, sinaisDaEspecialidade, type AnamneseServidor, type ConsultaServidor, type ExameServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
+import { adicionarPergunta, atualizarSecoes, avisosDeUrgencia, historiaParaServidor, juntarPerguntas, responder, secoesDoServidor } from './historia-servidor'
+import { PerguntasHistoria } from './perguntas-historia'
 import { anamneseDoServidor, anamneseParaServidor, etapasParaOficializar, exameDoServidor, exameParaServidor } from './servidor-mapa'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
@@ -84,15 +86,27 @@ function reduzir(e: EstadoConsulta, a: Acao): EstadoConsulta {
   return a.tipo === 'oficializar' ? oficializar(e, a.bloco) : editar(e, a.bloco)
 }
 
+/** História em branco (a IA falhou): o médico escreve; a segurança parte do que a ficha já sabe. */
+function historiaVazia(base: HistoriaServidor | null, ficha: Atendimento['ficha']): HistoriaServidor {
+  if (base) return base
+  const f = ficha.situacao === 'pronta' ? ficha : null
+  return {
+    historia: { qp: '', hda: '', ap: '', hp: '', hf: '', exameFisico: '', examesTexto: '' },
+    seguranca: { alergias: f?.alergias ?? [], emUso: f?.emUso ?? [], sinais: [] },
+    conflitos: [], extrasIa: [], perguntas: [],
+  }
+}
+
 function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade; at: Atendimento; etapa: EtapaId; formulario: FormularioConsulta | null; servidor: ConsultaServidor | null }) {
   const base0 = useMemo(() => conteudoDaConsulta(at, esp.slug), [at, esp.slug])
   // consulta retomada: o que já estava salvo no servidor volta para os campos (como rascunho: salvar de novo envia e oficializa)
   const retomada = useMemo(() => {
-    const bloco = (etapa: 'anamnese' | 'exame') => servidor?.blocos.find((b) => b.etapa === etapa)?.conteudo
+    const bloco = (etapa: 'anamnese' | 'exame' | 'historia') => servidor?.blocos.find((b) => b.etapa === etapa)?.conteudo
     const a = bloco('anamnese') as AnamneseServidor | undefined
     const x = bloco('exame') as ExameServidor | undefined
     const exame = x ? Object.fromEntries(exameDoServidor(x).map((c) => [c.rotulo, c.valor])) : null
-    return { anamnese: a ? anamneseDoServidor(a, base0.perguntas) : null, exame }
+    const h = bloco('historia') as HistoriaServidor | undefined
+    return { anamnese: a ? anamneseDoServidor(a, base0.perguntas) : null, exame, historia: h ?? null }
   }, [servidor, base0])
   const conteudo = useMemo(
     () => (retomada.exame ? { ...base0, exame: base0.exame.map((c) => (retomada.exame![c.rotulo] ? { ...c, valor: retomada.exame![c.rotulo], prov: 'confirmado' as const } : c)) } : base0),
@@ -138,7 +152,21 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   // o que foi salvo na página 1: a história é montada só com isso
   const fontes = useRef<{ anamnese: string; perguntas: RespostaPergunta[]; exame: { rotulo: string; valor: string }[]; formulario: FormularioConsulta | null }>({ anamnese: '', perguntas: [], exame: [], formulario: null })
   /** geradas = última versão da IA; textos = o que está na tela (com as edições do médico); mudou = seções que a IA reescreveu agora */
-  const [historia, setHistoria] = useState<{ versao: number; geradas: SecaoHistoria[]; textos: string[]; mudou: boolean[]; sugestoes: (string | null)[] } | null>(null)
+  const [historia, setHistoria] = useState<{ versao: number; geradas: SecaoHistoria[]; textos: string[]; mudou: boolean[]; sugestoes: (string | null)[] } | null>(() => {
+    // consulta retomada: a história guardada no servidor volta como rascunho (salvar a anamnese e o exame de novo a atualiza)
+    const secoes = retomada.historia ? secoesDoServidor(retomada.historia.historia) : null
+    return secoes && { versao: 1, geradas: secoes, textos: secoes.map((x) => x.texto), mudou: secoes.map(() => false), sugestoes: secoes.map(() => null) }
+  })
+  /** consulta real: o último bloco da história que o servidor devolveu (segurança e extras seguem como estavam) */
+  const [histBase, setHistBase] = useState<HistoriaServidor | null>(retomada.historia)
+  const [perguntas, setPerguntas] = useState<PerguntaServidor[]>(retomada.historia?.perguntas ?? [])
+  const [perguntasEstado, setPerguntasEstado] = useState({ carregando: false, falhou: false })
+  const [catalogo, setCatalogo] = useState<SinalDoCatalogo[]>([])
+  /** a IA do servidor está montando a história (alguns segundos) */
+  const [montando, setMontando] = useState(false)
+  useEffect(() => {
+    if (servidor) sinaisDaEspecialidade(esp.slug).then(setCatalogo, () => setCatalogo([]))
+  }, [servidor, esp.slug])
 
   /** Envia a página 1 ao servidor (gravar e oficializar, na ordem que ele exige). Falha: nada fica marcado como salvo. */
   const enviarPagina1 = async (id: string, bloco: 'anamnese' | 'exame') => {
@@ -161,11 +189,44 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     )
   }
 
+  /** Consulta real: pede as perguntas contextuais (a história já existe no servidor). Falha: a história segue sem elas. */
+  const buscarPerguntas = async (id: string) => {
+    setPerguntasEstado({ carregando: true, falhou: false })
+    try {
+      const q = await gerarPerguntas(id)
+      setPerguntas((atuais) => juntarPerguntas(atuais, q.perguntas))
+      setPerguntasEstado({ carregando: false, falhou: q.iaFalhou })
+    } catch {
+      setPerguntasEstado({ carregando: false, falhou: true })
+    }
+  }
+
+  /** Consulta real: a história vem do servidor. Falha da IA ou da rede: avisa e abre vazia para o médico escrever. */
+  const montarDoServidor = async (id: string) => {
+    setMontando(true)
+    let recebido = historiaVazia(histBase, at.ficha)
+    let veio = false
+    try {
+      const r = await gerarHistoria(id)
+      if (r.conteudo) { recebido = r.conteudo; veio = true } else setAviso('A IA não conseguiu; escreva ou tente de novo')
+    } catch (e) {
+      setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível montar a história. Tente de novo.')
+    }
+    const novas = secoesDoServidor(recebido.historia)
+    setHistBase(recebido)
+    setHistoria((h) => h
+      ? { versao: h.versao + 1, geradas: novas, ...atualizarSecoes(h.geradas, h.textos, novas) }
+      : { versao: 1, geradas: novas, textos: novas.map((x) => x.texto), mudou: novas.map(() => true), sugestoes: novas.map(() => null) })
+    setMontando(false)
+    if (veio) await buscarPerguntas(id)
+  }
+
   /** Quando a anamnese e o exame ficam salvos, a história é montada e a página dela abre. */
   const concluirPagina1 = (bloco: 'anamnese' | 'exame') => {
     const novo = oficializar(estado, bloco)
     despachar({ tipo: 'oficializar', bloco })
     if (!podeOficializar(estado, 'historia') && podeOficializar(novo, 'historia')) {
+      if (servidor) { void montarDoServidor(servidor.id); navegar(`${base}/historia`); return }
       const f = fontes.current
       // sinais de alerta da anamnese, com a resposta do médico, entram em "Antecedentes e alertas"
       const sinais = conteudo.alertas.filter((x) => x.tipo === 'sinal').map((x) => ({ texto: x.texto, resposta: novo.alertas[x.id] }))
@@ -181,16 +242,34 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     }
   }
 
+  /** Responder ou acrescentar pergunta muda a história (a etapa fica revisada e as seguintes desatualizadas). */
+  const mudarPerguntas = (f: (xs: PerguntaServidor[]) => PerguntaServidor[]) => {
+    setPerguntas(f)
+    if (estado.blocos.historia.estado !== 'revisado_medico') fazer('editar', 'historia')
+  }
+
   /** Diagnósticos: itens = hipóteses da IA à mostra + as do médico, cada uma com a decisão dele; reserva = as que o "+" traz.
    *  resumo = o que pesa na conduta, da história salva (vai para a conduta com V/F). */
   const [dd, setDd] = useState<{ versao: number; itens: ItemDD[]; reserva: Hipotese[]; resumo: ItemResumo[] } | null>(null)
   /** última versão já escrita "ao vivo" de cada página: ao voltar, aparece pronta (não escreve de novo) */
-  const [escrita, setEscrita] = useState({ historia: 0, diagnosticos: 0, prontuario: 0 })
+  const [escrita, setEscrita] = useState({ historia: retomada.historia ? 1 : 0, diagnosticos: 0, prontuario: 0 })
   const escreveu = (pagina: 'historia' | 'diagnosticos' | 'prontuario', versao: number) =>
     setEscrita((e) => (e[pagina] === versao ? e : { ...e, [pagina]: versao }))
 
-  /** Salvar história. Ao liberar os diagnósticos, a IA sugere (ou atualiza só o que mudou) e a página deles abre. */
+  /** Salvar história. Consulta real: o servidor guarda e oficializa primeiro; só então a tela segue. */
   const salvarHistoria = () => {
+    if (!servidor || !historia || !histBase) return concluirHistoria()
+    const secoes = historia.geradas.map((s, i) => ({ rotulo: s.rotulo, texto: historia.textos[i] }))
+    enviarHistoria(servidor.id, historiaParaServidor(secoes, histBase, perguntas))
+      .then(() => oficializarEtapa(servidor.id, 'historia'))
+      .then(
+        () => concluirHistoria(),
+        (e: unknown) => setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível salvar. Tente de novo.'),
+      )
+  }
+
+  /** Ao liberar os diagnósticos, a IA sugere (ou atualiza só o que mudou) e a página deles abre. */
+  const concluirHistoria = () => {
     const novo = oficializar(estado, 'historia')
     despachar({ tipo: 'oficializar', bloco: 'historia' })
     if (!historia || podeOficializar(estado, 'diagnosticos') || !podeOficializar(novo, 'diagnosticos')) return
@@ -392,7 +471,9 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
             />
           </div>
         </div>
-        {etapa === 'historia' && historia && situacaoDaEtapa(estado, 'historia') !== 'bloqueado' ? (
+        {etapa === 'historia' && montando ? (
+          <p className="py-16 text-center text-apagado">A IA está montando a história com a anamnese e o exame físico salvos…</p>
+        ) : etapa === 'historia' && historia && situacaoDaEtapa(estado, 'historia') !== 'bloqueado' ? (
           <div className="flex flex-1 flex-col [&>section]:flex-1">
             {situacaoDaEtapa(estado, 'historia') === 'desatualizado' && !podeOficializar(estado, 'historia') && (
               <p className="mb-2 text-[14px] font-semibold">A anamnese ou o exame físico mudou. Salve de novo e a IA atualiza só o que mudou na história.</p>
@@ -422,6 +503,18 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
                 if (aceitar && estado.blocos.historia.estado !== 'revisado_medico') fazer('editar', 'historia')
               }}
               onSalvar={salvarHistoria}
+              bloco={servidor && histBase ? (
+                <PerguntasHistoria
+                  perguntas={perguntas}
+                  urgencias={avisosDeUrgencia(histBase, perguntas, catalogo)}
+                  catalogo={catalogo}
+                  carregando={perguntasEstado.carregando}
+                  falhou={perguntasEstado.falhou}
+                  onResponder={(id, r) => mudarPerguntas((xs) => responder(xs, id, r))}
+                  onAdicionar={(q) => mudarPerguntas((xs) => adicionarPergunta(xs, q))}
+                  onTentarDeNovo={() => void buscarPerguntas(servidor.id)}
+                />
+              ) : undefined}
             />
           </div>
         ) : etapa === 'diagnosticos' && dd && situacaoDaEtapa(estado, 'diagnosticos') !== 'bloqueado' ? (

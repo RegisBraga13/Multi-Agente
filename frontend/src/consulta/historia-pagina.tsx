@@ -98,7 +98,7 @@ export function PaginaHistoria({ secoes, tabelaExames, textos, mudou, sugestoes,
           <p className="flex-1 text-center text-[13.5px] text-tinta">{ditando ? `Ditando em ${secoes[onde].rotulo}…` : aviso}</p>
         </div>
       }
-      legenda="Parte só da anamnese e do exame físico salvos"
+      legenda={bloco ? 'Parte só da anamnese e do exame físico salvos · Pergunta sem resposta não vai para o prontuário' : 'Parte só da anamnese e do exame físico salvos'}
       rodape={
         <BotaoOficializar
           rotulo="Salvar história"

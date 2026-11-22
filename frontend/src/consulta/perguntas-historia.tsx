@@ -7,7 +7,7 @@ import { perguntaDoCatalogo, rotuloDoBloco, type AvisoUrgencia } from './histori
 const ROTULO_SECAO = 'text-[10.5px] font-bold tracking-[0.14em] text-historia-rotulo uppercase'
 const RESPOSTAS = [{ id: 'sim', nome: 'Sim' }, { id: 'nao', nome: 'Não' }] as const
 /** com mais perguntas que isto, o bloco rola dentro do cartão (o número de perguntas é livre) */
-const VISIVEIS = 5
+const VISIVEIS = 4
 
 type Props = {
   perguntas: PerguntaServidor[]
@@ -27,7 +27,7 @@ export function PerguntasHistoria({ perguntas, urgencias, catalogo, carregando, 
   return (
     <div className="mt-2 flex flex-col gap-1.5">
       {urgencias.map((u) => (
-        <p key={u.id} role="alert" className="bg-alerta-clinico px-3 py-1.5 text-[14px] leading-snug font-semibold text-papel">
+        <p key={u.id} role="alert" title={`${u.acao.join('. ')} (${u.prazo})`} className="truncate bg-alerta-clinico px-3 py-1 text-[14px] font-semibold text-papel">
           Urgência: {u.texto}. {u.acao[0]}{u.prazo ? ` (${u.prazo})` : ''}
         </p>
       ))}
@@ -56,7 +56,7 @@ export function PerguntasHistoria({ perguntas, urgencias, catalogo, carregando, 
         </ul>
       )}
       {perguntas.length > 0 && (
-        <div className={`flex flex-col gap-1 ${perguntas.length > VISIVEIS ? 'max-h-[188px] overflow-y-auto' : ''}`}>
+        <div className={`flex flex-col gap-1 ${perguntas.length > VISIVEIS ? 'max-h-[124px] overflow-y-auto' : ''}`}>
           {perguntas.map((p) => (
             <div key={p.id} className="flex items-center gap-3 border-[1.5px] border-linha bg-branco py-0.5 pr-1 pl-3 text-[14px] text-alerta-clinico">
               <span title={p.texto} className="min-w-0 flex-1 truncate">{p.texto}</span>
@@ -72,7 +72,6 @@ export function PerguntasHistoria({ perguntas, urgencias, catalogo, carregando, 
           ))}
         </div>
       )}
-      <p className="text-[12px] text-apagado">Sim ou Não; sem resposta, a pergunta não vai para o prontuário.</p>
     </div>
   )
 }
