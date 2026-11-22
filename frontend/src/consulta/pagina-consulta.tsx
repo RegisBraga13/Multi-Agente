@@ -32,6 +32,7 @@ import { IdentificacaoNaChegada } from './identificacao-chegada'
 import { buscarPedido, enderecoFoto, ErroServidor, type PedidoNaAgenda } from '../servidor/agenda'
 import { abrirConsultaDoPedido, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, sinaisDaEspecialidade, type AnamneseServidor, type ConsultaServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
 import { adicionarPergunta, atualizarSecoes, avisosDeUrgencia, historiaParaServidor, juntarPerguntas, responder, secoesDoServidor } from './historia-servidor'
+import { BuscaCid } from './busca-cid'
 import { PerguntasHistoria } from './perguntas-historia'
 import { diagnosticosParaServidor, hipotesesDoServidor, itensDoServidor } from './diagnosticos-servidor'
 import { anamneseDoServidor, anamneseParaServidor, etapasParaOficializar, exameDoServidor, exameParaServidor } from './servidor-mapa'
@@ -751,6 +752,7 @@ function PainelAnexos({ condutaPronta, onFechar, onAviso, onAbrir }: { condutaPr
           )
         })}
       </ul>
+      <BuscaCid />
     </Gaveta>
   )
 }
