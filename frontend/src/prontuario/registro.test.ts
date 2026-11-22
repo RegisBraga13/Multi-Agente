@@ -14,7 +14,7 @@ globalThis.localStorage = {
 const MARIANA = '92b99e33-e1c8-46f0-bd6b-d9edcc9d7c36'
 const DADOS: DadosEntrada = {
   qp: 'x', hda: '', ap: '', hp: '', hf: '', exameFisico: '', examesTexto: '', exames: [], diagnosticos: [{ nome: 'Acne', cid: 'L70.0', pct: 80, situacao: 'assinalado' }],
-  receita: null, condutaTexto: '', solicitado: [], encaminhado: [], orientacoes: '', retorno: '', documentos: [], fotos: [],
+  receita: null, condutaTexto: '', solicitado: [], encaminhado: [], orientacoes: '', avaliacao: '', documentos: [], fotos: [],
 }
 const nova = (tipo: NovaEntrada['tipo'], data: string, hora = '08:00'): NovaEntrada => ({ tipo, modalidade: 'presencial', data, hora, dados: DADOS, edicoes: {} })
 
@@ -105,5 +105,15 @@ describe('quem tem prontuário (acesso a qualquer hora)', () => {
     salvarEntrada(NOVA, nova('consulta', '2026-11-21'), { id: NOVA, nome: 'Paciente Real', nascimento: '1980-05-05' })
     expect(cadastroDoPaciente(NOVA)).toEqual({ id: NOVA, nome: 'Paciente Real', nascimento: '1980-05-05' })
     expect(pacientesComProntuario().map((p) => p.id)).toContain(NOVA)
+  })
+})
+
+describe('entrada salva antes da separação avaliação/retorno', () => {
+  it('a chave antiga "retorno" é lida como "avaliacao" (o prontuário local não some)', () => {
+    const semAvaliacao: Record<string, unknown> = { ...DADOS }
+    delete semAvaliacao.avaliacao
+    const antiga = { id: 'e1', pacienteId: MARIANA, titulo: 'Consulta 1', tipo: 'consulta', modalidade: 'presencial', data: '2026-11-01', hora: '08:00', dados: { ...semAvaliacao, retorno: 'em 8 semanas.' }, edicoes: {}, adendos: [] }
+    mem.set(`especialista:prontuario:${MARIANA}`, JSON.stringify([antiga]))
+    expect(entradas(MARIANA).map((e) => e.dados.avaliacao)).toEqual(['em 8 semanas.'])
   })
 })

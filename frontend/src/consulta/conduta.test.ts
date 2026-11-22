@@ -48,7 +48,7 @@ describe('médico escolhe', () => {
     // sem "Não solicitar": exame não marcado = não solicitar
     expect(ids(c, 'exames')).toEqual(['hormonal'])
     const d = escolherOpcao(c, 'retorno', '12s')
-    expect(d.textos[3]).toBe('Não manipular lesões inflamatórias. Ajustar frequência conforme tolerabilidade cutânea. Solicito exames de rotina: hemograma, glicemia de jejum, perfil lipídico, TSH, função renal, função hepática e EAS. Retorno em 12 semanas, em 05/02/2027.')
+    expect(d.textos[3]).toBe('Não manipular lesões inflamatórias. Ajustar frequência conforme tolerabilidade cutânea. Solicito exames de rotina: hemograma, glicemia de jejum, perfil lipídico, TSH, função renal, função hepática e EAS. Avaliação em 12 semanas, em 05/02/2027.')
     expect(d.textos.slice(0, 3)).toEqual(['', '', ''])
   })
   it('linha de uma escolha: outra opção troca; clicar na marcada desmarca', () => {

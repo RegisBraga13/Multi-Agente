@@ -128,3 +128,14 @@ def test_cid_repetido_entre_protocolos_e_pacote_invalido(tmp_path):
     (arquivo.parent / "acne-2.yaml").write_text(yaml.safe_dump(dados, allow_unicode=True), encoding="utf-8")
     with pytest.raises(PacoteInvalido, match="L70.0"):
         carregar_protocolos("dermatologia", raiz=tmp_path)
+
+
+def test_conduta_nao_chama_de_retorno_a_avaliacao_em_semanas():
+    """"Retorno" é só o marcado na agenda; a conduta recomenda "Avaliação em X semanas"."""
+    for nome, p in PROTOCOLOS.items():
+        for g in p.grupos:
+            for linha in g.linhas:
+                for o in linha.opcoes:
+                    assert not o.texto.startswith("Retorno "), (nome, o.id)
+    linha = next(li for g in ACNE.grupos for li in g.linhas if li.id == "retorno")
+    assert linha.rotulo == "Avaliação" and opcao(ACNE, "orientacoes", "8s").texto == "Avaliação em 8 semanas."

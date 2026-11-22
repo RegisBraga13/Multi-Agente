@@ -9,7 +9,7 @@ import type { Conduta } from './conduta'
 import type { ItemDD } from './diagnosticos'
 import type { Complementar } from './exemplo'
 import { extensaoDe, type SecaoHistoria } from './historia'
-import type { DadosEntrada, DiagnosticoRegistro, DocumentoRegistro, FotoRegistro } from '../prontuario/registro'
+import type { DadosEntrada, DiagnosticoRegistro, DocumentoRegistro, FotoRegistro, RetornoMarcado } from '../prontuario/registro'
 
 /** Uma linha ("• QP: texto"; rótulo vazio = só o texto). `id` estável para atualizar sem perder a edição do médico. */
 export type LinhaProntuario = { id: string; rotulo: string; texto: string }
@@ -50,13 +50,15 @@ export type FontesProntuario = {
   fotos?: FotoRegistro[]
   /** o que o médico deixou no campo Extensão do exame físico (vira número no prontuário, se houver) */
   extensao?: string
+  /** o retorno marcado na página 5 (null/ausente = sem retorno) */
+  retornoMarcado?: RetornoMarcado | null
 }
 
 /**
  * Os dados da entrada, das páginas salvas. As orientações da conduta são separadas por frase:
- * "Solicito…" → solicitado; "Encaminho para…" → encaminhado; "Retorno…" → retorno; o resto → orientações gerais.
+ * "Solicito…" → solicitado; "Encaminho para…" → encaminhado; "Avaliação…" → avaliação; o resto → orientações gerais.
  */
-export function dadosDaConsulta({ historia, itens, conduta, anexos = [], complementares = [], fotos = [], extensao = '' }: FontesProntuario): DadosEntrada {
+export function dadosDaConsulta({ historia, itens, conduta, anexos = [], complementares = [], fotos = [], extensao = '', retornoMarcado = null }: FontesProntuario): DadosEntrada {
   const t = conduta.textos.map((x) => x.trim())
   const orient = frases(t[3] ?? '')
   const receita = anexos.find((x) => x.tipo === 'receita' && x.emitir)?.texto.trim()
@@ -84,8 +86,9 @@ export function dadosDaConsulta({ historia, itens, conduta, anexos = [], complem
     solicitado: orient.filter((f) => /^Solicito /.test(f))
       .map((f) => (/^Solicito exames de rotina/.test(f) ? 'exames de rotina' : f.replace(/^Solicito /, '').replace(/\.$/, ''))),
     encaminhado: orient.filter((f) => /^Encaminho para /.test(f)).map((f) => f.replace(/^Encaminho para /, '').replace(/\.$/, '')),
-    orientacoes: orient.filter((f) => !/^(Solicito|Encaminho|Retorno) /.test(f)).join(' '),
-    retorno: orient.filter((f) => /^Retorno /.test(f)).map((f) => f.replace(/^Retorno /, '')).join(' '),
+    orientacoes: orient.filter((f) => !/^(Solicito|Encaminho|Avaliação) /.test(f)).join(' '),
+    avaliacao: orient.filter((f) => /^Avaliação /.test(f)).map((f) => f.replace(/^Avaliação /, '')).join(' '),
+    retornoMarcado,
     documentos: anexos.filter((x) => x.emitir).flatMap((x) => registroDoAnexo(x) ?? []),
     fotos,
   }
@@ -142,7 +145,11 @@ export function secoesDosDados(d: DadosEntrada): SecaoProntuario[] {
       { id: 'encaminhado', rotulo: 'Encaminhado para', texto: ponto(d.encaminhado) },
       { id: 'orientacoes', rotulo: 'Orientações gerais', texto: d.orientacoes },
       ...d.documentos.map((x) => ({ id: x.tipo, rotulo: x.tipo === 'atestado' ? 'Atestado' : 'Laudo', texto: x.resumo })),
-      { id: 'retorno', rotulo: 'Retorno', texto: d.retorno },
+      { id: 'avaliacao', rotulo: 'Avaliação', texto: d.avaliacao },
+      // sempre a última linha: o dia do retorno marcado ou "Sem retorno"
+      d.retornoMarcado
+        ? { id: 'retorno', rotulo: 'Retorno', texto: `${dataBr(d.retornoMarcado.data)} às ${d.retornoMarcado.inicio}, ${d.retornoMarcado.modalidade}` }
+        : { id: 'retorno', rotulo: '', texto: 'Sem retorno' },
     ] },
   ]
   return secoes.map((s) => ({ ...s, linhas: s.linhas.filter((l) => l.texto) })).filter((s) => s.linhas.length)

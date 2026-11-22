@@ -4,7 +4,7 @@ import type { EntradaProntuario } from './registro'
 
 const entrada = (id: string, data: string, hora = '09:00', tipo: 'consulta' | 'retorno' = 'consulta'): EntradaProntuario => ({
   id, pacienteId: 'p1', titulo: id, tipo, modalidade: 'presencial', data, hora, edicoes: {}, adendos: [],
-  dados: { qp: '', hda: '', ap: '', hp: '', hf: '', exameFisico: '', examesTexto: '', exames: [], diagnosticos: [], receita: null, condutaTexto: '', solicitado: [], encaminhado: [], orientacoes: '', retorno: '', documentos: [], fotos: [] },
+  dados: { qp: '', hda: '', ap: '', hp: '', hf: '', exameFisico: '', examesTexto: '', exames: [], diagnosticos: [], receita: null, condutaTexto: '', solicitado: [], encaminhado: [], orientacoes: '', avaliacao: '', documentos: [], fotos: [] },
 })
 
 describe('juntarEntradas', () => {

@@ -41,7 +41,7 @@ describe('montarProntuario (QP, HDA, AP, Ex. físico, HD e Conduta; só o que fo
     expect(t['P.solicitado']).toBe('exames de rotina, perfil hormonal.')
     expect(t['P.encaminhado']).toBe('ginecologia.')
     expect(t['P.orientacoes']).toBe('Não manipular lesões inflamatórias. Ajustar frequência conforme tolerabilidade cutânea.')
-    expect(t['P.retorno']).toBe('em 8 semanas, em 08/01/2027.')
+    expect(t['P.avaliacao']).toBe('em 8 semanas, em 08/01/2027.')
   })
   it('HP e HF só quando houver na história', () => {
     expect('S.hp' in t || 'S.hf' in t).toBe(false)
@@ -54,6 +54,23 @@ describe('montarProntuario (QP, HDA, AP, Ex. físico, HD e Conduta; só o que fo
   })
 })
 
+describe('retorno marcado no prontuário (a Conduta só recomenda "Avaliação")', () => {
+  const fontes = { historia: HISTORIA, itens: ITENS, conduta: conduta() }
+  const linhaRetorno = (retornoMarcado?: { data: string; inicio: string; modalidade: 'presencial' | 'online' } | null) =>
+    secoesDosDados(dadosDaConsulta({ ...fontes, retornoMarcado })).find((s) => s.id === 'P')!.linhas.slice(-1)[0]
+  it('termina com "Sem retorno" quando não há retorno marcado', () => {
+    expect(linhaRetorno(null)).toEqual({ id: 'retorno', rotulo: '', texto: 'Sem retorno' })
+    expect(linhaRetorno(undefined).texto).toBe('Sem retorno')
+  })
+  it('termina com o dia, a hora e a modalidade do retorno marcado', () => {
+    expect(linhaRetorno({ data: '2026-12-05', inicio: '14:00', modalidade: 'presencial' })).toEqual({ id: 'retorno', rotulo: 'Retorno', texto: '05/12/2026 às 14:00, presencial' })
+  })
+  it('a avaliação em semanas é outra linha, antes do retorno', () => {
+    const ids = secoesDosDados(dadosDaConsulta({ ...fontes })).find((s) => s.id === 'P')!.linhas.map((l) => l.id)
+    expect(ids.slice(-2)).toEqual(['avaliacao', 'retorno'])
+  })
+})
+
 describe('atualizarProntuario', () => {
   it('linha cuja origem não mudou mantém a edição do médico; a que mudou é reescrita', () => {
     const antes = montarProntuario(HISTORIA, ITENS, conduta())
@@ -62,8 +79,8 @@ describe('atualizarProntuario', () => {
     const r = atualizarProntuario(antes, textos, novas)
     expect(r.textos['S.qp']).toBe('Editado pelo médico.')
     expect(r.mudou['S.qp']).toBe(false)
-    expect(r.textos['P.retorno']).toMatch(/^em 4 semanas/)
-    expect(r.mudou['P.retorno']).toBe(true)
+    expect(r.textos['P.avaliacao']).toMatch(/^em 4 semanas/)
+    expect(r.mudou['P.avaliacao']).toBe(true)
   })
 })
 
@@ -182,7 +199,7 @@ describe('edicoesDoMedico (o que o médico mudou na revisão final)', () => {
   const dados: DadosEntrada = {
     qp: 'Espinhas.', hda: 'HDA original.', ap: 'Hipertensão.', hp: '', hf: '', exameFisico: 'Pápulas.', examesTexto: '', exames: [],
     diagnosticos: [{ nome: 'Acne vulgar', cid: 'L70.0', pct: 85, situacao: 'assinalado' }], receita: null,
-    condutaTexto: 'Rotina.', solicitado: [], encaminhado: [], orientacoes: '', retorno: 'em 8 semanas.', documentos: [], fotos: [],
+    condutaTexto: 'Rotina.', solicitado: [], encaminhado: [], orientacoes: '', avaliacao: 'em 8 semanas.', documentos: [], fotos: [],
   }
   const textos = () => Object.fromEntries(secoesDosDados(dados).flatMap((s) => s.linhas.map((l) => [chave(s, l), l.texto])))
   const NARRATIVA_DO_SERVIDOR: Record<string, keyof DadosEntrada> = { 'S.qp': 'qp', 'S.hda': 'hda', 'S.ap': 'ap', 'S.hp': 'hp', 'S.hf': 'hf', 'O.exame': 'exameFisico', 'O.exames': 'examesTexto', 'P.orientacoes': 'orientacoes' }

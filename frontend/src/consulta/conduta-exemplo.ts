@@ -72,10 +72,10 @@ const ACNE: ModeloConduta = {
         { id: 'exames', rotulo: 'Exames', opcoes: [
           { id: 'hormonal', rotulo: 'Perfil hormonal', texto: 'Solicito perfil hormonal.' },
         ] },
-        { id: 'retorno', rotulo: 'Retorno', opcoes: [
-          { id: '4s', rotulo: '4 semanas', texto: 'Retorno em 4 semanas.', dias: 28 },
-          { id: '8s', rotulo: '8 semanas', texto: 'Retorno em 8 semanas.', dias: 56 },
-          { id: '12s', rotulo: '12 semanas', texto: 'Retorno em 12 semanas.', dias: 84 },
+        { id: 'retorno', rotulo: 'Avaliação', opcoes: [
+          { id: '4s', rotulo: '4 semanas', texto: 'Avaliação em 4 semanas.', dias: 28 },
+          { id: '8s', rotulo: '8 semanas', texto: 'Avaliação em 8 semanas.', dias: 56 },
+          { id: '12s', rotulo: '12 semanas', texto: 'Avaliação em 12 semanas.', dias: 84 },
         ] },
         // mais de um especialista; nada marcado = sem encaminhamento
         { id: 'encaminhamento', rotulo: 'Encaminhamento', prefixo: 'Encaminho para', opcoes: [
@@ -95,15 +95,15 @@ const ACNE: ModeloConduta = {
 }
 
 // Modelos de conduta de exemplo para o retorno e a lesão nova (simulação; a IA verdadeira virá depois).
-const RETORNO: Linha = { id: 'retorno', rotulo: 'Retorno', opcoes: [
-  { id: '4s', rotulo: '4 semanas', texto: 'Retorno em 4 semanas.', dias: 28 },
-  { id: '8s', rotulo: '8 semanas', texto: 'Retorno em 8 semanas.', dias: 56 },
-  { id: '12s', rotulo: '12 semanas', texto: 'Retorno em 12 semanas.', dias: 84 },
+const RETORNO: Linha = { id: 'retorno', rotulo: 'Avaliação', opcoes: [
+  { id: '4s', rotulo: '4 semanas', texto: 'Avaliação em 4 semanas.', dias: 28 },
+  { id: '8s', rotulo: '8 semanas', texto: 'Avaliação em 8 semanas.', dias: 56 },
+  { id: '12s', rotulo: '12 semanas', texto: 'Avaliação em 12 semanas.', dias: 84 },
 ] }
-const RETORNO_CURTO: Linha = { id: 'retorno', rotulo: 'Retorno', opcoes: [
-  { id: '1s', rotulo: '1 semana', texto: 'Retorno em 1 semana, com o resultado.', dias: 7 },
-  { id: '2s', rotulo: '2 semanas', texto: 'Retorno em 2 semanas, com o resultado.', dias: 14 },
-  { id: '4s', rotulo: '4 semanas', texto: 'Retorno em 4 semanas, com o resultado.', dias: 28 },
+const RETORNO_CURTO: Linha = { id: 'retorno', rotulo: 'Avaliação', opcoes: [
+  { id: '1s', rotulo: '1 semana', texto: 'Avaliação em 1 semana, com o resultado.', dias: 7 },
+  { id: '2s', rotulo: '2 semanas', texto: 'Avaliação em 2 semanas, com o resultado.', dias: 14 },
+  { id: '4s', rotulo: '4 semanas', texto: 'Avaliação em 4 semanas, com o resultado.', dias: 28 },
 ] }
 
 const PSORIASE: ModeloConduta = {

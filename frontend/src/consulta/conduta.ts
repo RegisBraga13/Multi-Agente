@@ -3,14 +3,14 @@
 // À esquerda, os grupos ficam fechados (só o título, como as hipóteses do DD). O médico abre um grupo,
 // vê as opções que a IA sugeriu (nenhuma vem marcada), escolhe e fecha; a seção aparece à direita,
 // no texto corrido da conduta, que ele pode editar.
-// "4. Orientações" (antes "Seguimento") reúne orientações gerais, exames, data de retorno e encaminhamento.
+// "4. Orientações" (antes "Seguimento") reúne orientações gerais, exames, avaliação em X semanas e encaminhamento.
 // Não há opção "Não solicitar"/"Não encaminhar"/"Não indicar": não marcar nada já significa isso.
 import type { ItemDD } from './diagnosticos'
 import { CONDUTAS } from './conduta-exemplo'
 import type { ItemResumo } from './resumo'
 
 /** `texto`: a frase que entra na conduta quando a opção está marcada ('' = não escreve nada) */
-/** `dias`: retorno — a data (dia da consulta + dias) entra no fim da frase */
+/** `dias`: avaliação em X semanas — a data (dia da consulta + dias) entra no fim da frase */
 /**
  * Item da receita — o que a receita exige: nome pela DCB (genérico), forma farmacêutica, concentração/dosagem,
  * quantidade (algarismos e por extenso: `feminino` concorda o número com a unidade) e posologia com a via.

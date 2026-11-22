@@ -46,10 +46,16 @@ export type DadosEntrada = {
   solicitado: string[]
   encaminhado: string[]
   orientacoes: string
-  retorno: string
+  /** "avaliação em X semanas": recomendação da conduta; o retorno só existe se foi marcado na agenda */
+  avaliacao: string
+  /** o retorno marcado na página 5; null ou ausente = sem retorno */
+  retornoMarcado?: RetornoMarcado | null
   documentos: DocumentoRegistro[]
   fotos: FotoRegistro[]
 }
+
+/** Mesmo formato do servidor (RetornoMarcado): 'YYYY-MM-DD', 'HH:MM'. */
+export type RetornoMarcado = { data: string; inicio: string; modalidade: Modalidade }
 
 export type Adendo = { quando: string; texto: string }
 /** `data` 'YYYY-MM-DD', `hora` 'HH:MM'. `edicoes`: o texto que o médico reescreveu numa linha estruturada (HD, receita…). */
@@ -72,12 +78,20 @@ const CHAVE = (id: string) => `especialista:prontuario:${id}`
 function salvas(pacienteId: string): EntradaProntuario[] {
   try {
     const x = JSON.parse(localStorage.getItem(CHAVE(pacienteId)) ?? '[]')
-    return Array.isArray(x) ? x.filter(valida) : []
+    return Array.isArray(x) ? x.map(daVersaoAntiga).filter(valida) : []
   } catch { return [] }
 }
 
 const texto = (x: unknown) => typeof x === 'string'
 const textos = (x: unknown) => Array.isArray(x) && x.every(texto)
+
+/** Entradas gravadas antes de o retorno marcado existir chamavam de `retorno` o que hoje é `avaliacao`. */
+function daVersaoAntiga(x: unknown): unknown {
+  const e = x as { dados?: Record<string, unknown> } | null
+  if (!e?.dados || !('retorno' in e.dados) || 'avaliacao' in e.dados) return x
+  const { retorno, ...resto } = e.dados
+  return { ...e, dados: { ...resto, avaliacao: retorno } }
+}
 
 /** Entrada lida do navegador: só entra se tiver a forma esperada (nada inventado para completar). */
 function valida(x: unknown): x is EntradaProntuario {
@@ -85,7 +99,7 @@ function valida(x: unknown): x is EntradaProntuario {
   if (!e || !texto(e.id) || !texto(e.pacienteId) || !texto(e.titulo) || !['consulta', 'retorno'].includes(e.tipo)) return false
   if (!/^\d{4}-\d{2}-\d{2}$/.test(e.data) || !/^\d{2}:\d{2}$/.test(e.hora) || !['presencial', 'online'].includes(e.modalidade)) return false
   const d = e.dados
-  return !!d && ['qp', 'hda', 'ap', 'hp', 'hf', 'exameFisico', 'examesTexto', 'condutaTexto', 'orientacoes', 'retorno'].every((k) => texto(d[k as keyof DadosEntrada]))
+  return !!d && ['qp', 'hda', 'ap', 'hp', 'hf', 'exameFisico', 'examesTexto', 'condutaTexto', 'orientacoes', 'avaliacao'].every((k) => texto(d[k as keyof DadosEntrada]))
     && textos(d.solicitado) && textos(d.encaminhado) && Array.isArray(d.exames) && Array.isArray(d.fotos) && Array.isArray(d.documentos)
     && Array.isArray(d.diagnosticos) && d.diagnosticos.length <= 3 && d.diagnosticos.every((x) => texto(x.nome) && texto(x.cid) && ['assinalado', 'sugerido'].includes(x.situacao))
     && (d.receita === null || (typeof d.receita === 'object' && texto(d.receita.texto) && Array.isArray(d.receita.itens)))
@@ -213,7 +227,7 @@ const EXEMPLOS: Record<string, EntradaProntuario[]> = {
       condutaTexto: '',
       solicitado: ['exames de rotina'], encaminhado: [],
       orientacoes: 'Evitar banhos quentes e prolongados. Não usar o corticoide no rosto.',
-      retorno: 'em 8 semanas, em 13/11/2026.',
+      avaliacao: 'em 8 semanas, em 13/11/2026.',
       documentos: [],
       fotos: [{ n: 1, src: null }, { n: 2, src: null }],
     },
@@ -237,7 +251,7 @@ function consultaDoAntonio(data: string): EntradaProntuario {
       condutaTexto: 'Biópsia da lesão para confirmar o diagnóstico e planejar a retirada.',
       solicitado: ['biópsia da lesão (anatomopatológico)'], encaminhado: [],
       orientacoes: 'Proteger a lesão do sol. Procurar atendimento se sangrar muito ou crescer rápido.',
-      retorno: 'em 2 semanas, com o resultado da biópsia.',
+      avaliacao: 'em 2 semanas, com o resultado da biópsia.',
       documentos: [],
       fotos: [{ n: 1, src: null }, { n: 2, src: null }],
     },

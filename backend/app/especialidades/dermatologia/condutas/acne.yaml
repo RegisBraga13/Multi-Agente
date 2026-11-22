@@ -111,11 +111,11 @@ grupos:
         opcoes:
           - {id: hormonal, rotulo: Perfil hormonal, texto: Solicito perfil hormonal.}
       - id: retorno
-        rotulo: Retorno
+        rotulo: Avaliação
         opcoes:
-          - {id: 4s, rotulo: 4 semanas, texto: Retorno em 4 semanas., dias: 28}
-          - {id: 8s, rotulo: 8 semanas, texto: Retorno em 8 semanas., dias: 56}
-          - {id: 12s, rotulo: 12 semanas, texto: Retorno em 12 semanas., dias: 84}
+          - {id: 4s, rotulo: 4 semanas, texto: Avaliação em 4 semanas., dias: 28}
+          - {id: 8s, rotulo: 8 semanas, texto: Avaliação em 8 semanas., dias: 56}
+          - {id: 12s, rotulo: 12 semanas, texto: Avaliação em 12 semanas., dias: 84}
       - id: encaminhamento
         rotulo: Encaminhamento
         prefixo: Encaminho para
