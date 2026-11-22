@@ -51,3 +51,36 @@ def test_consulta_ponta_a_ponta_com_demonstracao(mundo):
         entrada["dados"]["retorno"] == "em 4 semanas."
         and entrada["dados"]["diagnosticos"][0]["situacao"] == "assinalado"
     )
+
+
+def test_demonstracao_propoe_tres_perguntas_validas(mundo):
+    pacientes, consultas = mundo
+    c = TestClient(
+        criar_app(
+            Dependencias(
+                identidade=MedicoLocal(MEDICO_A),
+                pacientes=pacientes,
+                consultas=consultas,
+                provedor=ProvedorDemonstracao(),
+            )
+        )
+    )
+    p = c.post("/pacientes", json={"nome": "Joana Fictícia", "nascimento": "1990-01-01", "sexo": "F"}).json()
+    cid = c.post(
+        "/consultas",
+        json={
+            "pacienteId": p["id"],
+            "tipo": "consulta",
+            "modalidade": "presencial",
+            "agendadaPara": "2026-11-13T08:00:00Z",
+        },
+    ).json()["id"]
+    for etapa, conteudo in (("anamnese", ANAMNESE), ("exame", EXAME)):
+        assert c.put(f"/consultas/{cid}/{etapa}", json=js(conteudo)).status_code == 200
+        assert c.post(f"/consultas/{cid}/{etapa}/oficializar").status_code == 200
+    c.post(f"/consultas/{cid}/historia/gerar")
+    r = c.post(f"/consultas/{cid}/perguntas/gerar")
+    assert r.status_code == 200 and r.json()["avisos"] == []
+    perguntas = r.json()["perguntas"]
+    assert len(perguntas) == 3
+    assert sorted(x["sinalId"] for x in perguntas if x["sinalId"]) == ["angioedema", "lesao-sangra-facil"]

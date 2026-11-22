@@ -33,6 +33,29 @@ class ProvedorDemonstracao:
             resultado = {"hipoteses": [hip], "naoPodePerder": None, "rastrear": []}
         elif pedido.motor == "conduta":
             resultado = {"grupos": []}
+        elif pedido.motor == "perguntas":
+            resultado = {
+                "perguntas": [
+                    {
+                        "texto": "Tem coceira nas lesões?",
+                        "seSim": "Refere prurido nas lesões.",
+                        "seNao": "Nega prurido.",
+                        "sinalId": None,
+                    },
+                    {
+                        "texto": "A lesão sangra ao toque leve?",
+                        "seSim": "Refere sangramento ao toque leve.",
+                        "seNao": "Nega sangramento ao toque.",
+                        "sinalId": "lesao-sangra-facil",
+                    },
+                    {
+                        "texto": "Teve inchaço de lábios, língua ou falta de ar?",
+                        "seSim": "Refere inchaço de lábios ou língua, ou falta de ar.",
+                        "seNao": "Nega inchaço de lábios, língua e falta de ar.",
+                        "sinalId": "angioedema",
+                    },
+                ]
+            }
         else:  # avaliadora: tudo em dúvida
             resultado = {
                 "vereditos": [
