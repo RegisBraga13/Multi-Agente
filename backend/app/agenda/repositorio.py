@@ -71,7 +71,8 @@ class RepositorioAgenda(Protocol):
     def criar_retorno(
         self, medico_id: UUID, paciente_id: UUID, paciente_nome: str, consulta_origem_id: UUID, marcado: RetornoMarcado
     ) -> Retorno:
-        """Cartão "Retorno" na agenda. HorarioOcupado se o instante já tem pedido não cancelado ou outro retorno."""
+        """Cartão "Retorno" na agenda. HorarioOcupado se o instante já tem pedido não cancelado ou retorno de outra
+        consulta. Marcar de novo na mesma consulta substitui o retorno anterior."""
         ...
 
     def retornos(self, medico_id: UUID, de: date, ate: date) -> list[Retorno]:
@@ -177,8 +178,18 @@ class RepositorioAgendaMemoria:
     def criar_retorno(
         self, medico_id: UUID, paciente_id: UUID, paciente_nome: str, consulta_origem_id: UUID, marcado: RetornoMarcado
     ) -> Retorno:
-        if any(h.inicio == marcado.inicio for h in self.ocupados(medico_id, marcado.data, marcado.data)):
+        # marcar de novo na mesma consulta substitui o retorno anterior (o horário antigo não conta como tomado)
+        de_outros = [
+            r
+            for r in self.retornos(medico_id, marcado.data, marcado.data)
+            if r.consulta_origem_id != consulta_origem_id
+        ]
+        pedidos = [p for p in self._do_medico(medico_id) if p.status != "cancelado" and p.data == marcado.data]
+        if any(x.inicio == marcado.inicio for x in (*de_outros, *pedidos)):
             raise HorarioOcupado
+        for id_, (dono, r) in list(self._retornos.items()):
+            if dono == medico_id and r.consulta_origem_id == consulta_origem_id:
+                del self._retornos[id_]
         retorno = Retorno(
             id=uuid4(),
             paciente_id=paciente_id,

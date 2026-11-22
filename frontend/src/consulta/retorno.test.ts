@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { RASCUNHO_INICIAL, escolher, horarioEscolhido, podeSalvarAnexos, retornoParaEnvio, textoDoRetorno, type RascunhoRetorno } from './retorno'
+import { RASCUNHO_INICIAL, erroDeHorario, escolher, horarioEscolhido, podeSalvarAnexos, retornoParaEnvio, textoDoRetorno, type RascunhoRetorno } from './retorno'
 
 const H = { data: '2026-12-05', inicio: '14:00', modalidade: 'presencial' as const }
 const SIM_SEM_HORARIO: RascunhoRetorno = { escolha: 'sim', marcado: null }
 const SIM_COM_HORARIO: RascunhoRetorno = { escolha: 'sim', marcado: H }
+
+describe('erroDeHorario (só o 409 do horário volta à escolha; consulta já finalizada não)', () => {
+  const e = (status: number, msg: string) => ({ status, message: msg })
+  it('horário ocupado ou que passou', () => {
+    expect(erroDeHorario(e(409, 'Esse horário acabou de ser ocupado. Escolha outro.'))).toBe(true)
+    expect(erroDeHorario(e(409, 'Esse horário já passou. Escolha outro.'))).toBe(true)
+  })
+  it('outros 409 não são de horário', () => {
+    expect(erroDeHorario(e(409, 'consulta finalizada; use adendo'))).toBe(false)
+    expect(erroDeHorario(e(409, 'Oficialize Anamnese antes'))).toBe(false)
+    expect(erroDeHorario(e(500, 'Esse horário'))).toBe(false)
+  })
+})
 
 describe('rascunho do retorno (nada vai ao servidor até Finalizar)', () => {
   it('começa em "Não" (sem retorno)', () => {

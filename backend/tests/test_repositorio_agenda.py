@@ -79,3 +79,22 @@ def test_retornos_so_do_medico_dono():
     repo.criar_retorno(MEDICO, PACIENTE, "João", uuid4(), marcado())
     assert repo.retornos(OUTRO, DIA, DIA) == []
     assert repo.ocupados(OUTRO, DIA, DIA) == []
+
+
+def test_marcar_de_novo_na_mesma_consulta_substitui_o_retorno_anterior():
+    repo = novo_repo()
+    origem = uuid4()
+    repo.criar_retorno(MEDICO, PACIENTE, "João", origem, marcado("14:00"))
+    novo = repo.criar_retorno(MEDICO, PACIENTE, "João", origem, marcado("15:00"))
+    assert repo.retornos(MEDICO, DIA, DIA) == [novo]
+    repo.criar_pedido(MEDICO, pedido("14:00"), "t" * 32)  # o 14:00 antigo ficou livre
+
+
+def test_substituir_para_horario_ocupado_mantem_o_retorno_anterior():
+    repo = novo_repo()
+    origem = uuid4()
+    antigo = repo.criar_retorno(MEDICO, PACIENTE, "João", origem, marcado("14:00"))
+    repo.criar_pedido(MEDICO, pedido("15:00"), "t" * 32)
+    with pytest.raises(HorarioOcupado):
+        repo.criar_retorno(MEDICO, PACIENTE, "João", origem, marcado("15:00"))
+    assert repo.retornos(MEDICO, DIA, DIA) == [antigo]

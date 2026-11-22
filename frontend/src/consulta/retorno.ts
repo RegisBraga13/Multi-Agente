@@ -22,5 +22,8 @@ export const retornoParaEnvio = (r: RascunhoRetorno): RetornoMarcado | null => (
 /** "Sim" sem horário escolhido não deixa salvar os anexos. */
 export const podeSalvarAnexos = (r: RascunhoRetorno): boolean => r.escolha === 'nao' || r.marcado !== null
 
+/** O Finalizar recusou por causa do horário (ocupado ou que passou). Outros 409 (consulta já finalizada, etapa faltando) não. */
+export const erroDeHorario = (e: { status: number; message: string }): boolean => e.status === 409 && /horário/i.test(e.message)
+
 /** "05/12/2026 às 14:00, presencial" */
 export const textoDoRetorno = (m: RetornoMarcado): string => `${dataBr(m.data)} às ${m.inicio}, ${m.modalidade}`

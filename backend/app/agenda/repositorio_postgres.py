@@ -51,11 +51,12 @@ def _travar_horario(conn: psycopg.Connection[dict[str, Any]], medico_id: UUID, q
     conn.execute("select pg_advisory_xact_lock(hashtextextended(%s, 0))", (f"{medico_id}|{quando.isoformat()}",))
 
 
-def _horario_tomado(conn: psycopg.Connection[dict[str, Any]], quando: Any) -> bool:
+def _horario_tomado(conn: psycopg.Connection[dict[str, Any]], quando: Any, ignorar_origem: UUID | None = None) -> bool:
+    """`ignorar_origem`: o retorno da própria consulta não conta (ele será substituído)."""
     achou = conn.execute(
         "select 1 from booking_requests where scheduled_at = %s and status <> 'cancelado'"
-        " union all select 1 from return_bookings where scheduled_at = %s",
-        (quando, quando),
+        " union all select 1 from return_bookings where scheduled_at = %s and origin_encounter_id is distinct from %s",
+        (quando, quando, ignorar_origem),
     ).fetchone()
     return achou is not None
 
@@ -212,8 +213,9 @@ class RepositorioAgendaPostgres:
         try:
             with transacao_do_medico(self.url, medico_id) as conn:
                 _travar_horario(conn, medico_id, quando)
-                if _horario_tomado(conn, quando):
+                if _horario_tomado(conn, quando, consulta_origem_id):
                     raise HorarioOcupado
+                conn.execute("delete from return_bookings where origin_encounter_id = %s", (consulta_origem_id,))
                 linha = conn.execute(
                     "insert into return_bookings (doctor_id, patient_id, origin_encounter_id, scheduled_at, modality)"
                     " values (%s, %s, %s, %s, %s) returning id",

@@ -4,6 +4,7 @@ Finalizar exige as 5 etapas oficializadas e em dia e todo documento gravado já 
 adendo datado.
 """
 
+from contextlib import suppress
 from typing import Annotated
 from uuid import UUID
 
@@ -103,7 +104,10 @@ def finalizar(consulta_id: UUID, corpo: Finalizacao, dep: Dep, medico: Medico) -
         dep.repo.finalizar(medico, consulta_id, dados, edicoes, dep.relogio.agora())
     except Exception:
         if marcou:
-            dep.agenda.desfazer_retorno(medico, consulta_id)
+            with suppress(
+                Exception
+            ):  # falha ao desfazer não esconde o erro original; a próxima tentativa substitui o cartão
+                dep.agenda.desfazer_retorno(medico, consulta_id)
         raise
     paciente = dep.repo.buscar(medico, consulta_id).paciente_id
     return next(e for e in dep.repo.prontuario(medico, paciente) if e.id == consulta_id)

@@ -131,7 +131,7 @@ def test_cid_repetido_entre_protocolos_e_pacote_invalido(tmp_path):
 
 
 def test_conduta_nao_chama_de_retorno_a_avaliacao_em_semanas():
-    """"Retorno" é só o marcado na agenda; a conduta recomenda "Avaliação em X semanas"."""
+    """ "Retorno" é só o marcado na agenda; a conduta recomenda "Avaliação em X semanas"."""
     for nome, p in PROTOCOLOS.items():
         for g in p.grupos:
             for linha in g.linhas:

@@ -4,7 +4,7 @@ import pytest
 
 from app.agenda.repositorio import RepositorioAgendaMemoria
 from app.consulta.repositorio import RepositorioConsultasMemoria
-from app.contratos.agenda import NovoPedido
+from app.contratos.agenda import NovoPedido, RetornoMarcado
 from tests.fabrica import ANAMNESE, diagnosticos
 from tests.test_api_consultas import MEDICO_A, cliente, eventos, js, nova_consulta
 
@@ -215,3 +215,32 @@ def test_finalizar_que_falha_desfaz_o_retorno(mundo):
     with pytest.raises(RuntimeError):
         c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}, "retornoMarcado": RETORNO})
     assert agenda.retornos(MEDICO_A, FUTURO, FUTURO) == []
+
+
+def test_finalizar_com_retorno_orfao_da_mesma_consulta_funciona(mundo):
+    """Um cartão que sobrou de uma tentativa que caiu no meio não trava a consulta."""
+    from uuid import UUID
+
+    c, agenda = com_agenda(mundo)
+    cid = consulta_pronta(c)
+    paciente = UUID(c.get(f"/consultas/{cid}").json()["pacienteId"])
+    agenda.criar_retorno(MEDICO_A, paciente, "Mariana Souza", UUID(cid), RetornoMarcado(**RETORNO))
+    r = c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}, "retornoMarcado": RETORNO})
+    assert r.status_code == 200 and len(agenda.retornos(MEDICO_A, FUTURO, FUTURO)) == 1
+
+
+def test_falha_ao_desfazer_nao_esconde_o_erro_original(mundo):
+    class Quebrado(RepositorioConsultasMemoria):
+        def finalizar(self, *args, **kwargs):
+            raise RuntimeError("banco caiu")
+
+    class AgendaQueNaoDesfaz(RepositorioAgendaMemoria):
+        def desfazer_retorno(self, *args, **kwargs):
+            raise OSError("agenda caiu")
+
+    pacientes, _ = mundo
+    agenda = AgendaQueNaoDesfaz({"ana": MEDICO_A})
+    c = cliente((pacientes, Quebrado(pacientes)), agenda=agenda)
+    cid = consulta_pronta(c)
+    with pytest.raises(RuntimeError, match="banco caiu"):
+        c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}, "retornoMarcado": RETORNO})

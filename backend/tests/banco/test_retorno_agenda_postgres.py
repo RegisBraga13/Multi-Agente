@@ -79,3 +79,22 @@ def test_desfazer_retorno_libera_o_horario(url_banco):
     repo.desfazer_retorno(MEDICO_A, consulta)
     assert repo.retornos(MEDICO_A, date(2027, 4, 17), date(2027, 4, 17)) == []
     repo.criar_pedido(MEDICO_A, pedido(17, "14:00"), novo_token())
+
+
+def test_marcar_de_novo_na_mesma_consulta_substitui_o_retorno_anterior(url_banco):
+    repo = RepositorioAgendaPostgres(url_banco)
+    paciente, consulta = paciente_e_consulta(url_banco)
+    repo.criar_retorno(MEDICO_A, paciente, "João Lima", consulta, marcado(18, "14:00"))
+    novo = repo.criar_retorno(MEDICO_A, paciente, "João Lima", consulta, marcado(18, "15:00"))
+    assert repo.retornos(MEDICO_A, date(2027, 4, 18), date(2027, 4, 18)) == [novo]
+    repo.criar_pedido(MEDICO_A, pedido(18, "14:00"), novo_token())
+
+
+def test_substituir_para_horario_ocupado_mantem_o_retorno_anterior(url_banco):
+    repo = RepositorioAgendaPostgres(url_banco)
+    paciente, consulta = paciente_e_consulta(url_banco)
+    antigo = repo.criar_retorno(MEDICO_A, paciente, "João Lima", consulta, marcado(19, "14:00"))
+    repo.criar_pedido(MEDICO_A, pedido(19, "15:00"), novo_token())
+    with pytest.raises(HorarioOcupado):
+        repo.criar_retorno(MEDICO_A, paciente, "João Lima", consulta, marcado(19, "15:00"))
+    assert repo.retornos(MEDICO_A, date(2027, 4, 19), date(2027, 4, 19)) == [antigo]

@@ -21,7 +21,7 @@ import { atualizarConduta, editarTexto, escolherOpcao, escreverOutro, montarCond
 import { PaginaConduta } from './conduta-pagina'
 import { alternarEmitir, atualizarAnexos, avancar, definirCampos, editarAnexo, montarAnexos, pendenciasAnexos, type Anexo, type DadosConsulta } from './anexos'
 import { PaginaAnexos } from './anexos-pagina'
-import { RASCUNHO_INICIAL, podeSalvarAnexos, retornoParaEnvio, type RascunhoRetorno } from './retorno'
+import { RASCUNHO_INICIAL, erroDeHorario, podeSalvarAnexos, retornoParaEnvio, type RascunhoRetorno } from './retorno'
 import { EscolhaRetorno } from './retorno-pagina'
 import { dataLocal, gerarAgenda, marcarOcupados, MEDICO_EXEMPLO } from '../medico/exemplo'
 import { aplicarEdicoes, atualizarProntuario, cabecalhoProntuario, chave, dadosDaConsulta, edicoesDoMedico, secoesDosDados, type SecaoProntuario } from './prontuario'
@@ -522,7 +522,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
       (e: unknown) => {
         setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível finalizar. Tente de novo.')
         // horário do retorno tomado (ou que passou): volta à página 5 para escolher outro; o prontuário não se perde
-        if (e instanceof ErroServidor && e.status === 409 && retorno.escolha === 'sim') {
+        if (e instanceof ErroServidor && erroDeHorario(e) && retorno.escolha === 'sim') {
           setRetorno({ escolha: 'sim', marcado: null })
           fazer('editar', 'anexos')
           navegar(`${base}/anexos`)
