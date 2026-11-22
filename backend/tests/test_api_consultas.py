@@ -69,7 +69,7 @@ def test_fluxo_ate_a_conduta(mundo):
     assert c.put(f"/consultas/{cid}/diagnosticos", json=js(diagnosticos("confirmada"))).status_code == 200
     assert c.post(f"/consultas/{cid}/diagnosticos/oficializar").status_code == 200
     pronto = eventos(c.post(f"/consultas/{cid}/conduta/gerar").text)[-1][1]
-    conduta = pronto["conteudo"] | {"textos": ["Rotina para pele oleosa.", "", "", "Retorno em 8 semanas."]}
+    conduta = pronto["conteudo"] | {"textos": ["Rotina para pele oleosa.", "", "", "Avaliação em 8 semanas."]}
     assert c.put(f"/consultas/{cid}/conduta", json=conduta).status_code == 200
     r = c.post(f"/consultas/{cid}/conduta/oficializar")
     assert r.status_code == 200

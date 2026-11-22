@@ -91,8 +91,8 @@ def dados_da_consulta(
             if f.startswith("Solicito ")
         ],
         encaminhado=[_sem("Encaminho para ", f) for f in orient if f.startswith("Encaminho para ")],
-        orientacoes=" ".join(f for f in orient if not f.startswith(("Solicito ", "Encaminho ", "Retorno "))),
-        retorno=" ".join(f.removeprefix("Retorno ") for f in orient if f.startswith("Retorno ")),
+        orientacoes=" ".join(f for f in orient if not f.startswith(("Solicito ", "Encaminho ", "Avaliação "))),
+        avaliacao=" ".join(f.removeprefix("Avaliação ") for f in orient if f.startswith("Avaliação ")),
         documentos=[d.registro for d in enviados if d.registro is not None],
         fotos=[],
     )

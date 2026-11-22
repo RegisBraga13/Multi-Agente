@@ -2,7 +2,7 @@ from datetime import date
 
 from app.contratos.consulta import ExameComplementar, ItemComplementar
 from app.contratos.consulta_blocos import Documento, HipoteseItem, ItemDD, PerguntaContextual
-from app.contratos.prontuario import Atestado, ItemReceita, Laudo, Quantidade
+from app.contratos.prontuario import Atestado, DadosEntrada, ItemReceita, Laudo, Quantidade
 from app.prontuario.montar import aplicar_edicoes_narrativas, dados_da_consulta, diagnosticos_do_prontuario
 from tests.fabrica import DADOS_MINIMOS, EXAME, HISTORIA, conduta, diagnosticos, hipotese
 
@@ -17,7 +17,7 @@ ITEM = ItemReceita(
 )
 GRUPO4 = (
     "Não manipular lesões inflamatórias. Solicito exames de rotina: hemograma e TSH. Solicito perfil hormonal. "
-    "Retorno em 8 semanas, em 08/01/2027. Encaminho para ginecologia e endocrinologia."
+    "Avaliação em 8 semanas, em 08/01/2027. Encaminho para ginecologia e endocrinologia."
 )
 
 
@@ -61,7 +61,7 @@ def test_grupo_4_separado_em_solicitado_encaminhado_retorno_orientacoes():
     d = montar()
     assert d.solicitado == ["exames de rotina", "perfil hormonal"]
     assert d.encaminhado == ["ginecologia e endocrinologia"]
-    assert d.retorno == "em 8 semanas, em 08/01/2027."
+    assert d.avaliacao == "em 8 semanas, em 08/01/2027."
     assert d.orientacoes == "Não manipular lesões inflamatórias."
     assert d.conduta_texto == "Rotina para pele oleosa. Ácido azelaico."
 
@@ -204,3 +204,19 @@ def test_nao_muda_o_objeto_original():
     antes = DADOS_MINIMOS.model_copy(deep=True)
     aplicar_edicoes_narrativas(DADOS_MINIMOS, {"S.qp": "Outra queixa."})
     assert DADOS_MINIMOS == antes
+
+
+def test_avaliacao_nao_vai_para_as_orientacoes():
+    d = montar()
+    assert d.avaliacao == "em 8 semanas, em 08/01/2027." and "Avaliação" not in d.orientacoes
+
+
+def test_retorno_marcado_nasce_nulo():
+    assert montar().retorno_marcado is None
+
+
+def test_registro_antigo_com_retorno_vira_avaliacao():
+    antigo = DADOS_MINIMOS.model_dump(by_alias=True, mode="json")
+    del antigo["avaliacao"]
+    antigo["retorno"] = "em 4 semanas."
+    assert DadosEntrada.model_validate(antigo).avaliacao == "em 4 semanas."

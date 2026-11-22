@@ -17,7 +17,7 @@ DADOS_MINIMOS = DadosEntrada(
     solicitado=[],
     encaminhado=[],
     orientacoes="",
-    retorno="",
+    avaliacao="",
     documentos=[],
     fotos=[],
 )

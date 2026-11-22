@@ -23,6 +23,12 @@ class Horario(ModeloApi):
     inicio: str = Field(pattern=PADRAO_HORA)
 
 
+class RetornoMarcado(Horario):
+    """O retorno que o médico marcou na página 5 da consulta (só vira cartão da agenda ao finalizar)."""
+
+    modalidade: Modalidade
+
+
 class NovoPedido(Horario):
     modalidade: Modalidade
     nome: str = Field(min_length=1, max_length=120)

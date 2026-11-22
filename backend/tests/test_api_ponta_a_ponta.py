@@ -42,13 +42,13 @@ def test_consulta_ponta_a_ponta_com_demonstracao(mundo):
     assert c.put(f"/consultas/{cid}/diagnosticos", json=dd).status_code == 200
     assert c.post(f"/consultas/{cid}/diagnosticos/oficializar").status_code == 200
     conduta = eventos(c.post(f"/consultas/{cid}/conduta/gerar").text)[-1][1]["conteudo"]
-    conduta["textos"] = ["Orientação.", "", "", "Retorno em 4 semanas."]
+    conduta["textos"] = ["Orientação.", "", "", "Avaliação em 4 semanas."]
     assert c.put(f"/consultas/{cid}/conduta", json=conduta).status_code == 200
     assert c.post(f"/consultas/{cid}/conduta/oficializar").status_code == 200
     assert c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}}).json()["titulo"] == "Consulta 1"
     [entrada] = c.get(f"/pacientes/{p['id']}/prontuario").json()
     assert (
-        entrada["dados"]["retorno"] == "em 4 semanas."
+        entrada["dados"]["avaliacao"] == "em 4 semanas."
         and entrada["dados"]["diagnosticos"][0]["situacao"] == "assinalado"
     )
 

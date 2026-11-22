@@ -9,11 +9,12 @@ from datetime import date
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
+from app.contratos.agenda import RetornoMarcado
 from app.contratos.base import ModeloApi
 
-SCHEMA_VERSION_PRONTUARIO = 1
+SCHEMA_VERSION_PRONTUARIO = 2
 
 
 class Quantidade(ModeloApi):
@@ -97,9 +98,19 @@ class DadosEntrada(ModeloApi):
     solicitado: list[str]
     encaminhado: list[str]
     orientacoes: str
-    retorno: str
+    avaliacao: str  # "nova avaliação em X semanas": recomendação da conduta, não é o retorno marcado
+    retorno_marcado: RetornoMarcado | None = None
     documentos: list[DocumentoRegistro]
     fotos: list[FotoRegistro]
+
+    @model_validator(mode="before")
+    @classmethod
+    def _registro_do_schema_1(cls, dados: object) -> object:
+        """Registros gravados antes da versão 2 chamavam de `retorno` o que hoje é `avaliacao`."""
+        if isinstance(dados, dict) and "retorno" in dados and "avaliacao" not in dados:
+            dados = {**dados, "avaliacao": dados["retorno"]}
+            del dados["retorno"]
+        return dados
 
 
 class Adendo(ModeloApi):

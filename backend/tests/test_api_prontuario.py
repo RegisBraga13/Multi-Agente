@@ -17,7 +17,7 @@ def consulta_pronta(c):
     c.post(f"/consultas/{cid}/diagnosticos/oficializar")
     pronto = eventos(c.post(f"/consultas/{cid}/conduta/gerar").text)[-1][1]
     c.put(
-        f"/consultas/{cid}/conduta", json=pronto["conteudo"] | {"textos": ["Rotina.", "", "", "Retorno em 8 semanas."]}
+        f"/consultas/{cid}/conduta", json=pronto["conteudo"] | {"textos": ["Rotina.", "", "", "Avaliação em 8 semanas."]}
     )
     assert c.post(f"/consultas/{cid}/conduta/oficializar").status_code == 200
     return cid
@@ -27,7 +27,7 @@ def test_prontuario_proposto(mundo):
     c = cliente(mundo)
     cid = consulta_pronta(c)
     r = c.get(f"/consultas/{cid}/prontuario")
-    assert r.status_code == 200 and r.json()["qp"] == "Espinhas." and r.json()["retorno"] == "em 8 semanas."
+    assert r.status_code == 200 and r.json()["qp"] == "Espinhas." and r.json()["avaliacao"] == "em 8 semanas."
     assert r.json()["diagnosticos"][0]["situacao"] == "assinalado"
 
 
