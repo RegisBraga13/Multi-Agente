@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { TextoCrescente } from '../medico/texto-crescente'
 import { CampoLinha, SEM_CORRETOR } from './campo-linha'
 import { GRUPOS_CONDUTA, KIT_ROTINA, LINHAS_MULTIPLAS, OUTRO, type Conduta } from './conduta'
+import { textoDaFaixa, textoDaRetirada } from './conduta-servidor'
 import type { ItemResumo } from './resumo'
 import type { Situacao } from './tipos'
 import { BotaoOficializar, Cartao } from './ui'
@@ -33,6 +34,10 @@ type Props = {
   onRevelar: (i: number) => void
   onEditar: (i: number, texto: string) => void
   onSalvar: () => void
+  /** consulta real: faixa vermelha de urgência (a ação de emergência é fixa, vem do servidor) */
+  urgencia?: { nivel: 'prioritaria' | 'imediata'; acoes: string[] } | null
+  /** consulta real: opções que o servidor retirou por contraindicação, com o motivo */
+  retiradas?: { rotulo: string; motivo: string }[]
 }
 
 export function PaginaConduta(p: Props) {
@@ -88,6 +93,10 @@ export function PaginaConduta(p: Props) {
         />
       }
     >
+      {p.urgencia && (
+        <p role="alert" title={p.urgencia.acoes.join('. ')} className="mb-2 truncate bg-alerta-clinico px-3 py-1 text-[14px] font-semibold text-papel">{textoDaFaixa(p.urgencia)}</p>
+      )}
+      {p.retiradas?.map((r) => <p key={r.rotulo} className="mb-1 text-[12.5px] text-apagado">{textoDaRetirada(r)}</p>)}
       {/* como na landing: especialidade / conduta · diagnóstico, e a alergia ao lado */}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-[14px] text-tinta">
