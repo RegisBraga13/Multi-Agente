@@ -132,6 +132,16 @@ def test_prontuario_mais_recente_no_topo_com_titulo(ambiente):
     assert repo.prontuario(b, paciente) == []
 
 
+def test_pacientes_com_prontuario_so_finalizados_e_so_do_medico(ambiente):
+    repo, a, b, paciente = ambiente  # o banco de teste é compartilhado: compara pertencimento, não lista inteira
+    c = repo.criar(a, nova(paciente))
+    assert paciente not in repo.pacientes_com_prontuario(a)  # consulta aberta não conta
+    repo.finalizar(a, c.id, DADOS_MINIMOS, {}, QUANDO)
+    repo.criar(a, nova(paciente, datetime(2026, 11, 20, 8, 0, tzinfo=BRT)))
+    assert repo.pacientes_com_prontuario(a).count(paciente) == 1
+    assert paciente not in repo.pacientes_com_prontuario(b)
+
+
 def _oficial(repo, a, cid, etapa, conteudo):
     repo.gravar_bloco(a, cid, etapa, "oficializado", conteudo, QUANDO)
 

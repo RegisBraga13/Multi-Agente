@@ -109,3 +109,17 @@ def test_finalizar_aplica_a_edicao_da_hda_e_guarda_a_do_diagnostico(mundo):
     paciente = c.get(f"/consultas/{cid}").json()["pacienteId"]
     [e] = c.get(f"/pacientes/{paciente}/prontuario").json()
     assert e["dados"]["hda"] == "HDA editada." and e["edicoes"] == {"A.hd": "Linha do HD"}
+
+
+def test_lista_de_prontuarios_so_com_consulta_finalizada(mundo):
+    from tests.test_api_consultas import MEDICO_B
+
+    c = cliente(mundo)
+    assert c.get("/prontuarios").json() == []
+    cid = consulta_pronta(c)
+    assert c.get("/prontuarios").json() == []  # consulta aberta não conta
+    c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}})
+    [p] = c.get("/prontuarios").json()
+    paciente = c.get(f"/consultas/{cid}").json()
+    assert p["id"] == paciente["pacienteId"] and p["entradas"] == 1 and p["nome"] and p["nascimento"] and p["ultima"]
+    assert cliente(mundo, MEDICO_B).get("/prontuarios").json() == []  # outro médico não vê

@@ -295,6 +295,13 @@ class RepositorioConsultasPostgres:
                 (medico_id, consulta_id, texto, motivo, quando),
             )
 
+    def pacientes_com_prontuario(self, medico_id: UUID) -> list[UUID]:
+        with self._transacao(medico_id) as conn:
+            linhas = conn.execute(
+                "select distinct patient_id from encounters where finalized_at is not null"
+            ).fetchall()
+        return [x["patient_id"] for x in linhas]
+
     def prontuario(self, medico_id: UUID, paciente_id: UUID) -> list[EntradaProntuario]:
         with self._transacao(medico_id) as conn:
             linhas = conn.execute(

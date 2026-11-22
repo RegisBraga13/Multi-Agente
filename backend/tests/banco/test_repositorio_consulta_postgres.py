@@ -23,6 +23,7 @@ from tests.test_repositorio_consulta import (  # noqa: F401 (os cenários rodam 
     test_gravar_bloco_desatualiza_as_seguintes_junto,
     test_gravar_bloco_substitui_e_zera_desatualizado,
     test_paciente_de_outro_medico_nao_vira_consulta,
+    test_pacientes_com_prontuario_so_finalizados_e_so_do_medico,
     test_prontuario_mais_recente_no_topo_com_titulo,
     test_rascunho_ia_so_grava_se_nada_mudou,
 )

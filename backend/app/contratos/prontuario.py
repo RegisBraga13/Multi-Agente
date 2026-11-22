@@ -107,6 +107,16 @@ class Adendo(ModeloApi):
     texto: str
 
 
+class PacienteComProntuario(ModeloApi):
+    """Item da lista de prontuários: quem já terminou ao menos uma consulta."""
+
+    id: UUID
+    nome: str
+    nascimento: date
+    entradas: int
+    ultima: date
+
+
 class EntradaProntuario(ModeloApi):
     id: UUID
     paciente_id: UUID

@@ -88,6 +88,10 @@ class RepositorioConsultas(Protocol):
 
     def prontuario(self, medico_id: UUID, paciente_id: UUID) -> list[EntradaProntuario]: ...
 
+    def pacientes_com_prontuario(self, medico_id: UUID) -> list[UUID]:
+        """Pacientes do médico com ao menos uma consulta finalizada."""
+        ...
+
 
 def montar_entradas(
     finalizadas: list[tuple[Consulta, DadosEntrada, dict[str, str], list[Adendo]]],
@@ -232,6 +236,15 @@ class RepositorioConsultasMemoria:
         if r.consulta.finalizada_em is None:
             raise ConsultaAberta
         r.adendos.append(Adendo(quando=data_hora_br(quando), texto=texto))
+
+    def pacientes_com_prontuario(self, medico_id: UUID) -> list[UUID]:
+        return list(
+            dict.fromkeys(
+                r.consulta.paciente_id
+                for r in self._dados.values()
+                if r.medico_id == medico_id and r.registro is not None
+            )
+        )
 
     def prontuario(self, medico_id: UUID, paciente_id: UUID) -> list[EntradaProntuario]:
         finalizadas = [

@@ -21,7 +21,7 @@ from app.contratos.consulta_blocos import (
     ExameBloco,
     HistoriaBloco,
 )
-from app.contratos.prontuario import DadosEntrada, EntradaProntuario
+from app.contratos.prontuario import DadosEntrada, EntradaProntuario, PacienteComProntuario
 from app.prontuario.montar import aplicar_edicoes_narrativas, dados_da_consulta
 
 rotas = APIRouter(tags=["prontuário"])
@@ -92,3 +92,22 @@ def prontuario_do_paciente(paciente_id: UUID, dep: Dep, medico: Medico) -> list[
     if dep.pacientes.buscar(medico, paciente_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "paciente não encontrado")
     return dep.repo.prontuario(medico, paciente_id)
+
+
+@rotas.get("/prontuarios", response_model=list[PacienteComProntuario])
+def prontuarios(dep: Dep, medico: Medico) -> list[PacienteComProntuario]:
+    itens: list[PacienteComProntuario] = []
+    for paciente_id in dep.repo.pacientes_com_prontuario(medico):
+        paciente = dep.pacientes.buscar(medico, paciente_id)
+        entradas = dep.repo.prontuario(medico, paciente_id)
+        if paciente is not None and entradas:
+            itens.append(
+                PacienteComProntuario(
+                    id=paciente.id,
+                    nome=paciente.nome,
+                    nascimento=paciente.nascimento,
+                    entradas=len(entradas),
+                    ultima=entradas[0].data,
+                )
+            )
+    return sorted(itens, key=lambda p: (-p.ultima.toordinal(), p.nome))
