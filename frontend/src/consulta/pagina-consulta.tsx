@@ -21,16 +21,16 @@ import { atualizarConduta, editarTexto, escolherOpcao, escreverOutro, montarCond
 import { PaginaConduta } from './conduta-pagina'
 import { alternarEmitir, atualizarAnexos, avancar, definirCampos, editarAnexo, montarAnexos, pendenciasAnexos, type Anexo, type DadosConsulta } from './anexos'
 import { PaginaAnexos } from './anexos-pagina'
-import { aplicarEdicoes, atualizarProntuario, cabecalhoProntuario, chave, dadosDaConsulta, secoesDosDados, type SecaoProntuario } from './prontuario'
+import { aplicarEdicoes, atualizarProntuario, cabecalhoProntuario, chave, dadosDaConsulta, edicoesDoMedico, secoesDosDados, type SecaoProntuario } from './prontuario'
 import { PaginaProntuario } from './prontuario-pagina'
-import { abrirJanelaProntuario, entradas, salvarEntrada, tituloDaConsulta, type DadosEntrada } from '../prontuario/registro'
+import { abrirJanelaProntuario, entradas, salvarEntrada, tituloDaConsulta, tituloNovaEntrada, type DadosEntrada } from '../prontuario/registro'
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import { FORMULARIO_VAZIO, type FormularioConsulta } from './formulario-consulta'
 import { partesPreConsulta } from '../medico/pre-consulta'
 import { atendimentoDoPedido, precisaIdentificacao } from '../modulo/pedidos'
 import { IdentificacaoNaChegada } from './identificacao-chegada'
 import { buscarPedido, enderecoFoto, ErroServidor, type PedidoNaAgenda } from '../servidor/agenda'
-import { abrirConsultaDoPedido, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, gerarConduta, salvarConduta as enviarConduta, listarDocumentos, salvarDocumento, sinaisDaEspecialidade, type AnamneseServidor, type CondutaServidor, type ConsultaServidor, type DocumentoServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
+import { abrirConsultaDoPedido, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, gerarConduta, salvarConduta as enviarConduta, listarDocumentos, salvarDocumento, finalizarConsulta, prontuarioDoPaciente, prontuarioProposto, sinaisDaEspecialidade, type AnamneseServidor, type CondutaServidor, type ConsultaServidor, type DocumentoServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
 import { adicionarPergunta, atualizarSecoes, avisosDeUrgencia, historiaParaServidor, juntarPerguntas, responder, secoesDoServidor } from './historia-servidor'
 import { BuscaCid } from './busca-cid'
 import { PerguntasHistoria } from './perguntas-historia'
@@ -67,6 +67,7 @@ export function PaginaConsulta() {
   // sem a Identificação a consulta não começa (o médico pode preenchê-la aqui, na chegada)
   if (doServidor && precisaIdentificacao(doServidor)) return <IdentificacaoNaChegada esp={esp} pedido={doServidor} onPronto={setPedido} />
   if (usaServidor && aberta === null) return <p className="py-16 text-center text-apagado">Abrindo a consulta…</p>
+  if (aberta && aberta !== 'erro' && aberta.finalizadaEm) return <p className="py-16 text-center text-apagado">Esta consulta já foi finalizada. O prontuário está salvo.</p>
   if (aberta === 'erro') return <p className="py-16 text-center text-apagado">Não foi possível abrir a consulta no consultório. Confira a internet e recarregue a página.</p>
   return <Consulta key={at.id} esp={esp} at={at} etapa={etapa} formulario={doServidor ? formularioDoPedido(doServidor) : null} servidor={usaServidor ? aberta : null} />
 }
@@ -450,14 +451,33 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   }
 
   /** Prontuário: os dados organizados (o que fica gravado) e o texto na tela, escrito só com o que foi salvo. */
+  /** consulta real: o título da entrada ('Consulta N') calculado com as entradas já finalizadas do paciente */
+  const [tituloServidor, setTituloServidor] = useState('')
   const [prontuario, setProntuario] = useState<{ versao: number; dados: DadosEntrada; geradas: SecaoProntuario[]; textos: Record<string, string>; mudou: Record<string, boolean> } | null>(null)
   const fotoExemplo = at.paciente.nome === 'Mariana Costa' ? '/img/acne-exemplo.jpg' : null
+
+  /** Consulta real: o servidor monta o prontuário com o que está salvo (sem IA, na hora). Falha: fica nos Anexos e avisa. */
+  const montarProntuarioDoServidor = async (id: string) => {
+    try {
+      const [dadosP, anteriores] = await Promise.all([prontuarioProposto(id), prontuarioDoPaciente(servidor!.pacienteId)])
+      setTituloServidor(tituloNovaEntrada(anteriores, at.tipo))
+      const novas = secoesDosDados(dadosP)
+      setProntuario((x) => x
+        ? { versao: x.versao + 1, dados: dadosP, geradas: novas, ...atualizarProntuario(x.geradas, x.textos, novas) }
+        : { versao: 1, dados: dadosP, geradas: novas, textos: Object.fromEntries(novas.flatMap((sec) => sec.linhas.map((l) => [chave(sec, l), l.texto]))), mudou: Object.fromEntries(novas.flatMap((sec) => sec.linhas.map((l) => [chave(sec, l), true]))) })
+      navegar(`${base}/prontuario`)
+    } catch (e) {
+      fazer('editar', 'anexos') // volta a poder salvar os anexos para tentar de novo
+      setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível montar o prontuário. Tente de novo.')
+    }
+  }
 
   /** Salvar anexos. Ao liberar o prontuário, a IA escreve (ou atualiza só o que mudou) e a página dele abre. */
   const salvarAnexos = () => {
     const novo = oficializar(estado, 'anexos')
     despachar({ tipo: 'oficializar', bloco: 'anexos' })
     if (!historia || !dd || !conduta || podeOficializar(estado, 'prontuario') || !podeOficializar(novo, 'prontuario')) return
+    if (servidor) { void montarProntuarioDoServidor(servidor.id); return }
     const salva = historia.geradas.map((s, i) => ({ rotulo: s.rotulo, texto: historia.textos[i] }))
     const fotos = Array.from({ length: conteudo.fotos }, (_, i) => ({ n: i + 1, src: i === 0 ? fotoExemplo : null }))
     const dadosP = dadosDaConsulta({ historia: salva, itens: dd.itens, conduta: conduta.c, anexos: docs?.itens, complementares: conteudo.complementares, fotos, extensao: fontes.current.exame.find((x) => x.rotulo === 'Extensão')?.valor })
@@ -468,8 +488,17 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     navegar(`${base}/prontuario`)
   }
 
-  /** Salvar prontuário: a consulta fica finalizada e volta para a página inicial do módulo. */
+  /** Salvar prontuário. Consulta real: o servidor finaliza primeiro (a entrada fica imutável); só então a tela segue. */
   const salvarProntuario = () => {
+    if (!servidor || !prontuario) return concluirProntuario()
+    finalizarConsulta(servidor.id, edicoesDoMedico(prontuario.dados, prontuario.textos)).then(
+      () => concluirProntuario(),
+      (e: unknown) => setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível finalizar. Tente de novo.'),
+    )
+  }
+
+  /** A consulta fica finalizada e volta para a página inicial do módulo. */
+  const concluirProntuario = () => {
     fazer('oficializar', 'prontuario')
     // a entrada desta consulta vai para o prontuário do paciente (com as edições do médico)
     if (prontuario) salvarEntrada(at.paciente.id, { tipo: at.tipo, modalidade: at.modalidade, data: dia, hora: at.inicio, ...aplicarEdicoes(prontuario.dados, prontuario.textos) }, at.paciente)
@@ -729,7 +758,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
             )}
             <PaginaProntuario
               key={prontuario.versao}
-              titulo={tituloDaConsulta(at.paciente.id, at.tipo, dia, at.inicio)}
+              titulo={servidor ? tituloServidor : tituloDaConsulta(at.paciente.id, at.tipo, dia, at.inicio)}
               cabecalho={cabecalhoProntuario(dados, at.modalidade)}
               secoes={prontuario.geradas}
               textos={prontuario.textos}
