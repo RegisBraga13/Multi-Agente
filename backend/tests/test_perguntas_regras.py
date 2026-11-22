@@ -1,4 +1,4 @@
-from app.consulta.perguntas import respostas_de_alerta, seguranca_com_respostas
+from app.consulta.perguntas import frases_da_hda, respostas_de_alerta, seguranca_com_respostas
 from app.contratos.consulta_blocos import PerguntaContextual
 from app.especialidades.pacote import carregar_sinais
 from app.motores.diagnosticos import DadosSeguranca
@@ -62,3 +62,26 @@ def test_respostas_de_alerta_so_as_respondidas():
         ]
     )
     assert [(x.texto, x.resposta) for x in r] == [("A?", "sim"), ("C?", "nao")]
+
+
+def _p(id_, resposta, sim="Refere sangramento ao toque leve.", nao="Nega febre."):
+    return PerguntaContextual(id=id_, texto="x?", se_sim=sim, se_nao=nao, resposta=resposta)
+
+
+def test_hda_recebe_as_frases_das_respondidas_na_ordem():
+    assert frases_da_hda([_p("p1", "sim"), _p("p2", "nao")]) == "Refere sangramento ao toque leve. Nega febre."
+
+
+def test_sem_resposta_nao_entra():
+    assert frases_da_hda([_p("p1", None), _p("p2", "nao")]) == "Nega febre."
+
+
+def test_frases_repetidas_entram_uma_vez_e_ganham_ponto_final():
+    assert (
+        frases_da_hda([_p("p1", "sim", sim="Refere prurido"), _p("p2", "sim", sim="Refere prurido.")])
+        == "Refere prurido."
+    )
+
+
+def test_sem_perguntas_a_frase_e_vazia():
+    assert frases_da_hda([]) == ""

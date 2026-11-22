@@ -7,6 +7,7 @@ agora na fonte única (Pydantic). Diagnósticos: até 3 — assinalados (confirm
 
 import re
 
+from app.consulta.perguntas import frases_da_hda
 from app.contratos.consulta_blocos import (
     CondutaBloco,
     DiagnosticosBloco,
@@ -62,7 +63,7 @@ def dados_da_consulta(
     receita = next((d.texto.strip() for d in enviados if d.tipo == "receita"), "")
     return DadosEntrada(
         qp=h.qp.strip(),
-        hda=h.hda.strip(),
+        hda=" ".join(x for x in (h.hda.strip(), frases_da_hda(historia.perguntas)) if x),
         ap=h.ap.strip(),
         hp=h.hp.strip(),
         hf=h.hf.strip(),

@@ -1,7 +1,7 @@
 from datetime import date
 
 from app.contratos.consulta import ExameComplementar, ItemComplementar
-from app.contratos.consulta_blocos import Documento, ItemDD
+from app.contratos.consulta_blocos import Documento, ItemDD, PerguntaContextual
 from app.contratos.prontuario import Atestado, ItemReceita, Laudo, Quantidade
 from app.prontuario.montar import dados_da_consulta, diagnosticos_do_prontuario
 from tests.fabrica import EXAME, HISTORIA, conduta, diagnosticos, hipotese
@@ -137,3 +137,26 @@ def test_item_complementar_segue_present_inferred_missing():
         ItemComplementar(nome="TSH", valor=None, status="PRESENT", aviso=None, evidencia=None)
     with pytest.raises(ValidationError):  # INFERRED exige aviso e evidência
         ItemComplementar(nome="TSH", valor="2", status="INFERRED", aviso=None, evidencia="x")
+
+
+def _hda_com(perguntas, hda="Paciente, 34 anos, feminino, refere espinhas no rosto há 6 meses."):
+    h = HISTORIA.model_copy(
+        update={"perguntas": perguntas, "historia": HISTORIA.historia.model_copy(update={"hda": hda})}
+    )
+    return dados_da_consulta(h, diagnosticos("confirmada"), conduta(), EXAME, []).hda
+
+
+def _q(resposta):
+    return PerguntaContextual(id="p1", texto="x?", se_sim="Refere prurido.", se_nao="Nega prurido.", resposta=resposta)
+
+
+def test_hda_do_prontuario_recebe_as_respostas_depois_do_texto_da_historia():
+    assert _hda_com([_q("sim")]).endswith("há 6 meses. Refere prurido.")
+
+
+def test_sem_perguntas_respondidas_a_hda_fica_exatamente_como_estava():
+    assert _hda_com([]) == HISTORIA.historia.hda and _hda_com([_q(None)]) == HISTORIA.historia.hda
+
+
+def test_hda_vazia_com_respostas_nao_comeca_com_espaco():
+    assert _hda_com([_q("nao")], hda="") == "Nega prurido."

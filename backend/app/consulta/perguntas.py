@@ -36,3 +36,17 @@ def seguranca_com_respostas(
 
 def respostas_de_alerta(perguntas: list[PerguntaContextual]) -> list[RespostaDeAlerta]:
     return [RespostaDeAlerta(texto=p.texto, resposta=p.resposta) for p in perguntas if p.resposta is not None]
+
+
+def frases_da_hda(perguntas: list[PerguntaContextual]) -> str:
+    """As respostas dadas, em frases de prontuário, na ordem das perguntas. Sem resposta não entra (não vira "nega");
+    frase repetida entra uma vez; cada frase termina em ponto."""
+    frases: list[str] = []
+    for p in perguntas:
+        frase = {"sim": p.se_sim, "nao": p.se_nao}.get(p.resposta or "", "").strip()
+        if not frase:
+            continue
+        frase = frase if frase.endswith((".", "!", "?")) else f"{frase}."
+        if frase not in frases:
+            frases.append(frase)
+    return " ".join(frases)
