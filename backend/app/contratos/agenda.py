@@ -29,6 +29,16 @@ class RetornoMarcado(Horario):
     modalidade: Modalidade
 
 
+class Retorno(Horario):
+    """O retorno marcado, como cartão da agenda: ligado ao paciente e à consulta de origem."""
+
+    id: UUID
+    paciente_id: UUID
+    paciente_nome: str
+    consulta_origem_id: UUID
+    modalidade: Modalidade
+
+
 class NovoPedido(Horario):
     modalidade: Modalidade
     nome: str = Field(min_length=1, max_length=120)

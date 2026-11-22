@@ -8,12 +8,12 @@ from datetime import date, datetime, time
 from typing import Protocol
 from uuid import UUID, uuid4
 
-from app.contratos.agenda import FormularioRecebido, Horario, NovoPedido, Pedido
+from app.contratos.agenda import FormularioRecebido, Horario, NovoPedido, Pedido, Retorno, RetornoMarcado
 from app.fuso import FUSO_CONSULTORIO, no_consultorio
 
 
 class HorarioOcupado(Exception):
-    """Outro pedido já ficou com este horário."""
+    """Outro pedido ou retorno já ficou com este horário."""
 
 
 class PedidoNaoEncontrado(Exception):
@@ -68,12 +68,27 @@ class RepositorioAgenda(Protocol):
 
     def foto(self, medico_id: UUID, pedido_id: UUID, pergunta: str) -> FotoGuardada | None: ...
 
+    def criar_retorno(
+        self, medico_id: UUID, paciente_id: UUID, paciente_nome: str, consulta_origem_id: UUID, marcado: RetornoMarcado
+    ) -> Retorno:
+        """Cartão "Retorno" na agenda. HorarioOcupado se o instante já tem pedido não cancelado ou outro retorno."""
+        ...
+
+    def retornos(self, medico_id: UUID, de: date, ate: date) -> list[Retorno]:
+        """Ordenados por data e hora."""
+        ...
+
+    def desfazer_retorno(self, medico_id: UUID, consulta_origem_id: UUID) -> None:
+        """Remove o retorno que nasceu desta consulta (não faz nada se não houver)."""
+        ...
+
 
 class RepositorioAgendaMemoria:
     def __init__(self, paginas: dict[str, UUID] | None = None) -> None:
         self._paginas = dict(paginas or {})
         self._pedidos: dict[UUID, tuple[UUID, Pedido]] = {}
         self._fotos: dict[tuple[UUID, str], FotoGuardada] = {}
+        self._retornos: dict[UUID, tuple[UUID, Retorno]] = {}
 
     def medico_da_pagina(self, slug: str) -> UUID | None:
         return self._paginas.get(slug)
@@ -85,11 +100,13 @@ class RepositorioAgendaMemoria:
         return [p for dono, p in self._pedidos.values() if dono == medico_id]
 
     def ocupados(self, medico_id: UUID, de: date, ate: date) -> list[Horario]:
-        return [
+        pedidos = [
             Horario(data=p.data, inicio=p.inicio)
             for p in self._do_medico(medico_id)
             if p.status != "cancelado" and de <= p.data <= ate
         ]
+        retornos = [Horario(data=r.data, inicio=r.inicio) for r in self.retornos(medico_id, de, ate)]
+        return pedidos + retornos
 
     def criar_pedido(self, medico_id: UUID, novo: NovoPedido, token: str) -> Pedido:
         if any(h.inicio == novo.inicio for h in self.ocupados(medico_id, novo.data, novo.data)):
@@ -156,3 +173,27 @@ class RepositorioAgendaMemoria:
     def foto(self, medico_id: UUID, pedido_id: UUID, pergunta: str) -> FotoGuardada | None:
         self._buscar(medico_id, pedido_id)
         return self._fotos.get((pedido_id, pergunta))
+
+    def criar_retorno(
+        self, medico_id: UUID, paciente_id: UUID, paciente_nome: str, consulta_origem_id: UUID, marcado: RetornoMarcado
+    ) -> Retorno:
+        if any(h.inicio == marcado.inicio for h in self.ocupados(medico_id, marcado.data, marcado.data)):
+            raise HorarioOcupado
+        retorno = Retorno(
+            id=uuid4(),
+            paciente_id=paciente_id,
+            paciente_nome=paciente_nome,
+            consulta_origem_id=consulta_origem_id,
+            **marcado.model_dump(),
+        )
+        self._retornos[retorno.id] = (medico_id, retorno)
+        return retorno
+
+    def retornos(self, medico_id: UUID, de: date, ate: date) -> list[Retorno]:
+        lista = [r for dono, r in self._retornos.values() if dono == medico_id and de <= r.data <= ate]
+        return sorted(lista, key=lambda r: (r.data, r.inicio))
+
+    def desfazer_retorno(self, medico_id: UUID, consulta_origem_id: UUID) -> None:
+        for id_, (dono, r) in list(self._retornos.items()):
+            if dono == medico_id and r.consulta_origem_id == consulta_origem_id:
+                del self._retornos[id_]

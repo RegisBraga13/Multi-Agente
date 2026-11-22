@@ -13,7 +13,7 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
 from app.agenda.repositorio import FotoGuardada, HorarioOcupado, PedidoNaoEncontrado, horario, instante
-from app.contratos.agenda import FormularioRecebido, Horario, NovoPedido, Pedido
+from app.contratos.agenda import FormularioRecebido, Horario, NovoPedido, Pedido, Retorno, RetornoMarcado
 from app.fuso import FUSO_CONSULTORIO
 from app.pacientes.repositorio_postgres import transacao_do_medico
 
@@ -44,6 +44,20 @@ def _pedido(linha: dict[str, Any]) -> Pedido:
         if respostas
         else None,
     )
+
+
+def _travar_horario(conn: psycopg.Connection[dict[str, Any]], medico_id: UUID, quando: Any) -> None:
+    """Pedido e retorno moram em tabelas diferentes: quem grava um horário trava o instante antes de conferir os dois."""
+    conn.execute("select pg_advisory_xact_lock(hashtextextended(%s, 0))", (f"{medico_id}|{quando.isoformat()}",))
+
+
+def _horario_tomado(conn: psycopg.Connection[dict[str, Any]], quando: Any) -> bool:
+    achou = conn.execute(
+        "select 1 from booking_requests where scheduled_at = %s and status <> 'cancelado'"
+        " union all select 1 from return_bookings where scheduled_at = %s",
+        (quando, quando),
+    ).fetchone()
+    return achou is not None
 
 
 def _limites(de: date, ate: date) -> tuple[Any, Any]:
@@ -78,8 +92,10 @@ class RepositorioAgendaPostgres:
         with transacao_do_medico(self.url, medico_id) as conn:
             linhas = conn.execute(
                 "select scheduled_at from booking_requests"
-                " where status <> 'cancelado' and scheduled_at >= %s and scheduled_at < %s order by scheduled_at",
-                _limites(de, ate),
+                " where status <> 'cancelado' and scheduled_at >= %s and scheduled_at < %s"
+                " union all select scheduled_at from return_bookings where scheduled_at >= %s and scheduled_at < %s"
+                " order by scheduled_at",
+                (*_limites(de, ate), *_limites(de, ate)),
             ).fetchall()
         return [horario(linha["scheduled_at"]) for linha in linhas]
 
@@ -97,6 +113,9 @@ class RepositorioAgendaPostgres:
         )
         try:
             with transacao_do_medico(self.url, medico_id) as conn:
+                _travar_horario(conn, medico_id, valores[1])
+                if _horario_tomado(conn, valores[1]):
+                    raise HorarioOcupado
                 linha = conn.execute(
                     "insert into booking_requests (doctor_id, scheduled_at, modality, patient_name, whatsapp, payment,"
                     " transcription, form_choice, form_token) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
@@ -185,3 +204,59 @@ class RepositorioAgendaPostgres:
                 (pedido_id, pergunta),
             ).fetchone()
         return FotoGuardada(tipo=linha["content_type"], conteudo=bytes(linha["data"])) if linha else None
+
+    def criar_retorno(
+        self, medico_id: UUID, paciente_id: UUID, paciente_nome: str, consulta_origem_id: UUID, marcado: RetornoMarcado
+    ) -> Retorno:
+        quando = instante(marcado.data, marcado.inicio)
+        try:
+            with transacao_do_medico(self.url, medico_id) as conn:
+                _travar_horario(conn, medico_id, quando)
+                if _horario_tomado(conn, quando):
+                    raise HorarioOcupado
+                linha = conn.execute(
+                    "insert into return_bookings (doctor_id, patient_id, origin_encounter_id, scheduled_at, modality)"
+                    " values (%s, %s, %s, %s, %s) returning id",
+                    (medico_id, paciente_id, consulta_origem_id, quando, marcado.modalidade),
+                ).fetchone()
+        except psycopg.errors.UniqueViolation as erro:
+            if erro.diag.constraint_name == "return_bookings_horario_unico":
+                raise HorarioOcupado from erro
+            raise
+        if linha is None:
+            raise RuntimeError("o banco não devolveu o retorno criado")
+        return Retorno(
+            id=linha["id"],
+            paciente_id=paciente_id,
+            paciente_nome=paciente_nome,
+            consulta_origem_id=consulta_origem_id,
+            **marcado.model_dump(),
+        )
+
+    def retornos(self, medico_id: UUID, de: date, ate: date) -> list[Retorno]:
+        with transacao_do_medico(self.url, medico_id) as conn:
+            linhas = conn.execute(
+                "select r.id, r.patient_id, p.full_name, r.origin_encounter_id, r.scheduled_at, r.modality"
+                " from return_bookings r join patients p on p.id = r.patient_id"
+                " where r.scheduled_at >= %s and r.scheduled_at < %s order by r.scheduled_at",
+                _limites(de, ate),
+            ).fetchall()
+        saida = []
+        for x in linhas:
+            quando = horario(x["scheduled_at"])
+            saida.append(
+                Retorno(
+                    id=x["id"],
+                    paciente_id=x["patient_id"],
+                    paciente_nome=x["full_name"],
+                    consulta_origem_id=x["origin_encounter_id"],
+                    data=quando.data,
+                    inicio=quando.inicio,
+                    modalidade=x["modality"],
+                )
+            )
+        return saida
+
+    def desfazer_retorno(self, medico_id: UUID, consulta_origem_id: UUID) -> None:
+        with transacao_do_medico(self.url, medico_id) as conn:
+            conn.execute("delete from return_bookings where origin_encounter_id = %s", (consulta_origem_id,))
