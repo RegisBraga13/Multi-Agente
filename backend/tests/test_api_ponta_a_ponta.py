@@ -84,3 +84,36 @@ def test_demonstracao_propoe_tres_perguntas_validas(mundo):
     perguntas = r.json()["perguntas"]
     assert len(perguntas) == 3
     assert sorted(x["sinalId"] for x in perguntas if x["sinalId"]) == ["angioedema", "lesao-sangra-facil"]
+
+
+def test_demonstracao_propoe_quatro_hipoteses_e_um_nao_pode_perder(mundo):
+    pacientes, consultas = mundo
+    c = TestClient(
+        criar_app(
+            Dependencias(
+                identidade=MedicoLocal(MEDICO_A),
+                pacientes=pacientes,
+                consultas=consultas,
+                provedor=ProvedorDemonstracao(),
+            )
+        )
+    )
+    p = c.post("/pacientes", json={"nome": "Joana Fictícia", "nascimento": "1990-01-01", "sexo": "F"}).json()
+    cid = c.post(
+        "/consultas",
+        json={
+            "pacienteId": p["id"],
+            "tipo": "consulta",
+            "modalidade": "presencial",
+            "agendadaPara": "2026-11-13T08:00:00Z",
+        },
+    ).json()["id"]
+    for etapa, conteudo in (("anamnese", ANAMNESE), ("exame", EXAME)):
+        assert c.put(f"/consultas/{cid}/{etapa}", json=js(conteudo)).status_code == 200
+        assert c.post(f"/consultas/{cid}/{etapa}/oficializar").status_code == 200
+    c.post(f"/consultas/{cid}/historia/gerar")
+    assert c.post(f"/consultas/{cid}/historia/oficializar").status_code == 200
+    dd = eventos(c.post(f"/consultas/{cid}/diagnosticos/gerar").text)[-1][1]["conteudo"]
+    assert [i["hipotese"]["pct"] for i in dd["itens"]] == [70, 15, 10, 5]
+    assert all(i["decisao"] == "pendente" and i["propria"] is False for i in dd["itens"])
+    assert dd["naoPodePerder"] is not None

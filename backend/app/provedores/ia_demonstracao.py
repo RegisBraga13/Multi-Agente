@@ -29,8 +29,25 @@ class ProvedorDemonstracao:
             resultado = {"detectados": [], "extras": []}
         elif pedido.motor == "diagnosticos":
             ev = {"lado": "favor", "texto": "demonstração", "secao": "hda", "trecho": self.HDA}
-            hip = {"nome": "Demonstração", "cid": "L98.9", "certeza": "hipotese", "pct": 50, "evidencias": [ev]}
-            resultado = {"hipoteses": [hip], "naoPodePerder": None, "rastrear": []}
+            hipoteses = [
+                ("Psoríase vulgar", "L40.0", 70),
+                ("Dermatite seborreica", "L21.9", 15),
+                ("Eczema numular", "L30.0", 10),
+                ("Tinha do corpo", "B35.4", 5),
+            ]
+            resultado = {
+                "hipoteses": [
+                    {"nome": n, "cid": c, "certeza": "hipotese", "pct": pct, "evidencias": [ev]}
+                    for n, c, pct in hipoteses
+                ],
+                "naoPodePerder": {
+                    "nome": "Linfoma cutâneo de células T",
+                    "cid": "C84.0",
+                    "porque": "Pode imitar placas de psoríase e eczema.",
+                    "como": "Biópsia se não houver resposta ao tratamento.",
+                },
+                "rastrear": [],
+            }
         elif pedido.motor == "conduta":
             resultado = {"grupos": []}
         elif pedido.motor == "perguntas":
