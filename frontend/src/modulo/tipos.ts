@@ -43,4 +43,6 @@ export type Atendimento = {
   sempreDisponivel?: boolean
   /** veio de um pedido feito na página do médico (servidor); `novo` = ainda não confirmado */
   pedido?: { id: string; whatsapp: string; token: string; novo: boolean; chegouAs: string }
+  /** cartão "Retorno" marcado ao finalizar a consulta de origem (abrir o cartão é a parte 2 do retorno) */
+  retornoMarcado?: { id: string }
 }

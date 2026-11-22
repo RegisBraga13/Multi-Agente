@@ -3,7 +3,7 @@
 import { formatarWhatsapp, type DadosPessoais } from '../medico/regras'
 import { horaCurta, rotuloDiaLongo } from '../medico/textos'
 import type { Medico } from '../medico/tipos'
-import type { PedidoNaAgenda } from '../servidor/agenda'
+import type { PedidoNaAgenda, RetornoNaAgenda } from '../servidor/agenda'
 import { ordenarPorHorario } from './dia'
 import type { Atendimento, Ficha } from './tipos'
 
@@ -56,6 +56,30 @@ export function juntarPedidos(lista: Atendimento[], pedidos: PedidoNaAgenda[], d
   const doDia = pedidos.filter((p) => p.data === dia && p.status !== 'cancelado')
   const horas = new Set(doDia.map((p) => p.inicio))
   return ordenarPorHorario([...lista.filter((x) => !horas.has(x.inicio)), ...doDia.map((p) => atendimentoDoPedido(p, agora))])
+}
+
+/** O retorno marcado na consulta de origem, como cartão da agenda (o paciente já tem prontuário). */
+export function atendimentoDoRetorno(r: RetornoNaAgenda, agora: Date): Atendimento {
+  const hoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`
+  return {
+    id: `retorno-${r.id}`,
+    inicio: r.inicio,
+    paciente: { id: r.pacienteId, nome: r.pacienteNome, nascimento: '' },
+    tipo: 'retorno',
+    modalidade: r.modalidade,
+    pagamento: '',
+    ficha: { situacao: 'sem-ficha' },
+    atendido: r.data < hoje,
+    temHistorico: true,
+    retornoMarcado: { id: r.id },
+  }
+}
+
+/** Agenda do dia com os retornos marcados: o retorno ocupa o horário (sai o paciente de exemplo daquele horário). */
+export function juntarRetornos(lista: Atendimento[], retornos: RetornoNaAgenda[], dia: string, agora: Date): Atendimento[] {
+  const doDia = retornos.filter((r) => r.data === dia)
+  const horas = new Set(doDia.map((r) => r.inicio))
+  return ordenarPorHorario([...lista.filter((x) => !horas.has(x.inicio)), ...doDia.map((r) => atendimentoDoRetorno(r, agora))])
 }
 
 /** Mensagem pronta do consultório para o paciente, com o link do formulário. */

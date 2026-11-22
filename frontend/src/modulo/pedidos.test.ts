@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { MEDICO_EXEMPLO } from '../medico/exemplo'
-import type { PedidoNaAgenda } from '../servidor/agenda'
-import { atendimentoDoPedido, identificacaoDaChegada, juntarPedidos, lembrarHoje, mensagemDaConfirmacao, mensagemDoAviso, mensagemDoFormulario, mensagemDoLembrete, precisaIdentificacao } from './pedidos'
+import type { PedidoNaAgenda, RetornoNaAgenda } from '../servidor/agenda'
+import { atendimentoDoPedido, atendimentoDoRetorno, identificacaoDaChegada, juntarPedidos, juntarRetornos, lembrarHoje, mensagemDaConfirmacao, mensagemDoAviso, mensagemDoFormulario, mensagemDoLembrete, precisaIdentificacao } from './pedidos'
 import type { Atendimento } from './tipos'
 
 const PEDIDO: PedidoNaAgenda = {
@@ -128,5 +128,28 @@ describe('Avisar (não vai poder atender)', () => {
       'Olá, Maria! Infelizmente não será possível atender sexta-feira, 20 de novembro, às 10h. '
       + 'Escolha outro horário: https://x.trycloudflare.com/medico/ana-souza',
     )
+  })
+})
+
+const RETORNO: RetornoNaAgenda = {
+  id: 'r1', pacienteId: 'pac1', pacienteNome: 'João Lima', consultaOrigemId: 'c1', data: '2026-11-20', inicio: '14:00', modalidade: 'online',
+}
+
+describe('cartão "Retorno" na agenda (abrir o cartão é a parte 2)', () => {
+  it('atendimentoDoRetorno: tipo retorno, hora, modalidade, nome; não é pedido', () => {
+    const at = atendimentoDoRetorno(RETORNO, AGORA)
+    expect(at).toMatchObject({
+      id: 'retorno-r1', inicio: '14:00', tipo: 'retorno', modalidade: 'online', pagamento: '',
+      paciente: { id: 'pac1', nome: 'João Lima' }, atendido: false, temHistorico: true, retornoMarcado: { id: 'r1' },
+    })
+    expect(at.pedido).toBeUndefined()
+  })
+  it('retorno de dia que já passou aparece como atendido', () => {
+    expect(atendimentoDoRetorno({ ...RETORNO, data: '2026-11-10' }, AGORA).atendido).toBe(true)
+  })
+  it('juntarRetornos: só os do dia, ordenados com os outros por horário; o retorno ocupa o horário do exemplo', () => {
+    const exemplo = (inicio: string): Atendimento => ({ ...atendimentoDoPedido(PEDIDO, AGORA), id: `ex-${inicio}`, inicio, pedido: undefined })
+    const lista = juntarRetornos([exemplo('14:00'), exemplo('09:00')], [RETORNO, { ...RETORNO, id: 'r2', data: '2026-11-21' }], '2026-11-20', AGORA)
+    expect(lista.map((x) => x.id)).toEqual(['ex-09:00', 'retorno-r1'])
   })
 })

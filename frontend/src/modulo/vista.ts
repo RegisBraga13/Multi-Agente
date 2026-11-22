@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { dataLocal } from '../medico/exemplo'
 import { proximoPaciente } from './dia'
-import type { PedidoNaAgenda } from '../servidor/agenda'
+import type { PedidoNaAgenda, RetornoNaAgenda } from '../servidor/agenda'
 import { agendaDoDia } from './exemplo'
-import { juntarPedidos } from './pedidos'
+import { juntarPedidos, juntarRetornos } from './pedidos'
 import type { Atendimento } from './tipos'
 
 export type VistaDoDia = {
@@ -13,10 +13,10 @@ export type VistaDoDia = {
   fichasProntas: number; semFicha: number
 }
 
-export function vistaDoDia(dia: string, agora: Date, pedidos: PedidoNaAgenda[] = []): VistaDoDia {
+export function vistaDoDia(dia: string, agora: Date, pedidos: PedidoNaAgenda[] = [], retornos: RetornoNaAgenda[] = []): VistaDoDia {
   const hoje = dataLocal(agora)
   const ehHoje = dia === hoje
-  const lista = juntarPedidos(agendaDoDia(dia, agora), pedidos, dia, agora)
+  const lista = juntarRetornos(juntarPedidos(agendaDoDia(dia, agora), pedidos, dia, agora), retornos, dia, agora)
   // fichas de quem ainda vai ser atendido: o número muda a cada atendimento
   const aSeguir = lista.filter((x) => !x.atendido)
   const fichasProntas = aSeguir.filter((x) => x.ficha.situacao === 'pronta').length

@@ -12,7 +12,7 @@ import { retornoParaAbrir, useAgora, vistaDoDia } from './vista'
 import { linkWhatsapp } from '../medico/duvidas'
 import { formatarWhatsapp } from '../medico/regras'
 import type { Medico } from '../medico/tipos'
-import { cancelarPedido, confirmarPedido, marcarLinkEnviado, pedidosDaAgenda, type PedidoNaAgenda } from '../servidor/agenda'
+import { cancelarPedido, confirmarPedido, marcarLinkEnviado, pedidosDaAgenda, retornosDaAgenda, type PedidoNaAgenda, type RetornoNaAgenda } from '../servidor/agenda'
 import { lembrarHoje, mensagemDaConfirmacao, mensagemDoAviso, mensagemDoFormulario, mensagemDoLembrete } from './pedidos'
 
 /** Quantos pacientes o cartão "Hoje" mostra, para a página caber numa tela (~690 px). */
@@ -45,9 +45,12 @@ function Pagina({ esp }: { esp: Especialidade }) {
 
   // pedidos feitos na página do médico (servidor), renovados a cada 10 s; sem servidor, só o exemplo
   const [pedidos, setPedidos] = useState<PedidoNaAgenda[]>([])
+  // retornos marcados ao finalizar uma consulta (cartão "Retorno")
+  const [retornos, setRetornos] = useState<RetornoNaAgenda[]>([])
   const recarregar = useMemo(() => () => {
     const hoje = dataLocal(new Date())
     pedidosDaAgenda(somarDias(hoje, -7), somarDias(hoje, 45)).then(setPedidos, () => {})
+    retornosDaAgenda(somarDias(hoje, -7), somarDias(hoje, 45)).then(setRetornos, () => {})
   }, [])
   useEffect(() => {
     recarregar()
@@ -55,8 +58,8 @@ function Pagina({ esp }: { esp: Especialidade }) {
     return () => clearInterval(t)
   }, [recarregar])
 
-  const deHoje = useMemo(() => vistaDoDia(dataLocal(agora), agora, pedidos), [agora, pedidos])
-  const doDia = useMemo(() => vistaDoDia(dia, agora, pedidos), [dia, agora, pedidos])
+  const deHoje = useMemo(() => vistaDoDia(dataLocal(agora), agora, pedidos, retornos), [agora, pedidos, retornos])
+  const doDia = useMemo(() => vistaDoDia(dia, agora, pedidos, retornos), [dia, agora, pedidos, retornos])
   const atual = vista === 'agenda' ? doDia : deHoje
   const escolhido = atual.lista.find((x) => x.id === selecionado) ?? null
 
@@ -292,9 +295,10 @@ function Linhas({ lista, proximo, selecionado, onSelecionar, compacta = false }:
                 <span className="truncate text-[16px] font-semibold">{x.paciente.nome}</span>
                 {x.id === proximo && <span className="shrink-0 bg-tinta px-1.5 py-0.5 text-[10px] font-bold tracking-[0.1em] text-papel uppercase">Próximo</span>}
                 {x.pedido?.novo && <span className="shrink-0 bg-(--esp) px-1.5 py-0.5 text-[10px] font-bold tracking-[0.1em] text-papel uppercase">Pedido novo</span>}
+                {x.retornoMarcado && <span className="shrink-0 bg-(--esp-medio) px-1.5 py-0.5 text-[10px] font-bold tracking-[0.1em] text-tinta uppercase">Retorno</span>}
               </span>
               <span className="block truncate text-[13.5px] leading-snug text-apagado">
-                {x.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · {x.modalidade === 'online' ? 'Online' : 'Presencial'} · {x.pagamento}
+                {x.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · {x.modalidade === 'online' ? 'Online' : 'Presencial'}{x.pagamento && ` · ${x.pagamento}`}
               </span>
             </span>
             {x.atendido ? <span className="text-[13px]">Atendido</span> : <EtiquetaFicha situacao={x.ficha.situacao} />}

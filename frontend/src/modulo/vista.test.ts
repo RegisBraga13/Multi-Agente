@@ -48,3 +48,11 @@ describe('retornoParaAbrir (cartão Retorno da página inicial)', () => {
     expect(retornoParaAbrir(depois.lista.filter((x) => x.tipo !== 'retorno'), null)).toBeNull()
   })
 })
+
+describe('vistaDoDia com retornos marcados', () => {
+  it('o cartão Retorno entra na lista do dia', () => {
+    const r = { id: 'r1', pacienteId: 'p', pacienteNome: 'João Lima', consultaOrigemId: 'c', data: '2026-11-17', inicio: '15:00', modalidade: 'presencial' as const }
+    const v = vistaDoDia('2026-11-17', new Date(2026, 10, 16, 8, 10), [], [r])
+    expect(v.lista.some((x) => x.id === 'retorno-r1')).toBe(true)
+  })
+})
