@@ -408,3 +408,12 @@ def test_nao_ou_sem_resposta_nao_mudam_a_conduta(cenario):
     oficializar(repo, medico, cid, "diagnosticos", QUANDO)
     r = gerar(ctx, medico, cid, "conduta")
     assert r.conteudo["proposta"]["urgencia"] != "imediata"
+
+
+def test_diagnosticos_gerados_viram_itens_com_os_mesmos_valores(cenario):
+    repo, medico, cid, ctx = _ate_historia_com_perguntas(cenario, [])
+    gerar(ctx, medico, cid, "diagnosticos")
+    [item] = repo.buscar(medico, cid).bloco("diagnosticos").conteudo["itens"]
+    h = item["hipotese"]
+    assert (h["nome"], h["cid"], h["certeza"], h["pct"]) == ("Acne vulgar", "L70.0", "clinico", 85)
+    assert item["decisao"] == "pendente" and item["propria"] is False and h["evidencias"][0]["secao"] == "exameFisico"

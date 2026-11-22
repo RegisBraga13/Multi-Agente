@@ -28,11 +28,12 @@ from app.contratos.consulta_blocos import (  # noqa: E402
     CondutaBloco,
     DiagnosticosBloco,
     ExameBloco,
+    HipoteseItem,
     HistoriaBloco,
     ItemDD,
 )
 from app.motores.conduta import CondutaProposta, DiagnosticoConfirmado  # noqa: E402
-from app.motores.diagnosticos import DadosSeguranca, EvidenciaDD, HipoteseIA  # noqa: E402
+from app.motores.diagnosticos import DadosSeguranca, EvidenciaDD  # noqa: E402
 from app.motores.historia import HistoriaClinica  # noqa: E402
 
 ANAMNESE = AnamneseBloco(
@@ -65,7 +66,7 @@ HISTORIA = HistoriaBloco(
 
 def hipotese(nome="Acne vulgar", cid="L70.0", pct=85):
     ev = EvidenciaDD(lado="favor", texto="pápulas", secao="exameFisico", trecho="Pápulas e pústulas")
-    return HipoteseIA(nome=nome, cid=cid, certeza="clinico", pct=pct, evidencias=[ev])
+    return HipoteseItem(nome=nome, cid=cid, certeza="clinico", pct=pct, evidencias=[ev])
 
 
 def diagnosticos(*decisoes: str) -> DiagnosticosBloco:

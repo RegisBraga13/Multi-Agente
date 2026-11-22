@@ -1,7 +1,7 @@
 from datetime import date
 
 from app.contratos.consulta import ExameComplementar, ItemComplementar
-from app.contratos.consulta_blocos import Documento, ItemDD, PerguntaContextual
+from app.contratos.consulta_blocos import Documento, HipoteseItem, ItemDD, PerguntaContextual
 from app.contratos.prontuario import Atestado, ItemReceita, Laudo, Quantidade
 from app.prontuario.montar import dados_da_consulta, diagnosticos_do_prontuario
 from tests.fabrica import EXAME, HISTORIA, conduta, diagnosticos, hipotese
@@ -160,3 +160,13 @@ def test_sem_perguntas_respondidas_a_hda_fica_exatamente_como_estava():
 
 def test_hda_vazia_com_respostas_nao_comeca_com_espaco():
     assert _hda_com([_q("nao")], hda="") == "Nega prurido."
+
+
+def test_diagnostico_do_medico_sem_pct_vai_para_o_fim_dos_assinalados():
+    meu = ItemDD(
+        hipotese=HipoteseItem(nome="Meu", cid="", certeza="clinico", pct=None, evidencias=[]),
+        decisao="confirmada",
+        propria=True,
+    )
+    ds = diagnosticos_do_prontuario([meu, item("B", "L71.9", 90, "confirmada")])
+    assert [(d.nome, d.pct) for d in ds] == [("B", 90), ("Meu", None)]

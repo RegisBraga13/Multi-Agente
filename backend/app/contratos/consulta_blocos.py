@@ -23,7 +23,7 @@ from app.contratos.consulta import (
 )
 from app.contratos.prontuario import DocumentoRegistro, ItemReceita
 from app.motores.conduta import CondutaProposta, DiagnosticoConfirmado
-from app.motores.diagnosticos import DadosSeguranca, HipoteseIA, NaoPerderIA
+from app.motores.diagnosticos import Certeza, DadosSeguranca, EvidenciaDD, NaoPerderIA
 from app.motores.historia import HistoriaClinica
 from app.motores.sinais import SinalDisparado
 
@@ -74,10 +74,21 @@ class HistoriaBloco(ModeloApi):
     perguntas: list[PerguntaContextual] = Field(default_factory=list)
 
 
+class HipoteseItem(ModeloApi):
+    """A hipótese como fica no bloco: a da IA (percentual de 1 a 99, evidências) ou a do médico (sem percentual,
+    CID livre ou vazio, sem evidências)."""
+
+    nome: str = Field(min_length=1)
+    cid: str = Field(max_length=12)
+    certeza: Certeza
+    pct: int | None = Field(ge=1, le=99)
+    evidencias: list[EvidenciaDD]
+
+
 class ItemDD(ModeloApi):
     """`propria`: diagnóstico escrito pelo médico (não veio da IA)."""
 
-    hipotese: HipoteseIA
+    hipotese: HipoteseItem
     decisao: Literal["pendente", "confirmada", "descartada"]
     propria: bool
 

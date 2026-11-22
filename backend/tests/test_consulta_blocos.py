@@ -12,7 +12,9 @@ from app.contratos.consulta_blocos import (
     AnamneseBloco,
     CondutaBloco,
     ExameBloco,
+    HipoteseItem,
     HistoriaBloco,
+    ItemDD,
     PerguntaContextual,
 )
 from app.contratos.paciente import Paciente
@@ -154,3 +156,34 @@ def test_pergunta_sem_texto_ou_frase_e_invalida(campo):
     dados = {"id": "p1", "texto": "x?", "se_sim": "a.", "se_nao": "b.", campo: ""}
     with pytest.raises(ValidationError):
         PerguntaContextual(**dados)
+
+
+def _do_medico(cid="", nome="Meu diagnóstico"):
+    return ItemDD(
+        hipotese=HipoteseItem(nome=nome, cid=cid, certeza="clinico", pct=None, evidencias=[]),
+        decisao="confirmada",
+        propria=True,
+    )
+
+
+def test_item_do_medico_sem_pct_e_sem_cid_e_valido():
+    item = _do_medico()
+    assert item.hipotese.pct is None and item.hipotese.cid == "" and item.propria
+
+
+@pytest.mark.parametrize("cid", ["l70", "L70.0", "L70", "C44.3"])
+def test_cid_livre_do_medico_ida_e_volta(cid):
+    item = _do_medico(cid)
+    assert ItemDD.model_validate(item.model_dump(by_alias=True, mode="json")) == item
+    assert item.hipotese.cid == cid
+
+
+@pytest.mark.parametrize("pct", [0, 100, -5])
+def test_pct_fora_de_1_a_99_e_invalido(pct):
+    with pytest.raises(ValidationError):
+        HipoteseItem(nome="x", cid="L70.0", certeza="clinico", pct=pct, evidencias=[])
+
+
+def test_cid_com_mais_de_12_caracteres_e_invalido():
+    with pytest.raises(ValidationError):
+        HipoteseItem(nome="x", cid="L70.0123456789", certeza="clinico", pct=None, evidencias=[])

@@ -25,6 +25,7 @@ from app.contratos.consulta_blocos import (
     DiagnosticosBloco,
     EtapaIA,
     ExameBloco,
+    HipoteseItem,
     HistoriaBloco,
     ItemDD,
 )
@@ -149,7 +150,10 @@ def gerar(
             avisos = p.avisos
             novo = (
                 DiagnosticosBloco(
-                    itens=[ItemDD(hipotese=x, decisao="pendente", propria=False) for x in p.resultado.hipoteses],
+                    itens=[
+                        ItemDD(hipotese=HipoteseItem.model_validate(x.model_dump()), decisao="pendente", propria=False)
+                        for x in p.resultado.hipoteses
+                    ],
                     nao_pode_perder=p.resultado.nao_pode_perder,
                     rastrear=p.resultado.rastrear,
                 )
