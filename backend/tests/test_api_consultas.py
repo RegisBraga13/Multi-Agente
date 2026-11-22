@@ -15,10 +15,15 @@ MEDICO_B = UUID("00000000-0000-4000-8000-000000000002")
 PACIENTE = {"nome": "Mariana Souza", "nascimento": "1992-03-10", "sexo": "F", "cpf": "12345678909"}
 
 
-def cliente(mundo, medico=MEDICO_A, provedor=None):
+def cliente(mundo, medico=MEDICO_A, provedor=None, agenda=None):
     pacientes, consultas = mundo
+    extras = {} if agenda is None else {"agenda": agenda}
     dep = Dependencias(
-        identidade=MedicoLocal(medico), pacientes=pacientes, consultas=consultas, provedor=provedor or Roteiro()
+        identidade=MedicoLocal(medico),
+        pacientes=pacientes,
+        consultas=consultas,
+        provedor=provedor or Roteiro(),
+        **extras,
     )
     return TestClient(criar_app(dep))
 

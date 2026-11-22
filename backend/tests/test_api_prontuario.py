@@ -1,5 +1,12 @@
+from datetime import date
+
+import pytest
+
+from app.agenda.repositorio import RepositorioAgendaMemoria
+from app.consulta.repositorio import RepositorioConsultasMemoria
+from app.contratos.agenda import NovoPedido
 from tests.fabrica import ANAMNESE, diagnosticos
-from tests.test_api_consultas import cliente, eventos, js, nova_consulta
+from tests.test_api_consultas import MEDICO_A, cliente, eventos, js, nova_consulta
 
 
 def consulta_pronta(c):
@@ -17,7 +24,8 @@ def consulta_pronta(c):
     c.post(f"/consultas/{cid}/diagnosticos/oficializar")
     pronto = eventos(c.post(f"/consultas/{cid}/conduta/gerar").text)[-1][1]
     c.put(
-        f"/consultas/{cid}/conduta", json=pronto["conteudo"] | {"textos": ["Rotina.", "", "", "Avaliação em 8 semanas."]}
+        f"/consultas/{cid}/conduta",
+        json=pronto["conteudo"] | {"textos": ["Rotina.", "", "", "Avaliação em 8 semanas."]},
     )
     assert c.post(f"/consultas/{cid}/conduta/oficializar").status_code == 200
     return cid
@@ -123,3 +131,87 @@ def test_lista_de_prontuarios_so_com_consulta_finalizada(mundo):
     paciente = c.get(f"/consultas/{cid}").json()
     assert p["id"] == paciente["pacienteId"] and p["entradas"] == 1 and p["nome"] and p["nascimento"] and p["ultima"]
     assert cliente(mundo, MEDICO_B).get("/prontuarios").json() == []  # outro médico não vê
+
+
+# ---- retorno marcado (parte 1 do retorno) ----
+
+FUTURO = date(2099, 1, 5)
+RETORNO = {"data": FUTURO.isoformat(), "inicio": "14:00", "modalidade": "online"}
+
+
+def com_agenda(mundo):
+    agenda = RepositorioAgendaMemoria({"ana": MEDICO_A})
+    return cliente(mundo, agenda=agenda), agenda
+
+
+def test_finalizar_com_retorno_cria_cartao_e_grava_dia(mundo):
+    c, agenda = com_agenda(mundo)
+    cid = consulta_pronta(c)
+    r = c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}, "retornoMarcado": RETORNO})
+    assert r.status_code == 200 and r.json()["dados"]["retornoMarcado"] == RETORNO
+    [cartao] = agenda.retornos(MEDICO_A, FUTURO, FUTURO)
+    assert (cartao.inicio, cartao.modalidade, cartao.paciente_nome) == ("14:00", "online", "Mariana Souza")
+    assert str(cartao.consulta_origem_id) == cid
+
+
+def test_finalizar_sem_retorno_nao_cria_cartao(mundo):
+    c, agenda = com_agenda(mundo)
+    cid = consulta_pronta(c)
+    r = c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}, "retornoMarcado": None})
+    assert r.status_code == 200 and r.json()["dados"]["retornoMarcado"] is None
+    assert agenda.retornos(MEDICO_A, FUTURO, FUTURO) == []
+
+
+def test_finalizar_com_horario_ocupado_e_409_e_consulta_continua_aberta(mundo):
+    c, agenda = com_agenda(mundo)
+    cid = consulta_pronta(c)
+    agenda.criar_pedido(
+        MEDICO_A,
+        NovoPedido(
+            data=FUTURO,
+            inicio="14:00",
+            modalidade="presencial",
+            nome="Outra Pessoa",
+            whatsapp="5585999990000",
+            pagamento="Particular",
+            transcricao="aceita",
+            forma="pagina",
+        ),
+        "t" * 32,
+    )
+    r = c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}, "retornoMarcado": RETORNO})
+    assert r.status_code == 409 and "ocupado" in r.json()["detail"]
+    assert c.get(f"/consultas/{cid}").json()["finalizadaEm"] is None
+    outro = RETORNO | {"inicio": "15:00"}
+    assert c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}, "retornoMarcado": outro}).status_code == 200
+
+
+def test_finalizar_com_horario_no_passado_e_409(mundo):
+    c, agenda = com_agenda(mundo)
+    cid = consulta_pronta(c)
+    passado = RETORNO | {"data": "2020-01-06"}
+    r = c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}, "retornoMarcado": passado})
+    assert r.status_code == 409 and "passou" in r.json()["detail"]
+    assert c.get(f"/consultas/{cid}").json()["finalizadaEm"] is None
+
+
+def test_finalizar_duas_vezes_nao_duplica_o_cartao(mundo):
+    c, agenda = com_agenda(mundo)
+    cid = consulta_pronta(c)
+    corpo = {"edicoes": {}, "retornoMarcado": RETORNO}
+    assert c.post(f"/consultas/{cid}/finalizar", json=corpo).status_code == 200
+    assert c.post(f"/consultas/{cid}/finalizar", json=corpo).status_code == 409
+    assert len(agenda.retornos(MEDICO_A, FUTURO, FUTURO)) == 1
+
+
+def test_finalizar_que_falha_desfaz_o_retorno(mundo):
+    class Quebrado(RepositorioConsultasMemoria):
+        def finalizar(self, *args, **kwargs):
+            raise RuntimeError("banco caiu")
+
+    pacientes, _ = mundo
+    c, agenda = com_agenda((pacientes, Quebrado(pacientes)))
+    cid = consulta_pronta(c)
+    with pytest.raises(RuntimeError):
+        c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}, "retornoMarcado": RETORNO})
+    assert agenda.retornos(MEDICO_A, FUTURO, FUTURO) == []

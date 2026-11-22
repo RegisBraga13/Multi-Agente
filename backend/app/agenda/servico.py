@@ -7,7 +7,16 @@ from datetime import date, datetime
 from uuid import UUID
 
 from app.agenda.repositorio import FotoGuardada, RepositorioAgenda, instante
-from app.contratos.agenda import DadosPessoais, FormularioEnviado, FormularioRecebido, NovoPedido, Pedido, PedidoCriado
+from app.contratos.agenda import (
+    DadosPessoais,
+    FormularioEnviado,
+    FormularioRecebido,
+    NovoPedido,
+    Pedido,
+    PedidoCriado,
+    Retorno,
+    RetornoMarcado,
+)
 
 TAMANHO_MAXIMO_FOTO = 10 * 1024 * 1024
 
@@ -86,3 +95,18 @@ def identificacao_na_chegada(
 def periodo_valido(de: date, ate: date) -> None:
     if ate < de or (ate - de).days > 62:
         raise ErroAgenda("Período inválido (no máximo dois meses).")
+
+
+def marcar_retorno(
+    repo: RepositorioAgenda,
+    medico: UUID,
+    paciente_id: UUID,
+    paciente_nome: str,
+    consulta_id: UUID,
+    marcado: RetornoMarcado,
+    agora: datetime,
+) -> Retorno:
+    """O retorno combinado na consulta vira cartão da agenda (HorarioOcupado se o horário já foi tomado)."""
+    if instante(marcado.data, marcado.inicio) <= agora:
+        raise ErroAgenda("Esse horário já passou. Escolha outro.")
+    return repo.criar_retorno(medico, paciente_id, paciente_nome, consulta_id, marcado)

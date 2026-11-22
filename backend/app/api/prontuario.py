@@ -10,9 +10,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import StringConstraints
 
+from app.agenda import servico as agenda_servico
+from app.agenda.servico import ErroAgenda
 from app.api.dependencias import Dependencias, dependencias, medico_atual
 from app.consulta.repositorio import ConsultaFinalizada
 from app.consulta.servico import ROTULOS, ErroEtapa
+from app.contratos.agenda import RetornoMarcado
 from app.contratos.base import ModeloApi
 from app.contratos.consulta_blocos import (
     ETAPAS,
@@ -33,6 +36,7 @@ class Finalizacao(ModeloApi):
     """`edicoes`: os textos que o médico mudou ou ditou na revisão final (chave → texto)."""
 
     edicoes: dict[str, str]
+    retorno_marcado: RetornoMarcado | None = None  # rascunho da página 5: só vira cartão da agenda aqui
 
 
 # a coluna `reason` do banco é obrigatória; o médico escreve só o texto
@@ -77,7 +81,30 @@ def finalizar(consulta_id: UUID, corpo: Finalizacao, dep: Dep, medico: Medico) -
     if any(d.estado != "enviado" for d in dep.repo.documentos(medico, consulta_id)):
         raise ErroEtapa("Envie os documentos antes de finalizar")
     dados, edicoes = aplicar_edicoes_narrativas(dados, corpo.edicoes)
-    dep.repo.finalizar(medico, consulta_id, dados, edicoes, dep.relogio.agora())
+    consulta = dep.repo.buscar(medico, consulta_id)
+    marcou = corpo.retorno_marcado is not None
+    if corpo.retorno_marcado is not None:
+        nome = dep.pacientes.buscar(medico, consulta.paciente_id)
+        assert nome is not None
+        try:
+            agenda_servico.marcar_retorno(
+                dep.agenda,
+                medico,
+                consulta.paciente_id,
+                nome.nome,
+                consulta_id,
+                corpo.retorno_marcado,
+                dep.relogio.agora(),
+            )
+        except ErroAgenda as erro:
+            raise HTTPException(status.HTTP_409_CONFLICT, str(erro)) from erro
+        dados = dados.model_copy(update={"retorno_marcado": corpo.retorno_marcado})
+    try:
+        dep.repo.finalizar(medico, consulta_id, dados, edicoes, dep.relogio.agora())
+    except Exception:
+        if marcou:
+            dep.agenda.desfazer_retorno(medico, consulta_id)
+        raise
     paciente = dep.repo.buscar(medico, consulta_id).paciente_id
     return next(e for e in dep.repo.prontuario(medico, paciente) if e.id == consulta_id)
 
