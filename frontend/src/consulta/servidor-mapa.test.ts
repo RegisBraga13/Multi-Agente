@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { anamneseDoServidor, anamneseParaServidor, etapasParaOficializar, exameDoServidor, exameParaServidor } from './servidor-mapa'
+import { anamneseDoServidor, anamneseParaServidor, diaDaConsulta, etapasParaOficializar, exameDoServidor, exameParaServidor } from './servidor-mapa'
 import type { Pergunta, RespostaPergunta } from './exemplo'
 import type { Ficha } from '../modulo/tipos'
 
@@ -71,4 +71,10 @@ describe('etapasParaOficializar (o servidor só oficializa o exame depois da ana
   it('anamnese salva com o exame já salvo na tela: anamnese e depois exame', () => expect(etapasParaOficializar('anamnese', true)).toEqual(['anamnese', 'exame']))
   it('exame salvo com a anamnese já salva: só o exame', () => expect(etapasParaOficializar('exame', true)).toEqual(['exame']))
   it('exame salvo antes da anamnese: nenhuma (fica gravado como rascunho no servidor)', () => expect(etapasParaOficializar('exame', false)).toEqual([]))
+})
+
+describe('diaDaConsulta (o dia no consultório, em São Paulo)', () => {
+  it('10h no consultório (13h UTC) é o mesmo dia', () => expect(diaDaConsulta('2027-08-12T13:00:00Z')).toBe('2027-08-12'))
+  it('de madrugada em UTC ainda é o dia anterior no consultório', () => expect(diaDaConsulta('2027-08-12T02:00:00Z')).toBe('2027-08-11'))
+  it('aceita o formato com deslocamento que o servidor devolve', () => expect(diaDaConsulta('2027-08-12T10:00:00-03:00')).toBe('2027-08-12'))
 })

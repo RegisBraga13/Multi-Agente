@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { soAlergias, editar, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
+import { estadoDoServidor, soAlergias, editar, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
 import type { EstadoConsulta } from './tipos'
 
 const tudoOficializado = (): EstadoConsulta =>
@@ -104,5 +104,40 @@ describe('soAlergias (a página 1 não pergunta mais os sinais de alerta)', () =
   })
   it('sem alergia a lista fica vazia', () => {
     expect(soAlergias([{ id: 'sinal-0', tipo: 'sinal' }])).toEqual([])
+  })
+})
+
+
+describe('estadoDoServidor (retomar a consulta de onde parou)', () => {
+  const b = (etapa: string, estado: 'rascunho_ia' | 'revisado_medico' | 'oficializado', desatualizado = false) => ({ etapa, estado, desatualizado })
+  const todasSalvas = ['anamnese', 'exame', 'historia', 'diagnosticos', 'conduta'].map((e) => b(e, 'oficializado'))
+
+  it('sem blocos no servidor, nada muda', () => {
+    expect(estadoDoServidor(inicial([]), [])).toEqual(inicial([]))
+  })
+  it('as 5 etapas salvas: a consulta continua nos Anexos, e o Prontuário segue bloqueado', () => {
+    const e = estadoDoServidor(inicial([]), todasSalvas)
+    expect(situacaoDaEtapa(e, 'anamnese-exame')).toBe('oficializado')
+    expect(situacaoDaEtapa(e, 'historia')).toBe('oficializado')
+    expect(situacaoDaEtapa(e, 'conduta')).toBe('oficializado')
+    expect(situacaoDaEtapa(e, 'anexos')).toBe('rascunho_ia')
+    expect(situacaoDaEtapa(e, 'prontuario')).toBe('bloqueado')
+    expect(podeOficializar(e, 'anexos')).toBe(true)
+  })
+  it('só a página 1 salva e a história ainda rascunho: a história está liberada e os diagnósticos bloqueados', () => {
+    const e = estadoDoServidor(inicial([]), [b('anamnese', 'oficializado'), b('exame', 'oficializado'), b('historia', 'rascunho_ia')])
+    expect(situacaoDaEtapa(e, 'historia')).toBe('rascunho_ia')
+    expect(situacaoDaEtapa(e, 'diagnosticos')).toBe('bloqueado')
+  })
+  it('etapa desatualizada continua desatualizada', () => {
+    const e = estadoDoServidor(inicial([]), [b('anamnese', 'oficializado'), b('exame', 'oficializado'), b('historia', 'oficializado', true)])
+    expect(situacaoDaEtapa(e, 'historia')).toBe('desatualizado')
+  })
+  it('etapa alcançada antes e depois desatualizada não volta a "bloqueada"', () => {
+    const e = estadoDoServidor(inicial([]), [b('anamnese', 'revisado_medico'), b('exame', 'oficializado'), b('historia', 'oficializado')])
+    expect(situacaoDaEtapa(e, 'historia')).toBe('desatualizado')
+  })
+  it('bloco de etapa que a tela não controla é ignorado', () => {
+    expect(estadoDoServidor(inicial([]), [b('qualquer', 'oficializado')])).toEqual(inicial([]))
   })
 })

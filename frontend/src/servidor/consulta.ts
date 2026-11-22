@@ -24,7 +24,7 @@ export type EtapaServidor = 'anamnese' | 'exame' | 'historia' | 'diagnosticos' |
 export type BlocoServidor = { etapa: EtapaServidor; estado: 'rascunho_ia' | 'revisado_medico' | 'oficializado'; desatualizado: boolean; conteudo: Record<string, unknown>; oficializadoEm: string | null }
 export type ConsultaServidor = {
   id: string; pacienteId: string; tipo: 'consulta' | 'retorno'; modalidade: 'presencial' | 'online'
-  especialidade: string; pedidoId: string | null; finalizadaEm: string | null; blocos: BlocoServidor[]
+  especialidade: string; pedidoId: string | null; agendadaPara: string; finalizadaEm: string | null; blocos: BlocoServidor[]
 }
 
 const json = (corpo: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(corpo) })

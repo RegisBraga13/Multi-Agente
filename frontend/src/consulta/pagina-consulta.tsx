@@ -9,7 +9,7 @@ import { NaoEncontrada } from '../nao-encontrada'
 import { idade } from '../modulo/dia'
 import type { Atendimento } from '../modulo/tipos'
 import { Anamnese } from './anamnese'
-import { ETAPAS, soAlergias, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
+import { ETAPAS, estadoDoServidor, soAlergias, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
 import { Exame } from './exame'
 import { atualizarHistoria, montarHistoria, montarHistoriaEvolucao, secoesDaConsultaAnterior, secoesDaEvolucaoParaDD, type SecaoHistoria } from './historia'
 import { PaginaHistoria } from './historia-pagina'
@@ -37,7 +37,7 @@ import { PerguntasHistoria } from './perguntas-historia'
 import { diagnosticosParaServidor, hipotesesDoServidor, idDaHipotese, itensDoServidor } from './diagnosticos-servidor'
 import { aplicarDocumentos, documentoParaServidor, virouEnviado } from './anexos-servidor'
 import { bloqueadasDaConduta, condutaDoServidor, condutaParaServidor, urgenciaDaConduta } from './conduta-servidor'
-import { anamneseDoServidor, anamneseParaServidor, etapasParaOficializar, exameDoServidor, exameParaServidor } from './servidor-mapa'
+import { anamneseDoServidor, anamneseParaServidor, diaDaConsulta, etapasParaOficializar, exameDoServidor, exameParaServidor } from './servidor-mapa'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
 
@@ -111,6 +111,8 @@ function semProposta(nome: string, cid: string): CondutaServidor {
 
 function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade; at: Atendimento; etapa: EtapaId; formulario: FormularioConsulta | null; servidor: ConsultaServidor | null }) {
   const base0 = useMemo(() => conteudoDaConsulta(at, esp.slug), [at, esp.slug])
+  /** o dia da consulta: nos pedidos reais vem do servidor (o id do atendimento não é uma data) */
+  const dia = servidor ? diaDaConsulta(servidor.agendadaPara) : at.id.slice(0, 10)
   // consulta retomada: o que já estava salvo no servidor volta para os campos (como rascunho: salvar de novo envia e oficializa)
   const retomada = useMemo(() => {
     const bloco = (etapa: 'anamnese' | 'exame' | 'historia' | 'diagnosticos' | 'conduta') => servidor?.blocos.find((b) => b.etapa === etapa)?.conteudo
@@ -130,7 +132,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   /** no retorno a primeira página é a Evolução (regra 14.1) */
   const nomeDaEtapa = (id: string, nome: string) => (at.tipo === 'retorno' ? ({ 'anamnese-exame': 'Evolução', historia: 'História da evolução' } as Record<string, string>)[id] ?? nome : nome)
   const consultaAnterior = at.tipo === 'retorno' ? entradas(at.paciente.id).find((e) => e.tipo === 'consulta') : undefined
-  const [estado, despachar] = useReducer(reduzir, soAlergias(conteudo.alertas).map((a) => a.id), inicial)
+  const [estado, despachar] = useReducer(reduzir, soAlergias(conteudo.alertas).map((a) => a.id), (ids: string[]) => (servidor ? estadoDoServidor(inicial(ids), servidor.blocos) : inicial(ids)))
   const [anexos, setAnexos] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const navegar = useNavigate()
@@ -185,7 +187,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   const [condBase, setCondBase] = useState<CondutaServidor | null>(retomada.conduta)
   const [montandoConduta, setMontandoConduta] = useState(false)
   /** consulta real: os anexos que o servidor guardou como enviados (voltam como enviados ao recarregar) */
-  const [docsServidor, setDocsServidor] = useState<DocumentoServidor[]>([])
+  const [docsServidor, setDocsServidor] = useState<DocumentoServidor[] | null>(null)
   useEffect(() => {
     if (servidor) listarDocumentos(servidor.id).then(setDocsServidor, () => setDocsServidor([]))
   }, [servidor])
@@ -332,7 +334,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     // retorno: os diagnósticos são NOVOS, só da evolução de hoje (como numa primeira consulta, sem repetir o prontuário);
     // "Para relembrar" (alergias, comorbidades, o que não muda) ainda vem do prontuário, junto com a evolução (regra 14.2)
     const retorno = at.tipo === 'retorno'
-    const anterior = retorno ? entradas(at.paciente.id).find((e) => e.data < at.id.slice(0, 10) && e.dados.diagnosticos.length > 0) : undefined
+    const anterior = retorno ? entradas(at.paciente.id).find((e) => e.data < dia && e.dados.diagnosticos.length > 0) : undefined
     const r = montarDiagnosticos(esp.slug, at.paciente.nome, retorno ? secoesDaEvolucaoParaDD(salva) : salva)
     const resumo = montarResumo(anterior ? [...secoesDaConsultaAnterior(anterior.dados), ...salva] : salva)
     const inicio = iniciarDiagnosticos(r.hipoteses)
@@ -354,7 +356,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     // consulta retomada: a conduta guardada volta como rascunho, com as escolhas e os textos de antes
     const b = retomada.conduta
     if (!b) return null
-    const c = condutaDoServidor(b, { id: idDaHipotese(b.diagnostico), nome: b.diagnostico.nome, cid: b.diagnostico.cid }, at.id.slice(0, 10), (id) => id)
+    const c = condutaDoServidor(b, { id: idDaHipotese(b.diagnostico), nome: b.diagnostico.nome, cid: b.diagnostico.cid }, dia, (id) => id)
     return { versao: 1, c: { ...c, escolha: b.escolha, textos: b.textos, editado: b.textos.map(() => true), revelado: b.textos.map(() => true) } }
   })
 
@@ -385,7 +387,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     if (base) {
       setCondBase(base)
       const nomeDoSinal = (sid: string) => catalogo.find((x) => x.id === sid)?.texto ?? sid
-      const nova = condutaDoServidor(base, { id: idDaHipotese(base.diagnostico), nome: base.diagnostico.nome, cid: base.diagnostico.cid }, at.id.slice(0, 10), nomeDoSinal)
+      const nova = condutaDoServidor(base, { id: idDaHipotese(base.diagnostico), nome: base.diagnostico.nome, cid: base.diagnostico.cid }, dia, nomeDoSinal)
       setConduta((x) => (x ? { versao: x.versao + 1, c: atualizarConduta(x.c, nova) } : { versao: 1, c: nova }))
     }
     setMontandoConduta(false)
@@ -397,7 +399,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     despachar({ tipo: 'oficializar', bloco: 'diagnosticos' })
     if (!dd || podeOficializar(estado, 'conduta') || !podeOficializar(novo, 'conduta')) return
     if (servidor) { void montarCondutaDoServidor(servidor.id); navegar(`${base}/conduta`); return }
-    const nova = montarConduta(dd.itens, dd.resumo, at.id.slice(0, 10))
+    const nova = montarConduta(dd.itens, dd.resumo, dia)
     if (!nova) return
     setConduta((x) => (x ? { versao: x.versao + 1, c: atualizarConduta(x.c, nova) } : { versao: 1, c: nova }))
     navegar(`${base}/conduta`)
@@ -409,9 +411,16 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   const dados: DadosConsulta = {
     paciente: at.paciente.nome,
     idade: idade(at.paciente.nascimento, new Date()),
-    data: at.id.slice(0, 10).split('-').reverse().join('/'),
+    data: dia.split('-').reverse().join('/'),
     hora: at.inicio,
   }
+  // consulta retomada com a conduta já salva: os anexos voltam (os já enviados, como enviados)
+  useEffect(() => {
+    if (!servidor || docs !== null || !conduta || docsServidor === null) return
+    if (estado.blocos.conduta.estado !== 'oficializado' || estado.blocos.conduta.desatualizado) return
+    setDocs({ versao: 1, itens: aplicarDocumentos(montarAnexos(conduta.c, dados), docsServidor) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servidor, docs, conduta, docsServidor, estado.blocos.conduta])
 
   /** Salvar conduta. Consulta real: o servidor guarda e oficializa primeiro; só então a tela segue. */
   const salvarConduta = () => {
@@ -429,7 +438,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     const novo = oficializar(estado, 'conduta')
     despachar({ tipo: 'oficializar', bloco: 'conduta' })
     if (!conduta || podeOficializar(estado, 'anexos') || !podeOficializar(novo, 'anexos')) return
-    const novos = aplicarDocumentos(montarAnexos(conduta.c, dados), docsServidor)
+    const novos = aplicarDocumentos(montarAnexos(conduta.c, dados), docsServidor ?? [])
     setDocs((x) => (x ? { versao: x.versao + 1, itens: atualizarAnexos(x.itens, novos) } : { versao: 1, itens: novos }))
     navegar(`${base}/anexos`)
   }
@@ -463,7 +472,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   const salvarProntuario = () => {
     fazer('oficializar', 'prontuario')
     // a entrada desta consulta vai para o prontuário do paciente (com as edições do médico)
-    if (prontuario) salvarEntrada(at.paciente.id, { tipo: at.tipo, modalidade: at.modalidade, data: at.id.slice(0, 10), hora: at.inicio, ...aplicarEdicoes(prontuario.dados, prontuario.textos) }, at.paciente)
+    if (prontuario) salvarEntrada(at.paciente.id, { tipo: at.tipo, modalidade: at.modalidade, data: dia, hora: at.inicio, ...aplicarEdicoes(prontuario.dados, prontuario.textos) }, at.paciente)
     navegar(`/modulo/${esp.slug}`, { state: { aviso: `Consulta finalizada. Prontuário de ${at.paciente.nome} salvo.` } })
   }
 
@@ -706,7 +715,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
                 // consulta real: o servidor grava primeiro; se falhar, o anexo não fica como enviado
                 const doc = documentoParaServidor(enviado)
                 salvarDocumento(servidor.id, doc).then(
-                  () => { setDocsServidor((ds) => [...ds.filter((x) => x.tipo !== tipo), doc]); aplicar() },
+                  () => { setDocsServidor((ds) => [...(ds ?? []).filter((x) => x.tipo !== tipo), doc]); aplicar() },
                   (e: unknown) => setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível enviar. Tente de novo.'),
                 )
               }}
@@ -720,7 +729,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
             )}
             <PaginaProntuario
               key={prontuario.versao}
-              titulo={tituloDaConsulta(at.paciente.id, at.tipo, at.id.slice(0, 10), at.inicio)}
+              titulo={tituloDaConsulta(at.paciente.id, at.tipo, dia, at.inicio)}
               cabecalho={cabecalhoProntuario(dados, at.modalidade)}
               secoes={prontuario.geradas}
               textos={prontuario.textos}

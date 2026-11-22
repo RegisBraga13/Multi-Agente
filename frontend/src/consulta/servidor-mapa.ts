@@ -82,3 +82,7 @@ export function etapasParaOficializar(salva: 'anamnese' | 'exame', outraOficiali
   if (salva === 'anamnese') return outraOficializada ? ['anamnese', 'exame'] : ['anamnese']
   return outraOficializada ? ['exame'] : []
 }
+
+/** O dia da consulta ('YYYY-MM-DD') no fuso do consultório, a partir do instante que o servidor devolve. */
+export const diaDaConsulta = (agendadaPara: string): string =>
+  new Date(agendadaPara).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })

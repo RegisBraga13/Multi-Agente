@@ -28,6 +28,22 @@ export function inicial(alertas: string[]): EstadoConsulta {
   return { blocos, alertas: Object.fromEntries(alertas.map((id) => [id, null])), alcancadas: [] }
 }
 
+/** As etapas que o servidor guarda (os anexos e o prontuário ainda são só da tela). */
+const DO_SERVIDOR: Bloco[] = ['anamnese', 'exame', 'historia', 'diagnosticos', 'conduta']
+
+/**
+ * Consulta retomada: o "salvo" de cada etapa volta do servidor, para o médico continuar de onde parou sem salvar tudo
+ * de novo. Uma etapa que o servidor já tem conta como alcançada (se depois ficar desatualizada, não volta a "bloqueada").
+ */
+export function estadoDoServidor(base: EstadoConsulta, blocos: { etapa: string; estado: EstadoConsulta['blocos'][Bloco]['estado']; desatualizado: boolean }[]): EstadoConsulta {
+  const guardados = blocos.filter((x): x is typeof x & { etapa: Bloco } => (DO_SERVIDOR as string[]).includes(x.etapa))
+  let e: EstadoConsulta = { ...base, blocos: { ...base.blocos } }
+  for (const x of guardados) e.blocos[x.etapa] = { estado: x.estado, desatualizado: x.desatualizado }
+  const alcancadas = (['historia', 'diagnosticos', 'conduta', 'anexos', 'prontuario'] as const).filter((b) => guardados.some((x) => x.etapa === b) || podeOficializar(e, b))
+  e = { ...e, alcancadas: [...new Set([...base.alcancadas, ...alcancadas])] }
+  return e
+}
+
 export function oficializar(e: EstadoConsulta, bloco: Bloco): EstadoConsulta {
   const novo = { ...e, blocos: { ...e.blocos, [bloco]: { estado: 'oficializado' as const, desatualizado: false } } }
   const liberadas = (['historia', 'diagnosticos', 'conduta', 'anexos', 'prontuario'] as const).filter((b) => podeOficializar(novo, b) && !e.alcancadas.includes(b))
