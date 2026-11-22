@@ -1,11 +1,13 @@
 // Prontuários: quem já terminou ao menos uma consulta ou retorno tem prontuário. O médico entra aqui a qualquer
 // hora (cartão Prontuário da página inicial), busca pelo nome e abre o prontuário da pessoa.
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { buscarEspecialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
 import { NaoEncontrada } from '../nao-encontrada'
-import { pacientesComProntuario } from './registro'
+import { prontuariosDoMedico } from '../servidor/consulta'
+import { juntarPacientes } from './juntar'
+import { pacientesComProntuario, type PacienteComProntuario } from './registro'
 
 const dataBr = (d: string) => d.split('-').reverse().join('/')
 const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -15,7 +17,13 @@ export function ListaProntuarios() {
   const esp = buscarEspecialidade(slug)
   const navegar = useNavigate()
   const [busca, setBusca] = useState('')
-  const todos = useMemo(() => pacientesComProntuario(), [])
+  const [locais] = useState(() => pacientesComProntuario())
+  const [doServidor, setDoServidor] = useState<PacienteComProntuario[]>([])
+  const [aviso, setAviso] = useState('')
+  useEffect(() => {
+    prontuariosDoMedico().then(setDoServidor, () => setAviso('Não foi possível ler os prontuários do servidor. Aparecem só os registros deste aparelho.'))
+  }, [])
+  const todos = juntarPacientes(locais, doServidor)
   const vistos = todos.filter((p) => semAcento(p.nome).includes(semAcento(busca.trim())))
   const abrir = (id: string) => navegar(`/modulo/${slug}/prontuario/${id}`)
 
@@ -36,6 +44,7 @@ export function ListaProntuarios() {
           />
           <button type="submit" disabled={!vistos.length} className="bg-tinta px-4 py-2 text-[15px] font-bold text-papel disabled:opacity-40">Buscar</button>
         </form>
+        {aviso && <p role="alert" className="border border-historia-borda bg-historia px-5 py-3 text-[14px] font-bold">{aviso}</p>}
         {todos.length === 0 ? (
           <p className="border border-historia-borda bg-historia px-5 py-4 text-[15px]">Nenhum prontuário ainda. O prontuário nasce quando o paciente termina a primeira consulta.</p>
         ) : vistos.length === 0 ? (

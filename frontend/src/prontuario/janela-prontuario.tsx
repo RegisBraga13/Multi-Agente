@@ -1,7 +1,7 @@
 // Janela do prontuário: abre separada da consulta (outra janela do navegador), só leitura.
 // Todas as entradas do paciente, a mais recente no topo. Atualiza sozinha quando uma consulta é salva.
 // O texto de cada entrada é montado dos dados gravados (secoesDaEntrada); as fotos aparecem em miniatura.
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { useParams } from 'react-router-dom'
 import { tabelaDeExames } from '../consulta/exames-tabela'
 import { secoesDaEntrada } from '../consulta/prontuario'
@@ -9,6 +9,10 @@ import { TabelaDeExames } from '../consulta/tabela-exames'
 import { buscarEspecialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
 import { NaoEncontrada } from '../nao-encontrada'
+import { ErroServidor } from '../servidor/agenda'
+import { pacienteDoServidor, prontuarioDoPaciente } from '../servidor/consulta'
+import { Adendos, BotaoAdendo } from './adendo'
+import { juntarEntradas } from './juntar'
 import { cadastroDoPaciente, entradas, type EntradaProntuario, type FotoRegistro } from './registro'
 
 const TITULO_SECAO = 'text-[11px] font-bold tracking-[0.14em] text-historia-rotulo uppercase'
@@ -18,23 +22,41 @@ const dataBr = (d: string) => d.split('-').reverse().join('/')
 export function JanelaProntuario() {
   const { slug = '', paciente = '' } = useParams()
   const esp = buscarEspecialidade(slug)
-  // nome e nascimento vêm do cadastro do paciente (não mudam)
-  const cadastro = cadastroDoPaciente(paciente)
-  const id = cadastro?.id ?? paciente
-  const [lista, setLista] = useState(() => entradas(id))
+  // nome e nascimento: o cadastro local (exemplos) ou o paciente real, lido do servidor
+  const [cadastro, setCadastro] = useState(() => cadastroDoPaciente(paciente))
+  const [semPaciente, setSemPaciente] = useState(false)
+  const id = paciente
+  const [daqui, setDaqui] = useState(() => entradas(id))
+  // as entradas finalizadas no servidor (as únicas que recebem adendo)
+  const [doServidor, setDoServidor] = useState<EntradaProntuario[]>([])
+  const [aviso, setAviso] = useState('')
+  const lista = juntarEntradas(daqui, doServidor)
   // o histórico de exames não aparece sozinho: só é montado quando o médico pede
   const [historico, setHistorico] = useState(false)
 
+  const recarregar = useCallback(() => {
+    setDaqui(entradas(id))
+    prontuarioDoPaciente(id).then(
+      (x) => { setDoServidor(x); setAviso('') },
+      (e: unknown) => { if (!(e instanceof ErroServidor && e.status === 404)) setAviso('Não foi possível ler o prontuário do servidor. Aparecem só os registros deste aparelho.') }, // 404: paciente só de exemplo, sem registro no servidor
+    )
+  }, [id])
+
+  useEffect(() => {
+    if (cadastro) return
+    pacienteDoServidor(id).then((p) => setCadastro({ id: p.id, nome: p.nome, nascimento: p.nascimento }), () => setSemPaciente(true))
+  }, [id, cadastro])
   useEffect(() => { if (cadastro) document.title = `Prontuário · ${cadastro.nome}` }, [cadastro])
   // a consulta salva noutra janela: a lista se atualiza
   useEffect(() => {
-    const atualizar = () => setLista(entradas(id))
-    window.addEventListener('storage', atualizar)
-    window.addEventListener('focus', atualizar)
-    return () => { window.removeEventListener('storage', atualizar); window.removeEventListener('focus', atualizar) }
-  }, [id])
+    recarregar()
+    window.addEventListener('storage', recarregar)
+    window.addEventListener('focus', recarregar)
+    return () => { window.removeEventListener('storage', recarregar); window.removeEventListener('focus', recarregar) }
+  }, [recarregar])
 
-  if (!esp || !cadastro) return <NaoEncontrada />
+  if (!esp || semPaciente) return <NaoEncontrada />
+  if (!cadastro) return <p className="py-16 text-center text-apagado">Abrindo o prontuário…</p>
   const tabela = tabelaDeExames(lista.flatMap((e) => e.dados.exames), [])
   return (
     <div style={{ '--esp': esp.cor } as CSSProperties} className="cor-esp flex min-h-screen flex-col bg-papel bg-[url(/papel.png)] bg-size-[512px]">
@@ -44,6 +66,7 @@ export function JanelaProntuario() {
         <span className="ml-auto text-[13px] text-apagado">Só leitura</span>
       </header>
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-3 sm:px-6">
+        {aviso && <p role="alert" className="border border-historia-borda bg-historia px-5 py-3 text-[14px] font-bold">{aviso}</p>}
         {lista.length === 0 ? (
           <p className="border border-historia-borda bg-historia px-5 py-4 text-[15px]">Sem prontuário anterior. A primeira entrada nasce ao salvar o prontuário no fim da consulta.</p>
         ) : (
@@ -60,7 +83,7 @@ export function JanelaProntuario() {
                 {historico && <TabelaDeExames tabela={tabela} className="mt-2" />}
               </section>
             )}
-            {lista.map((e) => <Entrada key={e.id} e={e} />)}
+            {lista.map((e) => <Entrada key={e.id} e={e} podeAdendo={doServidor.some((x) => x.id === e.id)} aoSalvarAdendo={recarregar} />)}
           </>
         )}
       </main>
@@ -69,7 +92,7 @@ export function JanelaProntuario() {
   )
 }
 
-function Entrada({ e }: { e: EntradaProntuario }) {
+function Entrada({ e, podeAdendo, aoSalvarAdendo }: { e: EntradaProntuario; podeAdendo: boolean; aoSalvarAdendo: () => void }) {
   const secoes = secoesDaEntrada(e)
   // as fotos vêm logo depois do exame físico (ou, sem ele, depois da anamnese)
   const depoisDe = secoes.some((s) => s.id === 'O') ? 'O' : 'S'
@@ -90,6 +113,8 @@ function Entrada({ e }: { e: EntradaProntuario }) {
           </div>
         ))}
       </div>
+      <Adendos adendos={e.adendos} />
+      {podeAdendo && <div className="mt-2 flex justify-end"><BotaoAdendo consultaId={e.id} aoSalvar={aoSalvarAdendo} /></div>}
     </article>
   )
 }
