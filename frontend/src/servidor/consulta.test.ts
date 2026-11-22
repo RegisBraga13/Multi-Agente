@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { adicionarAdendo, lerEventos, urlDaFinalizacao, urlDaGeracao, urlDoDocumento } from './consulta'
+import { adicionarAdendo, corpoDaFinalizacao, lerEventos, urlDaFinalizacao, urlDaGeracao, urlDoDocumento } from './consulta'
 
 describe('lerEventos (fluxo de eventos do servidor)', () => {
   it('lê os eventos na ordem, com o JSON de cada um', () => {
@@ -48,5 +48,16 @@ describe('adicionarAdendo', () => {
     vi.stubGlobal('fetch', f)
     await adicionarAdendo('abc', 'Biópsia confirmou.')
     expect(f).toHaveBeenCalledWith('/api/consultas/abc/adendos', expect.objectContaining({ method: 'POST', body: JSON.stringify({ texto: 'Biópsia confirmou.' }) }))
+  })
+})
+
+describe('corpoDaFinalizacao', () => {
+  it('sem retorno marcado vai com retornoMarcado nulo (o servidor grava "Sem retorno")', () => {
+    expect(corpoDaFinalizacao({ 'S.qp': 'x' }, null)).toEqual({ edicoes: { 'S.qp': 'x' }, retornoMarcado: null })
+    expect(corpoDaFinalizacao({}, undefined)).toEqual({ edicoes: {}, retornoMarcado: null })
+  })
+  it('com retorno marcado leva data, hora e modalidade', () => {
+    const r = { data: '2026-12-05', inicio: '14:00', modalidade: 'online' as const }
+    expect(corpoDaFinalizacao({}, r)).toEqual({ edicoes: {}, retornoMarcado: r })
   })
 })

@@ -32,6 +32,12 @@ export type PedidoDoLink = {
   situacaoFicha: SituacaoFicha
 }
 
+/** O retorno marcado, como cartão da agenda (nasce ao finalizar a consulta de origem). */
+export type RetornoNaAgenda = {
+  id: string; pacienteId: string; pacienteNome: string; consultaOrigemId: string
+  data: string; inicio: string; modalidade: Modalidade
+}
+
 export type FotoParaEnviar = { tipo: string; base64: string }
 
 /** Erro com a mensagem do servidor (já escrita para quem está usando a tela). */
@@ -75,6 +81,8 @@ export const enviarFormulario = (
 ) => chamar<void>(`/publico/formularios/${encodeURIComponent(token)}`, { method: 'POST', body: JSON.stringify(corpo) })
 
 export const pedidosDaAgenda = (de: string, ate: string) => chamar<PedidoNaAgenda[]>(`/agenda/pedidos?de=${de}&ate=${ate}`)
+
+export const retornosDaAgenda = (de: string, ate: string) => chamar<RetornoNaAgenda[]>(`/agenda/retornos?de=${de}&ate=${ate}`)
 
 export const buscarPedido = (id: string) => chamar<PedidoNaAgenda>(`/agenda/pedidos/${id}`)
 

@@ -2,7 +2,7 @@
 // salva (o médico escolhe quais emitir); à direita, o documento aberto, como uma folha: editar e revisar,
 // assinar (só os que exigem; simulação) e enviar ao paciente (simulação). Enviado = bloco cheio.
 // Com todos os escolhidos enviados, "Salvar anexos": a IA escreve o prontuário (página 6).
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { TextoCrescente } from '../medico/texto-crescente'
 import { FINALIDADES, camposPendentes, proximoPasso, type Anexo, type DadosConsulta, type TipoAnexo } from './anexos'
 import { SEM_CORRETOR } from './campo-linha'
@@ -37,6 +37,8 @@ type Props = {
   /** período do atestado / finalidade do laudo */
   onCampos: (tipo: TipoAnexo, campos: Pick<Anexo, 'periodo' | 'finalidade'>) => void
   onSalvar: () => void
+  /** ao lado dos anexos (a escolha do retorno) */
+  retorno?: ReactNode
 }
 
 export function PaginaAnexos(p: Props) {
@@ -92,6 +94,7 @@ export function PaginaAnexos(p: Props) {
               </div>
             )
           })}
+          {p.retorno}
           {/* resumo no cartão escuro */}
           <div className="mt-auto flex items-baseline gap-4 bg-escuro px-4 py-2.5 text-sobre-escuro">
             <span className="text-[26px] leading-none font-bold tabular-nums">{enviados}/{escolhidos.length}</span>

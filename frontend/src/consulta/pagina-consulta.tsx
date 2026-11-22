@@ -21,6 +21,9 @@ import { atualizarConduta, editarTexto, escolherOpcao, escreverOutro, montarCond
 import { PaginaConduta } from './conduta-pagina'
 import { alternarEmitir, atualizarAnexos, avancar, definirCampos, editarAnexo, montarAnexos, pendenciasAnexos, type Anexo, type DadosConsulta } from './anexos'
 import { PaginaAnexos } from './anexos-pagina'
+import { RASCUNHO_INICIAL, podeSalvarAnexos, retornoParaEnvio, type RascunhoRetorno } from './retorno'
+import { EscolhaRetorno } from './retorno-pagina'
+import { dataLocal, gerarAgenda, marcarOcupados, MEDICO_EXEMPLO } from '../medico/exemplo'
 import { aplicarEdicoes, atualizarProntuario, cabecalhoProntuario, chave, dadosDaConsulta, edicoesDoMedico, secoesDosDados, type SecaoProntuario } from './prontuario'
 import { PaginaProntuario } from './prontuario-pagina'
 import { abrirJanelaProntuario, entradas, salvarEntrada, tituloDaConsulta, tituloNovaEntrada, type DadosEntrada } from '../prontuario/registro'
@@ -29,7 +32,7 @@ import { FORMULARIO_VAZIO, type FormularioConsulta } from './formulario-consulta
 import { partesPreConsulta } from '../medico/pre-consulta'
 import { atendimentoDoPedido, precisaIdentificacao } from '../modulo/pedidos'
 import { IdentificacaoNaChegada } from './identificacao-chegada'
-import { buscarPedido, enderecoFoto, ErroServidor, type PedidoNaAgenda } from '../servidor/agenda'
+import { buscarPedido, enderecoFoto, ErroServidor, pedidosDaAgenda, retornosDaAgenda, type HorarioOcupado, type PedidoNaAgenda } from '../servidor/agenda'
 import { abrirConsultaDoPedido, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, gerarConduta, salvarConduta as enviarConduta, listarDocumentos, salvarDocumento, finalizarConsulta, prontuarioDoPaciente, prontuarioProposto, sinaisDaEspecialidade, type AnamneseServidor, type CondutaServidor, type ConsultaServidor, type DocumentoServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
 import { adicionarPergunta, atualizarSecoes, avisosDeUrgencia, historiaParaServidor, juntarPerguntas, responder, secoesDoServidor } from './historia-servidor'
 import { BuscaCid } from './busca-cid'
@@ -445,6 +448,27 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     navegar(`${base}/anexos`)
   }
 
+  /** Retorno (página 5): só rascunho; vai ao servidor no Finalizar. */
+  const [retorno, setRetorno] = useState<RascunhoRetorno>(RASCUNHO_INICIAL)
+  const [ocupadosRetorno, setOcupadosRetorno] = useState<HorarioOcupado[]>([])
+  const agendaRetorno = useMemo(() => marcarOcupados(gerarAgenda(new Date()), ocupadosRetorno), [ocupadosRetorno])
+  // consulta real: os horários já tomados (pedidos e outros retornos) nos próximos dias; sem conexão, a agenda aparece como está
+  useEffect(() => {
+    if (!servidor || etapa !== 'anexos') return
+    const hoje = new Date()
+    const de = dataLocal(new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 1))
+    const ate = dataLocal(new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 15))
+    Promise.all([pedidosDaAgenda(de, ate), retornosDaAgenda(de, ate)]).then(
+      ([pedidos, retornos]) => setOcupadosRetorno([...pedidos.filter((p) => p.status !== 'cancelado'), ...retornos]),
+      () => {},
+    )
+  }, [servidor, etapa])
+  /** Mexer no retorno muda o que o prontuário diz: a página dos anexos deixa de estar salva. */
+  const mudarRetorno = (r: RascunhoRetorno) => {
+    setRetorno(r)
+    if (estado.blocos.anexos.estado !== 'revisado_medico') fazer('editar', 'anexos')
+  }
+
   /** O médico mexeu nos anexos: a página deixa de estar finalizada. */
   const mexerDocs = (f: (xs: Anexo[]) => Anexo[]) => {
     setDocs((x) => x && { ...x, itens: f(x.itens) })
@@ -460,7 +484,8 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   /** Consulta real: o servidor monta o prontuário com o que está salvo (sem IA, na hora). Falha: fica nos Anexos e avisa. */
   const montarProntuarioDoServidor = async (id: string) => {
     try {
-      const [dadosP, anteriores] = await Promise.all([prontuarioProposto(id), prontuarioDoPaciente(servidor!.pacienteId)])
+      const [proposto, anteriores] = await Promise.all([prontuarioProposto(id), prontuarioDoPaciente(servidor!.pacienteId)])
+      const dadosP = { ...proposto, retornoMarcado: retornoParaEnvio(retorno) } // o servidor só grava o retorno ao finalizar
       setTituloServidor(tituloNovaEntrada(anteriores, at.tipo))
       const novas = secoesDosDados(dadosP)
       setProntuario((x) => x
@@ -481,7 +506,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     if (servidor) { void montarProntuarioDoServidor(servidor.id); return }
     const salva = historia.geradas.map((s, i) => ({ rotulo: s.rotulo, texto: historia.textos[i] }))
     const fotos = Array.from({ length: conteudo.fotos }, (_, i) => ({ n: i + 1, src: i === 0 ? fotoExemplo : null }))
-    const dadosP = dadosDaConsulta({ historia: salva, itens: dd.itens, conduta: conduta.c, anexos: docs?.itens, complementares: conteudo.complementares, fotos, extensao: fontes.current.exame.find((x) => x.rotulo === 'Extensão')?.valor })
+    const dadosP = dadosDaConsulta({ historia: salva, itens: dd.itens, conduta: conduta.c, anexos: docs?.itens, complementares: conteudo.complementares, fotos, extensao: fontes.current.exame.find((x) => x.rotulo === 'Extensão')?.valor, retornoMarcado: retornoParaEnvio(retorno) })
     const novas = secoesDosDados(dadosP)
     setProntuario((x) => x
       ? { versao: x.versao + 1, dados: dadosP, geradas: novas, ...atualizarProntuario(x.geradas, x.textos, novas) }
@@ -492,9 +517,17 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   /** Salvar prontuário. Consulta real: o servidor finaliza primeiro (a entrada fica imutável); só então a tela segue. */
   const salvarProntuario = () => {
     if (!servidor || !prontuario) return concluirProntuario()
-    finalizarConsulta(servidor.id, edicoesDoMedico(prontuario.dados, prontuario.textos)).then(
+    finalizarConsulta(servidor.id, edicoesDoMedico(prontuario.dados, prontuario.textos), retornoParaEnvio(retorno)).then(
       () => concluirProntuario(),
-      (e: unknown) => setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível finalizar. Tente de novo.'),
+      (e: unknown) => {
+        setAviso(e instanceof ErroServidor ? e.message : 'Não foi possível finalizar. Tente de novo.')
+        // horário do retorno tomado (ou que passou): volta à página 5 para escolher outro; o prontuário não se perde
+        if (e instanceof ErroServidor && e.status === 409 && retorno.escolha === 'sim') {
+          setRetorno({ escolha: 'sim', marcado: null })
+          fazer('editar', 'anexos')
+          navegar(`${base}/anexos`)
+        }
+      },
     )
   }
 
@@ -730,7 +763,8 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
               dados={dados}
               situacao={situacaoDaEtapa(estado, 'anexos')}
               podeSalvar={podeOficializar(estado, 'anexos')}
-              pendencia={pendenciasAnexos(docs.itens)}
+              pendencia={pendenciasAnexos(docs.itens) ?? (podeSalvarAnexos(retorno) ? null : 'Escolha o dia e o horário do retorno.')}
+              retorno={<EscolhaRetorno valor={retorno} onMudar={mudarRetorno} agenda={agendaRetorno} atendeOnline={MEDICO_EXEMPLO.atendeOnline} fixo={estado.blocos.prontuario.estado === 'oficializado'} />}
               onEmitir={(tipo) => mexerDocs((xs) => alternarEmitir(xs, tipo))}
               onEditar={(tipo, texto) => mexerDocs((xs) => editarAnexo(xs, tipo, texto))}
               onCampos={(tipo, campos) => mexerDocs((xs) => definirCampos(xs, tipo, campos))}
