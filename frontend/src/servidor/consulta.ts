@@ -1,5 +1,6 @@
 // Conversa com o servidor da consulta (FastAPI). Formatos iguais aos contratos do servidor
 // (backend/app/contratos/consulta_blocos.py), em camelCase.
+import type { DadosEntrada, EntradaProntuario } from '../prontuario/registro'
 import { BASE, chamar, ErroServidor } from './agenda'
 
 export type SinalServidor = { id: string; texto: string; resposta: 'sim' | 'nao' }
@@ -167,3 +168,17 @@ export const urlDoDocumento = (id: string, tipo: TipoDocumento) => `${BASE}/cons
 export const salvarDocumento = (id: string, doc: DocumentoServidor) => chamar<void>(`/consultas/${id}/documentos/${doc.tipo}`, put(doc))
 
 export const listarDocumentos = (id: string) => chamar<DocumentoServidor[]>(`/consultas/${id}/documentos`)
+
+// ---------- Prontuário ----------
+
+export const urlDaFinalizacao = (id: string) => `${BASE}/consultas/${id}/finalizar`
+
+/** O prontuário que o servidor monta com o que está salvo (história, diagnósticos, conduta e anexos enviados). */
+export const prontuarioProposto = (id: string) => chamar<DadosEntrada>(`/consultas/${id}/prontuario`)
+
+/** Finaliza a consulta: a entrada fica imutável (só adendo). `edicoes`: o que o médico mudou, chave → texto. */
+export const finalizarConsulta = (id: string, edicoes: Record<string, string>) =>
+  chamar<EntradaProntuario>(`/consultas/${id}/finalizar`, json({ edicoes }))
+
+/** As entradas já finalizadas do paciente (a mais recente no topo). */
+export const prontuarioDoPaciente = (pacienteId: string) => chamar<EntradaProntuario[]>(`/pacientes/${pacienteId}/prontuario`)

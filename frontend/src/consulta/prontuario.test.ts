@@ -3,7 +3,8 @@ import { escolherOpcao, montarConduta, revelar, type Conduta } from './conduta'
 import type { ItemDD } from './diagnosticos'
 import { definirCampos, montarAnexos } from './anexos'
 import { CONDUTAS } from './conduta-exemplo'
-import { aplicarEdicoes, atualizarProntuario, chave, dadosDaConsulta, diagnosticosDoProntuario, montarProntuario, secoesDaEntrada, secoesDosDados } from './prontuario'
+import type { DadosEntrada } from '../prontuario/registro'
+import { aplicarEdicoes, atualizarProntuario, chave, dadosDaConsulta, edicoesDoMedico, diagnosticosDoProntuario, montarProntuario, secoesDaEntrada, secoesDosDados } from './prontuario'
 
 const item = (id: string, nome: string, cid: string, decisao: ItemDD['decisao']): ItemDD => ({ hip: { id, nome, cid, pct: 50, evidencias: [] }, decisao, propria: false, mudou: false, aviso: null })
 const ITENS = [item('acne', 'Acne grau II · papulopustulosa', 'L70.0', 'confirmada'), item('rosacea', 'Rosácea', 'L71', 'descartada')]
@@ -173,5 +174,36 @@ describe('retorno: a Evolução vai para o prontuário', () => {
     expect(secoes[0].linhas.map((l) => l.rotulo)).toEqual(['Evolução'])
     const editado = aplicarEdicoes(dados(), { 'S.evolucao': 'Paciente informa melhora. Nega efeitos colaterais.' })
     expect(editado.dados.evolucao).toBe('Paciente informa melhora. Nega efeitos colaterais.')
+  })
+})
+
+
+describe('edicoesDoMedico (o que o médico mudou na revisão final)', () => {
+  const dados: DadosEntrada = {
+    qp: 'Espinhas.', hda: 'HDA original.', ap: 'Hipertensão.', hp: '', hf: '', exameFisico: 'Pápulas.', examesTexto: '', exames: [],
+    diagnosticos: [{ nome: 'Acne vulgar', cid: 'L70.0', pct: 85, situacao: 'assinalado' }], receita: null,
+    condutaTexto: 'Rotina.', solicitado: [], encaminhado: [], orientacoes: '', retorno: 'em 8 semanas.', documentos: [], fotos: [],
+  }
+  const textos = () => Object.fromEntries(secoesDosDados(dados).flatMap((s) => s.linhas.map((l) => [chave(s, l), l.texto])))
+  const NARRATIVA_DO_SERVIDOR: Record<string, keyof DadosEntrada> = { 'S.qp': 'qp', 'S.hda': 'hda', 'S.ap': 'ap', 'S.hp': 'hp', 'S.hf': 'hf', 'O.exame': 'exameFisico', 'O.exames': 'examesTexto', 'P.orientacoes': 'orientacoes' }
+
+  it('devolve a linha narrativa e a estruturada que ele mudou', () => {
+    expect(edicoesDoMedico(dados, { ...textos(), 'S.hda': 'HDA corrigida.', 'A.hd': 'Meu HD' })).toEqual({ 'S.hda': 'HDA corrigida.', 'A.hd': 'Meu HD' })
+  })
+  it('sem mudança devolve vazio', () => expect(edicoesDoMedico(dados, textos())).toEqual({}))
+  it('texto apagado vem como vazio (a linha some)', () => expect(edicoesDoMedico(dados, { ...textos(), 'S.ap': '  ' })).toEqual({ 'S.ap': '' }))
+  it('linha que não existe nos dados é ignorada', () => expect(edicoesDoMedico(dados, { ...textos(), 'S.hp': 'Inventado.' })).toEqual({}))
+  it('a cópia local é igual ao que o servidor guarda (narrativas nos dados, o resto em edicoes)', () => {
+    const t = { ...textos(), 'S.hda': 'HDA corrigida.', 'O.exame': 'Pápulas e pústulas.', 'A.hd': 'Meu HD' }
+    const todas = edicoesDoMedico(dados, t)
+    const noServidor = { ...dados } as Record<string, unknown>
+    const resto: Record<string, string> = {}
+    for (const [k, v] of Object.entries(todas)) {
+      if (NARRATIVA_DO_SERVIDOR[k]) noServidor[NARRATIVA_DO_SERVIDOR[k]] = v.trim()
+      else resto[k] = v
+    }
+    const local = aplicarEdicoes(dados, t)
+    expect(noServidor).toEqual(local.dados)
+    expect(resto).toEqual(local.edicoes)
   })
 })

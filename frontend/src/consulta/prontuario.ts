@@ -171,6 +171,21 @@ export function aplicarEdicoes(d: DadosEntrada, textos: Record<string, string>):
   return { dados, edicoes }
 }
 
+/**
+ * Tudo o que o médico mudou na revisão final, linha por linha (chave → texto): narrativas e estruturadas.
+ * É o que se envia ao servidor, que põe as narrativas nos próprios dados e guarda o resto em `edicoes`.
+ */
+export function edicoesDoMedico(d: DadosEntrada, textos: Record<string, string>): Record<string, string> {
+  const todas: Record<string, string> = {}
+  for (const s of secoesDosDados(d)) for (const l of s.linhas) {
+    const k = chave(s, l)
+    const novo = textos[k]?.trim()
+    if (novo === undefined || novo === l.texto) continue
+    todas[k] = novo
+  }
+  return todas
+}
+
 /** O texto de uma entrada salva: as seções dos dados, com as linhas estruturadas que o médico reescreveu. */
 export const secoesDaEntrada = (e: { dados: DadosEntrada; edicoes: Record<string, string> }): SecaoProntuario[] =>
   secoesDosDados(e.dados).map((s) => ({ ...s, linhas: s.linhas.map((l) => ({ ...l, texto: e.edicoes[chave(s, l)] ?? l.texto })) }))
