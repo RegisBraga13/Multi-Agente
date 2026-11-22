@@ -73,3 +73,10 @@ export function avisosDeUrgencia(h: HistoriaServidor, perguntas: PerguntaServido
   }
   return avisos
 }
+
+/** A mensagem do estado do bloco; `null` quando há perguntas para mostrar. */
+export function rotuloDoBloco(e: { carregando: boolean; falhou: boolean; n: number }): string | null {
+  if (e.carregando) return 'A IA está pensando nas perguntas…'
+  if (e.falhou) return 'Não foi possível escrever as perguntas.'
+  return e.n === 0 ? 'Sem perguntas para este caso.' : null
+}

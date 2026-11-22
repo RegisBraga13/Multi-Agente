@@ -1,6 +1,6 @@
 // Página 2: história clínica. A IA "escreve ao vivo" o rascunho, seção por seção, no ritmo da landing
 // (3 letras a cada 33 ms, cursor piscando). Numa atualização, só as seções que mudaram são reescritas.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { TextoCrescente } from '../medico/texto-crescente'
 import type { SecaoHistoria } from './historia'
 import type { TabelaExames } from './exames-tabela'
@@ -40,9 +40,11 @@ type Props = {
   /** aceitar (troca pelo texto da IA) ou manter o do médico */
   onDecidir: (i: number, aceitar: boolean) => void
   onSalvar: () => void
+  /** consulta real: as perguntas contextuais, no fim do cartão */
+  bloco?: ReactNode
 }
 
-export function PaginaHistoria({ secoes, tabelaExames, textos, mudou, sugestoes, primeira, animar, onEscrito, situacao, podeSalvar, onMudar, onDecidir, onSalvar }: Props) {
+export function PaginaHistoria({ secoes, tabelaExames, textos, mudou, sugestoes, primeira, animar, onEscrito, situacao, podeSalvar, onMudar, onDecidir, onSalvar, bloco }: Props) {
   // só as seções que mudaram são escritas, na ordem; k = posição na fila, n = letras já escritas
   const [fila] = useState(() => secoes.map((_, i) => i).filter((i) => mudou[i]))
   const [textosFila] = useState(() => fila.map((i) => secoes[i].texto))
@@ -154,6 +156,7 @@ export function PaginaHistoria({ secoes, tabelaExames, textos, mudou, sugestoes,
           )
         })}
       </div>
+      {bloco}
       {tabelaExames && <TabelaDeExames tabela={tabelaExames} className="mt-2" />}
     </Cartao>
   )
