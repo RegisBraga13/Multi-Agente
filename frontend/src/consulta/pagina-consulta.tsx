@@ -158,7 +158,8 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   }, [janelaAberta])
   const alternarJanela = () => {
     if (janela.current && !janela.current.closed) { janela.current.close(); setJanelaAberta(false); return }
-    janela.current = abrirJanelaProntuario(esp.slug, at.paciente.id)
+    // consulta real: o prontuário do paciente do servidor (o id do pedido não é o do paciente)
+    janela.current = abrirJanelaProntuario(esp.slug, servidor?.pacienteId ?? at.paciente.id)
     setJanelaAberta(!!janela.current)
   }
 
@@ -500,8 +501,8 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   /** A consulta fica finalizada e volta para a página inicial do módulo. */
   const concluirProntuario = () => {
     fazer('oficializar', 'prontuario')
-    // a entrada desta consulta vai para o prontuário do paciente (com as edições do médico)
-    if (prontuario) salvarEntrada(at.paciente.id, { tipo: at.tipo, modalidade: at.modalidade, data: dia, hora: at.inicio, ...aplicarEdicoes(prontuario.dados, prontuario.textos) }, at.paciente)
+    // consulta real: o servidor já guardou a entrada; nos exemplos ela vai para o prontuário local (com as edições do médico)
+    if (prontuario && !servidor) salvarEntrada(at.paciente.id, { tipo: at.tipo, modalidade: at.modalidade, data: dia, hora: at.inicio, ...aplicarEdicoes(prontuario.dados, prontuario.textos) }, at.paciente)
     navegar(`/modulo/${esp.slug}`, { state: { aviso: `Consulta finalizada. Prontuário de ${at.paciente.nome} salvo.` } })
   }
 
