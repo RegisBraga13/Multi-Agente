@@ -40,7 +40,7 @@ export const salvarAnamnese = (id: string, corpo: AnamneseServidor) => chamar<Co
 
 export const salvarExame = (id: string, corpo: ExameServidor) => chamar<ConsultaServidor>(`/consultas/${id}/exame`, put(corpo))
 
-export const oficializarEtapa = (id: string, etapa: 'anamnese' | 'exame' | 'historia') =>
+export const oficializarEtapa = (id: string, etapa: 'anamnese' | 'exame' | 'historia' | 'diagnosticos') =>
   chamar<ConsultaServidor>(`/consultas/${id}/${etapa}/oficializar`, { method: 'POST' })
 
 /** O catálogo de sinais de alerta da especialidade (a IA escolhe os que servem ao caso; o médico pode abrir todos). */
@@ -61,7 +61,6 @@ export type HistoriaServidor = {
   extrasIa: string[]
   perguntas: PerguntaServidor[]
 }
-export type ResultadoHistoria = { gravado: boolean; conteudo: HistoriaServidor | null; avisos: string[]; mensagem: string }
 
 /** Lê o texto do fluxo de eventos (`event: x` + `data: {json}`, separados por linha em branco); ignora o bloco incompleto do fim. */
 export function lerEventos(texto: string): { evento: string; dados: unknown }[] {
@@ -77,10 +76,14 @@ export function lerEventos(texto: string): { evento: string; dados: unknown }[] 
 
 const SEM_CONEXAO = 'Não foi possível falar com o consultório. Confira a internet e tente de novo.'
 
-/** Pede ao servidor a história (a IA escreve; esperamos o evento final). Falha da IA ou da rede lança ErroServidor. */
-export async function gerarHistoria(id: string): Promise<ResultadoHistoria> {
+export const urlDaGeracao = (id: string, etapa: 'historia' | 'diagnosticos') => `${BASE}/consultas/${id}/${etapa}/gerar`
+
+export type ResultadoEtapa<T> = { gravado: boolean; conteudo: T | null; avisos: string[]; mensagem: string }
+
+/** Pede ao servidor uma etapa escrita pela IA e espera o evento final. Falha da IA ou da rede lança ErroServidor. */
+export async function gerarEtapa<T>(id: string, etapa: 'historia' | 'diagnosticos'): Promise<ResultadoEtapa<T>> {
   let r: Response
-  try { r = await fetch(`${BASE}/consultas/${id}/historia/gerar`, { method: 'POST' }) } catch { throw new ErroServidor(0, SEM_CONEXAO) }
+  try { r = await fetch(urlDaGeracao(id, etapa), { method: 'POST' }) } catch { throw new ErroServidor(0, SEM_CONEXAO) }
   if (!r.ok) {
     const corpo = await r.json().catch(() => null) as { detail?: unknown } | null
     throw new ErroServidor(r.status, typeof corpo?.detail === 'string' ? corpo.detail : SEM_CONEXAO)
@@ -91,8 +94,21 @@ export async function gerarHistoria(id: string): Promise<ResultadoHistoria> {
     const erro = eventos.find((e) => e.evento === 'erro')?.dados as { detail?: string } | undefined
     throw new ErroServidor(500, erro?.detail ?? SEM_CONEXAO)
   }
-  return pronto.dados as ResultadoHistoria
+  return pronto.dados as ResultadoEtapa<T>
 }
+
+export const gerarHistoria = (id: string) => gerarEtapa<HistoriaServidor>(id, 'historia')
+
+// ---------- Diagnósticos ----------
+
+export type EvidenciaServidor = { lado: 'favor' | 'contra'; texto: string; secao: string; trecho: string }
+export type HipoteseServidor = { nome: string; cid: string; certeza: 'suspeita' | 'hipotese' | 'clinico'; pct: number | null; evidencias: EvidenciaServidor[] }
+export type ItemDDServidor = { hipotese: HipoteseServidor; decisao: 'pendente' | 'confirmada' | 'descartada'; propria: boolean }
+export type DiagnosticosServidor = { itens: ItemDDServidor[]; naoPodePerder: unknown | null; rastrear: string[] }
+
+export const gerarDiagnosticos = (id: string) => gerarEtapa<DiagnosticosServidor>(id, 'diagnosticos')
+
+export const salvarDiagnosticos = (id: string, bloco: DiagnosticosServidor) => chamar<ConsultaServidor>(`/consultas/${id}/diagnosticos`, put(bloco))
 
 export const salvarHistoria = (id: string, bloco: HistoriaServidor) => chamar<ConsultaServidor>(`/consultas/${id}/historia`, put(bloco))
 

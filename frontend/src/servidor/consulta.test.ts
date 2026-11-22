@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lerEventos } from './consulta'
+import { lerEventos, urlDaGeracao } from './consulta'
 
 describe('lerEventos (fluxo de eventos do servidor)', () => {
   it('lê os eventos na ordem, com o JSON de cada um', () => {
@@ -14,5 +14,12 @@ describe('lerEventos (fluxo de eventos do servidor)', () => {
   })
   it('texto vazio não tem eventos', () => {
     expect(lerEventos('')).toEqual([])
+  })
+})
+
+describe('urlDaGeracao', () => {
+  it('monta o endereço de cada etapa que a IA escreve', () => {
+    expect(urlDaGeracao('abc', 'historia')).toBe('/api/consultas/abc/historia/gerar')
+    expect(urlDaGeracao('abc', 'diagnosticos')).toBe('/api/consultas/abc/diagnosticos/gerar')
   })
 })
