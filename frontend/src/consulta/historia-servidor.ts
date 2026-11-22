@@ -15,6 +15,9 @@ const ROTULOS: Record<Campo, string> = {
   exameFisico: 'Exame físico',
   examesTexto: 'Exames complementares',
 }
+/** chave do servidor ↔ rótulo da tela (as evidências dos diagnósticos citam a seção pela chave) */
+export const ROTULO_DA_SECAO: Record<string, string> = ROTULOS
+export const CHAVE_DA_SECAO: Record<string, string> = Object.fromEntries(Object.entries(ROTULOS).map(([chave, rotulo]) => [rotulo, chave]))
 const ORDEM: Campo[] = ['qp', 'hda', 'ap', 'hp', 'hf', 'exameFisico', 'examesTexto']
 /** sempre aparecem, mesmo vazias (o médico pode escrever); história pessoal e familiar só quando houver texto */
 const SEMPRE: Campo[] = ['qp', 'hda', 'ap', 'exameFisico', 'examesTexto']
