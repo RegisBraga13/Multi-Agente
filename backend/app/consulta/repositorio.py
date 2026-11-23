@@ -34,7 +34,13 @@ class ConsultaAberta(Exception):
 
 
 class RepositorioConsultas(Protocol):
-    def criar(self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None = None) -> Consulta: ...
+    def criar(
+        self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None = None, retorno_id: UUID | None = None
+    ) -> Consulta: ...
+
+    def do_retorno(self, medico_id: UUID, retorno_id: UUID) -> Consulta | None:
+        """O retorno que já nasceu deste cartão da agenda, se houver."""
+        ...
 
     def do_pedido(self, medico_id: UUID, pedido_id: UUID) -> Consulta | None:
         """A consulta que já nasceu deste pedido da agenda, se houver."""
@@ -148,12 +154,22 @@ class RepositorioConsultasMemoria:
             raise ConsultaFinalizada
         return r
 
-    def criar(self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None = None) -> Consulta:
+    def criar(
+        self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None = None, retorno_id: UUID | None = None
+    ) -> Consulta:
         if self.pacientes.buscar(medico_id, nova.paciente_id) is None:
             raise ConsultaNaoEncontrada
-        consulta = Consulta(**nova.model_dump(), id=uuid4(), finalizada_em=None, blocos=[], pedido_id=pedido_id)
+        consulta = Consulta(
+            **nova.model_dump(), id=uuid4(), finalizada_em=None, blocos=[], pedido_id=pedido_id, retorno_id=retorno_id
+        )
         self._dados[consulta.id] = _Registro(medico_id, consulta)
         return consulta.model_copy(deep=True)
+
+    def do_retorno(self, medico_id: UUID, retorno_id: UUID) -> Consulta | None:
+        achada = next(
+            (r for r in self._dados.values() if r.medico_id == medico_id and r.consulta.retorno_id == retorno_id), None
+        )
+        return achada.consulta.model_copy(deep=True) if achada else None
 
     def do_pedido(self, medico_id: UUID, pedido_id: UUID) -> Consulta | None:
         achada = next(

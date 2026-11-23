@@ -140,6 +140,7 @@ class Consulta(NovaConsulta):
     finalizada_em: datetime | None
     blocos: list[Bloco]
     pedido_id: UUID | None = None  # o pedido da agenda de onde a consulta nasceu (None: criada sem pedido)
+    retorno_id: UUID | None = None  # o cartão "Retorno" da agenda de onde o retorno nasceu (só tipo "retorno")
 
     def bloco(self, etapa: Etapa) -> Bloco | None:
         return next((b for b in self.blocos if b.etapa == etapa), None)

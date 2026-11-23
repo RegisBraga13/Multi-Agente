@@ -3,7 +3,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from app.agenda.repositorio import HorarioOcupado, PedidoNaoEncontrado
+from app.agenda.repositorio import HorarioOcupado, PedidoNaoEncontrado, RetornoNaoEncontrado
 from app.agenda.servico import ErroAgenda, FormularioNaoEncontrado, PaginaNaoEncontrada
 from app.api import agenda, consultas, especialidades, pacientes, prontuario, saude
 from app.api.dependencias import Dependencias
@@ -26,6 +26,7 @@ _ERROS: dict[type[Exception], tuple[int, str | None]] = {
     PaginaNaoEncontrada: (status.HTTP_404_NOT_FOUND, "página não encontrada"),
     FormularioNaoEncontrado: (status.HTTP_404_NOT_FOUND, "Este link de formulário não existe."),
     PedidoNaoEncontrado: (status.HTTP_404_NOT_FOUND, "pedido não encontrado"),
+    RetornoNaoEncontrado: (status.HTTP_404_NOT_FOUND, "retorno não encontrado"),
     ErroAgenda: (status.HTTP_422_UNPROCESSABLE_CONTENT, None),
 }
 

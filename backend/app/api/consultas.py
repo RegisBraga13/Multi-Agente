@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import StreamingResponse
 
 from app.api.dependencias import Dependencias, dependencias, medico_atual
-from app.consulta.abertura import abrir_do_pedido
+from app.consulta.abertura import abrir_do_pedido, abrir_do_retorno
 from app.consulta.geracao import ResultadoGeracao, gerar, gerar_perguntas
 from app.consulta.servico import SinalDesconhecido, editar, oficializar
 from app.contratos.base import ModeloApi
@@ -57,6 +57,14 @@ def abrir_consulta_do_pedido(pedido_id: UUID, corpo: AberturaDoPedido, dep: Dep,
     if corpo.especialidade not in especialidades_disponiveis():
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "especialidade não disponível")
     return abrir_do_pedido(dep.agenda, dep.pacientes, dep.repo, medico, pedido_id, corpo.especialidade)
+
+
+@rotas.post("/do-retorno/{retorno_id}", response_model=Consulta)
+def abrir_consulta_do_retorno(retorno_id: UUID, corpo: AberturaDoPedido, dep: Dep, medico: Medico) -> Consulta:
+    """Cria a consulta de retorno do cartão da agenda (a mesma se já aberta, inclusive finalizada)."""
+    if corpo.especialidade not in especialidades_disponiveis():
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "especialidade não disponível")
+    return abrir_do_retorno(dep.agenda, dep.repo, medico, retorno_id, corpo.especialidade)
 
 
 @rotas.get("/{consulta_id}", response_model=Consulta)

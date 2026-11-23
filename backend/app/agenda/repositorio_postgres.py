@@ -12,7 +12,14 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-from app.agenda.repositorio import FotoGuardada, HorarioOcupado, PedidoNaoEncontrado, horario, instante
+from app.agenda.repositorio import (
+    FotoGuardada,
+    HorarioOcupado,
+    PedidoNaoEncontrado,
+    RetornoNaoEncontrado,
+    horario,
+    instante,
+)
 from app.contratos.agenda import FormularioRecebido, Horario, NovoPedido, Pedido, Retorno, RetornoMarcado
 from app.fuso import FUSO_CONSULTORIO
 from app.pacientes.repositorio_postgres import transacao_do_medico
@@ -43,6 +50,25 @@ def _pedido(linha: dict[str, Any]) -> Pedido:
         formulario=FormularioRecebido.model_validate({**respostas, "recebidoEm": linha["form_received_at"]})
         if respostas
         else None,
+    )
+
+
+_SELECT_RETORNO = (
+    "select r.id, r.patient_id, p.full_name, r.origin_encounter_id, r.scheduled_at, r.modality"
+    " from return_bookings r join patients p on p.id = r.patient_id"
+)
+
+
+def _retorno(x: dict[str, Any]) -> Retorno:
+    quando = horario(x["scheduled_at"])
+    return Retorno(
+        id=x["id"],
+        paciente_id=x["patient_id"],
+        paciente_nome=x["full_name"],
+        consulta_origem_id=x["origin_encounter_id"],
+        data=quando.data,
+        inicio=quando.inicio,
+        modalidade=x["modality"],
     )
 
 
@@ -238,26 +264,17 @@ class RepositorioAgendaPostgres:
     def retornos(self, medico_id: UUID, de: date, ate: date) -> list[Retorno]:
         with transacao_do_medico(self.url, medico_id) as conn:
             linhas = conn.execute(
-                "select r.id, r.patient_id, p.full_name, r.origin_encounter_id, r.scheduled_at, r.modality"
-                " from return_bookings r join patients p on p.id = r.patient_id"
-                " where r.scheduled_at >= %s and r.scheduled_at < %s order by r.scheduled_at",
+                f"{_SELECT_RETORNO} where r.scheduled_at >= %s and r.scheduled_at < %s order by r.scheduled_at",
                 _limites(de, ate),
             ).fetchall()
-        saida = []
-        for x in linhas:
-            quando = horario(x["scheduled_at"])
-            saida.append(
-                Retorno(
-                    id=x["id"],
-                    paciente_id=x["patient_id"],
-                    paciente_nome=x["full_name"],
-                    consulta_origem_id=x["origin_encounter_id"],
-                    data=quando.data,
-                    inicio=quando.inicio,
-                    modalidade=x["modality"],
-                )
-            )
-        return saida
+        return [_retorno(x) for x in linhas]
+
+    def retorno(self, medico_id: UUID, retorno_id: UUID) -> Retorno:
+        with transacao_do_medico(self.url, medico_id) as conn:
+            linha = conn.execute(f"{_SELECT_RETORNO} where r.id = %s", (retorno_id,)).fetchone()
+        if linha is None:
+            raise RetornoNaoEncontrado
+        return _retorno(linha)
 
     def desfazer_retorno(self, medico_id: UUID, consulta_origem_id: UUID) -> None:
         with transacao_do_medico(self.url, medico_id) as conn:

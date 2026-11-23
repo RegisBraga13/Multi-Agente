@@ -363,3 +363,32 @@ def test_nome_do_paciente_na_historia_bloqueia_as_perguntas_com_422(mundo):
     historia["historia"]["hda"] = "Mariana refere manchas."
     assert c.put(f"/consultas/{cid}/historia", json=historia).status_code == 200
     assert c.post(f"/consultas/{cid}/perguntas/gerar").status_code == 422
+
+
+def _cartao_de_retorno(c, agenda):
+    from datetime import date
+
+    from app.contratos.agenda import RetornoMarcado
+
+    p = _pedido_com_formulario(agenda, MEDICO_A)
+    origem = c.post(f"/consultas/do-pedido/{p.id}", json={"especialidade": "dermatologia"}).json()
+    marcado = RetornoMarcado(data=date(2026, 11, 25), inicio="14:00", modalidade="online")
+    return origem, agenda.criar_retorno(MEDICO_A, origem["pacienteId"], "Maria", origem["id"], marcado)
+
+
+def test_abrir_do_retorno_cria_o_retorno_e_repete_o_mesmo_id(mundo):
+    c, agenda = _cliente_com_agenda(mundo)
+    origem, cartao = _cartao_de_retorno(c, agenda)
+    a = c.post(f"/consultas/do-retorno/{cartao.id}", json={"especialidade": "dermatologia"})
+    b = c.post(f"/consultas/do-retorno/{cartao.id}", json={"especialidade": "dermatologia"})
+    assert a.status_code == 200 and a.json()["id"] == b.json()["id"]
+    assert (a.json()["tipo"], a.json()["retornoId"], a.json()["pacienteId"]) == ("retorno", str(cartao.id), origem["pacienteId"])
+
+
+def test_abrir_do_retorno_inexistente_e_404_e_especialidade_desconhecida_e_422(mundo):
+    from uuid import uuid4
+
+    c, agenda = _cliente_com_agenda(mundo)
+    _, cartao = _cartao_de_retorno(c, agenda)
+    assert c.post(f"/consultas/do-retorno/{uuid4()}", json={"especialidade": "dermatologia"}).status_code == 404
+    assert c.post(f"/consultas/do-retorno/{cartao.id}", json={"especialidade": "astrologia"}).status_code == 422

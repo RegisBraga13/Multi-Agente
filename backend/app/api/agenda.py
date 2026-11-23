@@ -73,6 +73,11 @@ def retornos(de: date, ate: date, dep: Dep, medico: Medico) -> list[Retorno]:
     return dep.agenda.retornos(medico, de, ate)
 
 
+@medico_rotas.get("/retornos/{retorno_id}", response_model=Retorno)
+def um_retorno(retorno_id: UUID, dep: Dep, medico: Medico) -> Retorno:
+    return dep.agenda.retorno(medico, retorno_id)
+
+
 @medico_rotas.get("/pedidos/{pedido_id}", response_model=Pedido)
 def um_pedido(pedido_id: UUID, dep: Dep, medico: Medico) -> Pedido:
     return dep.agenda.pedido(medico, pedido_id)

@@ -41,12 +41,33 @@ def abrir_do_pedido(
             telefone=pedido.whatsapp,
         ),
     )
-    voltando = bool(consultas.prontuario(medico_id, paciente.id))
     nova = NovaConsulta(
         paciente_id=paciente.id,
-        tipo="retorno" if voltando else "consulta",
+        tipo="consulta",  # a próxima vez do paciente é nova consulta; só o cartão Retorno abre retorno
         modalidade=pedido.modalidade,
         agendada_para=instante(pedido.data, pedido.inicio),
         especialidade=especialidade,
     )
     return consultas.criar(medico_id, nova, pedido_id)
+
+
+def abrir_do_retorno(
+    agenda: RepositorioAgenda,
+    consultas: RepositorioConsultas,
+    medico_id: UUID,
+    retorno_id: UUID,
+    especialidade: str,
+) -> Consulta:
+    """Abre o retorno do cartão da agenda, uma vez só; o mesmo se já aberto (inclusive finalizado)."""
+    cartao = agenda.retorno(medico_id, retorno_id)  # RetornoNaoEncontrado: cartão de outro médico também
+    existente = consultas.do_retorno(medico_id, retorno_id)
+    if existente is not None:
+        return existente
+    nova = NovaConsulta(
+        paciente_id=cartao.paciente_id,
+        tipo="retorno",
+        modalidade=cartao.modalidade,
+        agendada_para=instante(cartao.data, cartao.inicio),
+        especialidade=especialidade,
+    )
+    return consultas.criar(medico_id, nova, retorno_id=retorno_id)

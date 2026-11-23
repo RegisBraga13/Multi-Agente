@@ -20,6 +20,10 @@ class PedidoNaoEncontrado(Exception):
     """Pedido de outro médico ou que não existe."""
 
 
+class RetornoNaoEncontrado(Exception):
+    """Cartão de retorno de outro médico ou que não existe."""
+
+
 @dataclass(frozen=True)
 class FotoGuardada:
     tipo: str
@@ -77,6 +81,10 @@ class RepositorioAgenda(Protocol):
 
     def retornos(self, medico_id: UUID, de: date, ate: date) -> list[Retorno]:
         """Ordenados por data e hora."""
+        ...
+
+    def retorno(self, medico_id: UUID, retorno_id: UUID) -> Retorno:
+        """O cartão de retorno pelo id; RetornoNaoEncontrado se for de outro médico ou não existir."""
         ...
 
     def desfazer_retorno(self, medico_id: UUID, consulta_origem_id: UUID) -> None:
@@ -203,6 +211,12 @@ class RepositorioAgendaMemoria:
     def retornos(self, medico_id: UUID, de: date, ate: date) -> list[Retorno]:
         lista = [r for dono, r in self._retornos.values() if dono == medico_id and de <= r.data <= ate]
         return sorted(lista, key=lambda r: (r.data, r.inicio))
+
+    def retorno(self, medico_id: UUID, retorno_id: UUID) -> Retorno:
+        achado = self._retornos.get(retorno_id)
+        if achado is None or achado[0] != medico_id:
+            raise RetornoNaoEncontrado
+        return achado[1]
 
     def desfazer_retorno(self, medico_id: UUID, consulta_origem_id: UUID) -> None:
         for id_, (dono, r) in list(self._retornos.items()):

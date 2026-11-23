@@ -263,3 +263,20 @@ def test_retornos_do_periodo_so_do_medico_e_do_periodo(agenda):
 def test_retornos_periodo_longo_demais_e_recusado_como_os_pedidos(agenda):
     r = cliente(agenda).get("/agenda/retornos", params={"de": "2026-01-01", "ate": "2026-12-31"})
     assert r.status_code == 422
+
+
+def test_um_retorno_pelo_id_so_do_proprio_medico(agenda):
+    from uuid import uuid4
+
+    from app.contratos.agenda import RetornoMarcado
+
+    meu = agenda.criar_retorno(
+        MEDICO_A, uuid4(), "João Lima", uuid4(), RetornoMarcado(data="2026-11-20", inicio="14:00", modalidade="online")
+    )
+    alheio = agenda.criar_retorno(
+        MEDICO_B, uuid4(), "Outra", uuid4(), RetornoMarcado(data="2026-11-20", inicio="15:00", modalidade="presencial")
+    )
+    c = cliente(agenda)
+    r = c.get(f"/agenda/retornos/{meu.id}")
+    assert r.status_code == 200 and (r.json()["pacienteNome"], r.json()["inicio"]) == ("João Lima", "14:00")
+    assert c.get(f"/agenda/retornos/{alheio.id}").status_code == 404

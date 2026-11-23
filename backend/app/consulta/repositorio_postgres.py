@@ -45,7 +45,7 @@ TABELA: dict[str, str] = {
     "diagnosticos": "diagnostic_hypotheses",
     "conduta": "care_plans",
 }
-_COLUNAS_CONSULTA = "id, patient_id, kind, modality, scheduled_at, finalized_at, specialty_slug, booking_request_id"
+_COLUNAS_CONSULTA = "id, patient_id, kind, modality, scheduled_at, finalized_at, specialty_slug, booking_request_id, return_booking_id"
 
 
 def _consulta(linha: dict[str, Any], blocos: list[Bloco]) -> Consulta:
@@ -56,6 +56,7 @@ def _consulta(linha: dict[str, Any], blocos: list[Bloco]) -> Consulta:
         modalidade=linha["modality"],
         especialidade=linha["specialty_slug"],
         pedido_id=linha["booking_request_id"],
+        retorno_id=linha["return_booking_id"],
         agendada_para=linha["scheduled_at"],
         finalizada_em=linha["finalized_at"],
         blocos=blocos,
@@ -88,23 +89,32 @@ class RepositorioConsultasPostgres:
         if self._linha(conn, consulta_id)["finalized_at"] is not None:
             raise ConsultaFinalizada
 
-    def criar(self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None = None) -> Consulta:
+    def criar(
+        self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None = None, retorno_id: UUID | None = None
+    ) -> Consulta:
         try:
-            return self._criar(medico_id, nova, pedido_id)
+            return self._criar(medico_id, nova, pedido_id, retorno_id)
         except psycopg.errors.UniqueViolation:
             # dois toques em "Abrir consulta" ao mesmo tempo: o banco guardou o primeiro, devolvemos esse
-            existente = self.do_pedido(medico_id, pedido_id) if pedido_id else None
+            existente = None
+            if pedido_id:
+                existente = self.do_pedido(medico_id, pedido_id)
+            elif retorno_id:
+                existente = self.do_retorno(medico_id, retorno_id)
             if existente is None:
                 raise
             return existente
 
-    def _criar(self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None) -> Consulta:
+    def _criar(
+        self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None, retorno_id: UUID | None
+    ) -> Consulta:
         with self._transacao(medico_id) as conn:
             if conn.execute("select 1 from patients where id = %s", (nova.paciente_id,)).fetchone() is None:
                 raise ConsultaNaoEncontrada
             linha = conn.execute(
-                "insert into encounters (doctor_id, patient_id, kind, modality, scheduled_at, specialty_slug, booking_request_id)"
-                f" values (%s, %s, %s, %s, %s, %s, %s) returning {_COLUNAS_CONSULTA}",
+                "insert into encounters (doctor_id, patient_id, kind, modality, scheduled_at, specialty_slug,"
+                " booking_request_id, return_booking_id) values (%s, %s, %s, %s, %s, %s, %s, %s)"
+                f" returning {_COLUNAS_CONSULTA}",
                 (
                     medico_id,
                     nova.paciente_id,
@@ -113,6 +123,7 @@ class RepositorioConsultasPostgres:
                     nova.agendada_para,
                     nova.especialidade,
                     pedido_id,
+                    retorno_id,
                 ),
             ).fetchone()
         assert linha is not None
@@ -122,6 +133,13 @@ class RepositorioConsultasPostgres:
         with self._transacao(medico_id) as conn:
             linha = conn.execute(
                 f"select {_COLUNAS_CONSULTA} from encounters where booking_request_id = %s", (pedido_id,)
+            ).fetchone()
+        return None if linha is None else self.buscar(medico_id, linha["id"])
+
+    def do_retorno(self, medico_id: UUID, retorno_id: UUID) -> Consulta | None:
+        with self._transacao(medico_id) as conn:
+            linha = conn.execute(
+                f"select {_COLUNAS_CONSULTA} from encounters where return_booking_id = %s", (retorno_id,)
             ).fetchone()
         return None if linha is None else self.buscar(medico_id, linha["id"])
 
