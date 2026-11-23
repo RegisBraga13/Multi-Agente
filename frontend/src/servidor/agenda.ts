@@ -84,6 +84,8 @@ export const pedidosDaAgenda = (de: string, ate: string) => chamar<PedidoNaAgend
 
 export const retornosDaAgenda = (de: string, ate: string) => chamar<RetornoNaAgenda[]>(`/agenda/retornos?de=${de}&ate=${ate}`)
 
+export const buscarRetorno = (id: string) => chamar<RetornoNaAgenda>(`/agenda/retornos/${id}`)
+
 export const buscarPedido = (id: string) => chamar<PedidoNaAgenda>(`/agenda/pedidos/${id}`)
 
 export const marcarLinkEnviado = (id: string) => chamar<PedidoNaAgenda>(`/agenda/pedidos/${id}/link-enviado`, { method: 'POST' })

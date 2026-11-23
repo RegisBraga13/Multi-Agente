@@ -25,7 +25,7 @@ export type EtapaServidor = 'anamnese' | 'exame' | 'historia' | 'diagnosticos' |
 export type BlocoServidor = { etapa: EtapaServidor; estado: 'rascunho_ia' | 'revisado_medico' | 'oficializado'; desatualizado: boolean; conteudo: Record<string, unknown>; oficializadoEm: string | null }
 export type ConsultaServidor = {
   id: string; pacienteId: string; tipo: 'consulta' | 'retorno'; modalidade: 'presencial' | 'online'
-  especialidade: string; pedidoId: string | null; agendadaPara: string; finalizadaEm: string | null; blocos: BlocoServidor[]
+  especialidade: string; pedidoId: string | null; retornoId: string | null; agendadaPara: string; finalizadaEm: string | null; blocos: BlocoServidor[]
 }
 
 const json = (corpo: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(corpo) })
@@ -34,6 +34,10 @@ const put = (corpo: unknown): RequestInit => ({ method: 'PUT', body: JSON.string
 /** Cria o paciente e a consulta do pedido da agenda (a mesma consulta se já aberta). */
 export const abrirConsultaDoPedido = (pedidoId: string, especialidade: string) =>
   chamar<ConsultaServidor>(`/consultas/do-pedido/${pedidoId}`, json({ especialidade }))
+
+/** Abre o retorno do cartão da agenda (o servidor cria uma vez só; o mesmo se já aberto). */
+export const abrirConsultaDoRetorno = (retornoId: string, especialidade: string) =>
+  chamar<ConsultaServidor>(`/consultas/do-retorno/${retornoId}`, json({ especialidade }))
 
 export const buscarConsulta = (id: string) => chamar<ConsultaServidor>(`/consultas/${id}`)
 

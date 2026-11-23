@@ -26,14 +26,14 @@ import { EscolhaRetorno } from './retorno-pagina'
 import { dataLocal, gerarAgenda, marcarOcupados, MEDICO_EXEMPLO } from '../medico/exemplo'
 import { aplicarEdicoes, atualizarProntuario, cabecalhoProntuario, chave, dadosDaConsulta, edicoesDoMedico, secoesDosDados, type SecaoProntuario } from './prontuario'
 import { PaginaProntuario } from './prontuario-pagina'
-import { abrirJanelaProntuario, entradas, salvarEntrada, tituloDaConsulta, tituloNovaEntrada, type DadosEntrada } from '../prontuario/registro'
+import { abrirJanelaProntuario, entradas, salvarEntrada, tituloDaConsulta, tituloNovaEntrada, type DadosEntrada, type EntradaProntuario } from '../prontuario/registro'
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import { FORMULARIO_VAZIO, type FormularioConsulta } from './formulario-consulta'
 import { partesPreConsulta } from '../medico/pre-consulta'
-import { atendimentoDoPedido, precisaIdentificacao } from '../modulo/pedidos'
+import { atendimentoDoPedido, atendimentoDoRetorno, precisaIdentificacao } from '../modulo/pedidos'
 import { IdentificacaoNaChegada } from './identificacao-chegada'
-import { buscarPedido, enderecoFoto, ErroServidor, pedidosDaAgenda, retornosDaAgenda, type HorarioOcupado, type PedidoNaAgenda } from '../servidor/agenda'
-import { abrirConsultaDoPedido, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, gerarConduta, salvarConduta as enviarConduta, listarDocumentos, salvarDocumento, finalizarConsulta, prontuarioDoPaciente, prontuarioProposto, sinaisDaEspecialidade, type AnamneseServidor, type CondutaServidor, type ConsultaServidor, type DocumentoServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
+import { buscarPedido, buscarRetorno, enderecoFoto, ErroServidor, pedidosDaAgenda, retornosDaAgenda, type HorarioOcupado, type PedidoNaAgenda, type RetornoNaAgenda } from '../servidor/agenda'
+import { abrirConsultaDoPedido, abrirConsultaDoRetorno, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, gerarConduta, salvarConduta as enviarConduta, listarDocumentos, salvarDocumento, finalizarConsulta, prontuarioDoPaciente, prontuarioProposto, sinaisDaEspecialidade, type AnamneseServidor, type CondutaServidor, type ConsultaServidor, type DocumentoServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
 import { adicionarPergunta, atualizarSecoes, avisosDeUrgencia, historiaParaServidor, juntarPerguntas, responder, secoesDoServidor } from './historia-servidor'
 import { BuscaCid } from './busca-cid'
 import { PerguntasHistoria } from './perguntas-historia'
@@ -55,9 +55,24 @@ export function PaginaConsulta() {
   }, [idPedido])
   const doServidor = pedido && pedido !== 'erro' ? pedido : null
   // o dia da consulta é o do endereço; o "agora" só decide quem já foi atendido
+  // cartão "Retorno" da agenda ("retorno-<id>"): o servidor cria o retorno uma vez; a Evolução e o resto seguem simulados (parte 2)
+  const idRetorno = atendimento.startsWith('retorno-') ? atendimento.slice('retorno-'.length) : null
+  const [cartao, setCartao] = useState<RetornoNaAgenda | null | 'erro'>(null)
+  const [retornoAberto, setRetornoAberto] = useState<ConsultaServidor | 'erro' | null>(null)
+  const [anteriores, setAnteriores] = useState<EntradaProntuario[] | 'erro' | null>(null)
+  useEffect(() => {
+    if (!idRetorno) return
+    buscarRetorno(idRetorno).then((c) => {
+      setCartao(c)
+      abrirConsultaDoRetorno(idRetorno, slug).then(setRetornoAberto, () => setRetornoAberto('erro'))
+      prontuarioDoPaciente(c.pacienteId).then(setAnteriores, () => setAnteriores('erro'))
+    }, () => setCartao('erro'))
+  }, [idRetorno, slug])
+  const doRetorno = cartao && cartao !== 'erro' ? cartao : null
   const at = useMemo(
-    () => (idPedido ? (doServidor ? atendimentoDoPedido(doServidor, new Date()) : undefined) : buscarAtendimento(atendimento, new Date())),
-    [atendimento, idPedido, doServidor],
+    () => (idRetorno ? (doRetorno ? atendimentoDoRetorno(doRetorno, new Date()) : undefined)
+      : idPedido ? (doServidor ? atendimentoDoPedido(doServidor, new Date()) : undefined) : buscarAtendimento(atendimento, new Date())),
+    [atendimento, idPedido, idRetorno, doServidor, doRetorno],
   )
   // pedido real de uma primeira consulta: a consulta nasce e vive no servidor (os atendimentos de exemplo seguem simulados)
   const usaServidor = !!esp && !!doServidor && !precisaIdentificacao(doServidor) && at?.tipo === 'consulta'
@@ -66,13 +81,18 @@ export function PaginaConsulta() {
     if (usaServidor && idPedido) abrirConsultaDoPedido(idPedido, slug).then(setAberta, () => setAberta('erro'))
   }, [usaServidor, idPedido, slug])
   if (idPedido && pedido === null) return <p className="py-16 text-center text-apagado">Abrindo a consulta…</p>
+  if (idRetorno) {
+    if (cartao === 'erro' || retornoAberto === 'erro' || anteriores === 'erro') return <p className="py-16 text-center text-apagado">Não foi possível abrir o retorno no consultório. Confira a internet e recarregue a página.</p>
+    if (!cartao || !retornoAberto || !anteriores) return <p className="py-16 text-center text-apagado">Abrindo o retorno…</p>
+    if (retornoAberto.finalizadaEm) return <p className="py-16 text-center text-apagado">Este retorno já foi finalizado. O prontuário está salvo.</p>
+  }
   if (!esp || esp.status !== 'disponivel' || !at || !ehEtapa(etapa)) return <NaoEncontrada />
   // sem a Identificação a consulta não começa (o médico pode preenchê-la aqui, na chegada)
   if (doServidor && precisaIdentificacao(doServidor)) return <IdentificacaoNaChegada esp={esp} pedido={doServidor} onPronto={setPedido} />
   if (usaServidor && aberta === null) return <p className="py-16 text-center text-apagado">Abrindo a consulta…</p>
   if (aberta && aberta !== 'erro' && aberta.finalizadaEm) return <p className="py-16 text-center text-apagado">Esta consulta já foi finalizada. O prontuário está salvo.</p>
   if (aberta === 'erro') return <p className="py-16 text-center text-apagado">Não foi possível abrir a consulta no consultório. Confira a internet e recarregue a página.</p>
-  return <Consulta key={at.id} esp={esp} at={at} etapa={etapa} formulario={doServidor ? formularioDoPedido(doServidor) : null} servidor={usaServidor ? aberta : null} />
+  return <Consulta key={at.id} esp={esp} at={at} etapa={etapa} formulario={doServidor ? formularioDoPedido(doServidor) : null} servidor={usaServidor ? aberta : null} anteriores={anteriores && anteriores !== 'erro' ? anteriores : undefined} dia={doRetorno?.data} />
 }
 
 /** O formulário que o paciente enviou, para o modo Formulário da anamnese. */
@@ -113,10 +133,11 @@ function semProposta(nome: string, cid: string): CondutaServidor {
   }
 }
 
-function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade; at: Atendimento; etapa: EtapaId; formulario: FormularioConsulta | null; servidor: ConsultaServidor | null }) {
+function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDoRetorno }: { esp: Especialidade; at: Atendimento; etapa: EtapaId; formulario: FormularioConsulta | null; servidor: ConsultaServidor | null; /** retorno do servidor: as entradas do prontuário (no lugar das de exemplo locais) */ anteriores?: EntradaProntuario[]; /** retorno do servidor: o dia do cartão */ dia?: string }) {
   const base0 = useMemo(() => conteudoDaConsulta(at, esp.slug), [at, esp.slug])
   /** o dia da consulta: nos pedidos reais vem do servidor (o id do atendimento não é uma data) */
-  const dia = servidor ? diaDaConsulta(servidor.agendadaPara) : at.id.slice(0, 10)
+  const dia = servidor ? diaDaConsulta(servidor.agendadaPara) : (diaDoRetorno ?? at.id.slice(0, 10))
+  const entradasDoPaciente = () => anteriores ?? entradas(at.paciente.id)
   // consulta retomada: o que já estava salvo no servidor volta para os campos (como rascunho: salvar de novo envia e oficializa)
   const retomada = useMemo(() => {
     const bloco = (etapa: 'anamnese' | 'exame' | 'historia' | 'diagnosticos' | 'conduta') => servidor?.blocos.find((b) => b.etapa === etapa)?.conteudo
@@ -135,7 +156,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
   /** retorno: a consulta anterior do prontuário (suas fotos aparecem ao lado das de hoje) */
   /** no retorno a primeira página é a Evolução (regra 14.1) */
   const nomeDaEtapa = (id: string, nome: string) => (at.tipo === 'retorno' ? ({ 'anamnese-exame': 'Evolução', historia: 'História da evolução' } as Record<string, string>)[id] ?? nome : nome)
-  const consultaAnterior = at.tipo === 'retorno' ? entradas(at.paciente.id).find((e) => e.tipo === 'consulta') : undefined
+  const consultaAnterior = at.tipo === 'retorno' ? entradasDoPaciente().find((e) => e.tipo === 'consulta') : undefined
   const [estado, despachar] = useReducer(reduzir, soAlergias(conteudo.alertas).map((a) => a.id), (ids: string[]) => (servidor ? estadoDoServidor(inicial(ids), servidor.blocos) : inicial(ids)))
   const [anexos, setAnexos] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
@@ -264,7 +285,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
       const sinais: { texto: string; resposta: RespostaAlerta | null }[] = []
       // retorno: História da evolução (sem identificação, abre com "Paciente relata..."); primeira consulta: história clínica
       const novas = at.tipo === 'retorno'
-        ? montarHistoriaEvolucao(f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais: [], perguntas: f.perguntas, anteriores: entradas(at.paciente.id).map((e) => ({ data: e.data, exameFisico: e.dados.exameFisico, extensaoPct: e.dados.extensaoPct })) })
+        ? montarHistoriaEvolucao(f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais: [], perguntas: f.perguntas, anteriores: entradasDoPaciente().map((e) => ({ data: e.data, exameFisico: e.dados.exameFisico, extensaoPct: e.dados.extensaoPct })) })
         : montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais, perguntas: f.perguntas, formulario: f.formulario ? { ...f.formulario, partes: partesPreConsulta(esp.slug) } : undefined })
       // primeira vez: tudo novo; depois: a IA mexe só no que mudou
       setHistoria((h) => h
@@ -339,7 +360,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
     // retorno: os diagnósticos são NOVOS, só da evolução de hoje (como numa primeira consulta, sem repetir o prontuário);
     // "Para relembrar" (alergias, comorbidades, o que não muda) ainda vem do prontuário, junto com a evolução (regra 14.2)
     const retorno = at.tipo === 'retorno'
-    const anterior = retorno ? entradas(at.paciente.id).find((e) => e.data < dia && e.dados.diagnosticos.length > 0) : undefined
+    const anterior = retorno ? entradasDoPaciente().find((e) => e.data < dia && e.dados.diagnosticos.length > 0) : undefined
     const r = montarDiagnosticos(esp.slug, at.paciente.nome, retorno ? secoesDaEvolucaoParaDD(salva) : salva)
     const resumo = montarResumo(anterior ? [...secoesDaConsultaAnterior(anterior.dados), ...salva] : salva)
     const inicio = iniciarDiagnosticos(r.hipoteses)
@@ -660,7 +681,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
               animar={escrita.historia < historia.versao}
               onEscrito={() => escreveu('historia', historia.versao)}
               secoes={historia.geradas}
-              tabelaExames={at.tipo === 'retorno' ? tabelaDeExames(entradas(at.paciente.id).flatMap((e) => e.dados.exames), conteudo.complementares) : null}
+              tabelaExames={at.tipo === 'retorno' ? tabelaDeExames(entradasDoPaciente().flatMap((e) => e.dados.exames), conteudo.complementares) : null}
               textos={historia.textos}
               mudou={historia.mudou}
               sugestoes={historia.sugestoes}
@@ -764,7 +785,7 @@ function Consulta({ esp, at, etapa, formulario, servidor }: { esp: Especialidade
               situacao={situacaoDaEtapa(estado, 'anexos')}
               podeSalvar={podeOficializar(estado, 'anexos')}
               pendencia={pendenciasAnexos(docs.itens) ?? (podeSalvarAnexos(retorno) ? null : 'Escolha o dia e o horário do retorno.')}
-              retorno={<EscolhaRetorno valor={retorno} onMudar={mudarRetorno} agenda={agendaRetorno} atendeOnline={MEDICO_EXEMPLO.atendeOnline} fixo={estado.blocos.prontuario.estado === 'oficializado'} />}
+              retorno={at.tipo === 'retorno' ? undefined : <EscolhaRetorno valor={retorno} onMudar={mudarRetorno} agenda={agendaRetorno} atendeOnline={MEDICO_EXEMPLO.atendeOnline} fixo={estado.blocos.prontuario.estado === 'oficializado'} />}
               onEmitir={(tipo) => mexerDocs((xs) => alternarEmitir(xs, tipo))}
               onEditar={(tipo, texto) => mexerDocs((xs) => editarAnexo(xs, tipo, texto))}
               onCampos={(tipo, campos) => mexerDocs((xs) => definirCampos(xs, tipo, campos))}

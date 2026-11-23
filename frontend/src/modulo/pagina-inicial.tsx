@@ -449,7 +449,7 @@ function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario, pedido,
         </a>
       )}
 
-      {pedido && (
+      {(pedido || at.retornoMarcado) && (
         <button type="button" onClick={onAbrirConsulta}
           className="mt-2 block w-full border-[1.5px] border-tinta px-4 py-2 text-center text-[15px] font-bold transition hover:bg-tinta hover:text-papel">
           Abrir consulta
