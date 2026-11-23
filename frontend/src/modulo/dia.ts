@@ -25,7 +25,8 @@ export function idade(nascimento: string, em: Date): number {
 /** Id do primeiro paciente ainda não atendido (lista já em ordem de horário); só hoje. */
 export function proximoPaciente(lista: Atendimento[], ehHoje: boolean): string | null {
   if (!ehHoje) return null
-  return lista.find((x) => !x.atendido && !x.sempreDisponivel)?.id ?? null
+  // sem ninguém a seguir, a consulta de demonstração (sempre disponível) ainda abre; o retorno tem o seu cartão
+  return (lista.find((x) => !x.atendido && !x.sempreDisponivel) ?? lista.find((x) => !x.atendido && x.tipo === 'consulta'))?.id ?? null
 }
 
 export function dataPorExtenso(data: string): string {

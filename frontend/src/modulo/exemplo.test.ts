@@ -13,7 +13,8 @@ describe('agendaDoDia', () => {
     expect(dia).toHaveLength(9)
     const horas = dia.map((x) => x.inicio)
     expect(horas).toEqual([...horas].sort())
-    for (const x of dia) expect(x.atendido).toBe(x.inicio < '10:00')
+    // a Mariana (demonstração) fica sempre disponível até o prontuário dela ser salvo
+    for (const x of dia) expect(x.atendido).toBe(x.inicio < '10:00' && x.paciente.nome !== 'Mariana Costa')
     expect(dia.some((x) => x.tipo === 'retorno')).toBe(true)
     expect(dia.some((x) => x.modalidade === 'online')).toBe(true)
     expect(dia.some((x) => x.ficha.situacao === 'link-enviado')).toBe(true)

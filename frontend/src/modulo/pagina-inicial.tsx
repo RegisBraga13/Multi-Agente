@@ -8,6 +8,8 @@ import { dataLocal, MEDICO_EXEMPLO } from '../medico/exemplo'
 import { dataPorExtenso, idade, janelaDeHoje, saudacao, somarDias, vistaDoModulo } from './dia'
 import type { Atendimento } from './tipos'
 import { abrirJanelaProntuario } from '../prontuario/registro'
+import { reiniciarPaciente } from '../prontuario/chave'
+import { MARIANA } from './exemplo'
 import { retornoParaAbrir, useAgora, vistaDoDia } from './vista'
 import { linkWhatsapp } from '../medico/duvidas'
 import { formatarWhatsapp } from '../medico/regras'
@@ -239,6 +241,11 @@ function ListaDeHoje({ vista, selecionado, onSelecionar }: PropsLista & { vista:
         <span className="flex items-baseline gap-4 text-[14px]">
           {resumo && <span className="text-apagado">{resumo}</span>}
           <a href="#agenda" className="text-[12px] font-bold tracking-[0.1em] uppercase underline underline-offset-4 hover:text-(--esp)">Ver agenda</a>
+          {/* demonstração: apaga o prontuário da Mariana e a agenda volta a mostrá-la para a primeira consulta */}
+          <button type="button" className="text-[12px] font-bold tracking-[0.1em] uppercase underline underline-offset-4 hover:text-(--esp)"
+            onClick={() => { if (window.confirm('Reiniciar a demonstração? O prontuário da Mariana Costa será apagado e o caso recomeça na primeira consulta.')) { reiniciarPaciente(MARIANA); window.location.reload() } }}>
+            Reiniciar demonstração
+          </button>
         </span>
       }
     >

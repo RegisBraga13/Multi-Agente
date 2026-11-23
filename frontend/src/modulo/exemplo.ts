@@ -3,6 +3,7 @@
 import { dataLocal } from '../medico/exemplo'
 import type { EstadoCivil } from '../medico/regras'
 import type { Modalidade } from '../medico/tipos'
+import { temProntuarioSalvo } from '../prontuario/chave'
 import { ordenarPorHorario, paraData } from './dia'
 import type { Atendimento, Ficha, TipoAtendimento } from './tipos'
 
@@ -30,7 +31,10 @@ type Vaga = { inicio: string; tipo: TipoAtendimento; modalidade: Modalidade; pag
 // Os demais não têm prontuário (nada de prontuário vazio).
 const ANTONIO = 'd17f3be7-5155-4d72-b178-05776e2a3bc0'
 const JOAO = '8715f152-846a-467d-a995-91ea384312b6'
-const FIXOS: Record<string, string> = { '08:00': ANTONIO, '10:00': JOAO }
+// Demonstração com um paciente de formulário preenchido (Mariana Costa): às 9h30 vem para a consulta; terminada a
+// consulta (prontuário salvo), às 11h ela volta para o retorno. Sempre disponíveis, a qualquer hora do dia.
+export const MARIANA = '92b99e33-e1c8-46f0-bd6b-d9edcc9d7c36'
+const FIXOS: Record<string, string> = { '08:00': ANTONIO, '09:30': MARIANA, '10:00': JOAO }
 const VAGAS: Vaga[] = [
   { inicio: '08:00', tipo: 'consulta', modalidade: 'presencial', pagamento: 'Unimed', ficha: 'pronta', historico: true },
   { inicio: '08:30', tipo: 'consulta', modalidade: 'presencial', pagamento: 'Particular', ficha: 'pronta', historico: false },
@@ -51,11 +55,11 @@ function chegada(inicio: string): string {
 
 function fichaDe(v: Vaga, c: Conteudo, i: number): Ficha {
   if (v.ficha !== 'pronta') return { situacao: v.ficha }
-  return { situacao: 'pronta', recebidaAs: chegada(v.inicio), ...c, transcricao: i % 4 === 3 ? 'recusada' : 'aceita' }
+  return { situacao: 'pronta', recebidaAs: chegada(v.inicio), ...c, transcricao: i % 4 === 3 && v.inicio !== '09:30' ? 'recusada' : 'aceita' }
 }
 
 /** Sábado: só as manhãs, presencial (como na agenda da página do médico); vai até as 10h para incluir o retorno de exemplo. */
-const VAGAS_SABADO = VAGAS.slice(0, 5)
+const VAGAS_SABADO = VAGAS.slice(0, 6)
 
 function horaLocal(d: Date): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
@@ -69,10 +73,15 @@ export function agendaDoDia(data: string, agora: Date): Atendimento[] {
   const hoje = dataLocal(agora)
   const hora = horaLocal(agora)
   const giro = d.getDate() // troca os pacientes de um dia para o outro
+  const marianaJaFoiAtendida = temProntuarioSalvo(MARIANA)
   const rodizio = PACIENTES.filter((x) => !Object.values(FIXOS).includes(x.id))
   return ordenarPorHorario(
-    vagas.map((v, i) => {
-      const p = PACIENTES.find((x) => x.id === FIXOS[v.inicio]) ?? rodizio[(i + giro) % rodizio.length]
+    vagas.map((v0, i) => {
+      // às 11h: depois da consulta da Mariana, o retorno dela
+      const volta = v0.inicio === '11:00' && marianaJaFoiAtendida
+      const v: Vaga = volta ? { ...v0, tipo: 'retorno', historico: true } : v0
+      const p = PACIENTES.find((x) => x.id === (volta ? MARIANA : FIXOS[v.inicio])) ?? rodizio[(i + giro) % rodizio.length]
+      const demo = p.id === MARIANA
       return {
         id: `${data}-${v.inicio}`,
         inicio: v.inicio,
@@ -82,9 +91,9 @@ export function agendaDoDia(data: string, agora: Date): Atendimento[] {
         pagamento: v.pagamento,
         ficha: fichaDe(v, p.ficha, i),
         // o retorno de exemplo (João) fica sempre a seguir hoje, para a simulação poder abri-lo a qualquer hora
-        atendido: data < hoje || (data === hoje && v.inicio < hora && p.id !== JOAO),
+        atendido: data < hoje || (data === hoje && (demo ? !volta && marianaJaFoiAtendida : v.inicio < hora && p.id !== JOAO)),
         temHistorico: v.historico,
-        ...(p.id === JOAO && { sempreDisponivel: true }),
+        ...((p.id === JOAO || demo) && { sempreDisponivel: true }),
       }
     }),
   )

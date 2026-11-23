@@ -7,6 +7,7 @@
 // SIMULAÇÃO (sem servidor ainda): as entradas ficam no navegador (localStorage), chaveadas pelo id do paciente.
 import type { ItemReceita } from '../consulta/conduta'
 import { dataLocal } from '../medico/exemplo'
+import { CHAVE_PRONTUARIO, PREFIXO_PRONTUARIO } from './chave'
 import { buscarPaciente } from '../modulo/exemplo'
 import type { Modalidade } from '../medico/tipos'
 import type { TipoAtendimento } from '../modulo/tipos'
@@ -73,7 +74,7 @@ export type EntradaProntuario = {
 }
 export type NovaEntrada = Omit<EntradaProntuario, 'id' | 'pacienteId' | 'titulo' | 'adendos'>
 
-const CHAVE = (id: string) => `especialista:prontuario:${id}`
+const CHAVE = CHAVE_PRONTUARIO
 
 function salvas(pacienteId: string): EntradaProntuario[] {
   try {
@@ -171,8 +172,7 @@ export function pacientesComProntuario(): PacienteComProntuario[] {
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i) ?? ''
-      const prefixo = 'especialista:prontuario:'
-      if (k.startsWith(prefixo)) ids.add(k.slice(prefixo.length))
+      if (k.startsWith(PREFIXO_PRONTUARIO)) ids.add(k.slice(PREFIXO_PRONTUARIO.length))
     }
   } catch { /* sem armazenamento: só os de exemplo */ }
   return [...ids].flatMap((id): PacienteComProntuario[] => {
