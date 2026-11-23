@@ -150,6 +150,10 @@ describe('cartão "Retorno" na agenda (abrir o cartão é a parte 2)', () => {
     expect(atendimentoDoRetorno(RETORNO, AGORA, origem)).toMatchObject({ gravacaoAutorizada: true, alergiasDoProntuario: origem.alergias })
     expect(atendimentoDoRetorno(RETORNO, AGORA, { gravacaoAutorizada: false, alergias: [] }).gravacaoAutorizada).toBe(false)
   })
+  it('o nascimento vem do cadastro do paciente (o cartão não traz), para a idade não sair NaN', () => {
+    expect(atendimentoDoRetorno(RETORNO, AGORA).paciente.nascimento).toBe('')
+    expect(atendimentoDoRetorno(RETORNO, AGORA, { gravacaoAutorizada: true, alergias: [], nascimento: '1990-05-02' }).paciente.nascimento).toBe('1990-05-02')
+  })
   it('retorno de dia que já passou aparece como atendido', () => {
     expect(atendimentoDoRetorno({ ...RETORNO, data: '2026-11-10' }, AGORA).atendido).toBe(true)
   })

@@ -68,6 +68,7 @@ def _proposto(dep: Dependencias, medico: UUID, consulta_id: UUID) -> DadosEntrad
         CondutaBloco.model_validate(conteudo("conduta")),
         ExameBloco.model_validate(conteudo("exame")),
         dep.repo.documentos(medico, consulta_id),
+        retorno=consulta.tipo == "retorno",
     )
 
 

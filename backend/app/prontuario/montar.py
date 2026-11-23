@@ -45,6 +45,15 @@ def diagnosticos_do_prontuario(itens: list[ItemDD]) -> list[DiagnosticoRegistro]
     return [reg(i, "assinalado") for i in assinalados] + [reg(i, "sugerido") for i in sugeridos]
 
 
+_PORCENTAGEM = re.compile(r"(\d+(?:[.,]\d+)?)\s*%|^\s*(\d+(?:[.,]\d+)?)\s*$")
+
+
+def _extensao_pct(texto: str | None) -> float | None:
+    """Percentual do corpo no texto ("BSA estimada em 4%", "6,5%", "1"); None se não houver número."""
+    m = _PORCENTAGEM.search(texto or "")
+    return float((m.group(1) or m.group(2)).replace(",", ".")) if m else None
+
+
 def _sem(prefixo: str, frase: str) -> str:
     return frase.removeprefix(prefixo).removesuffix(".")
 
@@ -55,15 +64,20 @@ def dados_da_consulta(
     conduta: CondutaBloco,
     exame: ExameBloco,
     documentos: list[Documento],
+    retorno: bool = False,
 ) -> DadosEntrada:
     h = historia.historia
     t = [x.strip() for x in conduta.textos]
     orient = _frases(t[3])
     enviados = [d for d in documentos if d.estado == "enviado"]
     receita = next((d.texto.strip() for d in enviados if d.tipo == "receita"), "")
+    hda = " ".join(x for x in (h.hda.strip(), frases_da_hda(historia.perguntas)) if x)
     return DadosEntrada(
         qp=h.qp.strip(),
-        hda=" ".join(x for x in (h.hda.strip(), frases_da_hda(historia.perguntas)) if x),
+        # retorno: a história da evolução fica em `hda` no bloco; no prontuário ela é a Evolução de hoje
+        hda="" if retorno else hda,
+        evolucao=hda if retorno else None,
+        extensao_pct=_extensao_pct(exame.exame.extensao),
         ap=h.ap.strip(),
         hp=h.hp.strip(),
         hf=h.hf.strip(),
@@ -101,6 +115,7 @@ def dados_da_consulta(
 # As linhas narrativas do prontuário (mesmas chaves da tela): a edição do médico vai para o próprio dado.
 # As outras (diagnósticos, conduta, solicitado…) guardam a edição à parte, em `edicoes`.
 NARRATIVAS: dict[str, str] = {
+    "S.evolucao": "evolucao",
     "S.qp": "qp",
     "S.hda": "hda",
     "S.ap": "ap",

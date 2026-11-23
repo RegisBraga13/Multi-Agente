@@ -33,7 +33,7 @@ import { partesPreConsulta } from '../medico/pre-consulta'
 import { atendimentoDoPedido, atendimentoDoRetorno, precisaIdentificacao } from '../modulo/pedidos'
 import { IdentificacaoNaChegada } from './identificacao-chegada'
 import { buscarPedido, buscarRetorno, enderecoFoto, ErroServidor, pedidosDaAgenda, retornosDaAgenda, type HorarioOcupado, type PedidoNaAgenda, type RetornoNaAgenda } from '../servidor/agenda'
-import { abrirConsultaDoPedido, abrirConsultaDoRetorno, buscarConsulta, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, gerarConduta, salvarConduta as enviarConduta, listarDocumentos, salvarDocumento, finalizarConsulta, prontuarioDoPaciente, prontuarioProposto, sinaisDaEspecialidade, type AnamneseServidor, type CondutaServidor, type ConsultaServidor, type DocumentoServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
+import { abrirConsultaDoPedido, abrirConsultaDoRetorno, buscarConsulta, gerarHistoria, gerarPerguntas, oficializarEtapa, salvarAnamnese, salvarExame, salvarHistoria as enviarHistoria, gerarDiagnosticos, salvarDiagnosticos as enviarDiagnosticos, gerarConduta, salvarConduta as enviarConduta, listarDocumentos, salvarDocumento, finalizarConsulta, pacienteDoServidor, prontuarioDoPaciente, prontuarioProposto, sinaisDaEspecialidade, type AnamneseServidor, type CondutaServidor, type ConsultaServidor, type DocumentoServidor, type ExameServidor, type DiagnosticosServidor, type HistoriaServidor, type PerguntaServidor, type SinalDoCatalogo } from '../servidor/consulta'
 import { adicionarPergunta, atualizarSecoes, avisosDeUrgencia, historiaDaEvolucaoParaServidor, historiaParaServidor, juntarPerguntas, responder, secoesDaEvolucaoDoServidor, secoesDoServidor } from './historia-servidor'
 import { BuscaCid } from './busca-cid'
 import { PerguntasHistoria } from './perguntas-historia'
@@ -61,18 +61,20 @@ export function PaginaConsulta() {
   const [retornoAberto, setRetornoAberto] = useState<ConsultaServidor | 'erro' | null>(null)
   const [anteriores, setAnteriores] = useState<EntradaProntuario[] | 'erro' | null>(null)
   /** retorno: o aceite de gravação é o que o paciente deu na consulta de origem (consulta de origem → pedido) */
-  const [origem, setOrigem] = useState<{ gravacaoAutorizada: boolean; alergias: { substancia: string; reacao: string }[] } | null>(null)
+  const [origem, setOrigem] = useState<{ gravacaoAutorizada: boolean; alergias: { substancia: string; reacao: string }[]; nascimento: string } | null>(null)
   useEffect(() => {
     if (!idRetorno) return
     buscarRetorno(idRetorno).then((c) => {
       setCartao(c)
       abrirConsultaDoRetorno(idRetorno, slug).then(setRetornoAberto, () => setRetornoAberto('erro'))
       prontuarioDoPaciente(c.pacienteId).then(setAnteriores, () => setAnteriores('erro'))
+      // a idade do cabeçalho e dos documentos vem do cadastro do paciente (o cartão da agenda não traz o nascimento)
+      const nascimento = pacienteDoServidor(c.pacienteId).then((p) => p.nascimento, () => '')
       buscarConsulta(c.consultaOrigemId).then(async (o) => {
         const ped = o.pedidoId ? await buscarPedido(o.pedidoId) : null
         const anamnese = o.blocos.find((x) => x.etapa === 'anamnese')?.conteudo as AnamneseServidor | undefined
-        setOrigem({ gravacaoAutorizada: ped?.transcricao === 'aceita', alergias: anamnese?.alergias ?? [] })
-      }, () => setOrigem({ gravacaoAutorizada: false, alergias: [] }))
+        setOrigem({ gravacaoAutorizada: ped?.transcricao === 'aceita', alergias: anamnese?.alergias ?? [], nascimento: await nascimento })
+      }, async () => setOrigem({ gravacaoAutorizada: false, alergias: [], nascimento: await nascimento }))
     }, () => setCartao('erro'))
   }, [idRetorno, slug])
   const doRetorno = cartao && cartao !== 'erro' ? cartao : null

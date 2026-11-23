@@ -89,6 +89,8 @@ class DadosEntrada(ModeloApi):
     ap: str
     hp: str
     hf: str
+    evolucao: str | None = None  # retorno: a evolução de hoje (a consulta anterior já está no prontuário); None na consulta
+    extensao_pct: float | None = None  # extensão das lesões em % do corpo, do exame físico; None = sem número
     exame_fisico: str
     exames_texto: str
     exames: list[ExameRegistro]

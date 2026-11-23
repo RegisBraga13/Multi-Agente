@@ -194,9 +194,9 @@ def test_texto_vazio_apaga_a_narrativa():
 
 
 def test_chave_desconhecida_fica_em_edicoes():
-    assert aplicar_edicoes_narrativas(DADOS_MINIMOS, {"hda": "x", "S.evolucao": "y"})[1] == {
+    assert aplicar_edicoes_narrativas(DADOS_MINIMOS, {"hda": "x", "S.inexistente": "y"})[1] == {
         "hda": "x",
-        "S.evolucao": "y",
+        "S.inexistente": "y",
     }
 
 
@@ -220,3 +220,25 @@ def test_registro_antigo_com_retorno_vira_avaliacao():
     del antigo["avaliacao"]
     antigo["retorno"] = "em 4 semanas."
     assert DadosEntrada.model_validate(antigo).avaliacao == "em 4 semanas."
+
+
+def test_retorno_poe_o_texto_da_evolucao_em_evolucao_e_nao_em_hda():
+    c = conduta("Rotina.", "Ácido.", "", GRUPO4).model_copy(update={"receita": [ITEM], "livres": []})
+    d = dados_da_consulta(HISTORIA, diagnosticos("confirmada"), c, EXAME, [], retorno=True)
+    assert d.evolucao == HISTORIA.historia.hda.strip() and d.hda == ""
+    assert d.exame_fisico == "Pápulas e pústulas em face."
+
+
+def test_consulta_comum_nao_tem_evolucao():
+    assert montar().evolucao is None
+
+
+def test_extensao_em_porcentagem_vem_do_campo_extensao_do_exame():
+    exame = EXAME.model_copy(update={"exame": EXAME.exame.model_copy(update={"extensao": "BSA estimada em 6,5%"})})
+    assert montar(exame=exame).extensao_pct == 6.5
+    assert montar().extensao_pct is None
+
+
+def test_edicao_da_evolucao_vai_para_o_proprio_dado():
+    dados, resto = aplicar_edicoes_narrativas(DADOS_MINIMOS, {"S.evolucao": " Melhorou. "})
+    assert dados.evolucao == "Melhorou." and resto == {}

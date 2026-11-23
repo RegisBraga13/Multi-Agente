@@ -33,7 +33,7 @@ export type DadosEntrada = {
   /** extensão das lesões em % do corpo (do campo Extensão do exame físico); null = sem número. Entradas antigas não têm */
   extensaoPct?: number | null
   /** retorno: a evolução de hoje (texto da História da evolução); vazio na primeira consulta */
-  evolucao?: string
+  evolucao?: string | null
   qp: string; hda: string; ap: string; hp: string; hf: string
   exameFisico: string
   /** os exames como ficaram escritos na história (o que o médico aprovou) */
