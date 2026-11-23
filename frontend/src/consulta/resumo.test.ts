@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SecaoHistoria } from './historia'
-import { atualizarResumo, marcarResumo, montarResumo } from './resumo'
+import { atualizarResumo, marcarResumo, montarResumo, secaoDeAlergias } from './resumo'
 
 const historia = (ant: string, hda = ''): SecaoHistoria[] => [
   { rotulo: 'Identificação', texto: 'Fulana, 34 anos · Consulta · Presencial' },
@@ -64,5 +64,15 @@ describe('marcar e atualizar', () => {
     expect(a.find((x) => x.id === 'comorbidade:comorbidades')!.marca).toBe('v')
     expect(a.some((x) => x.id === 'alergia:alergias')).toBe(false)
     expect(a[0]).toMatchObject({ texto: 'Alergia a dipirona (urticária)', marca: 'v' })
+  })
+})
+
+describe('secaoDeAlergias (retorno: a alergia do prontuário entra no "Para relembrar")', () => {
+  it('vira a frase que o resumo já entende, com marca V', () => {
+    const itens = montarResumo([secaoDeAlergias([{ substancia: 'Penicilina', reacao: 'urticária' }, { substancia: 'Dipirona', reacao: '' }])!])
+    expect(itens.filter((x) => x.tipo === 'alergia').map((x) => [x.texto, x.marca])).toEqual([['Alergia a Penicilina (urticária)', 'v'], ['Alergia a Dipirona (reação não informada)', 'v']])
+  })
+  it('sem alergia registrada: nada (continua "não informado")', () => {
+    expect(secaoDeAlergias([])).toBeNull()
   })
 })

@@ -144,6 +144,12 @@ describe('cartão "Retorno" na agenda (abrir o cartão é a parte 2)', () => {
     })
     expect(at.pedido).toBeUndefined()
   })
+  it('o que vem da consulta de origem: aceite da gravação e alergias (o retorno não tem ficha própria)', () => {
+    expect(atendimentoDoRetorno(RETORNO, AGORA).gravacaoAutorizada).toBeUndefined()
+    const origem = { gravacaoAutorizada: true, alergias: [{ substancia: 'Penicilina', reacao: 'urticária' }] }
+    expect(atendimentoDoRetorno(RETORNO, AGORA, origem)).toMatchObject({ gravacaoAutorizada: true, alergiasDoProntuario: origem.alergias })
+    expect(atendimentoDoRetorno(RETORNO, AGORA, { gravacaoAutorizada: false, alergias: [] }).gravacaoAutorizada).toBe(false)
+  })
   it('retorno de dia que já passou aparece como atendido', () => {
     expect(atendimentoDoRetorno({ ...RETORNO, data: '2026-11-10' }, AGORA).atendido).toBe(true)
   })

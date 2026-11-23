@@ -33,6 +33,7 @@ from app.contratos.consulta_blocos import (
     TipoDocumento,
 )
 from app.especialidades.registro import especialidades_disponiveis
+from app.motores.diagnosticos import DadosSeguranca
 from app.motores.perguntas import PerguntasProposta
 
 rotas = APIRouter(prefix="/consultas", tags=["consultas"])
@@ -72,11 +73,26 @@ def buscar_consulta(consulta_id: UUID, dep: Dep, medico: Medico) -> Consulta:
     return dep.repo.buscar(medico, consulta_id)
 
 
+def _base_do_retorno(dep: Dependencias, medico: UUID, consulta: Consulta) -> AnamneseBloco | None:
+    """No retorno, o que não muda (alergias, remédios em uso, antecedentes) vem do prontuário: da consulta de origem."""
+    if consulta.tipo != "retorno" or consulta.retorno_id is None:
+        return None
+    cartao = dep.agenda.retorno(medico, consulta.retorno_id)
+    bloco = dep.repo.buscar(medico, cartao.consulta_origem_id).bloco("anamnese")
+    return AnamneseBloco.model_validate(bloco.conteudo) if bloco else None
+
+
 @rotas.put("/{consulta_id}/anamnese", response_model=Consulta)
 def editar_anamnese(consulta_id: UUID, conteudo: AnamneseBloco, dep: Dep, medico: Medico) -> Consulta:
-    conhecidos = {s.id for s in dep.pacote(dep.repo.buscar(medico, consulta_id).especialidade).sinais}
+    consulta = dep.repo.buscar(medico, consulta_id)
+    conhecidos = {s.id for s in dep.pacote(consulta.especialidade).sinais}
     if any(s.id not in conhecidos for s in conteudo.sinais):
         raise SinalDesconhecido
+    base = _base_do_retorno(dep, medico, consulta)
+    if base is not None:
+        conteudo = conteudo.model_copy(
+            update={"alergias": base.alergias, "em_uso": base.em_uso, "antecedentes": base.antecedentes}
+        )
     return editar(dep.repo, medico, consulta_id, "anamnese", conteudo)
 
 
@@ -87,6 +103,11 @@ def editar_exame(consulta_id: UUID, conteudo: ExameBloco, dep: Dep, medico: Medi
 
 @rotas.put("/{consulta_id}/historia", response_model=Consulta)
 def editar_historia(consulta_id: UUID, conteudo: HistoriaBloco, dep: Dep, medico: Medico) -> Consulta:
+    base = _base_do_retorno(dep, medico, dep.repo.buscar(medico, consulta_id))
+    if base is not None:
+        # a História da evolução é montada pela tela (sem IA): a segurança é a do prontuário, sem sinais novos
+        seguranca = DadosSeguranca(alergias=base.alergias, em_uso=base.em_uso, sinais=[])
+        conteudo = conteudo.model_copy(update={"seguranca": seguranca, "conflitos": [], "extras_ia": []})
     return editar(dep.repo, medico, consulta_id, "historia", conteudo)
 
 

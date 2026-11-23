@@ -59,7 +59,7 @@ export function juntarPedidos(lista: Atendimento[], pedidos: PedidoNaAgenda[], d
 }
 
 /** O retorno marcado na consulta de origem, como cartão da agenda (o paciente já tem prontuário). */
-export function atendimentoDoRetorno(r: RetornoNaAgenda, agora: Date): Atendimento {
+export function atendimentoDoRetorno(r: RetornoNaAgenda, agora: Date, origem?: { gravacaoAutorizada: boolean; alergias: { substancia: string; reacao: string }[] }): Atendimento {
   const hoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`
   return {
     id: `retorno-${r.id}`,
@@ -72,6 +72,7 @@ export function atendimentoDoRetorno(r: RetornoNaAgenda, agora: Date): Atendimen
     atendido: r.data < hoje,
     temHistorico: true,
     retornoMarcado: { id: r.id },
+    ...(origem ? { gravacaoAutorizada: origem.gravacaoAutorizada, alergiasDoProntuario: origem.alergias } : {}),
   }
 }
 

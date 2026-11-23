@@ -392,3 +392,53 @@ def test_abrir_do_retorno_inexistente_e_404_e_especialidade_desconhecida_e_422(m
     _, cartao = _cartao_de_retorno(c, agenda)
     assert c.post(f"/consultas/do-retorno/{uuid4()}", json={"especialidade": "dermatologia"}).status_code == 404
     assert c.post(f"/consultas/do-retorno/{cartao.id}", json={"especialidade": "astrologia"}).status_code == 422
+
+
+def _origem_com_alergia(c, origem_id):
+    from tests.fabrica import ANAMNESE
+
+    com = ANAMNESE.model_copy(
+        update={"alergias": [{"substancia": "Penicilina", "reacao": "urticária"}], "em_uso": ["Losartana"], "antecedentes": ["Hipertensão"]}
+    )
+    assert c.put(f"/consultas/{origem_id}/anamnese", json=js(com)).status_code == 200
+
+
+def test_anamnese_do_retorno_traz_alergias_e_remedios_da_consulta_de_origem(mundo):
+    from tests.fabrica import ANAMNESE
+
+    c, agenda = _cliente_com_agenda(mundo)
+    origem, cartao = _cartao_de_retorno(c, agenda)
+    _origem_com_alergia(c, origem["id"])
+    retorno = c.post(f"/consultas/do-retorno/{cartao.id}", json={"especialidade": "dermatologia"}).json()
+    # a Evolução não pergunta alergia: mesmo que a tela mande vazio, o prontuário (origem) é a fonte
+    r = c.put(f"/consultas/{retorno['id']}/anamnese", json=js(ANAMNESE))
+    conteudo = next(b for b in r.json()["blocos"] if b["etapa"] == "anamnese")["conteudo"]
+    assert conteudo["alergias"] == [{"substancia": "Penicilina", "reacao": "urticária"}]
+    assert (conteudo["emUso"], conteudo["antecedentes"]) == (["Losartana"], ["Hipertensão"])
+
+
+def test_historia_da_evolucao_leva_a_seguranca_da_origem_e_nenhum_sinal(mundo):
+    from tests.fabrica import ANAMNESE, EXAME, HISTORIA
+
+    c, agenda = _cliente_com_agenda(mundo)
+    origem, cartao = _cartao_de_retorno(c, agenda)
+    _origem_com_alergia(c, origem["id"])
+    rid = c.post(f"/consultas/do-retorno/{cartao.id}", json={"especialidade": "dermatologia"}).json()["id"]
+    for etapa, conteudo in (("anamnese", ANAMNESE), ("exame", EXAME)):
+        assert c.put(f"/consultas/{rid}/{etapa}", json=js(conteudo)).status_code == 200
+        assert c.post(f"/consultas/{rid}/{etapa}/oficializar").status_code == 200
+    r = c.put(f"/consultas/{rid}/historia", json=js(HISTORIA))  # a tela manda a seguranca vazia
+    assert r.status_code == 200
+    h = next(b for b in r.json()["blocos"] if b["etapa"] == "historia")["conteudo"]
+    assert h["seguranca"]["alergias"] == [{"substancia": "Penicilina", "reacao": "urticária"}]
+    assert (h["seguranca"]["emUso"], h["seguranca"]["sinais"], h["conflitos"]) == (["Losartana"], [], [])
+
+
+def test_consulta_comum_nao_herda_nada_da_origem(mundo):
+    from tests.fabrica import ANAMNESE
+
+    c, agenda = _cliente_com_agenda(mundo)
+    origem, _ = _cartao_de_retorno(c, agenda)
+    _origem_com_alergia(c, origem["id"])
+    r = c.put(f"/consultas/{origem['id']}/anamnese", json=js(ANAMNESE))
+    assert next(b for b in r.json()["blocos"] if b["etapa"] == "anamnese")["conteudo"]["alergias"] == []

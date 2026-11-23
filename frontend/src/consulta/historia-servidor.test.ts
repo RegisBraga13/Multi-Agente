@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { HistoriaServidor, PerguntaServidor, SinalDisparadoServidor, SinalDoCatalogo } from '../servidor/consulta'
-import { adicionarPergunta, atualizarSecoes, avisosDeUrgencia, historiaParaServidor, juntarPerguntas, perguntaDoCatalogo, responder, secoesDoServidor } from './historia-servidor'
+import { adicionarPergunta, atualizarSecoes, avisosDeUrgencia, historiaDaEvolucaoParaServidor, historiaParaServidor, juntarPerguntas, perguntaDoCatalogo, responder, secoesDaEvolucaoDoServidor, secoesDoServidor } from './historia-servidor'
 
 const historia = (extra: Partial<HistoriaServidor['historia']> = {}): HistoriaServidor['historia'] => ({
   qp: 'Ferida no nariz.', hda: 'Paciente, 73 anos, refere ferida há 3 meses.', ap: 'Hipertensão.', hp: '', hf: '',
@@ -99,5 +99,18 @@ describe('avisosDeUrgencia', () => {
   })
   it('não duplica quando a história já tinha o mesmo sinal', () => {
     expect(avisosDeUrgencia(base([urgencia]), [q('p1', 'A?', 'sim', 'angioedema')], catalogo)).toHaveLength(1)
+  })
+})
+
+describe('História da evolução (retorno): as 3 seções da tela guardadas nos campos do servidor', () => {
+  const secoes = [{ rotulo: 'Evolução', texto: 'Paciente relata melhora.' }, { rotulo: 'Exame', texto: 'Máculas residuais.' }, { rotulo: 'Exames', texto: 'Nenhum exame novo.' }]
+  const base: HistoriaServidor = { historia: { qp: '', hda: '', ap: '', hp: '', hf: '', exameFisico: '', examesTexto: '' }, seguranca: { alergias: [], emUso: [], sinais: [] }, conflitos: [], extrasIa: [], perguntas: [] }
+  it('Evolução → hda, Exame → exame físico, Exames → exames; o resto fica vazio', () => {
+    expect(historiaDaEvolucaoParaServidor(secoes, base).historia).toEqual({ qp: '', hda: 'Paciente relata melhora.', ap: '', hp: '', hf: '', exameFisico: 'Máculas residuais.', examesTexto: 'Nenhum exame novo.' })
+  })
+  it('volta como as mesmas 3 seções, sempre presentes (mesmo vazias)', () => {
+    const h = historiaDaEvolucaoParaServidor(secoes, base).historia
+    expect(secoesDaEvolucaoDoServidor(h)).toEqual(secoes)
+    expect(secoesDaEvolucaoDoServidor({ ...h, hda: '' }).map((s) => s.rotulo)).toEqual(['Evolução', 'Exame', 'Exames'])
   })
 })

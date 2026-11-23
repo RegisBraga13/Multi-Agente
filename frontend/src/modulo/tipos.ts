@@ -45,4 +45,8 @@ export type Atendimento = {
   pedido?: { id: string; whatsapp: string; token: string; novo: boolean; chegouAs: string }
   /** cartão "Retorno" marcado ao finalizar a consulta de origem (abrir o cartão é a parte 2 do retorno) */
   retornoMarcado?: { id: string }
+  /** retorno: o paciente aceitou a gravação na consulta de origem (o retorno não tem ficha própria) */
+  gravacaoAutorizada?: boolean
+  /** retorno: as alergias do prontuário (consulta de origem) para o aviso no topo */
+  alergiasDoProntuario?: { substancia: string; reacao: string }[]
 }

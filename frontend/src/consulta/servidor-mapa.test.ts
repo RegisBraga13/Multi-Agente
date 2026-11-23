@@ -78,3 +78,22 @@ describe('diaDaConsulta (o dia no consultório, em São Paulo)', () => {
   it('de madrugada em UTC ainda é o dia anterior no consultório', () => expect(diaDaConsulta('2027-08-12T02:00:00Z')).toBe('2027-08-11'))
   it('aceita o formato com deslocamento que o servidor devolve', () => expect(diaDaConsulta('2027-08-12T10:00:00-03:00')).toBe('2027-08-12'))
 })
+
+describe('exame do retorno (a Evolução usa o mesmo bloco de exame do servidor)', () => {
+  const linhas = [
+    { rotulo: 'Aspecto atual das lesões', valor: 'Máculas residuais' },
+    { rotulo: 'Extensão', valor: '1' },
+    { rotulo: 'Comparado à consulta anterior', valor: 'Bem menos lesões' },
+    { rotulo: 'Observações', valor: 'Sem novas lesões' },
+  ]
+  it('vai e volta sem perder nada', () => {
+    const b = exameParaServidor(linhas, true)
+    expect(b.exame).toEqual({ morfologia: 'Máculas residuais', localizacao: null, extensao: '1', gravidade: null, achados: 'Bem menos lesões' })
+    expect(b.observacoes).toBe('Sem novas lesões')
+    const volta = Object.fromEntries(exameDoServidor(b, true).map((c) => [c.rotulo, c.valor]))
+    expect(volta).toMatchObject({ 'Aspecto atual das lesões': 'Máculas residuais', Extensão: '1', 'Comparado à consulta anterior': 'Bem menos lesões', Observações: 'Sem novas lesões' })
+  })
+  it('na primeira consulta o rótulo do retorno continua desconhecido (nada muda)', () => {
+    expect(() => exameParaServidor(linhas)).toThrow(/não conhece/)
+  })
+})

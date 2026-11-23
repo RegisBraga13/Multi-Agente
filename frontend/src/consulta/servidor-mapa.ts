@@ -11,24 +11,32 @@ const CAMPOS: Record<string, CampoExame> = {
   Morfologia: 'morfologia', 'Localização': 'localizacao', 'Extensão': 'extensao',
   'Gravidade estimada': 'gravidade', 'Achados associados': 'achados',
 }
+/** retorno (Evolução): o mesmo bloco de exame do servidor, com os rótulos da Evolução */
+const CAMPOS_RETORNO: Record<string, CampoExame> = {
+  'Aspecto atual das lesões': 'morfologia', 'Extensão': 'extensao', 'Comparado à consulta anterior': 'achados',
+}
+const ROTULOS_RETORNO = Object.fromEntries(Object.entries(CAMPOS_RETORNO).map(([rotulo, campo]) => [campo, rotulo])) as Partial<Record<CampoExame, string>>
 const ROTULOS = Object.fromEntries(Object.entries(CAMPOS).map(([rotulo, campo]) => [campo, rotulo])) as Record<CampoExame, string>
 const ORDEM: CampoExame[] = ['morfologia', 'localizacao', 'extensao', 'gravidade', 'achados']
 const OBSERVACOES = 'Observações'
 
-export function exameParaServidor(valores: { rotulo: string; valor: string }[]): ExameServidor {
+export function exameParaServidor(valores: { rotulo: string; valor: string }[], retorno = false): ExameServidor {
+  const campos = retorno ? CAMPOS_RETORNO : CAMPOS
   const exame: ExameServidor['exame'] = { morfologia: null, localizacao: null, extensao: null, gravidade: null, achados: null }
   let observacoes = ''
   for (const { rotulo, valor } of valores) {
     const v = valor.trim()
     if (rotulo === OBSERVACOES) observacoes = v
-    else if (rotulo in CAMPOS) exame[CAMPOS[rotulo]] = v || null
+    else if (rotulo in campos) exame[campos[rotulo]] = v || null
     else throw new Error(`Campo do exame que o servidor não conhece: ${rotulo}`)
   }
   return { exame, complementares: [], observacoes }
 }
 
-export function exameDoServidor(b: ExameServidor): { rotulo: string; valor: string }[] {
-  return [...ORDEM.map((c) => ({ rotulo: ROTULOS[c], valor: b.exame[c] ?? '' })), { rotulo: OBSERVACOES, valor: b.observacoes }]
+export function exameDoServidor(b: ExameServidor, retorno = false): { rotulo: string; valor: string }[] {
+  const rotulos = retorno ? ROTULOS_RETORNO : ROTULOS
+  const campos = ORDEM.filter((c) => rotulos[c] !== undefined)
+  return [...campos.map((c) => ({ rotulo: rotulos[c]!, valor: b.exame[c] ?? '' })), { rotulo: OBSERVACOES, valor: b.observacoes }]
 }
 
 type EntradaAnamnese = {

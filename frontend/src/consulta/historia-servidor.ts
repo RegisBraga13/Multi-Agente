@@ -32,6 +32,16 @@ export function historiaParaServidor(secoes: { rotulo: string; texto: string }[]
   return { ...base, historia, perguntas }
 }
 
+/** Retorno: a História da evolução (3 seções montadas pela tela) guardada nos campos do servidor. */
+const EVOLUCAO: [string, Campo][] = [['Evolução', 'hda'], ['Exame', 'exameFisico'], ['Exames', 'examesTexto']]
+
+export function historiaDaEvolucaoParaServidor(secoes: { rotulo: string; texto: string }[], base: HistoriaServidor, perguntas: PerguntaServidor[] = []): HistoriaServidor {
+  const historia = Object.fromEntries(ORDEM.map((c) => [c, secoes.find((s) => s.rotulo === EVOLUCAO.find(([, campo]) => campo === c)?.[0])?.texto ?? ''])) as CamposHistoria
+  return { ...base, historia, perguntas }
+}
+
+export const secoesDaEvolucaoDoServidor = (h: CamposHistoria): SecaoHistoria[] => EVOLUCAO.map(([rotulo, campo]) => ({ rotulo, texto: h[campo] }))
+
 /** Como `atualizarHistoria`, mas alinhando as seções pelo rótulo (a história pessoal e a familiar podem aparecer ou sumir). */
 export function atualizarSecoes(antes: SecaoHistoria[], atuais: string[], novas: SecaoHistoria[]) {
   const achar = (rotulo: string) => antes.findIndex((s) => s.rotulo === rotulo)

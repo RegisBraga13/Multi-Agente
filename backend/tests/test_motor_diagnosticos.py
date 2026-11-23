@@ -91,3 +91,15 @@ def test_pedido_leva_so_historia_e_seguranca():
     assert sorted(p.dados) == ["historia", "seguranca"]
     assert (p.motor, p.esforco, p.versao_prompt) == ("diagnosticos", "high", "diagnosticos-derm-2")
     assert p.dados["seguranca"]["alergias"][0]["substancia"] == "Dipirona"
+
+
+def test_demonstracao_cita_a_historia_do_pedido_e_nao_a_frase_fixa():
+    from app.provedores.ia import PedidoIA
+    from app.provedores.ia_demonstracao import ProvedorDemonstracao
+
+    hda = "Paciente relata melhora das lesões."
+    pedido = PedidoIA(
+        motor="diagnosticos", versao_prompt="x", instrucoes="x", dados={"historia": {"hda": hda}}, esforco="high"
+    )
+    resposta = ProvedorDemonstracao().gerar(pedido, dict)
+    assert {e["trecho"] for h in resposta.bruto["resultado"]["hipoteses"] for e in h["evidencias"]} == {hda}

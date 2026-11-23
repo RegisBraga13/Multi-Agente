@@ -53,6 +53,12 @@ const REGRAS: Regra[] = [
 /** Frase de antecedentes que não é reconhecida por nenhuma regra nem lista: a primeira é a lista de comorbidades da ficha. */
 const OUTRAS = /^(Nega|Em uso|Alergia|Alerta|Ficha|História familiar|Relata|Refere)/i
 
+/** Retorno: as alergias do prontuário como uma seção que o resumo entende ("Alergia a X (reação)."). */
+export function secaoDeAlergias(alergias: { substancia: string; reacao: string }[]): SecaoHistoria | null {
+  if (!alergias.length) return null
+  return { rotulo: 'Antecedentes e alertas', texto: alergias.map((a) => `Alergia a ${a.substancia} (${a.reacao || 'reação não informada'}).`).join('\n') }
+}
+
 export function montarResumo(historia: SecaoHistoria[]): ItemResumo[] {
   const itens: ItemResumo[] = []
   const por = (tipo: TipoResumo, texto: string, marca: Marca, secao: string, trecho: string) => {

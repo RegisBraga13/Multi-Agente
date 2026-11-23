@@ -44,7 +44,9 @@ class ProvedorDemonstracao:
         elif pedido.motor == "sinais":
             resultado = {"detectados": [], "extras": []}
         elif pedido.motor == "diagnosticos":
-            ev = {"lado": "favor", "texto": "demonstração", "secao": "hda", "trecho": self.HDA}
+            # a evidência cita a história que veio no pedido (a do retorno é montada pela tela, não é a fixa daqui)
+            hda = str(pedido.dados.get("historia", {}).get("hda", "")).strip() or self.HDA
+            ev = {"lado": "favor", "texto": "demonstração", "secao": "hda", "trecho": hda}
             hipoteses = [
                 ("Psoríase vulgar", "L40.0", 70),
                 ("Dermatite seborreica", "L21.9", 15),
