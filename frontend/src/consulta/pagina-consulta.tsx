@@ -338,7 +338,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
   const [dd, setDd] = useState<{ versao: number; itens: ItemDD[]; reserva: Hipotese[]; resumo: ItemResumo[] } | null>(() =>
     // consulta retomada: os diagnósticos e as decisões guardadas voltam como rascunho (sem a reserva do "+")
     retomada.diagnosticos && retomada.historia
-      ? { versao: 1, itens: itensDoServidor(retomada.diagnosticos), reserva: [], resumo: montarResumo(secoesDaHistoria(retomada.historia.historia)) }
+      ? { versao: 1, itens: itensDoServidor(retomada.diagnosticos), reserva: [], resumo: montarResumo(at.tipo === 'retorno' ? secoesDaHistoria(retomada.historia.historia) : comAlergiasDaFicha(retomada.historia, secoesDaHistoria(retomada.historia.historia))) }
       : null)
   /** última versão já escrita "ao vivo" de cada página: ao voltar, aparece pronta (não escreve de novo) */
   const [escrita, setEscrita] = useState({ historia: retomada.historia ? 1 : 0, diagnosticos: retomada.diagnosticos ? 1 : 0, prontuario: 0 })
@@ -395,7 +395,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
       // retorno: o "resumo" da conduta leva também o que o prontuário já tem (regra 14.2); a IA dos diagnósticos lê só a evolução salva
       const anteriorDoServidor = at.tipo === 'retorno' ? entradasDoPaciente().find((e) => e.data < dia && e.dados.diagnosticos.length > 0) : undefined
       const alergiaDoProntuario = at.tipo === 'retorno' ? secaoDeAlergias(at.alergiasDoProntuario ?? []) : null
-      void montarDDDoServidor(servidor.id, at.tipo === 'retorno' ? [...(alergiaDoProntuario ? [alergiaDoProntuario] : []), ...(anteriorDoServidor ? secoesDaConsultaAnterior(anteriorDoServidor.dados) : []), ...salva] : salva)
+      void montarDDDoServidor(servidor.id, at.tipo === 'retorno' ? [...(alergiaDoProntuario ? [alergiaDoProntuario] : []), ...(anteriorDoServidor ? secoesDaConsultaAnterior(anteriorDoServidor.dados) : []), ...salva] : comAlergiasDaFicha(histBase, salva))
       navegar(`${base}/diagnosticos`)
       return
     }
@@ -888,6 +888,21 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
       </div>
     </div>
   )
+}
+
+/**
+ * Consulta real: as alergias da ficha (guardadas na segurança da história do servidor) entram em "Para relembrar"
+ * mesmo que o texto da história as escreva de outro jeito ("Alergia a dipirona." sem a reação).
+ */
+function comAlergiasDaFicha(h: HistoriaServidor | null, secoes: SecaoHistoria[]): SecaoHistoria[] {
+  const alergias = (h?.seguranca.alergias ?? []) as { substancia: string; reacao: string }[]
+  const secao = secaoDeAlergias(alergias)
+  if (!secao) return secoes
+  // o "Para relembrar" lê uma seção de antecedentes só: as alergias entram no fim dela (a 1ª frase segue sendo a das comorbidades)
+  const i = secoes.findIndex((s) => s.rotulo === secao.rotulo)
+  if (i < 0) return [secao, ...secoes]
+  const juntar = (t: string) => (t.trim() ? `${t.trim().replace(/([^.])$/, '$1.')}\n${secao.texto}` : secao.texto)
+  return secoes.map((s, j) => (j === i ? { ...s, texto: juntar(s.texto) } : s))
 }
 
 const TEXTO_ETAPA: Record<Exclude<EtapaId, 'anamnese-exame'>, { bloco: Bloco; antes: EtapaId; bloqueio: string; ia: string }> = {
