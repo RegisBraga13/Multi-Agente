@@ -22,7 +22,7 @@ describe('partesPreConsulta', () => {
     expect(q.sintomas.opcoes).toEqual(['Coça', 'Dói', 'Sangra', 'Nenhum dos três'])
     expect(q.mudou.opcoes).toEqual(['Sim', 'Não', 'Não sei'])
     for (const id of ['cor_pele', 'cor_olhos', 'cor_cabelo', 'reacao_sol', 'protetor', 'bronzeamento']) expect(q[id].tipo).toBe('escolha')
-    expect(q.protetor.opcoes).toEqual(['Todo dia', 'Às vezes', 'Raramente', 'Nunca'])
+    expect(q.protetor.opcoes).toEqual(['Todo dia', 'Às vezes', 'Raramente'])
     expect(q.familia.tipo).toBe('varias')
     expect(q.familia.opcoes).toEqual(['Câncer de pele', 'Psoríase', 'Dermatite atópica', 'Vitiligo', 'Queda de cabelo', 'Nenhum desses'])
     expect(q.medicamentos.rotulo).toContain('hormônios e corticoides')

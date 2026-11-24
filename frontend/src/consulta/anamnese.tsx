@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react'
 import { alternarOpcao, type Parte, type Pergunta as PerguntaFormulario } from '../medico/pre-consulta'
 import type { Respostas } from '../servidor/agenda'
 import { FORMULARIO_VAZIO, formularioParaHistoria, juntarFormularioAoTexto, lembretesDoFormulario, textoDoFormulario, type FormularioConsulta } from './formulario-consulta'
-import { blocosDoFormulario } from '../medico/blocos'
+import { blocosDaAnamnese } from '../medico/blocos'
 import { FormularioMedico } from './formulario-medico'
 import type { Alerta, Fala, Pergunta, RespostaPergunta } from './exemplo'
 import type { EstadoConsulta, RespostaAlerta, Situacao } from './tipos'
@@ -51,7 +51,7 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
   const [modo, setModo] = useState<'texto' | 'formulario'>('texto')
   const [form, setForm] = useState<FormularioConsulta>(formulario ?? FORMULARIO_VAZIO)
   const [parte, setParte] = useState(0)
-  const [conferidas, setConferidas] = useState<boolean[]>(() => blocosDoFormulario(partes).map(() => false))
+  const [conferidas, setConferidas] = useState<boolean[]>(() => blocosDaAnamnese(partes).map(() => false))
   /** texto do formulário que já está na caixa (null = ainda não salvo) */
   const [textoForm, setTextoForm] = useState<string | null>(null)
   /** o formulário como estava ao ser salvo (a história é escrita a partir dele) */

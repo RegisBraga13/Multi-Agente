@@ -15,6 +15,10 @@ export function blocosDoFormulario(partes: Parte[]): Bloco[] {
   ]
 }
 
+/** Formulário dentro da anamnese: sem a Identificação (nome, nascimento, cidade). A anamnese só existe para montar a
+ *  história clínica, que não leva dado pessoal (regra 9.1); idade e sexo já estão no topo da consulta. */
+export const blocosDaAnamnese = (partes: Parte[]): Bloco[] => blocosDoFormulario(partes).filter((b) => b.id !== 'identificacao')
+
 type Estado = { dados: DadosPessoais; respostas: RespostasPreConsulta; fotos: string[]; hoje: Date }
 
 const preenchida = (r: string | string[] | undefined) => (Array.isArray(r) ? r.length > 0 : !!r?.trim())

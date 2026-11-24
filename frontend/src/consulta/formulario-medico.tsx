@@ -1,7 +1,7 @@
 // Anamnese, modo Formulário: o mesmo formulário que o paciente viu, uma parte por vez, já com as respostas dele.
 // O médico confere cada parte ("Conferido ✓"), corrige ou completa, e na última salva: o formulário vira texto da anamnese.
 // Depois de salvo, fica só para consulta (as correções são feitas na caixa de texto).
-import { blocosDoFormulario, type Bloco } from '../medico/blocos'
+import { blocosDaAnamnese, type Bloco } from '../medico/blocos'
 import { alternarOpcao, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
 import { ESTADOS_CIVIS, type DadosPessoais } from '../medico/regras'
 import type { FormularioConsulta } from './formulario-consulta'
@@ -30,13 +30,13 @@ type Props = {
 }
 
 export function FormularioMedico({ partes, valor, parte, onParte, onMudar, conferidas, onConferir, onSalvar, salvo }: Props) {
-  const blocos = blocosDoFormulario(partes)
+  const blocos = blocosDaAnamnese(partes) // sem a Identificação: a anamnese só monta a história clínica
   const bloco = blocos[parte]
   const dados = valor.dados
   const mudaDado = <K extends keyof FormularioConsulta['dados']>(k: K, v: FormularioConsulta['dados'][K]) => onMudar({ ...valor, dados: { ...dados, [k]: v } })
   const mudaResposta = (id: string, v: string | string[]) => onMudar({ ...valor, respostas: { ...valor.respostas, [id]: v } })
 
-  function campoDado(rotulo: string, k: 'nomeCompleto' | 'nomeSocial' | 'nascimento' | 'cidade' | 'profissao', tipo = 'text') {
+  function campoDado(rotulo: string, k: 'profissao', tipo = 'text') {
     return (
       <label key={k} className="block">
         <RotuloCampo texto={rotulo} vazio={!dados[k].trim()} />
@@ -85,6 +85,18 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar, confe
         </div>
       )
     }
+    if (q.tipo === 'escolha' && q.lista) {
+      const escolhida = typeof v === 'string' ? v : ''
+      return (
+        <label key={q.id} className="block">
+          <RotuloCampo texto={q.rotulo} vazio={!escolhida} />
+          <select value={escolhida} onChange={(e) => mudaResposta(q.id, e.target.value)} className={`${ENTRADA} w-auto max-w-full`}>
+            <option value="">Escolha</option>
+            {(q.opcoes ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </label>
+      )
+    }
     if (q.tipo === 'escolha' || q.tipo === 'varias') {
       const marcadas = Array.isArray(v) ? v : v ? [v] : []
       return (
@@ -105,26 +117,12 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar, confe
 
   function conteudo(b: Bloco) {
     if ('parte' in b) return b.parte.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map(campoPergunta)
-    if (b.id === 'trabalho') {
-      return [
-        <div key="ec">{opcoes('Estado civil', ESTADOS_CIVIS, dados.estadoCivil ? [dados.estadoCivil] : [], (v) => mudaDado('estadoCivil', dados.estadoCivil === v ? '' : v as DadosPessoais['estadoCivil']))}</div>,
-        campoDado('Profissão', 'profissao'),
-        <div key="te" className="col-span-2">{opcoes('Trabalha ao ar livre, exposto ao sol ou a produtos químicos?', [{ valor: 'sim', rotulo: 'Sim' }, { valor: 'nao', rotulo: 'Não' }],
-          dados.trabalhoExposto ? [dados.trabalhoExposto] : [], (v) => mudaDado('trabalhoExposto', dados.trabalhoExposto === v ? '' : v as DadosPessoais['trabalhoExposto']))}</div>,
-      ]
-    }
-    // um campo por linha onde a largura aperta (iPad): nada sobe sobre o vizinho
+    // 'trabalho' (a Identificação não aparece na anamnese)
     return [
-      <div key="n" className="col-span-2">{campoDado('Nome completo', 'nomeCompleto')}</div>,
-      <div key="ns" className="col-span-2">{campoDado('Nome social', 'nomeSocial')}</div>,
-      <div key="dn">{campoDado('Nascimento', 'nascimento', 'date')}</div>,
-      <div key="s">{opcoes('Sexo', [{ valor: 'M', rotulo: 'M', nome: 'Masculino' }, { valor: 'F', rotulo: 'F', nome: 'Feminino' }, { valor: 'I', rotulo: 'I', nome: 'Intersexo' }],
-        dados.sexo ? [dados.sexo] : [], (v) => mudaDado('sexo', v as DadosPessoais['sexo']))}</div>,
-      campoDado('Cidade', 'cidade'),
-      <label key="uf" className="block">
-        <RotuloCampo texto="UF" vazio={!dados.uf} />
-        <input {...SEM_CORRETOR} maxLength={2} value={dados.uf} onChange={(e) => mudaDado('uf', e.target.value.toUpperCase())} className={`${ENTRADA} w-16`} />
-      </label>,
+      <div key="ec">{opcoes('Estado civil', ESTADOS_CIVIS, dados.estadoCivil ? [dados.estadoCivil] : [], (v) => mudaDado('estadoCivil', dados.estadoCivil === v ? '' : v as DadosPessoais['estadoCivil']))}</div>,
+      campoDado('Profissão', 'profissao'),
+      <div key="te" className="col-span-2">{opcoes('Trabalha ao ar livre, exposto ao sol ou a produtos químicos?', [{ valor: 'sim', rotulo: 'Sim' }, { valor: 'nao', rotulo: 'Não' }],
+        dados.trabalhoExposto ? [dados.trabalhoExposto] : [], (v) => mudaDado('trabalhoExposto', dados.trabalhoExposto === v ? '' : v as DadosPessoais['trabalhoExposto']))}</div>,
     ]
   }
 

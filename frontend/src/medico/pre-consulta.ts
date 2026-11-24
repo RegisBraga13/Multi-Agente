@@ -26,9 +26,12 @@ export type Pergunta = {
   semResposta?: string
   /** no formulário do paciente, ocupa a linha toda (mantém a ordem das perguntas) */
   linhaToda?: boolean
+  /** escolha única num campo que abre, escolhe e fecha (economiza espaço; autor, 25/11) */
+  lista?: boolean
 }
 
-export type Parte = { titulo: string; perguntas: Pergunta[]; nota?: string }
+/** `colunas`: no PC, a parte em duas colunas com estas perguntas (ids) em cada uma, para caber numa tela */
+export type Parte = { titulo: string; perguntas: Pergunta[]; nota?: string; colunas?: [string[], string[]] }
 
 /** Respostas da pré-consulta, pela chave de cada pergunta (as fotos vão à parte). */
 export type RespostasPreConsulta = Record<string, string | string[]>
@@ -67,21 +70,17 @@ const DERMATOLOGIA: Parte[] = [
   },
   {
     titulo: 'Fototipo e exposição ao sol',
+    colunas: [['cor_pele', 'cor_olhos', 'cor_cabelo'], ['reacao_sol', 'protetor', 'bronzeamento']],
     perguntas: [
-      { id: 'cor_pele', rotulo: 'Cor da pele', tipo: 'escolha', opcoes: ['Muito clara', 'Clara', 'Morena clara', 'Morena', 'Morena escura', 'Negra'] },
-      { id: 'cor_olhos', rotulo: 'Cor dos olhos', tipo: 'escolha', opcoes: ['Azuis ou verdes', 'Castanho-claros', 'Castanho-escuros ou pretos'] },
-      { id: 'cor_cabelo', rotulo: 'Cor natural do cabelo', tipo: 'escolha', opcoes: ['Ruivo', 'Loiro', 'Castanho', 'Preto'] },
+      { id: 'cor_pele', rotulo: 'Cor da pele', tipo: 'escolha', lista: true, opcoes: ['Clara', 'Morena clara', 'Morena', 'Negra'] },
+      { id: 'cor_olhos', rotulo: 'Cor dos olhos', tipo: 'escolha', lista: true, opcoes: ['Azuis ou verdes', 'Castanho-claros', 'Castanho-escuros ou pretos'] },
+      { id: 'cor_cabelo', rotulo: 'Cor natural do cabelo', tipo: 'escolha', lista: true, opcoes: ['Ruivo', 'Loiro', 'Castanho', 'Preto'] },
       {
-        id: 'reacao_sol', rotulo: 'No sol, sua pele costuma:', tipo: 'escolha',
-        opcoes: [
-          'Sempre queimar e nunca bronzear',
-          'Queimar fácil e bronzear pouco',
-          'Queimar às vezes e bronzear aos poucos',
-          'Raramente queimar e bronzear fácil',
-          'Nunca queimar',
-        ],
+        id: 'reacao_sol', rotulo: 'No sol, sua pele costuma:', tipo: 'escolha', lista: true,
+        // sem "nunca" e sem as que quase se repetem: o prontuário não precisa de tanta precisão (autor, 25/11)
+        opcoes: ['Queimar fácil e bronzear pouco', 'Queimar às vezes e bronzear aos poucos', 'Raramente queimar e bronzear fácil'],
       },
-      { id: 'protetor', rotulo: 'Usa protetor solar?', tipo: 'escolha', opcoes: ['Todo dia', 'Às vezes', 'Raramente', 'Nunca'] },
+      { id: 'protetor', rotulo: 'Usa protetor solar?', tipo: 'escolha', lista: true, opcoes: ['Todo dia', 'Às vezes', 'Raramente'] },
       { id: 'bronzeamento', rotulo: 'Já fez bronzeamento artificial?', tipo: 'escolha', opcoes: SIM_NAO },
     ],
   },

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { buscarEspecialidade } from '../especialidades'
 import { Campo } from './campo'
 import { CamposIdentificacao } from './campos-identificacao'
 import { btnSecundario, classeEntrada } from './estilos'
@@ -30,6 +31,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
     estadoCivil: '', profissao: '', trabalhoExposto: '',
   })
   const partes = partesPreConsulta(medico.especialidade)
+  const especialidade = buscarEspecialidade(medico.especialidade)?.nome
   const [pre, setPre] = useState<RespostasPreConsulta>({})
   const [errosPre, setErrosPre] = useState<Record<string, string>>({})
   const [erros, setErros] = useState<Partial<Record<keyof DadosPessoais, string>>>({})
@@ -89,6 +91,18 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
 
   function campoPergunta(q: Pergunta) {
     const valor = pre[q.id]
+    if (q.tipo === 'escolha' && q.lista) {
+      return (
+        <Campo key={q.id} rotulo={q.rotulo} ajuda={q.ajuda}>
+          {(p) => (
+            <select {...p} value={typeof valor === 'string' ? valor : ''} onChange={(e) => mudaPre(q.id, e.target.value)} className={`${classeEntrada(p)} w-auto max-w-full`}>
+              <option value="">Escolha</option>
+              {(q.opcoes ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          )}
+        </Campo>
+      )
+    }
     if (q.tipo === 'escolha' || q.tipo === 'varias') {
       const marcadas = Array.isArray(valor) ? valor : valor ? [valor] : []
       return (
@@ -226,12 +240,25 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
     if ('parte' in b) {
       return (
         <>
-          {/* no PC, perguntas curtas lado a lado; as longas ocupam a linha toda */}
-          <div className="grid gap-3.5 sm:grid-flow-row-dense sm:grid-cols-[3fr_2fr] sm:gap-x-5">
-            {b.parte.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map((q) => (
-              <div key={q.id} className={ocupaLinhaToda(q) ? 'sm:col-span-2' : ''}>{campoPergunta(q)}</div>
-            ))}
-          </div>
+          {b.parte.colunas ? (
+            // parte em duas colunas no PC (cabe numa tela); no celular, uma pergunta abaixo da outra
+            <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-x-6">
+              {b.parte.colunas.map((ids, i) => (
+                <div key={i} className="grid content-start gap-3.5">
+                  {ids.map((id) => b.parte.perguntas.find((q) => q.id === id)).filter((q): q is Pergunta => !!q && perguntaVisivel(q, dados.sexo)).map((q) => (
+                    <div key={q.id}>{campoPergunta(q)}</div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            // no PC, perguntas curtas lado a lado; as longas ocupam a linha toda
+            <div className="grid gap-3.5 sm:grid-flow-row-dense sm:grid-cols-[3fr_2fr] sm:gap-x-5">
+              {b.parte.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map((q) => (
+                <div key={q.id} className={ocupaLinhaToda(q) ? 'sm:col-span-2' : ''}>{campoPergunta(q)}</div>
+              ))}
+            </div>
+          )}
           {b.parte.nota && <p className="mt-4 bg-suave px-4 py-3 text-[14px] text-apagado">{b.parte.nota}</p>}
         </>
       )
@@ -263,10 +290,9 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
   return (
     <section aria-labelledby="h-form" className="scroll-mt-4 pt-3 pb-4">
       {!pronto && etapa === 0 && whatsapp && pedido.data && (
-        <div role="status" className="mx-auto mb-4 max-w-3xl border-l-4 border-(--esp) bg-branco px-5 py-3 text-[15px] leading-snug">
-          <b className="block">✓ Solicitação de agendamento registrada</b>
-          <span className="block">{diaComSemana(pedido.data)} · {horaCurta(pedido.inicio ?? '')} · {NOME_MODALIDADE[pedido.modalidade]}</span>
-          <span className="block text-apagado">Confirmação pelo WhatsApp {formatarWhatsapp(whatsapp)}</span>
+        <div role="status" className="mx-auto mb-3 max-w-3xl border-l-4 border-(--esp) bg-branco px-5 py-2 text-[14.5px] leading-snug">
+          <b>✓ Agendado</b> · {diaComSemana(pedido.data)} · {horaCurta(pedido.inicio ?? '')} · {NOME_MODALIDADE[pedido.modalidade]}
+          <span className="text-apagado"> · confirmação no WhatsApp {formatarWhatsapp(whatsapp)}</span>
         </div>
       )}
       <div className="mx-auto max-w-3xl">
@@ -283,9 +309,9 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
             <form id="formulario-paciente" noValidate onSubmit={avancar}>
               {/* cabeçalho numa linha só: título, parte atual e "Fazer depois"; a barra de progresso logo abaixo */}
               <div className="flex items-baseline justify-between gap-4">
-                <h2 id="h-form" ref={titulo} tabIndex={-1} className="text-[13px] font-bold tracking-[.14em] text-(--esp) uppercase outline-none">
-                  Formulário da consulta
-                  <span className="ml-2 font-semibold tracking-normal normal-case text-apagado">· {bloco ? `Parte ${etapa + 1} de ${blocos.length}` : 'Revisão'}</span>
+                <h2 id="h-form" ref={titulo} tabIndex={-1} className="text-[20px] leading-tight font-bold outline-none">
+                  {especialidade && <><span className="text-(--esp)">{especialidade}</span> · </>}Formulário
+                  <span className="ml-2 text-[14px] font-semibold text-apagado">· {bloco ? `Parte ${etapa + 1} de ${blocos.length}` : 'Revisão'}</span>
                 </h2>
                 <button type="button" onClick={onConcluir} className="flex-none text-[14px] font-semibold text-apagado underline hover:text-tinta">Fazer depois</button>
               </div>

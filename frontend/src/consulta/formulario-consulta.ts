@@ -51,11 +51,10 @@ export function textoDoFormulario(partes: Parte[], f: FormularioConsulta, hoje: 
   const d = f.dados
   const idade = calcularIdade(d.nascimento, hoje)
   const linhas: string[] = []
+  // só o que ajuda o raciocínio clínico: a anamnese não leva nome, nome social nem cidade (regra 9.1)
   const ident = [
-    d.nomeCompleto.trim() && `${d.nomeCompleto.trim()}${d.nomeSocial.trim() ? ` (nome social: ${d.nomeSocial.trim()})` : ''}`,
     idade !== null ? `${idade} ${idade === 1 ? 'ano' : 'anos'}` : '',
     d.sexo && `sexo ${d.sexo}`,
-    d.cidade.trim() && `${d.cidade.trim()}${d.uf ? `/${d.uf}` : ''}`,
   ].filter(Boolean)
   if (ident.length) linhas.push(`Identificação: ${ident.join(', ')}.`)
   const trabalho = [

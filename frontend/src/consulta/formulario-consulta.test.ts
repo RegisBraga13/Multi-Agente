@@ -13,7 +13,7 @@ const F: FormularioConsulta = {
 describe('textoDoFormulario', () => {
   it('vira texto na ordem do formulário; pergunta com "?" seguida da resposta; o que está em branco não entra', () => {
     expect(textoDoFormulario(partes, F, hoje)).toBe([
-      'Identificação: Maria Lima, 47 anos, sexo F, Fortaleza/CE.',
+      'Identificação: 47 anos, sexo F.',
       'Estado civil e trabalho: Professora.',
       'Queixa principal: Qual o motivo da sua consulta? Manchas no rosto. Há quanto tempo apareceu? 2 anos. Coça, dói ou sangra? Coça, Dói.',
       'Fototipo e exposição ao sol: Cor da pele: Clara.',
@@ -23,9 +23,9 @@ describe('textoDoFormulario', () => {
     ].join('\n'))
   })
 
-  it('nome social aparece; "Não tenho alergia" fica escrito como resposta', () => {
+  it('sem nome, nome social ou cidade (só idade e sexo); "Não tenho alergia" fica escrito como resposta', () => {
     const t = textoDoFormulario(partes, { ...F, dados: { ...F.dados, nomeSocial: 'Mari' }, respostas: { alergias: 'Não tenho alergia' }, fotos: {} }, hoje)
-    expect(t.split('\n')).toEqual(['Identificação: Maria Lima (nome social: Mari), 47 anos, sexo F, Fortaleza/CE.', 'Estado civil e trabalho: Professora.', 'Saúde geral: Alergias: Não tenho alergia.'])
+    expect(t.split('\n')).toEqual(['Identificação: 47 anos, sexo F.', 'Estado civil e trabalho: Professora.', 'Saúde geral: Alergias: Não tenho alergia.'])
   })
 })
 

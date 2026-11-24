@@ -38,22 +38,9 @@ export function PaginaFormulario() {
 
   return (
     <div style={{ '--esp': esp?.cor } as CSSProperties} className="flex min-h-screen flex-col">
-      <header className="border-b border-linha bg-branco" style={{ borderTop: '4px solid var(--esp)' }}>
-        <div className="mx-auto max-w-3xl px-4 py-2.5 sm:px-6">
-          {medico ? (
-            <>
-              <h1 className="text-[clamp(21px,3vw,26px)] leading-tight font-bold">{medico.tratamento} {medico.nome}</h1>
-              <p className="mt-0.5 text-[12px] font-bold tracking-[.14em] text-(--esp) uppercase">
-                {esp?.profissional} <span className="font-semibold tracking-normal normal-case text-tinta">· CRM {medico.crm}-{medico.uf}</span>
-              </p>
-            </>
-          ) : (
-            <h1 className="text-[22px] font-bold">Formulário da consulta</h1>
-          )}
-        </div>
-      </header>
+      {/* sem cabeçalho próprio: a especialidade, "Formulário" e a parte ficam numa linha só, no topo do cartão */}
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-3 sm:px-6">
         {estado.tipo === 'carregando' && <p className="py-16 text-center text-apagado">Abrindo o formulário…</p>}
         {estado.tipo === 'erro' && <p role="alert" className="py-16 text-center text-[17px] font-semibold text-alerta">{estado.mensagem}</p>}
         {pedido && !medico && <p role="alert" className="py-16 text-center text-[17px] font-semibold text-alerta">Não foi possível abrir o formulário.</p>}
@@ -68,7 +55,7 @@ export function PaginaFormulario() {
         )}
       </main>
 
-      <footer className="border-t border-linha py-3 text-center text-[14px] text-apagado">
+      <footer className="border-t border-linha py-1.5 text-center text-[13px] text-apagado">
         Formulário com <Marca className="text-[17px]" />
       </footer>
     </div>
