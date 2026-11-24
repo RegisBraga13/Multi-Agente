@@ -45,7 +45,9 @@ TABELA: dict[str, str] = {
     "diagnosticos": "diagnostic_hypotheses",
     "conduta": "care_plans",
 }
-_COLUNAS_CONSULTA = "id, patient_id, kind, modality, scheduled_at, finalized_at, specialty_slug, booking_request_id, return_booking_id"
+_COLUNAS_CONSULTA = (
+    "id, patient_id, kind, modality, scheduled_at, finalized_at, specialty_slug, booking_request_id, return_booking_id"
+)
 
 
 def _consulta(linha: dict[str, Any], blocos: list[Bloco]) -> Consulta:
@@ -105,9 +107,7 @@ class RepositorioConsultasPostgres:
                 raise
             return existente
 
-    def _criar(
-        self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None, retorno_id: UUID | None
-    ) -> Consulta:
+    def _criar(self, medico_id: UUID, nova: NovaConsulta, pedido_id: UUID | None, retorno_id: UUID | None) -> Consulta:
         with self._transacao(medico_id) as conn:
             if conn.execute("select 1 from patients where id = %s", (nova.paciente_id,)).fetchone() is None:
                 raise ConsultaNaoEncontrada
@@ -294,9 +294,15 @@ class RepositorioConsultasPostgres:
         return [Documento.model_validate(x["content"]) for x in linhas]
 
     def finalizar(
-        self, medico_id: UUID, consulta_id: UUID, dados: DadosEntrada, edicoes: dict[str, str], quando: datetime
+        self,
+        medico_id: UUID,
+        consulta_id: UUID,
+        dados: DadosEntrada,
+        edicoes: dict[str, str],
+        quando: datetime,
+        titulo: str | None = None,
     ) -> None:
-        registro = {"dados": dados.model_dump(by_alias=True, mode="json"), "edicoes": edicoes}
+        registro = {"dados": dados.model_dump(by_alias=True, mode="json"), "edicoes": edicoes, "titulo": titulo}
         with self._transacao(medico_id) as conn:
             self._aberta(conn, consulta_id)
             conn.execute(
@@ -342,6 +348,7 @@ class RepositorioConsultasPostgres:
                     DadosEntrada.model_validate(x["record"]["dados"]),
                     dict(x["record"]["edicoes"]),
                     adendos.get(x["id"], []),
+                    x["record"].get("titulo"),
                 )
                 for x in linhas
             ]

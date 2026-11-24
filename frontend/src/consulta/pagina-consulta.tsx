@@ -26,7 +26,7 @@ import { EscolhaRetorno } from './retorno-pagina'
 import { dataLocal, gerarAgenda, marcarOcupados, MEDICO_EXEMPLO } from '../medico/exemplo'
 import { aplicarEdicoes, atualizarProntuario, cabecalhoProntuario, chave, dadosDaConsulta, edicoesDoMedico, secoesDosDados, type SecaoProntuario } from './prontuario'
 import { PaginaProntuario } from './prontuario-pagina'
-import { abrirJanelaProntuario, entradas, salvarEntrada, tituloDaConsulta, tituloNovaEntrada, type DadosEntrada, type EntradaProntuario } from '../prontuario/registro'
+import { abrirJanelaProntuario, entradas, salvarEntrada, tituloDaConsulta, type DadosEntrada, type EntradaProntuario } from '../prontuario/registro'
 import { buscarAtendimento, conteudoDaConsulta, type RespostaPergunta } from './exemplo'
 import { FORMULARIO_VAZIO, type FormularioConsulta } from './formulario-consulta'
 import { partesPreConsulta } from '../medico/pre-consulta'
@@ -542,7 +542,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
   }
 
   /** Prontuário: os dados organizados (o que fica gravado) e o texto na tela, escrito só com o que foi salvo. */
-  /** consulta real: o título da entrada ('Consulta N') calculado com as entradas já finalizadas do paciente */
+  /** consulta real: o título que o servidor vai gravar ao finalizar ('Consulta N' ou 'Consulta N — Retorno') */
   const [tituloServidor, setTituloServidor] = useState('')
   const [prontuario, setProntuario] = useState<{ versao: number; dados: DadosEntrada; geradas: SecaoProntuario[]; textos: Record<string, string>; mudou: Record<string, boolean> } | null>(null)
   const fotoExemplo = at.paciente.nome === 'Mariana Costa' ? '/img/acne-exemplo.jpg' : null
@@ -552,7 +552,8 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
     try {
       const [proposto, anteriores] = await Promise.all([prontuarioProposto(id), prontuarioDoPaciente(servidor!.pacienteId)])
       const dadosP = { ...proposto, retornoMarcado: retornoParaEnvio(retorno) } // o servidor só grava o retorno ao finalizar
-      setTituloServidor(tituloNovaEntrada(anteriores, at.tipo))
+      // mesma regra do servidor ao finalizar: retorno = nome da consulta de origem; consulta = próxima pela contagem
+      setTituloServidor(proposto.comparacao ? `${proposto.comparacao.referencia} — Retorno` : `Consulta ${anteriores.filter((e) => e.tipo === 'consulta').length + 1}`)
       const novas = secoesDosDados(dadosP)
       setProntuario((x) => x
         ? { versao: x.versao + 1, dados: dadosP, geradas: novas, ...atualizarProntuario(x.geradas, x.textos, novas) }

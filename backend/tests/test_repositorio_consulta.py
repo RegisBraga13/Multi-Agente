@@ -181,3 +181,21 @@ def test_data_e_hora_no_fuso_do_consultorio(ambiente):
     repo.finalizar(a, c.id, DADOS_MINIMOS, {}, QUANDO)
     [e] = repo.prontuario(a, paciente)
     assert (str(e.data), e.hora) == ("2026-11-13", "22:00")
+
+
+def test_titulo_gravado_ao_finalizar_nao_muda(ambiente):
+    repo, a, _, paciente = ambiente
+    tarde = repo.criar(a, nova(paciente, datetime(2026, 11, 20, 15, 0, tzinfo=BRT)))
+    repo.finalizar(a, tarde.id, DADOS_MINIMOS, {}, QUANDO, "Consulta 1")
+    cedo = repo.criar(a, nova(paciente, datetime(2026, 11, 20, 8, 0, tzinfo=BRT)))
+    repo.finalizar(a, cedo.id, DADOS_MINIMOS, {}, QUANDO + timedelta(hours=1), "Consulta 2")
+    assert {e.id: e.titulo for e in repo.prontuario(a, paciente)} == {tarde.id: "Consulta 1", cedo.id: "Consulta 2"}
+
+
+def test_registro_antigo_sem_titulo_numera_pela_ordem_de_finalizar(ambiente):
+    repo, a, _, paciente = ambiente
+    tarde = repo.criar(a, nova(paciente, datetime(2026, 11, 20, 15, 0, tzinfo=BRT)))
+    repo.finalizar(a, tarde.id, DADOS_MINIMOS, {}, QUANDO)
+    cedo = repo.criar(a, nova(paciente, datetime(2026, 11, 20, 8, 0, tzinfo=BRT)))
+    repo.finalizar(a, cedo.id, DADOS_MINIMOS, {}, QUANDO + timedelta(hours=1))
+    assert {e.id: e.titulo for e in repo.prontuario(a, paciente)} == {tarde.id: "Consulta 1", cedo.id: "Consulta 2"}

@@ -29,6 +29,7 @@ from app.contratos.consulta_blocos import (
 from app.contratos.prontuario import DadosEntrada, EntradaProntuario, PacienteComProntuario
 from app.prontuario.montar import aplicar_edicoes_narrativas, dados_da_consulta
 from app.prontuario.retorno import comparar_com_origem
+from app.prontuario.titulo import titulo_nova_entrada
 
 rotas = APIRouter(tags=["prontuário"])
 Dep = Annotated[Dependencias, Depends(dependencias)]
@@ -86,6 +87,17 @@ def _entrada_de_origem(dep: Dependencias, medico: UUID, consulta: Consulta) -> E
     return next((e for e in dep.repo.prontuario(medico, consulta.paciente_id) if e.id == origem_id), None)
 
 
+def _titulo(dep: Dependencias, medico: UUID, consulta: Consulta) -> str:
+    """Nome da entrada, fixado ao finalizar: consulta = "Consulta N" pela ordem em que foram finalizadas;
+    retorno = o nome da consulta que o marcou + " — Retorno" (um retorno por consulta)."""
+    if consulta.tipo == "retorno":
+        origem = _entrada_de_origem(dep, medico, consulta)
+        if origem is not None:
+            return f"{origem.titulo} — Retorno"
+    feitas = dep.repo.prontuario(medico, consulta.paciente_id)
+    return titulo_nova_entrada([(e.tipo, "0", "") for e in feitas], consulta.tipo)
+
+
 @rotas.get("/consultas/{consulta_id}/prontuario", response_model=DadosEntrada)
 def prontuario_proposto(consulta_id: UUID, dep: Dep, medico: Medico) -> DadosEntrada:
     return _proposto(dep, medico, consulta_id)
@@ -121,7 +133,8 @@ def finalizar(consulta_id: UUID, corpo: Finalizacao, dep: Dep, medico: Medico) -
             raise HTTPException(status.HTTP_409_CONFLICT, str(erro)) from erro
         dados = dados.model_copy(update={"retorno_marcado": corpo.retorno_marcado})
     try:
-        dep.repo.finalizar(medico, consulta_id, dados, edicoes, dep.relogio.agora())
+        titulo = _titulo(dep, medico, consulta)
+        dep.repo.finalizar(medico, consulta_id, dados, edicoes, dep.relogio.agora(), titulo)
     except Exception:
         if marcou:
             with suppress(

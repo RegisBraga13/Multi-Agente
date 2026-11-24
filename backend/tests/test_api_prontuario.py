@@ -275,3 +275,34 @@ def test_consulta_comum_nao_tem_comparacao(mundo):
     c = cliente(mundo)
     cid = consulta_pronta(c)
     assert c.get(f"/consultas/{cid}/prontuario").json()["comparacao"] is None
+
+
+def test_titulo_fica_fixo_mesmo_com_consulta_marcada_mais_cedo(mundo):
+    """Teste de consistência 24/11: a 2ª consulta marcada mais cedo no mesmo dia renomeava a Consulta 1."""
+    from tests.test_api_consultas import _cliente_com_agenda, _pedido_com_formulario
+
+    c, agenda = _cliente_com_agenda(mundo)
+    p = _pedido_com_formulario(agenda, MEDICO_A)
+    origem = c.post(f"/consultas/do-pedido/{p.id}", json={"especialidade": "dermatologia"}).json()["id"]
+    etapas_ate_conduta(c, origem)
+    c.post(f"/consultas/{origem}/finalizar", json={"edicoes": {}, "retornoMarcado": RETORNO})
+    [cartao] = agenda.retornos(MEDICO_A, FUTURO, FUTURO)
+    rid = c.post(f"/consultas/do-retorno/{cartao.id}", json={"especialidade": "dermatologia"}).json()["id"]
+    etapas_ate_conduta(c, rid)
+    c.post(f"/consultas/{rid}/finalizar", json={"edicoes": {}})
+    paciente = c.get(f"/consultas/{origem}").json()["pacienteId"]
+    marcada = c.get(f"/consultas/{origem}").json()["agendadaPara"]
+    mais_cedo = c.post(
+        "/consultas",
+        json={
+            "pacienteId": paciente,
+            "tipo": "consulta",
+            "modalidade": "presencial",
+            "agendadaPara": "2020-01-01T08:00:00Z",
+        },
+    ).json()["id"]
+    assert marcada > "2020-01-01"
+    etapas_ate_conduta(c, mais_cedo)
+    assert c.post(f"/consultas/{mais_cedo}/finalizar", json={"edicoes": {}}).json()["titulo"] == "Consulta 2"
+    titulos = {e["id"]: e["titulo"] for e in c.get(f"/pacientes/{paciente}/prontuario").json()}
+    assert titulos == {origem: "Consulta 1", rid: "Consulta 1 — Retorno", mais_cedo: "Consulta 2"}

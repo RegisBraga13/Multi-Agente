@@ -6,7 +6,7 @@ em consulta finalizada; propostas da IA e adendos só crescem. Consulta ou pacie
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any, Literal, Protocol
 from uuid import UUID, uuid4
 
@@ -85,8 +85,16 @@ class RepositorioConsultas(Protocol):
     def documentos(self, medico_id: UUID, consulta_id: UUID) -> list[Documento]: ...
 
     def finalizar(
-        self, medico_id: UUID, consulta_id: UUID, dados: DadosEntrada, edicoes: dict[str, str], quando: datetime
-    ) -> None: ...
+        self,
+        medico_id: UUID,
+        consulta_id: UUID,
+        dados: DadosEntrada,
+        edicoes: dict[str, str],
+        quando: datetime,
+        titulo: str | None = None,
+    ) -> None:
+        """`titulo`: o nome da entrada no prontuário ("Consulta 2"), gravado junto e nunca recalculado."""
+        ...
 
     def adicionar_adendo(
         self, medico_id: UUID, consulta_id: UUID, texto: str, motivo: str, quando: datetime
@@ -100,25 +108,27 @@ class RepositorioConsultas(Protocol):
 
 
 def montar_entradas(
-    finalizadas: list[tuple[Consulta, DadosEntrada, dict[str, str], list[Adendo]]],
+    finalizadas: list[tuple[Consulta, DadosEntrada, dict[str, str], list[Adendo], str | None]],
 ) -> list[EntradaProntuario]:
-    """Entradas do prontuário (mais recente no topo), com o título calculado pelas anteriores."""
-    locais = [no_consultorio(c.agendada_para) for c, *_ in finalizadas]
-    chave = [
-        (c.tipo, x.strftime("%Y-%m-%d"), x.strftime("%H:%M")) for (c, *_), x in zip(finalizadas, locais, strict=True)
-    ]
+    """Entradas do prontuário (mais recente no topo).
+
+    O título é o gravado ao finalizar (entrada salva nunca muda). Registros antigos, sem título gravado,
+    recebem o título pela ordem em que foram finalizados (nunca pela hora marcada, que pode ser anterior).
+    """
+    ordem = [(c.tipo, f"{(c.finalizada_em or c.agendada_para).timestamp():017.6f}", "") for c, *_ in finalizadas]
     entradas = []
-    for (c, dados, edicoes, adendos), (tipo, data, hora) in zip(finalizadas, chave, strict=True):
-        antes = [k for k in chave if f"{k[1]} {k[2]}" < f"{data} {hora}"]
+    for (c, dados, edicoes, adendos, gravado), chave in zip(finalizadas, ordem, strict=True):
+        local = no_consultorio(c.agendada_para)
+        antes = [k for k in ordem if k[1] < chave[1]]
         entradas.append(
             EntradaProntuario(
                 id=c.id,
                 paciente_id=c.paciente_id,
-                titulo=titulo_nova_entrada(antes, tipo),
+                titulo=gravado or titulo_nova_entrada(antes, c.tipo),
                 tipo=c.tipo,
                 modalidade=c.modalidade,
-                data=date.fromisoformat(data),
-                hora=hora,
+                data=local.date(),
+                hora=local.strftime("%H:%M"),
                 dados=dados,
                 edicoes=edicoes,
                 adendos=adendos,
@@ -135,6 +145,7 @@ class _Registro:
     documentos: dict[str, Documento] = field(default_factory=dict)
     adendos: list[Adendo] = field(default_factory=list)
     registro: tuple[DadosEntrada, dict[str, str]] | None = None
+    titulo: str | None = None
 
 
 class RepositorioConsultasMemoria:
@@ -241,10 +252,17 @@ class RepositorioConsultasMemoria:
         return [d.model_copy(deep=True) for d in self._achar(medico_id, consulta_id).documentos.values()]
 
     def finalizar(
-        self, medico_id: UUID, consulta_id: UUID, dados: DadosEntrada, edicoes: dict[str, str], quando: datetime
+        self,
+        medico_id: UUID,
+        consulta_id: UUID,
+        dados: DadosEntrada,
+        edicoes: dict[str, str],
+        quando: datetime,
+        titulo: str | None = None,
     ) -> None:
         r = self._aberta(medico_id, consulta_id)
         r.registro = (dados.model_copy(deep=True), dict(edicoes))
+        r.titulo = titulo
         r.consulta.finalizada_em = quando
 
     def adicionar_adendo(self, medico_id: UUID, consulta_id: UUID, texto: str, motivo: str, quando: datetime) -> None:
@@ -264,7 +282,7 @@ class RepositorioConsultasMemoria:
 
     def prontuario(self, medico_id: UUID, paciente_id: UUID) -> list[EntradaProntuario]:
         finalizadas = [
-            (r.consulta, r.registro[0], r.registro[1], list(r.adendos))
+            (r.consulta, r.registro[0], r.registro[1], list(r.adendos), r.titulo)
             for r in self._dados.values()
             if r.medico_id == medico_id and r.consulta.paciente_id == paciente_id and r.registro is not None
         ]
