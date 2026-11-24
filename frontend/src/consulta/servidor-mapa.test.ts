@@ -97,3 +97,15 @@ describe('exame do retorno (a Evolução usa o mesmo bloco de exame do servidor)
     expect(() => exameParaServidor(linhas)).toThrow(/não conhece/)
   })
 })
+
+describe('anamneseDoServidor: perguntas de aprofundamento do retorno', () => {
+  it('a resposta aberta de uma pergunta de aprofundamento volta ao recarregar', () => {
+    const filho = { texto: 'Qual foi o efeito?', aberta: true, seSim: 'Efeito: {}.', seNao: '' }
+    const mae = { texto: 'Teve efeito colateral?', seSim: 'Refere efeito colateral.', seNao: 'Nega.', aprofundar: [filho] }
+    const b = { queixa: '', falas: [], sinais: [], emUso: [], antecedentes: [], alergias: [], texto: '', formulario: null,
+      perguntas: [{ texto: 'Teve efeito colateral?', resposta: 'sim' as const, detalhe: null }, { texto: 'Qual foi o efeito?', resposta: 'sim' as const, detalhe: 'Ressecamento leve' }] }
+    const r = anamneseDoServidor(b, [mae] as never)
+    expect(r.naoReconhecidas).toEqual([])
+    expect(r.perguntas.map((p) => [p.pergunta.texto, p.resposta, p.texto])).toEqual([['Teve efeito colateral?', 'sim', undefined], ['Qual foi o efeito?', 'sim', 'Ressecamento leve']])
+  })
+})

@@ -73,8 +73,10 @@ export function anamneseParaServidor(e: EntradaAnamnese): AnamneseServidor {
 export function anamneseDoServidor(b: AnamneseServidor, catalogo: Pergunta[]) {
   const perguntas: RespostaPergunta[] = []
   const naoReconhecidas: string[] = []
+  // as perguntas de aprofundamento (retorno: "Qual foi o efeito?") também são conhecidas
+  const todas = catalogo.flatMap((c) => [c, ...(c.aprofundar ?? [])])
   for (const p of b.perguntas) {
-    const conhecida = catalogo.find((c) => c.texto === p.texto)
+    const conhecida = todas.find((c) => c.texto === p.texto)
     if (!conhecida) naoReconhecidas.push(p.texto)
     else perguntas.push({ pergunta: conhecida, resposta: p.resposta, ...(p.detalhe !== null ? { texto: p.detalhe } : {}) })
   }

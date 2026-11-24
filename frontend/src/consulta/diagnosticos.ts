@@ -92,12 +92,28 @@ export function atualizarDiagnosticos(itens: ItemDD[], novas: Hipotese[]): ItemD
     if (!antes) return { hip, decisao: 'pendente', propria: false, mudou: true, aviso: null }
     if (igual(antes.hip, hip)) return { ...antes, hip, mudou: false }
     if (antes.decisao === 'pendente') return { ...antes, hip, mudou: true, aviso: null }
+    // o médico já decidiu e a probabilidade não mudou (só o embasamento): a decisão fica, sem aviso ("70% → 70%")
+    if (antes.hip.pct === hip.pct) return { ...antes, hip, mudou: false }
     return { ...antes, hip, mudou: false, aviso: { tipo: 'mudou', antes: antes.aviso?.tipo === 'mudou' ? antes.aviso.antes : antes.hip.pct } }
   })
   const sairam = daIA
     .filter((x) => x.decisao !== 'pendente' && !novas.some((h) => h.id === x.hip.id))
     .map((x): ItemDD => ({ ...x, mudou: false, aviso: { tipo: 'saiu' } }))
   return [...atualizadas, ...sairam, ...itens.filter((x) => x.propria)]
+}
+
+const mesmoDiagnostico = (h: Hipotese, nome: string, cid: string) =>
+  (cid.trim() !== '' && h.cid.trim().toUpperCase() === cid.trim().toUpperCase()) || h.nome.trim().toLowerCase() === nome.trim().toLowerCase()
+
+/**
+ * O médico adiciona um diagnóstico dele (já confirmado). Se ele já está na lista (mesmo CID ou mesmo nome),
+ * não entra de novo: o que já estava fica confirmado.
+ */
+export function adicionarProprio(itens: ItemDD[], nome: string, cid: string, id: string): ItemDD[] {
+  if (itens.some((x) => mesmoDiagnostico(x.hip, nome, cid))) {
+    return itens.map((x) => (mesmoDiagnostico(x.hip, nome, cid) ? { ...x, decisao: 'confirmada', aviso: null } : x))
+  }
+  return [...itens, { hip: { id, nome, cid, pct: null, evidencias: [] }, decisao: 'confirmada', propria: true, mudou: false, aviso: null }]
 }
 
 /** O que impede salvar (null = pode salvar). Mostrado só depois de uma tentativa. */

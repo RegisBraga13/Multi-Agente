@@ -3,7 +3,7 @@ import { agendaDoDia } from '../modulo/exemplo'
 import { conteudoDaConsulta } from './exemplo'
 import { montarHistoria, type SecaoHistoria } from './historia'
 import { EXTRAS, MODELOS } from './diagnosticos-exemplo'
-import { atualizarComReserva, atualizarDiagnosticos, chamarMais, iniciarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, primeirosItens, type Hipotese, type ItemDD } from './diagnosticos'
+import { adicionarProprio, atualizarComReserva, atualizarDiagnosticos, chamarMais, iniciarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, primeirosItens, type Hipotese, type ItemDD } from './diagnosticos'
 
 const agora = new Date(2026, 10, 16, 7, 0)
 // os pacientes giram de um dia para o outro: procura o paciente, com ficha pronta, em algum dia de novembro
@@ -91,6 +91,10 @@ describe('atualizarDiagnosticos', () => {
     expect(de('e')).toMatchObject({ mudou: true, decisao: 'pendente' })
     expect(de('propria-1')).toEqual(itens[4])
   })
+  it('decidida e só o embasamento mudou (mesma %): a decisão fica, sem aviso "70% → 70%"', () => {
+    const r2 = atualizarDiagnosticos(itens, [hip('b', 30, 'y')])
+    expect(r2.find((x) => x.hip.id === 'b')).toMatchObject({ decisao: 'confirmada', mudou: false, aviso: null })
+  })
   it('nada mudou: nada é reescrito nem sugerido', () => {
     const iguais = atualizarDiagnosticos(itens, [hip('a', 60), hip('b', 30), hip('c', 10), hip('d', 5)])
     expect(iguais.every((x) => !x.mudou && !x.aviso)).toBe(true)
@@ -129,5 +133,19 @@ describe('pendenciasDiagnosticos', () => {
   it('sugestões precisam de decisão', () => {
     const ok = base.map((x, i) => (i === 0 ? { ...x, decisao: 'confirmada' as const } : x))
     expect(pendenciasDiagnosticos(ok.map((x) => ({ ...x, aviso: { tipo: 'saiu' as const } })))).toBe('Falta decidir 2 sugestões')
+  })
+})
+
+describe('adicionarProprio: o diagnóstico do médico não entra duas vezes', () => {
+  const base = primeirosItens([{ id: 'acne', nome: 'Acne vulgar', cid: 'L70.0', pct: 60, evidencias: [] }])
+  it('diagnóstico novo entra confirmado', () => {
+    const r = adicionarProprio(base, 'Tinha do corpo', 'B35.4', 'propria-1')
+    expect(r).toHaveLength(2)
+    expect(r[1]).toMatchObject({ propria: true, decisao: 'confirmada', hip: { nome: 'Tinha do corpo', cid: 'B35.4' } })
+  })
+  it('mesmo CID ou mesmo nome: não duplica; o que já estava fica confirmado', () => {
+    expect(adicionarProprio(base, 'Acne', 'l70.0', 'x')).toEqual([{ ...base[0], decisao: 'confirmada', aviso: null }])
+    const uma = adicionarProprio(base, 'Tinha do corpo', 'B35.4', 'propria-1')
+    expect(adicionarProprio(uma, 'tinha do corpo', '', 'propria-2')).toHaveLength(2)
   })
 })

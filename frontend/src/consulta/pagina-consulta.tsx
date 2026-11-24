@@ -14,7 +14,7 @@ import { Exame } from './exame'
 import { atualizarHistoria, montarHistoria, montarHistoriaEvolucao, secoesDaConsultaAnterior, secoesDaEvolucaoParaDD, type SecaoHistoria } from './historia'
 import { PaginaHistoria } from './historia-pagina'
 import { tabelaDeExames } from './exames-tabela'
-import { atualizarComReserva, chamarMais, iniciarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, type Hipotese, type ItemDD } from './diagnosticos'
+import { adicionarProprio, atualizarComReserva, chamarMais, iniciarDiagnosticos, montarDiagnosticos, pendenciasDiagnosticos, type Hipotese, type ItemDD } from './diagnosticos'
 import { atualizarResumo, secaoDeAlergias, marcarResumo, montarResumo, type ItemResumo } from './resumo'
 import { PaginaDiagnosticos } from './diagnosticos-pagina'
 import { atualizarConduta, editarTexto, escolherOpcao, escreverOutro, montarConduta, pendenciasConduta, revelar, type Conduta } from './conduta'
@@ -512,7 +512,10 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
   }
 
   /** Retorno (página 5): só rascunho; vai ao servidor no Finalizar. */
-  const [retorno, setRetorno] = useState<RascunhoRetorno>(RASCUNHO_INICIAL)
+  // o rascunho com que o médico salvou os anexos fica no navegador: recarregar a página não o perde (o servidor só o recebe no Finalizar)
+  const chaveRascunho = servidor ? `especialista:anexos-salvos:${servidor.id}` : null
+  const [anexosSalvosAntes] = useState<RascunhoRetorno | null>(() => lerRascunho(chaveRascunho))
+  const [retorno, setRetorno] = useState<RascunhoRetorno>(anexosSalvosAntes ?? RASCUNHO_INICIAL)
   const [ocupadosRetorno, setOcupadosRetorno] = useState<HorarioOcupado[]>([])
   const agendaRetorno = useMemo(() => marcarOcupados(gerarAgenda(new Date()), ocupadosRetorno), [ocupadosRetorno])
   // consulta real: os horários já tomados (pedidos e outros retornos) nos próximos dias; sem conexão, a agenda aparece como está
@@ -563,6 +566,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
 
   /** Salvar anexos. Ao liberar o prontuário, a IA escreve (ou atualiza só o que mudou) e a página dele abre. */
   const salvarAnexos = () => {
+    gravarRascunho(chaveRascunho, retorno)
     const novo = oficializar(estado, 'anexos')
     despachar({ tipo: 'oficializar', bloco: 'anexos' })
     if (!historia || !dd || !conduta || podeOficializar(estado, 'prontuario') || !podeOficializar(novo, 'prontuario')) return
@@ -576,6 +580,17 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
       : { versao: 1, dados: dadosP, geradas: novas, textos: Object.fromEntries(novas.flatMap((s) => s.linhas.map((l) => [chave(s, l), l.texto]))), mudou: Object.fromEntries(novas.flatMap((s) => s.linhas.map((l) => [chave(s, l), true]))) })
     navegar(`${base}/prontuario`)
   }
+
+  // consulta retomada na página do prontuário: os anexos já tinham sido salvos (todos enviados, retorno escolhido) →
+  // salva de novo sozinho e monta o prontuário, em vez de pedir para salvar os anexos outra vez
+  const anexosRetomados = useRef(false)
+  useEffect(() => {
+    if (anexosRetomados.current || !servidor || !anexosSalvosAntes || etapa !== 'prontuario' || prontuario) return
+    if (!historia || !dd || !conduta || !docs || estado.blocos.anexos.estado === 'oficializado' || !podeOficializar(estado, 'anexos')) return
+    if (pendenciasAnexos(docs.itens) !== null || !podeSalvarAnexos(retorno)) return
+    anexosRetomados.current = true
+    salvarAnexos()
+  })
 
   /** Salvar prontuário. Consulta real: o servidor finaliza primeiro (a entrada fica imutável); só então a tela segue. */
   const salvarProntuario = () => {
@@ -596,6 +611,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
 
   /** A consulta fica finalizada e volta para a página inicial do módulo. */
   const concluirProntuario = () => {
+    gravarRascunho(chaveRascunho, null)
     fazer('oficializar', 'prontuario')
     // consulta real: o servidor já guardou a entrada; nos exemplos ela vai para o prontuário local (com as edições do médico)
     if (prontuario && !servidor) salvarEntrada(at.paciente.id, { tipo: at.tipo, modalidade: at.modalidade, data: dia, hora: at.inicio, ...aplicarEdicoes(prontuario.dados, prontuario.textos) }, at.paciente)
@@ -783,7 +799,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
                 if (manter) return [{ ...x, aviso: null }]
                 return x.aviso.tipo === 'saiu' ? [] : [{ ...x, aviso: null, decisao: 'pendente' as const }]
               }))}
-              onAdicionar={(nome, cid) => nosItens((xs) => [...xs, { hip: { id: `propria-${Date.now()}`, nome, cid, pct: null, evidencias: [] }, decisao: 'confirmada', propria: true, mudou: false, aviso: null }])}
+              onAdicionar={(nome, cid) => nosItens((xs) => adicionarProprio(xs, nome, cid, `propria-${Date.now()}`))}
               onMais={() => mexerDd((d) => ({ ...d, ...chamarMais(d) }))}
               onMarcar={(id, m) => mexerDd((d) => ({ ...d, resumo: marcarResumo(d.resumo, id, m) }))}
               onSalvar={salvarDiagnosticos}
@@ -888,6 +904,19 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
       </div>
     </div>
   )
+}
+
+/** O rascunho dos anexos salvos, no navegador (pode não existir: aba privada, dados apagados). */
+function lerRascunho(chave: string | null): RascunhoRetorno | null {
+  if (!chave) return null
+  try {
+    const v = JSON.parse(localStorage.getItem(chave) ?? 'null') as RascunhoRetorno | null
+    return v && (v.escolha === 'nao' || v.escolha === 'sim') ? v : null
+  } catch { return null }
+}
+function gravarRascunho(chave: string | null, r: RascunhoRetorno | null) {
+  if (!chave) return
+  try { if (r) localStorage.setItem(chave, JSON.stringify(r)); else localStorage.removeItem(chave) } catch { /* sem armazenamento: só não lembra ao recarregar */ }
 }
 
 /**
