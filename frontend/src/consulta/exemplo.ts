@@ -189,7 +189,7 @@ const PERGUNTAS_RETORNO: Pergunta[] = [
     texto: 'Teve efeito colateral?', ...hda('Refere efeito colateral com a medicação.', 'Nega efeitos colaterais.'),
     aprofundar: [
       { texto: 'Qual foi o efeito?', aberta: true, ...hda('Efeito: {}.', '') },
-      { texto: 'Quando começou?', aberta: true, ...hda('Início {}.', '') },
+      { texto: 'Quando começou?', aberta: true, ...hda('Início: {}.', '') },
       { texto: 'Precisou parar o remédio?', ...hda('Precisou suspender o medicamento.', 'Manteve o uso do medicamento.') },
       { texto: 'Ainda continua?', ...hda('Efeito ainda presente.', 'Efeito já resolvido.') },
     ],

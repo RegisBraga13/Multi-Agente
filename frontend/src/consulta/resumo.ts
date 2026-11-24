@@ -50,8 +50,9 @@ const REGRAS: Regra[] = [
   { padrao: /^Nega medicamento ou creme novo/i, tipo: 'medicamento', texto: 'Medicamento ou creme novo', marca: 'f' },
 ]
 
-/** Frase de antecedentes que não é reconhecida por nenhuma regra nem lista: a primeira é a lista de comorbidades da ficha. */
-const OUTRAS = /^(Nega|Em uso|Alergia|Alerta|Ficha|História familiar|Relata|Refere)/i
+/** Frases de antecedentes com dono conhecido (alergia, remédio, pele, gestação, família...). A primeira que sobra é a
+ *  lista de comorbidades da ficha, esteja onde estiver ("Alergia a penicilina. Hipertensão arterial." também vale). */
+const OUTRAS = /^(Nega|Em uso|Alergia|Alerta|Ficha|História familiar|Relata|Refere|Pele|Gestante|Amamentando)/i
 
 /** Retorno: as alergias do prontuário como uma seção que o resumo entende ("Alergia a X (reação)."). */
 export function secaoDeAlergias(alergias: { substancia: string; reacao: string }[]): SecaoHistoria | null {
@@ -66,9 +67,10 @@ export function montarResumo(historia: SecaoHistoria[]): ItemResumo[] {
     if (!itens.some((x) => x.id === id)) itens.push({ id, tipo, texto, marcaIA: marca, marca, secao, trecho })
   }
 
+  let achouComorbidades = false
   for (const secao of [ANT, HDA]) {
     const texto = historia.find((s) => s.rotulo === secao)?.texto ?? ''
-    frases(texto).forEach((f, i) => {
+    frases(texto).forEach((f) => {
       for (const r of REGRAS) if (r.padrao.test(f)) por(r.tipo, r.texto, r.marca, secao, f)
       if (secao !== ANT) return
       const alergia = f.match(/^Alergia a (.+?)\s*\((.+)\)\.?$/i)
@@ -77,7 +79,10 @@ export function montarResumo(historia: SecaoHistoria[]): ItemResumo[] {
       if (alerta) por('alerta', maiuscula(semPonto(alerta[1])), 'v', secao, f)
       const emUso = f.match(/^Em uso de (.+)$/i)
       if (emUso) separar(semPonto(emUso[1])).forEach((m) => por('medicamento', maiuscula(m), 'v', secao, f))
-      if (i === 0 && !OUTRAS.test(f)) separar(semPonto(f)).forEach((c) => por('comorbidade', maiuscula(c), 'v', secao, f))
+      if (!achouComorbidades && !OUTRAS.test(f) && !REGRAS.some((r) => r.padrao.test(f))) {
+        achouComorbidades = true
+        separar(semPonto(f)).forEach((c) => por('comorbidade', maiuscula(c), 'v', secao, f))
+      }
     })
   }
 

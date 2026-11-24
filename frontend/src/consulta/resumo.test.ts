@@ -31,6 +31,11 @@ describe('montarResumo (só a partir da história salva)', () => {
       ['Alergias', 'f'], ['Diabetes', 'v'], ['Colesterol alto', 'v'], ['Metformina 850 mg, 2x ao dia', 'v'], ['Sinvastatina 20 mg', 'v'],
     ])
   })
+  it('comorbidade depois da alergia e do remédio também entra; a frase da pele não vira comorbidade', () => {
+    expect(resumo('Alergia a penicilina (urticária). Pele morena, raramente queima. Em uso de losartana 50 mg. Hipertensão arterial.')).toEqual([
+      ['Alergia a penicilina (urticária)', 'v'], ['Hipertensão arterial', 'v'], ['Losartana 50 mg', 'v'],
+    ])
+  })
   it('alergia informada vem primeiro, com V', () => {
     expect(resumo('Pressão alta. Em uso de losartana 50 mg, 1x ao dia. Alergia a dipirona (inchaço no rosto).')[0]).toEqual(['Alergia a dipirona (inchaço no rosto)', 'v'])
   })

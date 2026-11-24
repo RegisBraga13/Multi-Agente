@@ -211,7 +211,7 @@ export function montarHistoriaEvolucao(
   // a resposta Sim/Não entra, mas não repete "melhora" ou "piora" que o relato já disse
   const repete = (texto: string) => (/^melhorou/i.test(texto) && /melhora/i.test(abertura)) || (/^piorou/i.test(texto) && /piora/i.test(abertura))
   // pergunta aberta: a frase leva o que o médico escreveu ({}); sem texto, não entra
-  const frase = (x: RespostaPergunta) => (x.pergunta.aberta ? (x.texto?.trim() ? x.pergunta.sim.replace('{}', x.texto.trim()) : '') : x.resposta === 'sim' ? x.pergunta.sim : x.pergunta.nao)
+  const frase = (x: RespostaPergunta) => (x.pergunta.aberta ? (x.texto?.trim() ? x.pergunta.sim.replace('{}', noMeioDaFrase(x.texto)) : '') : x.resposta === 'sim' ? x.pergunta.sim : x.pergunta.nao)
   const respostas = (contexto.perguntas ?? []).filter((x) => !(x.resposta === 'sim' && repete(x.pergunta.texto))).map(frase).filter(Boolean)
   const evolucao = [abertura, ...respostas].filter(Boolean).join(' ') || 'Não registrada.'
 
@@ -241,4 +241,10 @@ export function secoesDaConsultaAnterior(d: { qp: string; hda: string; ap: strin
 export function secoesDaEvolucaoParaDD(evolucao: SecaoHistoria[]): SecaoHistoria[] {
   const rotulos: Record<string, string> = { Evolução: 'História da doença atual', Exame: 'Exame físico', Exames: 'Exames complementares' }
   return evolucao.map((s) => ({ rotulo: rotulos[s.rotulo] ?? s.rotulo, texto: s.texto }))
+}
+
+/** O que o médico escreveu, no meio da frase: "Sonolência leve." → "sonolência leve"; sigla fica ("AINE"). */
+function noMeioDaFrase(texto: string): string {
+  const t = texto.trim().replace(/\.+$/, '')
+  return /^\p{Lu}\p{Ll}/u.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : t
 }

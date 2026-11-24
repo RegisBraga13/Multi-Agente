@@ -195,6 +195,18 @@ describe('História da evolução: aprofundamento', () => {
       'Paciente relata melhora das placas. Refere efeito colateral com a medicação. Efeito: ardência na pele. Manteve o uso do medicamento. Efeito ainda presente.',
     )
   })
+  it('resposta aberta escrita com maiúscula entra no meio da frase: "Início: primeiros dias."; sigla fica', () => {
+    const perguntas = [
+      { pergunta: efeito, resposta: 'sim' as const },
+      { pergunta: qual, resposta: 'sim' as const, texto: 'Sonolência leve com a loratadina.' },
+      { pergunta: quando, resposta: 'sim' as const, texto: 'Primeiros dias' },
+    ]
+    expect(montarHistoriaEvolucao('melhora', [], [], { falas: cj.falas, sinais: [], perguntas })[0].texto).toBe(
+      'Paciente relata melhora. Refere efeito colateral com a medicação. Efeito: sonolência leve com a loratadina. Início: primeiros dias.',
+    )
+    const sigla = [{ pergunta: efeito, resposta: 'sim' as const }, { pergunta: qual, resposta: 'sim' as const, texto: 'AINE causou gastrite' }]
+    expect(montarHistoriaEvolucao('melhora', [], [], { falas: cj.falas, sinais: [], perguntas: sigla })[0].texto).toContain('Efeito: AINE causou gastrite.')
+  })
 })
 
 describe('História da evolução: extensão das lesões', () => {
