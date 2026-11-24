@@ -16,10 +16,18 @@ const hora = (iso: string) => {
 const texto = (v: string | string[] | undefined) => (Array.isArray(v) ? v.join(', ') : (v ?? '')).trim()
 const lista = (v: string | string[] | undefined) => (texto(v) ? [texto(v)] : [])
 
+/** Sem repetir a mesma substância (a de hoje vem primeiro). */
+function juntarAlergias(...listas: { substancia: string; reacao: string }[][]) {
+  const vistas = new Map<string, { substancia: string; reacao: string }>()
+  for (const a of listas.flat()) if (!vistas.has(a.substancia.trim().toLowerCase())) vistas.set(a.substancia.trim().toLowerCase(), a)
+  return [...vistas.values()]
+}
+
 function fichaDoPedido(p: PedidoNaAgenda): Ficha {
   const f = p.formulario
   if (p.situacaoFicha !== 'pronta' || !f) return { situacao: p.situacaoFicha === 'link-enviado' ? 'link-enviado' : 'sem-ficha' }
   const alergia = texto(f.respostas.alergias)
+  const deHoje = alergia && alergia !== SEM_ALERGIA ? [{ substancia: alergia, reacao: '' }] : []
   return {
     situacao: 'pronta',
     recebidaAs: hora(f.recebidoEm),
@@ -29,7 +37,7 @@ function fichaDoPedido(p: PedidoNaAgenda): Ficha {
     queixa: texto(f.respostas.queixa),
     emUso: lista(f.respostas.medicamentos),
     antecedentes: lista(f.respostas.doencas),
-    alergias: alergia && alergia !== SEM_ALERGIA ? [{ substancia: alergia, reacao: '' }] : [],
+    alergias: juntarAlergias(deHoje, p.historico?.alergias ?? []), // a do prontuário vale mesmo não dita hoje
     transcricao: p.transcricao,
   }
 }
@@ -46,7 +54,8 @@ export function atendimentoDoPedido(p: PedidoNaAgenda, agora: Date): Atendimento
     pagamento: p.pagamento,
     ficha: fichaDoPedido(p),
     atendido: p.data < hoje,
-    temHistorico: false,
+    temHistorico: !!p.historico,
+    ...(p.historico ? { prontuarioDe: p.historico.pacienteId, alergiasDoProntuario: p.historico.alergias } : {}),
     pedido: { id: p.id, whatsapp: p.whatsapp, token: p.tokenFormulario, novo: p.status === 'novo', chegouAs: hora(p.criadoEm) },
   }
 }

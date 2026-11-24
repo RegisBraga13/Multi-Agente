@@ -35,6 +35,7 @@ from app.contratos.consulta_blocos import (
 from app.especialidades.registro import especialidades_disponiveis
 from app.motores.diagnosticos import DadosSeguranca
 from app.motores.perguntas import PerguntasProposta
+from app.prontuario.alergias import alergias_do_prontuario, juntar_alergias
 
 rotas = APIRouter(prefix="/consultas", tags=["consultas"])
 Dep = Annotated[Dependencias, Depends(dependencias)]
@@ -93,6 +94,10 @@ def editar_anamnese(consulta_id: UUID, conteudo: AnamneseBloco, dep: Dep, medico
         conteudo = conteudo.model_copy(
             update={"alergias": base.alergias, "em_uso": base.em_uso, "antecedentes": base.antecedentes}
         )
+    else:
+        # consulta nova de quem já tem prontuário: a alergia conhecida continua valendo, mesmo não dita hoje
+        conhecidas = alergias_do_prontuario(dep.repo, medico, consulta.paciente_id)
+        conteudo = conteudo.model_copy(update={"alergias": juntar_alergias(conteudo.alergias, conhecidas)})
     return editar(dep.repo, medico, consulta_id, "anamnese", conteudo)
 
 

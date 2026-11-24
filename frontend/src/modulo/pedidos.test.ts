@@ -21,6 +21,22 @@ describe('atendimentoDoPedido', () => {
     })
   })
 
+  it('quem já tem prontuário: consulta nova com a alergia conhecida e o link Prontuário', () => {
+    const at = atendimentoDoPedido({
+      ...PEDIDO, situacaoFicha: 'pronta',
+      formulario: {
+        dados: {
+          nomeCompleto: 'Maria Teste da Silva', nomeSocial: '', nascimento: '1990-05-02', sexo: 'F', whatsapp: '', email: '', cidade: '', uf: '',
+          estadoCivil: '', profissao: '', trabalhoExposto: '',
+        },
+        respostas: { alergias: 'Dipirona' }, fotos: [], recebidoEm: '2026-11-19T17:30:00Z',
+      },
+      historico: { pacienteId: 'pac-1', alergias: [{ substancia: 'Penicilina', reacao: 'urticária' }, { substancia: 'dipirona', reacao: '' }] },
+    }, AGORA)
+    expect(at).toMatchObject({ tipo: 'consulta', temHistorico: true, prontuarioDe: 'pac-1' })
+    expect(at.ficha.situacao === 'pronta' && at.ficha.alergias.map((a) => a.substancia)).toEqual(['Dipirona', 'Penicilina'])
+  })
+
   it('link enviado aparece como link enviado', () => {
     expect(atendimentoDoPedido({ ...PEDIDO, situacaoFicha: 'link-enviado' }, AGORA).ficha).toEqual({ situacao: 'link-enviado' })
   })

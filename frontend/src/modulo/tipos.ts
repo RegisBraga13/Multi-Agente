@@ -49,6 +49,8 @@ export type Atendimento = {
   retornoMarcado?: { id: string }
   /** retorno: o paciente aceitou a gravação na consulta de origem (o retorno não tem ficha própria) */
   gravacaoAutorizada?: boolean
-  /** retorno: as alergias do prontuário (consulta de origem) para o aviso no topo */
+  /** pedido de quem já tem prontuário: o id do paciente no servidor (o do atendimento é o do pedido) */
+  prontuarioDe?: string
+  /** retorno ou consulta nova de quem tem prontuário: as alergias já registradas, para o aviso no topo */
   alergiasDoProntuario?: { substancia: string; reacao: string }[]
 }

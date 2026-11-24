@@ -670,7 +670,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
               <b className="mr-1.5 text-[11px] tracking-[0.14em] uppercase">Alergia</b><b>{a.substancia}</b>
             </span>
           ))}
-          {/* o prontuário só existe a partir do retorno (regra 13.2) */}
+          {/* quem já tem prontuário: retorno ou consulta nova (o registro anterior, só leitura) */}
           {at.temHistorico && (
             <button type="button" onClick={alternarJanela} aria-pressed={janelaAberta} title="Abre numa janela separada (só leitura)"
               className={`ml-auto border-[1.5px] border-tinta px-3 py-1 text-[14px] font-semibold ${janelaAberta ? 'bg-tinta text-papel' : 'hover:bg-tinta hover:text-papel'}`}>

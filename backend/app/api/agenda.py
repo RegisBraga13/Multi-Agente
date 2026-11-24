@@ -18,15 +18,18 @@ from app.contratos.agenda import (
     DadosPessoais,
     FichaDoRetorno,
     FormularioEnviado,
+    HistoricoDoPaciente,
     Horario,
     NovoPedido,
     Pedido,
     PedidoCriado,
+    PedidoDoMedico,
     PedidoParaPaciente,
     Retorno,
     RetornoComFicha,
 )
 from app.contratos.consulta_blocos import AnamneseBloco
+from app.prontuario.alergias import alergias_do_prontuario
 
 publico = APIRouter(prefix="/publico", tags=["agenda (paciente)"])
 medico_rotas = APIRouter(prefix="/agenda", tags=["agenda (médico)"])
@@ -65,10 +68,23 @@ def enviar_formulario(token: str, enviado: FormularioEnviado, dep: Dep) -> Respo
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@medico_rotas.get("/pedidos", response_model=list[Pedido])
-def pedidos(de: date, ate: date, dep: Dep, medico: Medico) -> list[Pedido]:
+@medico_rotas.get("/pedidos", response_model=list[PedidoDoMedico])
+def pedidos(de: date, ate: date, dep: Dep, medico: Medico) -> list[PedidoDoMedico]:
     servico.periodo_valido(de, ate)
-    return dep.agenda.pedidos(medico, de, ate)
+    return [_com_historico(dep, medico, p) for p in dep.agenda.pedidos(medico, de, ate)]
+
+
+def _com_historico(dep: Dependencias, medico: UUID, p: Pedido) -> PedidoDoMedico:
+    """Quem já tem prontuário (mesmo nome completo e nascimento) volta como consulta nova, com as alergias conhecidas."""
+    historico = None
+    if p.formulario is not None:
+        d = p.formulario.dados
+        paciente = dep.pacientes.procurar(medico, d.nome_completo, d.nascimento)
+        if paciente is not None and dep.repo.prontuario(medico, paciente.id):
+            historico = HistoricoDoPaciente(
+                paciente_id=paciente.id, alergias=alergias_do_prontuario(dep.repo, medico, paciente.id)
+            )
+    return PedidoDoMedico(**p.model_dump(), historico=historico)
 
 
 def _ficha_do_retorno(dep: Dependencias, medico: UUID, r: Retorno) -> FichaDoRetorno | None:
@@ -108,29 +124,30 @@ def um_retorno(retorno_id: UUID, dep: Dep, medico: Medico) -> RetornoComFicha:
     return _com_ficha(dep, medico, dep.agenda.retorno(medico, retorno_id))
 
 
-@medico_rotas.get("/pedidos/{pedido_id}", response_model=Pedido)
-def um_pedido(pedido_id: UUID, dep: Dep, medico: Medico) -> Pedido:
-    return dep.agenda.pedido(medico, pedido_id)
+@medico_rotas.get("/pedidos/{pedido_id}", response_model=PedidoDoMedico)
+def um_pedido(pedido_id: UUID, dep: Dep, medico: Medico) -> PedidoDoMedico:
+    return _com_historico(dep, medico, dep.agenda.pedido(medico, pedido_id))
 
 
-@medico_rotas.post("/pedidos/{pedido_id}/link-enviado", response_model=Pedido)
-def link_enviado(pedido_id: UUID, dep: Dep, medico: Medico) -> Pedido:
-    return dep.agenda.marcar_link_enviado(medico, pedido_id)
+@medico_rotas.post("/pedidos/{pedido_id}/link-enviado", response_model=PedidoDoMedico)
+def link_enviado(pedido_id: UUID, dep: Dep, medico: Medico) -> PedidoDoMedico:
+    return _com_historico(dep, medico, dep.agenda.marcar_link_enviado(medico, pedido_id))
 
 
-@medico_rotas.post("/pedidos/{pedido_id}/confirmar", response_model=Pedido)
-def confirmar(pedido_id: UUID, dep: Dep, medico: Medico) -> Pedido:
-    return dep.agenda.confirmar(medico, pedido_id)
+@medico_rotas.post("/pedidos/{pedido_id}/confirmar", response_model=PedidoDoMedico)
+def confirmar(pedido_id: UUID, dep: Dep, medico: Medico) -> PedidoDoMedico:
+    return _com_historico(dep, medico, dep.agenda.confirmar(medico, pedido_id))
 
 
-@medico_rotas.post("/pedidos/{pedido_id}/cancelar", response_model=Pedido)
-def cancelar(pedido_id: UUID, dep: Dep, medico: Medico) -> Pedido:
-    return dep.agenda.cancelar(medico, pedido_id)
+@medico_rotas.post("/pedidos/{pedido_id}/cancelar", response_model=PedidoDoMedico)
+def cancelar(pedido_id: UUID, dep: Dep, medico: Medico) -> PedidoDoMedico:
+    return _com_historico(dep, medico, dep.agenda.cancelar(medico, pedido_id))
 
 
-@medico_rotas.post("/pedidos/{pedido_id}/identificacao", response_model=Pedido)
-def identificacao(pedido_id: UUID, dados: DadosPessoais, dep: Dep, medico: Medico) -> Pedido:
-    return servico.identificacao_na_chegada(dep.agenda, medico, pedido_id, dados, dep.relogio.agora())
+@medico_rotas.post("/pedidos/{pedido_id}/identificacao", response_model=PedidoDoMedico)
+def identificacao(pedido_id: UUID, dados: DadosPessoais, dep: Dep, medico: Medico) -> PedidoDoMedico:
+    pedido = servico.identificacao_na_chegada(dep.agenda, medico, pedido_id, dados, dep.relogio.agora())
+    return _com_historico(dep, medico, pedido)
 
 
 @medico_rotas.get("/pedidos/{pedido_id}/fotos/{pergunta}")

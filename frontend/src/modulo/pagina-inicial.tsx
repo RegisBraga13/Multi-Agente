@@ -102,7 +102,7 @@ function Pagina({ esp }: { esp: Especialidade }) {
 
   const painel = escolhido ? (
     <PainelFicha
-      classeAlergia={estiloAlergia(esp)} at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => abrirJanelaProntuario(esp.slug, escolhido.paciente.id)}
+      classeAlergia={estiloAlergia(esp)} at={escolhido} agora={agora} onFechar={() => setSelecionado(null)} onProntuario={() => abrirJanelaProntuario(esp.slug, escolhido.prontuarioDe ?? escolhido.paciente.id)}
       pedido={pedidos.find((p) => p.id === escolhido.pedido?.id)} medico={medico}
       onLinkEnviado={(id) => { marcarLinkEnviado(id).then(recarregar, () => setAviso('Não foi possível marcar o envio. Tente de novo.')) }}
       onConfirmar={(id) => { confirmarPedido(id).then(recarregar, () => setAviso('Não foi possível confirmar. Tente de novo.')) }}

@@ -57,6 +57,13 @@ class RetornoComFicha(Retorno):
     ficha: FichaDoRetorno | None = None
 
 
+class HistoricoDoPaciente(ModeloApi):
+    """Pedido de quem já tem prontuário (mesmo nome completo e nascimento): consulta nova, com o que já se sabe."""
+
+    paciente_id: UUID
+    alergias: list[Alergia]
+
+
 class NovoPedido(Horario):
     modalidade: Modalidade
     nome: str = Field(min_length=1, max_length=120)
@@ -126,3 +133,9 @@ class Pedido(NovoPedido):
     status: Literal["novo", "confirmado", "cancelado"]
     criado_em: datetime
     formulario: FormularioRecebido | None = None
+
+
+class PedidoDoMedico(Pedido):
+    """O pedido como a agenda do médico o recebe: com o histórico, se o paciente já tem prontuário."""
+
+    historico: HistoricoDoPaciente | None = None

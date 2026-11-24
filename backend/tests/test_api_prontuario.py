@@ -15,8 +15,8 @@ def consulta_pronta(c):
     return cid
 
 
-def etapas_ate_conduta(c, cid):
-    c.put(f"/consultas/{cid}/anamnese", json=js(ANAMNESE))
+def etapas_ate_conduta(c, cid, anamnese=ANAMNESE):
+    c.put(f"/consultas/{cid}/anamnese", json=js(anamnese))
     c.post(f"/consultas/{cid}/anamnese/oficializar")
     from tests.fabrica import EXAME
 
@@ -306,3 +306,30 @@ def test_titulo_fica_fixo_mesmo_com_consulta_marcada_mais_cedo(mundo):
     assert c.post(f"/consultas/{mais_cedo}/finalizar", json={"edicoes": {}}).json()["titulo"] == "Consulta 2"
     titulos = {e["id"]: e["titulo"] for e in c.get(f"/pacientes/{paciente}/prontuario").json()}
     assert titulos == {origem: "Consulta 1", rid: "Consulta 1 — Retorno", mais_cedo: "Consulta 2"}
+
+
+def test_consulta_nova_de_quem_tem_prontuario_traz_a_alergia_conhecida(mundo):
+    """Teste de consistência 24/11: a 2ª consulta não mostrava a alergia a penicilina da 1ª."""
+    from app.contratos.consulta import Alergia
+    from tests.test_api_consultas import _cliente_com_agenda, _pedido_com_formulario
+
+    c, agenda = _cliente_com_agenda(mundo)
+    p1 = _pedido_com_formulario(agenda, MEDICO_A)
+    assert c.get(f"/agenda/pedidos/{p1.id}").json()["historico"] is None  # primeira vez: sem prontuário
+    c1 = c.post(f"/consultas/do-pedido/{p1.id}", json={"especialidade": "dermatologia"}).json()["id"]
+    penicilina = ANAMNESE.model_copy(update={"alergias": [Alergia(substancia="Penicilina", reacao="urticária")]})
+    etapas_ate_conduta(c, c1, penicilina)
+    assert c.post(f"/consultas/{c1}/finalizar", json={"edicoes": {}}).status_code == 200
+
+    p2 = _pedido_com_formulario(agenda, MEDICO_A, inicio="15:00", token="tok2")
+    historico = c.get(f"/agenda/pedidos/{p2.id}").json()["historico"]
+    paciente = c.get(f"/consultas/{c1}").json()["pacienteId"]
+    assert historico == {"pacienteId": paciente, "alergias": [{"substancia": "Penicilina", "reacao": "urticária"}]}
+    [na_lista] = [x for x in c.get("/agenda/pedidos?de=2026-11-20&ate=2026-11-20").json() if x["id"] == str(p2.id)]
+    assert na_lista["historico"] == historico
+
+    c2 = c.post(f"/consultas/do-pedido/{p2.id}", json={"especialidade": "dermatologia"}).json()["id"]
+    dipirona = ANAMNESE.model_copy(update={"alergias": [Alergia(substancia="Dipirona", reacao="")]})
+    anamnese = c.put(f"/consultas/{c2}/anamnese", json=js(dipirona)).json()
+    [bloco] = [b for b in anamnese["blocos"] if b["etapa"] == "anamnese"]
+    assert [a["substancia"] for a in bloco["conteudo"]["alergias"]] == ["Dipirona", "Penicilina"]

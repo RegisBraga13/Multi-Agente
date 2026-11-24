@@ -25,6 +25,8 @@ export type FormularioRecebido = {
 export type PedidoNaAgenda = NovoPedido & {
   id: string; tokenFormulario: string; situacaoFicha: SituacaoFicha
   status: 'novo' | 'confirmado' | 'cancelado'; criadoEm: string; formulario: FormularioRecebido | null
+  /** paciente que já tem prontuário (mesmo nome completo e nascimento): consulta nova, com as alergias conhecidas */
+  historico?: { pacienteId: string; alergias: { substancia: string; reacao: string }[] } | null
 }
 
 export type PedidoDoLink = {

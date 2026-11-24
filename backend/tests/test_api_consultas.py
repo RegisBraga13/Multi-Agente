@@ -213,7 +213,7 @@ def test_especialidade_desconhecida_e_422(mundo):
     assert c.post("/consultas", json=corpo).json()["especialidade"] == "dermatologia"
 
 
-def _pedido_com_formulario(agenda, medico):
+def _pedido_com_formulario(agenda, medico, inicio="10:00", token="tok"):
     from datetime import UTC, date, datetime
 
     from app.contratos.agenda import DadosPessoais, FormularioRecebido, NovoPedido
@@ -223,14 +223,14 @@ def _pedido_com_formulario(agenda, medico):
         NovoPedido(
             modalidade="presencial",
             data=date(2026, 11, 20),
-            inicio="10:00",
+            inicio=inicio,
             nome="Maria Teste",
             whatsapp="5585999990000",
             pagamento="Particular",
             transcricao="aceita",
             forma="whatsapp",
         ),
-        "tok",
+        token,
     )
     dados = DadosPessoais(
         nome_completo="Maria Teste da Silva", nascimento=date(1990, 5, 2), sexo="F", whatsapp="85", cidade="X", uf="CE"
