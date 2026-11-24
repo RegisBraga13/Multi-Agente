@@ -133,6 +133,7 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 6. **Conduta no retorno:** sempre depende do diagnóstico. É a de sempre, vinda dos **novos** diagnósticos confirmados; nada marcado; **sem "Manter"** e sem o tratamento anterior na tela. O médico olha o **prontuário aberto** (o que o paciente usa, efeito colateral anterior) e, se a conduta sugerir algo que não deu certo, troca. *(feito)*
 7. **O prontuário é o centro e o guia.** Guarda toda a história e toda a evolução, é o documento para auditoria e, a partir do retorno, o guia que o médico consulta aberto. Vale para todas as especialidades. As telas do retorno não repetem o que já está nele.
 8. **Registro do retorno no prontuário: só o que mudou** (24/11). Não repete a consulta. Evolução, Ex. físico e Avaliação como estão. **HD:** diagnóstico assinalado que já estava na consulta de origem → "Acne vulgar (CID-10 L70.0) · Confirmado" (sem %); assinalado novo → "Nova hipótese: Tinha do corpo (CID-10 B35.4) — 30%"; sugeridos não entram; nada → "Vide consulta 1". **Conduta:** só o que mudou — Iniciado / Suspenso / Ajustado; nada mudou → "Mantida". **Orientações:** só as novas. Usar o léxico médico. Os dados completos continuam guardados. *(feito)*
+9. **Retorno ≠ Avaliação** (24/11). O **Retorno** é marcado na página 5 (Sim/Não) e a agenda dele vai **só até 15 dias**. A **Avaliação** ("Avaliação em 8 a 12 semanas") é recomendação da conduta: o paciente marca nova consulta se quiser; não usa a agenda do retorno. *(feito)*
 
 ## 15. IA e privacidade
 
