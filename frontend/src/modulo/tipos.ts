@@ -24,6 +24,8 @@ export type Ficha =
     }
   | { situacao: 'link-enviado' }
   | { situacao: 'sem-ficha' }
+  /** retorno: a ficha vem do prontuário (consulta de origem), não de um formulário novo (regra 6.3) */
+  | { situacao: 'retorno'; queixa: string; emUso: string[]; antecedentes: string[]; alergias: { substancia: string; reacao: string }[]; transcricao: 'aceita' | 'recusada' | null }
 
 export type Atendimento = {
   id: string

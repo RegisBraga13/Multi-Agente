@@ -64,11 +64,13 @@ export function atendimentoDoRetorno(r: RetornoNaAgenda, agora: Date, origem?: {
   return {
     id: `retorno-${r.id}`,
     inicio: r.inicio,
-    paciente: { id: r.pacienteId, nome: r.pacienteNome, nascimento: origem?.nascimento ?? '' },
+    paciente: { id: r.pacienteId, nome: r.pacienteNome, nascimento: origem?.nascimento || r.ficha?.nascimento || '' },
     tipo: 'retorno',
     modalidade: r.modalidade,
     pagamento: '',
-    ficha: { situacao: 'sem-ficha' },
+    ficha: r.ficha
+      ? { situacao: 'retorno', queixa: r.ficha.queixa, emUso: r.ficha.emUso, antecedentes: r.ficha.antecedentes, alergias: r.ficha.alergias, transcricao: r.ficha.transcricao }
+      : { situacao: 'sem-ficha' },
     atendido: r.data < hoje,
     temHistorico: true,
     retornoMarcado: { id: r.id },

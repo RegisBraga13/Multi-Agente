@@ -33,9 +33,16 @@ export type PedidoDoLink = {
 }
 
 /** O retorno marcado, como cartão da agenda (nasce ao finalizar a consulta de origem). */
+/** A ficha do cartão Retorno: o que o prontuário já tem da consulta de origem (regra 6.3). */
+export type FichaDoRetorno = {
+  queixa: string; emUso: string[]; antecedentes: string[]; alergias: { substancia: string; reacao: string }[]
+  transcricao: 'aceita' | 'recusada' | null; nascimento: string | null
+}
 export type RetornoNaAgenda = {
   id: string; pacienteId: string; pacienteNome: string; consultaOrigemId: string
   data: string; inicio: string; modalidade: Modalidade
+  /** null/ausente: a consulta de origem não tem anamnese guardada */
+  ficha?: FichaDoRetorno | null
 }
 
 export type FotoParaEnviar = { tipo: string; base64: string }

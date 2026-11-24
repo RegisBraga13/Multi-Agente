@@ -13,8 +13,10 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.agenda import servico
 from app.api.dependencias import Dependencias, dependencias, medico_atual
+from app.consulta.repositorio import ConsultaNaoEncontrada
 from app.contratos.agenda import (
     DadosPessoais,
+    FichaDoRetorno,
     FormularioEnviado,
     Horario,
     NovoPedido,
@@ -22,7 +24,9 @@ from app.contratos.agenda import (
     PedidoCriado,
     PedidoParaPaciente,
     Retorno,
+    RetornoComFicha,
 )
+from app.contratos.consulta_blocos import AnamneseBloco
 
 publico = APIRouter(prefix="/publico", tags=["agenda (paciente)"])
 medico_rotas = APIRouter(prefix="/agenda", tags=["agenda (médico)"])
@@ -67,15 +71,41 @@ def pedidos(de: date, ate: date, dep: Dep, medico: Medico) -> list[Pedido]:
     return dep.agenda.pedidos(medico, de, ate)
 
 
-@medico_rotas.get("/retornos", response_model=list[Retorno])
-def retornos(de: date, ate: date, dep: Dep, medico: Medico) -> list[Retorno]:
+def _ficha_do_retorno(dep: Dependencias, medico: UUID, r: Retorno) -> FichaDoRetorno | None:
+    """A ficha do retorno vem do que já existe: a anamnese da consulta de origem, o aceite do pedido e o cadastro."""
+    try:
+        origem = dep.repo.buscar(medico, r.consulta_origem_id)
+    except ConsultaNaoEncontrada:  # sem a consulta de origem, o cartão segue sem ficha
+        return None
+    bloco = origem.bloco("anamnese")
+    if bloco is None:
+        return None
+    a = AnamneseBloco.model_validate(bloco.conteudo)
+    transcricao = dep.agenda.pedido(medico, origem.pedido_id).transcricao if origem.pedido_id else None
+    paciente = dep.pacientes.buscar(medico, r.paciente_id)
+    return FichaDoRetorno(
+        queixa=a.queixa,
+        em_uso=a.em_uso,
+        antecedentes=a.antecedentes,
+        alergias=a.alergias,
+        transcricao=transcricao,
+        nascimento=paciente.nascimento if paciente else None,
+    )
+
+
+def _com_ficha(dep: Dependencias, medico: UUID, r: Retorno) -> RetornoComFicha:
+    return RetornoComFicha(**r.model_dump(), ficha=_ficha_do_retorno(dep, medico, r))
+
+
+@medico_rotas.get("/retornos", response_model=list[RetornoComFicha])
+def retornos(de: date, ate: date, dep: Dep, medico: Medico) -> list[RetornoComFicha]:
     servico.periodo_valido(de, ate)
-    return dep.agenda.retornos(medico, de, ate)
+    return [_com_ficha(dep, medico, r) for r in dep.agenda.retornos(medico, de, ate)]
 
 
-@medico_rotas.get("/retornos/{retorno_id}", response_model=Retorno)
-def um_retorno(retorno_id: UUID, dep: Dep, medico: Medico) -> Retorno:
-    return dep.agenda.retorno(medico, retorno_id)
+@medico_rotas.get("/retornos/{retorno_id}", response_model=RetornoComFicha)
+def um_retorno(retorno_id: UUID, dep: Dep, medico: Medico) -> RetornoComFicha:
+    return _com_ficha(dep, medico, dep.agenda.retorno(medico, retorno_id))
 
 
 @medico_rotas.get("/pedidos/{pedido_id}", response_model=Pedido)

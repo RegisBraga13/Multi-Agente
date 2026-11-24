@@ -10,6 +10,7 @@ from uuid import UUID
 from pydantic import Field
 
 from app.contratos.base import ModeloApi
+from app.contratos.consulta import Alergia
 
 Modalidade = Literal["presencial", "online"]
 SituacaoFicha = Literal["sem-ficha", "link-enviado", "pronta"]
@@ -37,6 +38,23 @@ class Retorno(Horario):
     paciente_nome: str
     consulta_origem_id: UUID
     modalidade: Modalidade
+
+
+class FichaDoRetorno(ModeloApi):
+    """A ficha do cartão Retorno: o que o prontuário já tem da consulta de origem (regra 6.3)."""
+
+    queixa: str
+    em_uso: list[str]
+    antecedentes: list[str]
+    alergias: list[Alergia]
+    transcricao: Literal["aceita", "recusada"] | None  # o aceite dado no pedido da consulta de origem
+    nascimento: date | None
+
+
+class RetornoComFicha(Retorno):
+    """O cartão Retorno como a agenda do médico o recebe: com a ficha da consulta de origem (None se não houver)."""
+
+    ficha: FichaDoRetorno | None = None
 
 
 class NovoPedido(Horario):

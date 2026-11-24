@@ -19,7 +19,7 @@ export function vistaDoDia(dia: string, agora: Date, pedidos: PedidoNaAgenda[] =
   const lista = juntarRetornos(juntarPedidos(agendaDoDia(dia, agora), pedidos, dia, agora), retornos, dia, agora)
   // fichas de quem ainda vai ser atendido: o número muda a cada atendimento
   const aSeguir = lista.filter((x) => !x.atendido)
-  const fichasProntas = aSeguir.filter((x) => x.ficha.situacao === 'pronta').length
+  const fichasProntas = aSeguir.filter((x) => x.ficha.situacao === 'pronta' || x.ficha.situacao === 'retorno').length
   return {
     hoje, ehHoje, lista, proximo: proximoPaciente(lista, ehHoje), atendidos: lista.length - aSeguir.length,
     fichasProntas, semFicha: aSeguir.length - fichasProntas,

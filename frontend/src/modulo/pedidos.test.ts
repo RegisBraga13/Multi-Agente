@@ -154,6 +154,13 @@ describe('cartão "Retorno" na agenda (abrir o cartão é a parte 2)', () => {
     expect(atendimentoDoRetorno(RETORNO, AGORA).paciente.nascimento).toBe('')
     expect(atendimentoDoRetorno(RETORNO, AGORA, { gravacaoAutorizada: true, alergias: [], nascimento: '1990-05-02' }).paciente.nascimento).toBe('1990-05-02')
   })
+  it('a ficha do retorno vem do prontuário (regra 6.3); sem ela, "Sem ficha"', () => {
+    const ficha = { queixa: 'Espinhas.', emUso: ['Losartana'], antecedentes: [], alergias: [{ substancia: 'Dipirona', reacao: '' }], transcricao: 'aceita' as const, nascimento: '1990-05-02' }
+    const at = atendimentoDoRetorno({ ...RETORNO, ficha }, AGORA)
+    expect(at.ficha).toEqual({ situacao: 'retorno', queixa: 'Espinhas.', emUso: ['Losartana'], antecedentes: [], alergias: ficha.alergias, transcricao: 'aceita' })
+    expect(at.paciente.nascimento).toBe('1990-05-02')
+    expect(atendimentoDoRetorno({ ...RETORNO, ficha: null }, AGORA).ficha).toEqual({ situacao: 'sem-ficha' })
+  })
   it('retorno de dia que já passou aparece como atendido', () => {
     expect(atendimentoDoRetorno({ ...RETORNO, data: '2026-11-10' }, AGORA).atendido).toBe(true)
   })

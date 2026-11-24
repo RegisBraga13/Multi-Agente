@@ -382,7 +382,11 @@ def test_abrir_do_retorno_cria_o_retorno_e_repete_o_mesmo_id(mundo):
     a = c.post(f"/consultas/do-retorno/{cartao.id}", json={"especialidade": "dermatologia"})
     b = c.post(f"/consultas/do-retorno/{cartao.id}", json={"especialidade": "dermatologia"})
     assert a.status_code == 200 and a.json()["id"] == b.json()["id"]
-    assert (a.json()["tipo"], a.json()["retornoId"], a.json()["pacienteId"]) == ("retorno", str(cartao.id), origem["pacienteId"])
+    assert (a.json()["tipo"], a.json()["retornoId"], a.json()["pacienteId"]) == (
+        "retorno",
+        str(cartao.id),
+        origem["pacienteId"],
+    )
 
 
 def test_abrir_do_retorno_inexistente_e_404_e_especialidade_desconhecida_e_422(mundo):
@@ -398,7 +402,11 @@ def _origem_com_alergia(c, origem_id):
     from tests.fabrica import ANAMNESE
 
     com = ANAMNESE.model_copy(
-        update={"alergias": [{"substancia": "Penicilina", "reacao": "urticária"}], "em_uso": ["Losartana"], "antecedentes": ["Hipertensão"]}
+        update={
+            "alergias": [{"substancia": "Penicilina", "reacao": "urticária"}],
+            "em_uso": ["Losartana"],
+            "antecedentes": ["Hipertensão"],
+        }
     )
     assert c.put(f"/consultas/{origem_id}/anamnese", json=js(com)).status_code == 200
 
@@ -442,3 +450,21 @@ def test_consulta_comum_nao_herda_nada_da_origem(mundo):
     _origem_com_alergia(c, origem["id"])
     r = c.put(f"/consultas/{origem['id']}/anamnese", json=js(ANAMNESE))
     assert next(b for b in r.json()["blocos"] if b["etapa"] == "anamnese")["conteudo"]["alergias"] == []
+
+
+def test_cartao_de_retorno_traz_a_ficha_da_consulta_de_origem(mundo):
+    c, agenda = _cliente_com_agenda(mundo)
+    origem, cartao = _cartao_de_retorno(c, agenda)
+    _origem_com_alergia(c, origem["id"])
+    ficha = c.get(f"/agenda/retornos/{cartao.id}").json()["ficha"]
+    assert ficha["alergias"] == [{"substancia": "Penicilina", "reacao": "urticária"}]
+    assert (ficha["emUso"], ficha["antecedentes"], ficha["transcricao"]) == (["Losartana"], ["Hipertensão"], "aceita")
+    assert ficha["nascimento"] == "1990-05-02"
+    [na_lista] = c.get("/agenda/retornos?de=2026-11-25&ate=2026-11-25").json()
+    assert na_lista["ficha"] == ficha
+
+
+def test_cartao_de_retorno_sem_anamnese_na_origem_vem_sem_ficha(mundo):
+    c, agenda = _cliente_com_agenda(mundo)
+    _, cartao = _cartao_de_retorno(c, agenda)
+    assert c.get(f"/agenda/retornos/{cartao.id}").json()["ficha"] is None

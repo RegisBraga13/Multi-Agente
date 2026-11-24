@@ -26,7 +26,7 @@ const PACIENTES: { id: string; nome: string; nascimento: string; ficha: Conteudo
 ]
 
 // Cada horário do dia com o tipo, a modalidade, o pagamento, a situação da ficha e se já tem prontuário.
-type Vaga = { inicio: string; tipo: TipoAtendimento; modalidade: Modalidade; pagamento: string; ficha: Ficha['situacao']; historico: boolean }
+type Vaga = { inicio: string; tipo: TipoAtendimento; modalidade: Modalidade; pagamento: string; ficha: 'pronta' | 'link-enviado' | 'sem-ficha'; historico: boolean }
 // Exemplos fixos (todo dia útil): Antônio Barbosa às 8h = prontuário pronto da consulta; João Pedro Lima às 10h = retorno.
 // Os demais não têm prontuário (nada de prontuário vazio).
 const ANTONIO = 'd17f3be7-5155-4d72-b178-05776e2a3bc0'

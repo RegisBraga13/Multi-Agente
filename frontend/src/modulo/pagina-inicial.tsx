@@ -317,7 +317,7 @@ function Linhas({ lista, proximo, selecionado, onSelecionar, compacta = false }:
 }
 
 function EtiquetaFicha({ situacao }: { situacao: Atendimento['ficha']['situacao'] }) {
-  if (situacao === 'pronta') return <span className="w-[104px] border-[1.5px] border-petroleo py-0.5 text-center text-[12.5px] font-semibold text-petroleo">Ficha pronta</span>
+  if (situacao === 'pronta' || situacao === 'retorno') return <span className="w-[104px] border-[1.5px] border-petroleo py-0.5 text-center text-[12.5px] font-semibold text-petroleo">Ficha pronta</span>
   return (
     <span className="w-[104px] border-[1.5px] border-dashed border-(--esp-medio) py-0.5 text-center text-[12.5px] font-medium text-apagado">
       {situacao === 'link-enviado' ? 'Link enviado' : 'Sem ficha'}
@@ -369,14 +369,14 @@ function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario, pedido,
   return (
     <aside className="relative border border-linha bg-branco px-5 py-4" aria-label="Ficha do paciente">
       <button type="button" onClick={onFechar} aria-label="Fechar ficha" className="absolute top-2 right-2 px-2 text-[22px] leading-none text-apagado hover:text-tinta">×</button>
-      <p className={ROTULO}>{f.situacao === 'pronta' ? `Ficha recebida · ${f.recebidaAs}` : at.pedido ? `Pedido recebido · ${at.pedido.chegouAs}` : `Paciente das ${at.inicio}`}</p>
+      <p className={ROTULO}>{f.situacao === 'pronta' ? `Ficha recebida · ${f.recebidaAs}` : f.situacao === 'retorno' ? 'Retorno · ficha do prontuário' : at.pedido ? `Pedido recebido · ${at.pedido.chegouAs}` : `Paciente das ${at.inicio}`}</p>
       <h2 ref={titulo} tabIndex={-1} className="mt-1 pr-6 text-[22px] leading-tight font-semibold outline-none">{at.paciente.nome}</h2>
       <p className="mt-0.5 text-[14px] text-apagado">
-        {at.paciente.nascimento ? `${idade(at.paciente.nascimento, agora)} anos · ` : ''}{at.pagamento}
+        {[at.paciente.nascimento && `${idade(at.paciente.nascimento, agora)} anos`, at.pagamento].filter(Boolean).join(' · ')}
         {at.pedido && <> · WhatsApp {formatarWhatsapp(at.pedido.whatsapp)}</>}
       </p>
 
-      {f.situacao === 'pronta' ? (
+      {f.situacao === 'pronta' || f.situacao === 'retorno' ? (
         <div className="mt-2.5 space-y-2 text-[14.5px] leading-snug">
           {f.alergias.length > 0 ? (
             f.alergias.map((a) => (
@@ -388,10 +388,10 @@ function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario, pedido,
           ) : (
             <p><span className={ROTULO}>Alergias</span> <span className="ml-1">nenhuma informada</span></p>
           )}
-          <Bloco rotulo="Queixa">{f.queixa}</Bloco>
+          {f.queixa && <Bloco rotulo="Queixa">{f.queixa}</Bloco>}
           {f.emUso.length > 0 && <Bloco rotulo="Em uso">{f.emUso.join(' · ')}</Bloco>}
           {f.antecedentes.length > 0 && <Bloco rotulo="Antecedentes">{f.antecedentes.join(' · ')}</Bloco>}
-          <p className="border-t border-linha pt-2 text-[14px]">Transcrição: <b>{f.transcricao}</b></p>
+          {f.transcricao && <p className="border-t border-linha pt-2 text-[14px]">Transcrição: <b>{f.transcricao}</b></p>}
         </div>
       ) : (
         <p className="mt-3 text-[14.5px]">
