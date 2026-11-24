@@ -112,6 +112,13 @@ describe('estadoDoServidor (retomar a consulta de onde parou)', () => {
   const b = (etapa: string, estado: 'rascunho_ia' | 'revisado_medico' | 'oficializado', desatualizado = false) => ({ etapa, estado, desatualizado })
   const todasSalvas = ['anamnese', 'exame', 'historia', 'diagnosticos', 'conduta'].map((e) => b(e, 'oficializado'))
 
+  it('exame salvo antes da anamnese volta como salvo (o servidor só o oficializa junto com a anamnese)', () => {
+    const e = estadoDoServidor(inicial([]), [b('exame', 'revisado_medico')])
+    expect(e.blocos.exame.estado).toBe('oficializado')
+    expect(situacaoDaEtapa(e, 'historia')).toBe('bloqueado')
+    const depois = estadoDoServidor(inicial([]), [b('anamnese', 'oficializado'), b('exame', 'revisado_medico')])
+    expect(depois.blocos.exame.estado).toBe('revisado_medico') // anamnese já oficial: exame pendente de verdade
+  })
   it('sem blocos no servidor, nada muda', () => {
     expect(estadoDoServidor(inicial([]), [])).toEqual(inicial([]))
   })

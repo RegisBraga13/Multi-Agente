@@ -261,7 +261,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
   }
 
   return (
-    <section aria-labelledby="h-form" className="scroll-mt-4 pt-4 pb-14">
+    <section aria-labelledby="h-form" className="scroll-mt-4 pt-3 pb-4">
       {!pronto && etapa === 0 && whatsapp && pedido.data && (
         <div role="status" className="mx-auto mb-4 max-w-3xl border-l-4 border-(--esp) bg-branco px-5 py-3 text-[15px] leading-snug">
           <b className="block">✓ Solicitação de agendamento registrada</b>

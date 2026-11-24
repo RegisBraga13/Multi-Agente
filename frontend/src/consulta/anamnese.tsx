@@ -114,8 +114,8 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
     setModo('texto')
     mudou()
   }
-  // começou a gravar ou salvou o formulário: o que o paciente não respondeu vira lembrete em Perguntas (Alergias, sempre)
-  const camposLembrete = !retorno && (segundos > 0 || textoForm !== null) ? lembretesDoFormulario(partes, form) : []
+  // começou a gravar, a escrever ou salvou o formulário: o que o paciente não respondeu vira lembrete em Perguntas (Alergias, sempre)
+  const camposLembrete = !retorno && (segundos > 0 || textoForm !== null || texto.trim() !== '') ? lembretesDoFormulario(partes, form) : []
   const lembretes = camposLembrete.map((q) => ({ texto: q.rotulo, sim: '', nao: '', secao: 'hda' as const, lembrete: true }))
   const campoDoLembrete = (rotulo: string) => camposLembrete.find((q) => q.rotulo === rotulo)
   const responderLembrete = (id: string, v: string | string[]) => { setRespLembrete((r) => ({ ...r, [id]: v })); mudou() }

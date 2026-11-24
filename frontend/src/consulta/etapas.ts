@@ -39,6 +39,9 @@ export function estadoDoServidor(base: EstadoConsulta, blocos: { etapa: string; 
   const guardados = blocos.filter((x): x is typeof x & { etapa: Bloco } => (DO_SERVIDOR as string[]).includes(x.etapa))
   let e: EstadoConsulta = { ...base, blocos: { ...base.blocos } }
   for (const x of guardados) e.blocos[x.etapa] = { estado: x.estado, desatualizado: x.desatualizado }
+  // exame salvo antes da anamnese: o servidor só o oficializa depois dela, mas para o médico ele já está "Salvo"
+  // (ao salvar a anamnese, os dois são oficializados juntos)
+  if (e.blocos.exame.estado === 'revisado_medico' && e.blocos.anamnese.estado !== 'oficializado') e.blocos.exame = { estado: 'oficializado', desatualizado: false }
   const alcancadas = (['historia', 'diagnosticos', 'conduta', 'anexos', 'prontuario'] as const).filter((b) => guardados.some((x) => x.etapa === b) || podeOficializar(e, b))
   e = { ...e, alcancadas: [...new Set([...base.alcancadas, ...alcancadas])] }
   return e

@@ -149,6 +149,13 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
   /** o dia da consulta: nos pedidos reais vem do servidor (o id do atendimento não é uma data) */
   const dia = servidor ? diaDaConsulta(servidor.agendadaPara) : (diaDoRetorno ?? at.id.slice(0, 10))
   const entradasDoPaciente = () => anteriores ?? entradas(at.paciente.id)
+  /** Retorno no servidor: o "resumo" da conduta leva também o que o prontuário já tem (regra 14.2): as alergias e a
+   *  consulta anterior, antes da evolução salva. Vale ao salvar a história e ao recarregar a página. */
+  const secoesDoRetorno = (salva: SecaoHistoria[]) => {
+    const anterior = entradasDoPaciente().find((e) => e.data < dia && e.dados.diagnosticos.length > 0)
+    const alergia = secaoDeAlergias(at.alergiasDoProntuario ?? [])
+    return [...(alergia ? [alergia] : []), ...(anterior ? secoesDaConsultaAnterior(anterior.dados) : []), ...salva]
+  }
   // consulta retomada: o que já estava salvo no servidor volta para os campos (como rascunho: salvar de novo envia e oficializa)
   const retomada = useMemo(() => {
     const bloco = (etapa: 'anamnese' | 'exame' | 'historia' | 'diagnosticos' | 'conduta') => servidor?.blocos.find((b) => b.etapa === etapa)?.conteudo
@@ -168,7 +175,16 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
   /** no retorno a primeira página é a Evolução (regra 14.1) */
   const nomeDaEtapa = (id: string, nome: string) => (at.tipo === 'retorno' ? ({ 'anamnese-exame': 'Evolução', historia: 'História da evolução' } as Record<string, string>)[id] ?? nome : nome)
   const consultaAnterior = at.tipo === 'retorno' ? entradasDoPaciente().find((e) => e.tipo === 'consulta') : undefined
-  const [estado, despachar] = useReducer(reduzir, soAlergias(conteudo.alertas).map((a) => a.id), (ids: string[]) => (servidor ? estadoDoServidor(inicial(ids), servidor.blocos) : inicial(ids)))
+  // V/F dos sinais de alerta da página 1: o servidor não os guarda (só os sinais do catálogo); ficam no navegador
+  const chaveAlertas = servidor ? `especialista:alertas:${servidor.id}` : null
+  const chaveConduta = servidor ? `especialista:conduta:${servidor.id}` : null
+  const [estado, despachar] = useReducer(reduzir, soAlergias(conteudo.alertas).map((a) => a.id), (ids: string[]) => {
+    if (!servidor) return inicial(ids)
+    const e = estadoDoServidor(inicial(ids), servidor.blocos)
+    const salvas = lerAlertas(chaveAlertas)
+    return { ...e, alertas: Object.fromEntries(ids.map((id) => [id, salvas[id] ?? null])) }
+  })
+  useEffect(() => { gravarAlertas(chaveAlertas, estado.alertas) }, [chaveAlertas, estado.alertas])
   const [anexos, setAnexos] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const navegar = useNavigate()
@@ -338,7 +354,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
   const [dd, setDd] = useState<{ versao: number; itens: ItemDD[]; reserva: Hipotese[]; resumo: ItemResumo[] } | null>(() =>
     // consulta retomada: os diagnósticos e as decisões guardadas voltam como rascunho (sem a reserva do "+")
     retomada.diagnosticos && retomada.historia
-      ? { versao: 1, itens: itensDoServidor(retomada.diagnosticos), reserva: [], resumo: montarResumo(at.tipo === 'retorno' ? secoesDaHistoria(retomada.historia.historia) : comAlergiasDaFicha(retomada.historia, secoesDaHistoria(retomada.historia.historia))) }
+      ? { versao: 1, itens: itensDoServidor(retomada.diagnosticos), reserva: [], resumo: montarResumo(at.tipo === 'retorno' ? secoesDoRetorno(secoesDaHistoria(retomada.historia.historia)) : comAlergiasDaFicha(retomada.historia, secoesDaHistoria(retomada.historia.historia))) }
       : null)
   /** última versão já escrita "ao vivo" de cada página: ao voltar, aparece pronta (não escreve de novo) */
   const [escrita, setEscrita] = useState({ historia: retomada.historia ? 1 : 0, diagnosticos: retomada.diagnosticos ? 1 : 0, prontuario: 0 })
@@ -392,10 +408,8 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
     // a IA usa só a história salva: o texto que está na tela, com as edições do médico
     const salva = historia.geradas.map((s, i) => ({ rotulo: s.rotulo, texto: historia.textos[i] }))
     if (servidor) {
-      // retorno: o "resumo" da conduta leva também o que o prontuário já tem (regra 14.2); a IA dos diagnósticos lê só a evolução salva
-      const anteriorDoServidor = at.tipo === 'retorno' ? entradasDoPaciente().find((e) => e.data < dia && e.dados.diagnosticos.length > 0) : undefined
-      const alergiaDoProntuario = at.tipo === 'retorno' ? secaoDeAlergias(at.alergiasDoProntuario ?? []) : null
-      void montarDDDoServidor(servidor.id, at.tipo === 'retorno' ? [...(alergiaDoProntuario ? [alergiaDoProntuario] : []), ...(anteriorDoServidor ? secoesDaConsultaAnterior(anteriorDoServidor.dados) : []), ...salva] : comAlergiasDaFicha(histBase, salva))
+      // retorno: a IA dos diagnósticos lê só a evolução salva; o resumo da conduta junta o prontuário
+      void montarDDDoServidor(servidor.id, at.tipo === 'retorno' ? secoesDoRetorno(salva) : comAlergiasDaFicha(histBase, salva))
       navegar(`${base}/diagnosticos`)
       return
     }
@@ -425,8 +439,16 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
     const b = retomada.conduta
     if (!b) return null
     const c = condutaDoServidor(b, { id: idDaHipotese(b.diagnostico), nome: b.diagnostico.nome, cid: b.diagnostico.cid }, dia, (id) => id)
-    return { versao: 1, c: { ...c, escolha: b.escolha, textos: b.textos, editado: b.textos.map(() => true), revelado: b.textos.map(() => true) } }
+    const salva = { ...c, escolha: b.escolha, textos: b.textos, editado: b.textos.map(() => true), revelado: b.textos.map(() => true) }
+    // escolhas feitas e ainda não salvas (recarregou antes de Salvar conduta) voltam do navegador
+    const r = estado.blocos.conduta.estado !== 'oficializado' ? lerConduta(chaveConduta, c.diagnostico.id) : null
+    return { versao: 1, c: r ? { ...salva, escolha: r.escolha, outros: r.outros, textos: r.textos, editado: r.editado } : salva }
   })
+  useEffect(() => {
+    if (!chaveConduta) return
+    if (!conduta || estado.blocos.conduta.estado === 'oficializado') { gravarConduta(chaveConduta, null); return }
+    if (estado.blocos.conduta.estado === 'revisado_medico') gravarConduta(chaveConduta, conduta.c)
+  }, [chaveConduta, conduta, estado.blocos.conduta.estado])
 
   /** Salvar diagnósticos. Consulta real: o servidor guarda e oficializa primeiro; só então a tela segue. */
   const salvarDiagnosticos = () => {
@@ -613,6 +635,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
   /** A consulta fica finalizada e volta para a página inicial do módulo. */
   const concluirProntuario = () => {
     gravarRascunho(chaveRascunho, null)
+    if (chaveAlertas) try { localStorage.removeItem(chaveAlertas) } catch { /* nada a apagar */ }
     fazer('oficializar', 'prontuario')
     // consulta real: o servidor já guardou a entrada; nos exemplos ela vai para o prontuário local (com as edições do médico)
     if (prontuario && !servidor) salvarEntrada(at.paciente.id, { tipo: at.tipo, modalidade: at.modalidade, data: dia, hora: at.inicio, ...aplicarEdicoes(prontuario.dados, prontuario.textos) }, at.paciente)
@@ -905,6 +928,36 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
       </div>
     </div>
   )
+}
+
+/** As escolhas da conduta ainda não salvas, no navegador (só valem para o mesmo diagnóstico). */
+type RascunhoConduta = Pick<Conduta, 'escolha' | 'outros' | 'textos' | 'editado'> & { diagnostico: string }
+function lerConduta(chave: string | null, diagnostico: string): RascunhoConduta | null {
+  if (!chave) return null
+  try {
+    const v = JSON.parse(localStorage.getItem(chave) ?? 'null') as RascunhoConduta | null
+    return v && v.diagnostico === diagnostico && Array.isArray(v.textos) && Array.isArray(v.editado) ? v : null
+  } catch { return null }
+}
+function gravarConduta(chave: string, c: Conduta | null) {
+  try {
+    if (c) localStorage.setItem(chave, JSON.stringify({ diagnostico: c.diagnostico.id, escolha: c.escolha, outros: c.outros, textos: c.textos, editado: c.editado }))
+    else localStorage.removeItem(chave)
+  } catch { /* sem armazenamento: só não lembra ao recarregar */ }
+}
+
+/** As respostas V/F dos sinais de alerta da página 1, no navegador (pode não existir: aba privada, dados apagados). */
+function lerAlertas(chave: string | null): Record<string, RespostaAlerta> {
+  if (!chave) return {}
+  try {
+    const v = JSON.parse(localStorage.getItem(chave) ?? '{}') as Record<string, unknown>
+    return Object.fromEntries(Object.entries(v).filter((x): x is [string, RespostaAlerta] => x[1] === 'v' || x[1] === 'f'))
+  } catch { return {} }
+}
+function gravarAlertas(chave: string | null, alertas: Record<string, RespostaAlerta | null>) {
+  if (!chave) return
+  const respondidos = Object.fromEntries(Object.entries(alertas).filter(([, r]) => r))
+  try { localStorage.setItem(chave, JSON.stringify(respondidos)) } catch { /* sem armazenamento: só não lembra ao recarregar */ }
 }
 
 /** O rascunho dos anexos salvos, no navegador (pode não existir: aba privada, dados apagados). */

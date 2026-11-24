@@ -282,7 +282,7 @@ function ListaDoDia({ vista, selecionado, onSelecionar, cabecalho }: PropsLista 
   )
 }
 
-/** `compacta`: a agenda do dia inteiro, com linhas mais baixas para caber numa tela. */
+/** `compacta`: a agenda do dia inteiro, com linhas mais baixas para caber numa tela (mais baixas ainda com 10 ou mais). */
 function Linhas({ lista, proximo, selecionado, onSelecionar, compacta = false }: PropsLista & { lista: Atendimento[]; proximo: string | null; compacta?: boolean }) {
   // realce: o paciente aberto; sem nenhum aberto, o próximo
   const realce = selecionado ?? proximo
@@ -294,7 +294,7 @@ function Linhas({ lista, proximo, selecionado, onSelecionar, compacta = false }:
             type="button"
             onClick={() => onSelecionar(x.id)}
             aria-pressed={x.id === selecionado}
-            className={`grid w-full grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-x-4 px-5 ${compacta ? 'py-[5px]' : 'py-2'} text-left transition hover:bg-suave/60 ${x.id === realce ? 'bg-(--esp-claro) hover:bg-suave' : ''} ${x.atendido ? 'text-apagado' : ''}`}
+            className={`grid w-full grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-x-4 px-5 ${compacta ? (lista.length > 9 ? 'py-[3px]' : 'py-[5px]') : 'py-2'} text-left transition hover:bg-suave/60 ${x.id === realce ? 'bg-(--esp-claro) hover:bg-suave' : ''} ${x.atendido ? 'text-apagado' : ''}`}
           >
             <span className="text-[17px] font-bold tabular-nums">{x.inicio}</span>
             <span className="min-w-0">

@@ -39,7 +39,7 @@ export function PaginaFormulario() {
   return (
     <div style={{ '--esp': esp?.cor } as CSSProperties} className="flex min-h-screen flex-col">
       <header className="border-b border-linha bg-branco" style={{ borderTop: '4px solid var(--esp)' }}>
-        <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6">
+        <div className="mx-auto max-w-3xl px-4 py-2.5 sm:px-6">
           {medico ? (
             <>
               <h1 className="text-[clamp(21px,3vw,26px)] leading-tight font-bold">{medico.tratamento} {medico.nome}</h1>
@@ -68,7 +68,7 @@ export function PaginaFormulario() {
         )}
       </main>
 
-      <footer className="border-t border-linha py-6 text-center text-[14px] text-apagado">
+      <footer className="border-t border-linha py-3 text-center text-[14px] text-apagado">
         Formulário com <Marca className="text-[17px]" />
       </footer>
     </div>
