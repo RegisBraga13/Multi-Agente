@@ -203,7 +203,13 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
   const fazer = (tipo: 'oficializar' | 'editar', bloco: Bloco) => despachar({ tipo, bloco })
 
   // o que foi salvo na página 1: a história é montada só com isso
-  const fontes = useRef<{ anamnese: string; perguntas: RespostaPergunta[]; exame: { rotulo: string; valor: string }[]; formulario: FormularioConsulta | null }>({ anamnese: '', perguntas: [], exame: [], formulario: null })
+  // consulta retomada: começa com o que o servidor já guardou (senão, salvar só uma metade monta a história com a outra vazia)
+  const fontes = useRef<{ anamnese: string; perguntas: RespostaPergunta[]; exame: { rotulo: string; valor: string }[]; formulario: FormularioConsulta | null }>({
+    anamnese: retomada.anamnese?.texto ?? '',
+    perguntas: retomada.anamnese?.perguntas ?? [],
+    exame: retomada.exame ? [...conteudo.exame.map((c) => ({ rotulo: c.rotulo, valor: c.valor })), { rotulo: 'Observações', valor: retomada.exame['Observações'] ?? '' }] : [],
+    formulario: null,
+  })
   /** geradas = última versão da IA; textos = o que está na tela (com as edições do médico); mudou = seções que a IA reescreveu agora */
   const [historia, setHistoria] = useState<{ versao: number; geradas: SecaoHistoria[]; textos: string[]; mudou: boolean[]; sugestoes: (string | null)[] } | null>(() => {
     // consulta retomada: a história guardada no servidor volta como rascunho (salvar a anamnese e o exame de novo a atualiza)
