@@ -224,3 +224,28 @@ describe('edicoesDoMedico (o que o médico mudou na revisão final)', () => {
     expect(resto).toEqual(local.edicoes)
   })
 })
+
+describe('registro do retorno: só o que mudou (regra 14.8)', () => {
+  const base = dadosDaConsulta({ historia: HISTORIA, itens: ITENS, conduta: conduta() })
+  const linha = (d: DadosEntrada, id: string) => secoesDosDados(d).flatMap((s) => s.linhas).find((l) => l.id === id)?.texto
+  const acne = { nome: 'Acne vulgar', cid: 'L70.0', pct: null, situacao: 'assinalado' as const }
+
+  it('confirmado sem %, nova hipótese com %, conduta e orientações só o que mudou', () => {
+    const d: DadosEntrada = { ...base, comparacao: {
+      referencia: 'Consulta 1', confirmados: [acne],
+      novasHipoteses: [{ nome: 'Tinha do corpo', cid: 'B35.4', pct: 30, situacao: 'assinalado' }],
+      conduta: [{ tipo: 'iniciado', texto: 'Cetoconazol 2% CREME' }, { tipo: 'suspenso', texto: 'Limeciclina' }],
+      orientacoes: 'Evitar sol.',
+    } }
+    expect(linha(d, 'hd')).toBe('Acne vulgar (CID-10 L70.0) · Confirmado\nNova hipótese: Tinha do corpo (CID-10 B35.4) — 30%')
+    expect(linha(d, 'conduta')).toBe('Iniciado: Cetoconazol 2% CREME\nSuspenso: Limeciclina')
+    expect(linha(d, 'orientacoes')).toBe('Evitar sol.')
+  })
+
+  it('nada mudou: HD vide consulta, conduta mantida, sem orientações', () => {
+    const d: DadosEntrada = { ...base, comparacao: { referencia: 'Consulta 1', confirmados: [], novasHipoteses: [], conduta: [], orientacoes: '' } }
+    expect(linha(d, 'hd')).toBe('Vide consulta 1')
+    expect(linha(d, 'conduta')).toBe('Mantida.')
+    expect(linha(d, 'orientacoes')).toBeUndefined()
+  })
+})

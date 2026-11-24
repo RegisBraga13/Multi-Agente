@@ -21,12 +21,14 @@ from app.contratos.base import ModeloApi
 from app.contratos.consulta_blocos import (
     ETAPAS,
     CondutaBloco,
+    Consulta,
     DiagnosticosBloco,
     ExameBloco,
     HistoriaBloco,
 )
 from app.contratos.prontuario import DadosEntrada, EntradaProntuario, PacienteComProntuario
 from app.prontuario.montar import aplicar_edicoes_narrativas, dados_da_consulta
+from app.prontuario.retorno import comparar_com_origem
 
 rotas = APIRouter(tags=["prontuário"])
 Dep = Annotated[Dependencias, Depends(dependencias)]
@@ -62,7 +64,7 @@ def _proposto(dep: Dependencias, medico: UUID, consulta_id: UUID) -> DadosEntrad
         assert bloco is not None
         return bloco.conteudo
 
-    return dados_da_consulta(
+    dados = dados_da_consulta(
         HistoriaBloco.model_validate(conteudo("historia")),
         DiagnosticosBloco.model_validate(conteudo("diagnosticos")),
         CondutaBloco.model_validate(conteudo("conduta")),
@@ -70,6 +72,18 @@ def _proposto(dep: Dependencias, medico: UUID, consulta_id: UUID) -> DadosEntrad
         dep.repo.documentos(medico, consulta_id),
         retorno=consulta.tipo == "retorno",
     )
+    origem = _entrada_de_origem(dep, medico, consulta)
+    if origem is None:
+        return dados
+    return dados.model_copy(update={"comparacao": comparar_com_origem(dados, origem.dados, origem.titulo)})
+
+
+def _entrada_de_origem(dep: Dependencias, medico: UUID, consulta: Consulta) -> EntradaProntuario | None:
+    """Retorno: a entrada do prontuário da consulta que marcou este retorno."""
+    if consulta.tipo != "retorno" or consulta.retorno_id is None:
+        return None
+    origem_id = dep.agenda.retorno(medico, consulta.retorno_id).consulta_origem_id
+    return next((e for e in dep.repo.prontuario(medico, consulta.paciente_id) if e.id == origem_id), None)
 
 
 @rotas.get("/consultas/{consulta_id}/prontuario", response_model=DadosEntrada)
@@ -82,7 +96,12 @@ def finalizar(consulta_id: UUID, corpo: Finalizacao, dep: Dep, medico: Medico) -
     dados = _proposto(dep, medico, consulta_id)
     if any(d.estado != "enviado" for d in dep.repo.documentos(medico, consulta_id)):
         raise ErroEtapa("Envie os documentos antes de finalizar")
-    dados, edicoes = aplicar_edicoes_narrativas(dados, corpo.edicoes)
+    pedidas = dict(corpo.edicoes)
+    if dados.comparacao is not None and "P.orientacoes" in pedidas:
+        # retorno: a linha mostra só as orientações novas; a edição do médico vai para elas
+        nova = dados.comparacao.model_copy(update={"orientacoes": pedidas.pop("P.orientacoes").strip()})
+        dados = dados.model_copy(update={"comparacao": nova})
+    dados, edicoes = aplicar_edicoes_narrativas(dados, pedidas)
     consulta = dep.repo.buscar(medico, consulta_id)
     marcou = corpo.retorno_marcado is not None
     if corpo.retorno_marcado is not None:

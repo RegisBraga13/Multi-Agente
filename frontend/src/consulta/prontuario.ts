@@ -9,7 +9,7 @@ import type { Conduta } from './conduta'
 import type { ItemDD } from './diagnosticos'
 import type { Complementar } from './exemplo'
 import { extensaoDe, type SecaoHistoria } from './historia'
-import type { DadosEntrada, DiagnosticoRegistro, DocumentoRegistro, FotoRegistro, RetornoMarcado } from '../prontuario/registro'
+import type { ComparacaoRetorno, DadosEntrada, DiagnosticoRegistro, DocumentoRegistro, FotoRegistro, RetornoMarcado } from '../prontuario/registro'
 
 /** Uma linha ("• QP: texto"; rótulo vazio = só o texto). `id` estável para atualizar sem perder a edição do médico. */
 export type LinhaProntuario = { id: string; rotulo: string; texto: string }
@@ -114,6 +114,22 @@ export function registroDoAnexo(a: Anexo): DocumentoRegistro | null {
 export const textoDiagnosticos = (ds: DiagnosticoRegistro[]) =>
   ds.map((d) => `${d.nome}${d.cid ? ` (CID-10 ${d.cid})` : ''}${d.pct !== null ? ` — ${d.pct}%` : ''} · ${d.situacao === 'assinalado' ? 'Assinalado' : 'Sugerido'}`).join('\n')
 
+const PALAVRA: Record<ComparacaoRetorno['conduta'][number]['tipo'], string> = { iniciado: 'Iniciado', suspenso: 'Suspenso', ajustado: 'Ajustado' }
+
+/** Retorno, HD: "Acne vulgar (CID-10 L70.0) · Confirmado", "Nova hipótese: Tinha do corpo (CID-10 B35.4) — 30%"; nada: "Vide consulta 1". */
+export function hdDoRetorno(c: ComparacaoRetorno): string {
+  const cid = (d: DiagnosticoRegistro) => (d.cid ? ` (CID-10 ${d.cid})` : '')
+  const linhas = [
+    ...c.confirmados.map((d) => `${d.nome}${cid(d)} · Confirmado`),
+    ...c.novasHipoteses.map((d) => `Nova hipótese: ${d.nome}${cid(d)}${d.pct !== null ? ` — ${d.pct}%` : ''}`),
+  ]
+  return linhas.length ? linhas.join('\n') : `Vide ${c.referencia.charAt(0).toLowerCase()}${c.referencia.slice(1)}`
+}
+
+/** Retorno, conduta: só o que mudou ("Iniciado: …", "Suspenso: …", "Ajustado: …"); nada: "Mantida." */
+export const condutaDoRetorno = (c: ComparacaoRetorno): string =>
+  c.conduta.length ? c.conduta.map((m) => `${PALAVRA[m.tipo]}: ${m.texto}`).join('\n') : 'Mantida.'
+
 /** Exames trazidos naquele evento, por data: "12/11/2026: Glicemia de jejum 101 mg/dL; TGO 26 U/L." (sem resultado, não entra). */
 export function textoExamesDoRegistro(exames: DadosEntrada['exames']): string {
   const porData = new Map<string, string[]>()
@@ -124,6 +140,7 @@ export function textoExamesDoRegistro(exames: DadosEntrada['exames']): string {
 /** O texto do prontuário, montado dos dados (QP… HD, CONDUTA). Linha sem dado some; seção sem nada também. */
 export function secoesDosDados(d: DadosEntrada): SecaoProntuario[] {
   const ponto = (xs: string[]) => (xs.length ? `${xs.join(', ')}.` : '')
+  const c = d.comparacao
   const secoes: SecaoProntuario[] = [
     { id: 'S', titulo: '', linhas: [
       { id: 'evolucao', rotulo: 'Evolução', texto: d.evolucao ?? '' },
@@ -138,12 +155,13 @@ export function secoesDosDados(d: DadosEntrada): SecaoProntuario[] {
       // exames trazidos pelo paciente (ou, no retorno, os resultados dos pedidos): um por linha
       { id: 'exames', rotulo: 'Exames', texto: d.examesTexto || textoExamesDoRegistro(d.exames) },
     ] },
-    { id: 'A', titulo: '', linhas: [{ id: 'hd', rotulo: 'HD', texto: textoDiagnosticos(d.diagnosticos) }] },
+    { id: 'A', titulo: '', linhas: [{ id: 'hd', rotulo: 'HD', texto: c ? hdDoRetorno(c) : textoDiagnosticos(d.diagnosticos) }] },
     { id: 'P', titulo: 'Conduta', linhas: [
-      { id: 'conduta', rotulo: '', texto: d.receita?.texto || d.condutaTexto },
+      // retorno: só o que mudou desde a consulta de origem (regra 14.8)
+      { id: 'conduta', rotulo: '', texto: c ? condutaDoRetorno(c) : d.receita?.texto || d.condutaTexto },
       { id: 'solicitado', rotulo: 'Solicitado', texto: ponto(d.solicitado) },
       { id: 'encaminhado', rotulo: 'Encaminhado para', texto: ponto(d.encaminhado) },
-      { id: 'orientacoes', rotulo: 'Orientações gerais', texto: d.orientacoes },
+      { id: 'orientacoes', rotulo: 'Orientações gerais', texto: c ? c.orientacoes : d.orientacoes },
       ...d.documentos.map((x) => ({ id: x.tipo, rotulo: x.tipo === 'atestado' ? 'Atestado' : 'Laudo', texto: x.resumo })),
       { id: 'avaliacao', rotulo: 'Avaliação', texto: d.avaliacao },
       // sempre a última linha: o dia do retorno marcado ou "Sem retorno"

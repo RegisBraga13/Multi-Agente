@@ -51,8 +51,24 @@ export type DadosEntrada = {
   avaliacao: string
   /** o retorno marcado na página 5; null ou ausente = sem retorno */
   retornoMarcado?: RetornoMarcado | null
+  /** retorno: o registro mostra só o que mudou (os dados completos acima continuam guardados) */
+  comparacao?: ComparacaoRetorno | null
   documentos: DocumentoRegistro[]
   fotos: FotoRegistro[]
+}
+
+/** Retorno: o que mudou desde a consulta de origem (regra 14.8). Espelho de ComparacaoRetorno do servidor. */
+export type ComparacaoRetorno = {
+  /** "Consulta 1" */
+  referencia: string
+  /** assinalados que já estavam na origem (sem %) */
+  confirmados: DiagnosticoRegistro[]
+  /** assinalados novos (com %) */
+  novasHipoteses: DiagnosticoRegistro[]
+  /** vazia = conduta mantida */
+  conduta: { tipo: 'iniciado' | 'suspenso' | 'ajustado'; texto: string }[]
+  /** só as orientações novas */
+  orientacoes: string
 }
 
 /** Mesmo formato do servidor (RetornoMarcado): 'YYYY-MM-DD', 'HH:MM'. */

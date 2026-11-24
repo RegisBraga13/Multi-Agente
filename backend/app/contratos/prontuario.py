@@ -14,7 +14,7 @@ from pydantic import Field, model_validator
 from app.contratos.agenda import RetornoMarcado
 from app.contratos.base import ModeloApi
 
-SCHEMA_VERSION_PRONTUARIO = 2
+SCHEMA_VERSION_PRONTUARIO = 3  # 3: retorno com `comparacao` (só o que mudou)
 
 
 class Quantidade(ModeloApi):
@@ -81,6 +81,27 @@ class ReceitaRegistro(ModeloApi):
     texto: str
 
 
+class MudancaConduta(ModeloApi):
+    """Uma mudança na conduta do retorno em relação à consulta de origem."""
+
+    tipo: Literal["iniciado", "suspenso", "ajustado"]
+    texto: str
+
+
+class ComparacaoRetorno(ModeloApi):
+    """Retorno: o que mudou desde a consulta de origem (o prontuário não repete o que já tem).
+
+    `confirmados`: assinalados que já estavam na origem (sem %). `novas_hipoteses`: assinalados novos (com %).
+    Os dois vazios = "Vide consulta N". `conduta` vazia = "Mantida". `orientacoes`: só as novas.
+    """
+
+    referencia: str  # "Consulta 1"
+    confirmados: list[DiagnosticoRegistro]
+    novas_hipoteses: list[DiagnosticoRegistro]
+    conduta: list[MudancaConduta]
+    orientacoes: str
+
+
 class DadosEntrada(ModeloApi):
     """Narrativas ('' = não colhido) e dados estruturados da entrada."""
 
@@ -89,7 +110,9 @@ class DadosEntrada(ModeloApi):
     ap: str
     hp: str
     hf: str
-    evolucao: str | None = None  # retorno: a evolução de hoje (a consulta anterior já está no prontuário); None na consulta
+    evolucao: str | None = (
+        None  # retorno: a evolução de hoje (a consulta anterior já está no prontuário); None na consulta
+    )
     extensao_pct: float | None = None  # extensão das lesões em % do corpo, do exame físico; None = sem número
     exame_fisico: str
     exames_texto: str
@@ -102,6 +125,8 @@ class DadosEntrada(ModeloApi):
     orientacoes: str
     avaliacao: str  # "nova avaliação em X semanas": recomendação da conduta, não é o retorno marcado
     retorno_marcado: RetornoMarcado | None = None
+    # retorno: o registro mostra só o que mudou; os dados completos acima continuam guardados (auditoria)
+    comparacao: ComparacaoRetorno | None = None
     documentos: list[DocumentoRegistro]
     fotos: list[FotoRegistro]
 

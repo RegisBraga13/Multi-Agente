@@ -11,6 +11,11 @@ from tests.test_api_consultas import MEDICO_A, cliente, eventos, js, nova_consul
 
 def consulta_pronta(c):
     cid = nova_consulta(c)
+    etapas_ate_conduta(c, cid)
+    return cid
+
+
+def etapas_ate_conduta(c, cid):
     c.put(f"/consultas/{cid}/anamnese", json=js(ANAMNESE))
     c.post(f"/consultas/{cid}/anamnese/oficializar")
     from tests.fabrica import EXAME
@@ -28,7 +33,6 @@ def consulta_pronta(c):
         json=pronto["conteudo"] | {"textos": ["Rotina.", "", "", "Avaliação em 8 semanas."]},
     )
     assert c.post(f"/consultas/{cid}/conduta/oficializar").status_code == 200
-    return cid
 
 
 def test_prontuario_proposto(mundo):
@@ -244,3 +248,30 @@ def test_falha_ao_desfazer_nao_esconde_o_erro_original(mundo):
     cid = consulta_pronta(c)
     with pytest.raises(RuntimeError, match="banco caiu"):
         c.post(f"/consultas/{cid}/finalizar", json={"edicoes": {}, "retornoMarcado": RETORNO})
+
+
+def test_retorno_proposto_compara_com_a_consulta_de_origem(mundo):
+    from tests.test_api_consultas import _cliente_com_agenda, _pedido_com_formulario
+
+    c, agenda = _cliente_com_agenda(mundo)
+    p = _pedido_com_formulario(agenda, MEDICO_A)
+    origem = c.post(f"/consultas/do-pedido/{p.id}", json={"especialidade": "dermatologia"}).json()["id"]
+    etapas_ate_conduta(c, origem)
+    assert c.post(f"/consultas/{origem}/finalizar", json={"edicoes": {}, "retornoMarcado": RETORNO}).status_code == 200
+    [cartao] = agenda.retornos(MEDICO_A, FUTURO, FUTURO)
+    rid = c.post(f"/consultas/do-retorno/{cartao.id}", json={"especialidade": "dermatologia"}).json()["id"]
+    etapas_ate_conduta(c, rid)
+    comp = c.get(f"/consultas/{rid}/prontuario").json()["comparacao"]
+    assert comp["referencia"] == "Consulta 1" and comp["conduta"] == [] and comp["novasHipoteses"] == []
+    assert [(d["nome"], d["pct"]) for d in comp["confirmados"]] == [
+        (diagnosticos("confirmada").itens[0].hipotese.nome, None)
+    ]
+    r = c.post(f"/consultas/{rid}/finalizar", json={"edicoes": {"P.orientacoes": "Evitar sol."}})
+    assert r.json()["dados"]["comparacao"]["orientacoes"] == "Evitar sol."
+    assert c.get(f"/consultas/{origem}/prontuario").status_code == 409  # origem finalizada: sem proposta
+
+
+def test_consulta_comum_nao_tem_comparacao(mundo):
+    c = cliente(mundo)
+    cid = consulta_pronta(c)
+    assert c.get(f"/consultas/{cid}/prontuario").json()["comparacao"] is None
