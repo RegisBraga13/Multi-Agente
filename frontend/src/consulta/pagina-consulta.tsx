@@ -296,22 +296,36 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
     const novo = oficializar(estado, bloco)
     despachar({ tipo: 'oficializar', bloco })
     if (!podeOficializar(estado, 'historia') && podeOficializar(novo, 'historia')) {
-      // consulta real: a história vem da IA do servidor; no retorno a tela monta a História da evolução (sem IA) e o servidor só a guarda
-      if (servidor && at.tipo !== 'retorno') { void montarDoServidor(servidor.id); navegar(`${base}/historia`); return }
-      const f = fontes.current
-      // os sinais de alerta não saem mais da página 1 (vêm depois da história, como perguntas contextuais)
-      const sinais: { texto: string; resposta: RespostaAlerta | null }[] = []
-      // retorno: História da evolução (sem identificação, abre com "Paciente relata..."); primeira consulta: história clínica
-      const novas = at.tipo === 'retorno'
-        ? montarHistoriaEvolucao(f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais: [], perguntas: f.perguntas, anteriores: entradasDoPaciente().map((e) => ({ data: e.data, exameFisico: e.dados.exameFisico, extensaoPct: e.dados.extensaoPct })) })
-        : montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais, perguntas: f.perguntas, formulario: f.formulario ? { ...f.formulario, partes: partesPreConsulta(esp.slug) } : undefined })
-      // primeira vez: tudo novo; depois: a IA mexe só no que mudou
-      setHistoria((h) => h
-        ? { versao: h.versao + 1, geradas: novas, ...atualizarHistoria(h.geradas, h.textos, novas) }
-        : { versao: 1, geradas: novas, textos: novas.map((s) => s.texto), mudou: novas.map(() => true), sugestoes: novas.map(() => null) })
+      montarHistoriaDaPagina1()
       navegar(`${base}/historia`)
     }
   }
+
+  /** Monta a história com o que a página 1 salvou (ou, numa atualização, mexe só no que mudou). */
+  const montarHistoriaDaPagina1 = () => {
+    // consulta real: a história vem da IA do servidor; no retorno a tela monta a História da evolução (sem IA) e o servidor só a guarda
+    if (servidor && at.tipo !== 'retorno') { void montarDoServidor(servidor.id); return }
+    const f = fontes.current
+    // os sinais de alerta não saem mais da página 1 (vêm depois da história, como perguntas contextuais)
+    const sinais: { texto: string; resposta: RespostaAlerta | null }[] = []
+    // retorno: História da evolução (sem identificação, abre com "Paciente relata..."); primeira consulta: história clínica
+    const novas = at.tipo === 'retorno'
+      ? montarHistoriaEvolucao(f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais: [], perguntas: f.perguntas, anteriores: entradasDoPaciente().map((e) => ({ data: e.data, exameFisico: e.dados.exameFisico, extensaoPct: e.dados.extensaoPct })) })
+      : montarHistoria(at, new Date(), f.anamnese, f.exame, conteudo.complementares, { falas: conteudo.falas, sinais, perguntas: f.perguntas, formulario: f.formulario ? { ...f.formulario, partes: partesPreConsulta(esp.slug) } : undefined })
+    // primeira vez: tudo novo; depois: a IA mexe só no que mudou
+    setHistoria((h) => h
+      ? { versao: h.versao + 1, geradas: novas, ...atualizarHistoria(h.geradas, h.textos, novas) }
+      : { versao: 1, geradas: novas, textos: novas.map((s) => s.texto), mudou: novas.map(() => true), sugestoes: novas.map(() => null) })
+  }
+
+  // consulta retomada direto na página da história: a anamnese e o exame já estão salvos, mas a história ainda não
+  // (recarregou antes de salvá-la) → monta agora, como se tivesse acabado de salvar a página 1
+  const historiaPedida = useRef(false)
+  useEffect(() => {
+    if (etapa !== 'historia' || historia || montando || historiaPedida.current || !podeOficializar(estado, 'historia')) return
+    historiaPedida.current = true
+    montarHistoriaDaPagina1()
+  })
 
   /** Responder ou acrescentar pergunta muda a história (a etapa fica revisada e as seguintes desatualizadas). */
   const mudarPerguntas = (f: (xs: PerguntaServidor[]) => PerguntaServidor[]) => {
