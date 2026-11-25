@@ -3,7 +3,7 @@
 // Depois de salvo, fica só para consulta (as correções são feitas na caixa de texto).
 import type { ReactNode } from 'react'
 import { blocosDaAnamnese, type Bloco } from '../medico/blocos'
-import { alternarOpcao, chaveDaLinha, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
+import { alternarOpcao, chaveDaLinha, perguntaTrabalho, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
 import { ESTADOS_CIVIS, type DadosPessoais } from '../medico/regras'
 import type { FormularioConsulta } from './formulario-consulta'
 import { SEM_CORRETOR } from './campo-linha'
@@ -139,7 +139,7 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar, confe
     return [
       <div key="ec">{opcoes('Estado civil', ESTADOS_CIVIS, dados.estadoCivil ? [dados.estadoCivil] : [], (v) => mudaDado('estadoCivil', dados.estadoCivil === v ? '' : v as DadosPessoais['estadoCivil']))}</div>,
       campoDado('Profissão', 'profissao'),
-      <div key="te" className="col-span-2">{opcoes('Trabalha ao ar livre, exposto ao sol ou a produtos químicos?', [{ valor: 'sim', rotulo: 'Sim' }, { valor: 'nao', rotulo: 'Não' }],
+      <div key="te" className="col-span-2">{opcoes(perguntaTrabalho(partes).rotulo, [{ valor: 'sim', rotulo: 'Sim' }, { valor: 'nao', rotulo: 'Não' }],
         dados.trabalhoExposto ? [dados.trabalhoExposto] : [], (v) => mudaDado('trabalhoExposto', dados.trabalhoExposto === v ? '' : v as DadosPessoais['trabalhoExposto']))}</div>,
     ]
   }

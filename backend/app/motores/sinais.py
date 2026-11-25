@@ -70,7 +70,8 @@ def sinais_respondidos(entrada: EntradaConsulta, lista: list[SinalAlerta]) -> li
 
 
 def _textos_da_entrada(entrada: EntradaConsulta) -> list[str]:
-    exame = [v for v in entrada.exame.model_dump().values() if v]
+    valores = entrada.exame.values() if isinstance(entrada.exame, dict) else entrada.exame.model_dump().values()
+    exame = [v for v in valores if v]
     return [f.texto for f in entrada.falas] + exame
 
 

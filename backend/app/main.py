@@ -22,12 +22,13 @@ def _provedor() -> ProvedorIA:
     return ProvedorDemonstracao()
 
 
+agenda = RepositorioAgendaPostgres(configuracao.database_url)
 app = criar_app(
     Dependencias(
-        identidade=MedicoLocal(configuracao.medico_local_id),
+        identidade=MedicoLocal(configuracao.medico_local_id, paginas=agenda.medico_da_pagina),
         pacientes=RepositorioPacientesPostgres(configuracao.database_url),
         consultas=RepositorioConsultasPostgres(configuracao.database_url),
         provedor=_provedor(),
-        agenda=RepositorioAgendaPostgres(configuracao.database_url),
+        agenda=agenda,
     )
 )

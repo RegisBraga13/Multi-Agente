@@ -7,7 +7,7 @@ import { enviarFormulario, ErroServidor, lerComoBase64 } from '../servidor/agend
 import { blocoRespondido, blocosDoFormulario, faltaResponder, type Bloco } from './blocos'
 import { GrupoOpcoes } from './opcoes'
 import { TextoCrescente } from './texto-crescente'
-import { alternarOpcao, chaveDaLinha, partesPreConsulta, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
+import { alternarOpcao, chaveDaLinha, partesPreConsulta, perguntaTrabalho, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
 import { chavesDeDocumentos, ESTADOS_CIVIS, MAX_DOCUMENTOS, formatarWhatsapp, normalizarWhatsapp, validarDadosPessoais, validarFoto, type DadosPessoais, type RascunhoPedido } from './regras'
 import { diaComSemana, horaCurta, NOME_MODALIDADE } from './textos'
 import type { Medico } from './tipos'
@@ -311,7 +311,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
           <Campo rotulo="Profissão">
             {(p) => <input {...p} autoComplete="organization-title" value={dados.profissao} onChange={(e) => muda('profissao', e.target.value)} className={classeEntrada(p)} />}
           </Campo>
-          <GrupoOpcoes rotulo="Trabalha ao ar livre, exposto ao sol ou a produtos químicos?" modo="uma" opcoes={SIM_NAO}
+          <GrupoOpcoes rotulo={perguntaTrabalho(partes).rotulo} modo="uma" opcoes={SIM_NAO}
             marcadas={[dados.trabalhoExposto]} onAlternar={(v) => muda('trabalhoExposto', v as DadosPessoais['trabalhoExposto'])} />
         </div>
       )

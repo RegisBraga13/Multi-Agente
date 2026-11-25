@@ -29,3 +29,10 @@ pacote** de cada especialidade. Hoje só a Dermatologia tem pacote completo.
 - H2. Conduta: começar sem tabela — a IA monta as opções nos 4 grupos e o médico escolhe; tabelas das doenças comuns depois dos testes, com o conteúdo do autor (24/11).
 - I. Escalas (DAS28, CDAI, HAQ): depois dos testes (24/11); anexos começam iguais aos de todas.
 - J. Retorno (24/11): o mesmo exame de 5 partes, com o que foi marcado na consulta anterior em cinza ao lado de cada parte; no fim "Comparado à consulta anterior: Melhor · Igual · Pior"; fotos de antes e de hoje lado a lado.
+
+## Situação em 25/11/2026
+Construído e testado com a paciente fictícia Teresa Teste Reumato (Dr. Paulo Mendes): página e agenda do médico,
+formulário, anamnese (modo do médico em telas divididas), exame por roteiro, história, diagnósticos, conduta com os
+grupos da Reumatologia, receita com USO INJETÁVEL, prontuário e retorno (antes em cinza + Melhor/Igual/Pior).
+IA local = demonstração com respostas fixas de Reumatologia. Ficam para depois: IA real (paga), leitura de laudos,
+escalas (DAS28, CDAI, HAQ), tabelas de conduta por doença.

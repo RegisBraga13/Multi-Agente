@@ -44,6 +44,8 @@ export type Pergunta = {
   soSe?: { pergunta: string; opcao: string }
   /** texto curto do lembrete em Perguntas, na consulta (quando o rótulo é longo) */
   lembrete?: string
+  /** em branco, não vira lembrete em Perguntas (espaço livre do paciente, não pergunta clínica; autor, 25/11/2026) */
+  semLembrete?: boolean
 }
 
 /** Chave do texto escrito na linha que a opção `abreLinha` abre. */
@@ -51,8 +53,12 @@ export const chaveDaLinha = (id: string) => `${id}_qual`
 
 /** `colunas`: no PC, a parte em duas colunas com estas perguntas (ids) em cada uma, para caber numa tela */
 /** `semPular`: só Voltar e Próximo (a parte já é opcional; autor, 24/11) */
-/** `compacta`: opções mais baixas, para a parte caber numa tela */
-export type Parte = { titulo: string; perguntas: Pergunta[]; nota?: string; colunas?: [string[], string[]]; semPular?: boolean; compacta?: boolean }
+/** `compacta`: opções mais baixas, para a parte caber numa tela.
+ *  `telasDoMedico`: na anamnese (modo Formulário do médico, caixa menor), a parte em várias telas, cada uma com estas perguntas (ids). */
+export type Parte = {
+  titulo: string; perguntas: Pergunta[]; nota?: string; colunas?: [string[], string[]]; semPular?: boolean; compacta?: boolean
+  telasDoMedico?: string[][]
+}
 
 /** Respostas da pré-consulta, pela chave de cada pergunta (as fotos vão à parte). */
 export type RespostasPreConsulta = Record<string, string | string[]>
@@ -77,7 +83,7 @@ export const NOTA_DOR: Pergunta = {
 export const ALGO_MAIS: Parte = {
   titulo: 'Algo mais que seu médico deva saber?',
   semPular: true,
-  perguntas: [{ id: 'algo_mais', rotulo: 'Algo mais que seu médico deva saber?', tipo: 'texto-longo', semRotulo: true, placeholder: 'Escreva com suas palavras.' }],
+  perguntas: [{ id: 'algo_mais', rotulo: 'Algo mais que seu médico deva saber?', tipo: 'texto-longo', semRotulo: true, semLembrete: true, placeholder: 'Escreva com suas palavras.' }],
 }
 
 /** Aviso na parte de fotos: enviar e também trazer no dia (todos os módulos; autor, 24/11/2026). */
@@ -187,6 +193,8 @@ const REUMATOLOGIA: Parte[] = [
     // no PC, as regiões à esquerda e as outras duas à direita (cabe numa tela)
     colunas: [['regioes'], ['lados', 'inchaco']],
     compacta: true,
+    // na tela do médico não cabe numa caixa só (autor, 24/11/2026)
+    telasDoMedico: [['regioes'], ['lados', 'inchaco']],
     perguntas: [
       {
         id: 'regioes', rotulo: 'Quais regiões do corpo doem ou incomodam no momento?', tipo: 'varias', ajuda: 'Marque todas que se aplicam.', duasColunas: true,
@@ -207,6 +215,7 @@ const REUMATOLOGIA: Parte[] = [
   },
   {
     titulo: 'Rigidez e dor',
+    telasDoMedico: [['rigidez', 'piora'], ['nota_dor']],
     perguntas: [
       {
         id: 'rigidez', rotulo: 'Ao acordar pela manhã, você sente o corpo ou as juntas “travadas” (rigidez)?', tipo: 'escolha', duasColunas: true,
@@ -271,6 +280,24 @@ const PACOTES: Partial<Record<string, Parte[]>> = { dermatologia: DERMATOLOGIA, 
 export function partesPreConsulta(especialidade: string): Parte[] {
   return PACOTES[especialidade] ?? GERAIS
 }
+
+/** Pergunta do trabalho (parte "Estado civil e trabalho"): `sim`/`nao` = como entra no texto. */
+export type PerguntaTrabalho = { rotulo: string; sim: string; nao: string }
+const TRABALHO_PADRAO: PerguntaTrabalho = {
+  rotulo: 'Trabalha ao ar livre, exposto ao sol ou a produtos químicos?',
+  sim: 'trabalha exposto ao sol ou a produtos químicos', nao: 'não trabalha exposto ao sol nem a produtos químicos',
+}
+// Reumatologia: o que importa no trabalho é o esforço e o movimento repetitivo (autor, 24/11/2026)
+const TRABALHO: Partial<Record<string, PerguntaTrabalho>> = {
+  reumatologia: {
+    rotulo: 'Seu trabalho exige esforço físico ou movimentos repetitivos?',
+    sim: 'trabalha com esforço físico ou movimentos repetitivos', nao: 'não trabalha com esforço físico nem movimentos repetitivos',
+  },
+}
+/** As partes de cada especialidade são sempre o mesmo objeto: dá para saber de qual especialidade são. */
+const ESPECIALIDADE_DAS_PARTES = new Map(Object.entries(PACOTES).map(([esp, partes]) => [partes, esp]))
+export const especialidadeDasPartes = (partes: Parte[]) => ESPECIALIDADE_DAS_PARTES.get(partes)
+export const perguntaTrabalho = (partes: Parte[]): PerguntaTrabalho => TRABALHO[especialidadeDasPartes(partes) ?? ''] ?? TRABALHO_PADRAO
 
 /** A pergunta aparece para este paciente: sexo certo e, se depende de outra resposta, essa opção marcada
  *  (ou ela mesma já respondida: o que foi dito nunca some). */

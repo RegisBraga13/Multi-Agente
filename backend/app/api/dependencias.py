@@ -52,4 +52,7 @@ def dependencias(request: Request) -> Dependencias:
 
 
 def medico_atual(request: Request) -> UUID:
-    return dependencias(request).identidade.medico_atual()
+    # sem login (só local): a tela do módulo informa a página do médico fictício daquela especialidade
+    # (a imagem de uma foto não leva cabeçalho: vem no endereço, ?medico_pagina=)
+    pagina = request.headers.get("x-medico-pagina") or request.query_params.get("medico_pagina")
+    return dependencias(request).identidade.medico_atual(pagina)

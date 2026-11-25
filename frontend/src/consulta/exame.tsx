@@ -2,6 +2,8 @@
 import { useCallback, useRef, useState } from 'react'
 import { CampoLinha, SEM_CORRETOR } from './campo-linha'
 import type { CampoExame, Complementar } from './exemplo'
+import { ExameRoteiro } from './exame-roteiro'
+import { camposDoRoteiro, type MarcasExame, type Roteiro } from './roteiro-exame'
 import type { Situacao } from './tipos'
 import { BotaoOficializar, Cartao, Gaveta, ROTULO } from './ui'
 
@@ -25,13 +27,22 @@ type Props = {
   situacao: Situacao
   /** consulta retomada do servidor: as observações que já estavam salvas */
   observacoesIniciais?: string
+  /** exame por roteiro da especialidade (ex.: Reumatologia): partes que abrem e fecham, no lugar dos campos de texto */
+  roteiro?: Roteiro
+  /** consulta retomada: o que já estava marcado no roteiro */
+  marcasIniciais?: MarcasExame
+  /** retorno com roteiro: o que foi marcado na consulta anterior */
+  marcasAnteriores?: MarcasExame
   onEditar: () => void
-  /** salva com os valores atuais (a história clínica é montada com eles) */
-  onOficializar: (valores: { rotulo: string; valor: string }[]) => void
+  /** salva com os valores atuais (a história clínica é montada com eles); com roteiro, também as marcas */
+  onOficializar: (valores: { rotulo: string; valor: string }[], marcas?: MarcasExame) => void
   onAviso: (texto: string) => void
 }
 
-export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, fotosPaciente = [], documentos = [], retorno, situacao, observacoesIniciais = '', onEditar, onOficializar, onAviso }: Props) {
+export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, fotosPaciente = [], documentos = [], retorno, situacao, observacoesIniciais = '', roteiro, marcasIniciais = {}, marcasAnteriores, onEditar, onOficializar, onAviso }: Props) {
+  const [marcasRoteiro, setMarcasRoteiro] = useState<MarcasExame>(marcasIniciais)
+  /** roteiro com uma parte aberta: as fotos se recolhem para a parte caber na tela */
+  const [parteAberta, setParteAberta] = useState(false)
   const [laudos, setLaudos] = useState(false)
   const fecharLaudos = useCallback(() => setLaudos(false), [])
   const [valores, setValores] = useState(() => campos.map((c) => c.valor))
@@ -71,7 +82,9 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, foto
       titulo={retorno ? 'Fotos e exames' : 'Exame físico e complementar'}
       cabecalho={inserir}
       legenda={temRascunho ? 'Tracejado = sugestão da IA · clique para editar' : undefined}
-      rodape={<BotaoOficializar rotulo={retorno ? 'Salvar fotos e exames' : 'Salvar exame físico'} oficializado={oficializado} onClick={() => onOficializar([...campos.map((c, i) => ({ rotulo: c.rotulo, valor: valores[i] })), { rotulo: 'Observações', valor: observacoes }])} />}
+      rodape={<BotaoOficializar rotulo={retorno ? 'Salvar fotos e exames' : 'Salvar exame físico'} oficializado={oficializado} onClick={() => (roteiro
+        ? onOficializar([...camposDoRoteiro(roteiro, marcasRoteiro, !!marcasAnteriores).map((c) => ({ rotulo: c.rotulo, valor: c.valor ?? '' })), { rotulo: 'Observações', valor: observacoes }], marcasRoteiro)
+        : onOficializar([...campos.map((c, i) => ({ rotulo: c.rotulo, valor: valores[i] })), { rotulo: 'Observações', valor: observacoes }]))} />}
     >
       <>
           {retorno && (
@@ -82,7 +95,12 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, foto
               ))}
             </div>
           )}
-          <Fotos fotos={fotosPaciente.length || fotos} urls={fotosPaciente} fotoExemplo={fotoExemplo} marcas={marcas} onAdicionar={() => onAviso('Fotos e câmera chegam numa próxima etapa.')} />
+          {!(roteiro && parteAberta) && <Fotos fotos={fotosPaciente.length || fotos} urls={fotosPaciente} fotoExemplo={fotoExemplo} marcas={marcas} onAdicionar={() => onAviso('Fotos e câmera chegam numa próxima etapa.')} />}
+          {roteiro ? (
+            <ExameRoteiro roteiro={roteiro} marcas={marcasRoteiro} anteriores={marcasAnteriores} onAbrir={setParteAberta}
+              onMarcas={(m) => { setMarcasRoteiro(m); if (situacao !== 'revisado_medico') onEditar() }}
+              observacoes={observacoes} onObservacoes={mudarObs} />
+          ) : (<>
           {/* editando um campo, os outros se recolhem; ao sair (clicar fora), todos voltam */}
           <div className="flex min-h-0 flex-1 flex-col" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setAtivo(null) }}>
           <dl className="mt-2 space-y-[3px]">
@@ -147,6 +165,7 @@ export function Exame({ campos, fotos, fotoExemplo, marcas, complementares, foto
             </div>
           )}
           </div>
+          </>)}
       </>
       {laudos && (
         <Gaveta titulo="Prints, arquivos, laudos" onFechar={fecharLaudos}>

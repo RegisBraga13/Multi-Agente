@@ -36,6 +36,8 @@ export type DadosEntrada = {
   evolucao?: string | null
   qp: string; hda: string; ap: string; hp: string; hf: string
   exameFisico: string
+  /** exame por roteiro (ex.: Reumatologia): o que foi marcado em cada parte (o retorno mostra ao lado, em cinza) */
+  marcasExame?: Record<string, string[]> | null
   /** os exames como ficaram escritos na história (o que o médico aprovou) */
   examesTexto: string
   exames: ExameRegistro[]

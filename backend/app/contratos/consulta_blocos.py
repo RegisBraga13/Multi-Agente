@@ -14,6 +14,7 @@ from pydantic import AwareDatetime, Field
 from app.contratos.base import ModeloApi
 from app.contratos.consulta import (
     Alergia,
+    CampoExame,
     ExameComplementar,
     ExameDerm,
     Fala,
@@ -48,7 +49,12 @@ class AnamneseBloco(ModeloApi):
 
 
 class ExameBloco(ModeloApi):
-    exame: ExameDerm
+    """`exame`: os campos da Dermatologia. `campos`: o exame das outras especialidades, parte por parte, em texto.
+    `marcas`: o que o médico marcou em cada parte (para reabrir, mudar e comparar no retorno)."""
+
+    exame: ExameDerm | None = None
+    campos: list[CampoExame] = Field(default_factory=list, max_length=20)
+    marcas: dict[str, list[str]] = Field(default_factory=dict, max_length=100)
     complementares: list[ExameComplementar]
     observacoes: str = ""
 

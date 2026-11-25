@@ -74,6 +74,7 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 3. **O que o paciente não respondeu vira lembrete em Perguntas. Alergias aparece sempre**, mesmo respondida. Ficam na lista; se o médico perguntar de novo algo já dito, a IA tira a repetição.
 4. **Perguntas da IA:** clicar risca e abre Sim/Não (duas caixas, como está); a resposta vai para a história.
    **Lembretes do formulário:** clicar risca e abre as opções da própria pergunta (ex.: "Está amamentando?" → Sim / Não; "Usa protetor solar?" → Todo dia / Às vezes…) ou, se for pergunta aberta, uma linha para escrever ("Produtos que usa" → "sabonete e hidratante"). A resposta vai para a história, na seção certa. Riscada sem resposta não entra.
+   **"Algo mais" em branco (25/11):** não vira lembrete em Perguntas (é espaço livre do paciente).
    **Dor sem nota (24/11, todos os módulos):** se o paciente fala de dor (gravado ou escrito) e a nota não foi dita, entra em Perguntas o lembrete "Nota da dor (0 a 10)"; ao clicar, abre a fileira 0–10.
 5. **Sinais de alerta:** o médico pergunta e marca V ou F. V vai para a história (não para a anamnese).
 6. **Gravar só com o aceite da transcrição.** O que vale é o que é salvo: o médico sempre lê a anamnese antes de salvar.
@@ -107,6 +108,8 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 4. **Gravidez, suspeita, tentando engravidar ou amamentando** escondem as opções incompatíveis. "Planeja engravidar no futuro" não esconde nada.
 5. **Sinal de urgência imediata** traz a ação de emergência fixa do pacote da especialidade (não depende da IA).
 6. **Botão de fonte (no DD e na Conduta):** IA · RAG (diretrizes) · Fontes externas. O médico marca uma ou mais; o app consulta cada uma, compara e mostra o melhor resultado; o médico confirma ou descarta. A fonte só na tela. *(depende de ligar a IA real; cada fonte = consulta paga → ok do autor)*
+
+- **Conduta montada pela IA (25/11, todos os módulos):** além do sistêmico, o grupo de orientações ("Exames e orientações" na Reumatologia) aceita mais de uma opção (ex.: exames + retorno). Cada especialidade pode ter os próprios nomes dos 4 grupos (Reumatologia: Cuidados e reabilitação · Tópico e infiltração · Tratamento sistêmico · Exames e orientações).
 
 ## 12. Receita e anexos
 

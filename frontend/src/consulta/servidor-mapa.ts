@@ -5,7 +5,7 @@ import type { Fala, Pergunta, RespostaPergunta } from './exemplo'
 import type { FormularioConsulta } from './formulario-consulta'
 import type { RespostaAlerta } from './tipos'
 
-type CampoExame = keyof ExameServidor['exame']
+type CampoExame = keyof NonNullable<ExameServidor['exame']>
 /** rótulo na tela (primeira consulta de Dermatologia) → campo do servidor */
 const CAMPOS: Record<string, CampoExame> = {
   Morfologia: 'morfologia', 'Localização': 'localizacao', 'Extensão': 'extensao',
@@ -19,6 +19,12 @@ const ROTULOS_RETORNO = Object.fromEntries(Object.entries(CAMPOS_RETORNO).map(([
 const ROTULOS = Object.fromEntries(Object.entries(CAMPOS).map(([rotulo, campo]) => [campo, rotulo])) as Record<CampoExame, string>
 const ORDEM: CampoExame[] = ['morfologia', 'localizacao', 'extensao', 'gravidade', 'achados']
 const OBSERVACOES = 'Observações'
+
+/** Exame por roteiro (ex.: Reumatologia): cada parte em texto + o que foi marcado. Parte vazia = não examinada. */
+export function exameRoteiroParaServidor(valores: { rotulo: string; valor: string }[], marcas: Record<string, string[]>): ExameServidor {
+  const campos = valores.filter((v) => v.rotulo !== OBSERVACOES).map((v) => ({ rotulo: v.rotulo, valor: v.valor.trim() || null }))
+  return { exame: null, campos, marcas, complementares: [], observacoes: valores.find((v) => v.rotulo === OBSERVACOES)?.valor.trim() ?? '' }
+}
 
 export function exameParaServidor(valores: { rotulo: string; valor: string }[], retorno = false): ExameServidor {
   const campos = retorno ? CAMPOS_RETORNO : CAMPOS
@@ -34,9 +40,11 @@ export function exameParaServidor(valores: { rotulo: string; valor: string }[], 
 }
 
 export function exameDoServidor(b: ExameServidor, retorno = false): { rotulo: string; valor: string }[] {
+  if (!b.exame) return [...(b.campos ?? []).map((c) => ({ rotulo: c.rotulo, valor: c.valor ?? '' })), { rotulo: OBSERVACOES, valor: b.observacoes }]
   const rotulos = retorno ? ROTULOS_RETORNO : ROTULOS
   const campos = ORDEM.filter((c) => rotulos[c] !== undefined)
-  return [...campos.map((c) => ({ rotulo: rotulos[c]!, valor: b.exame[c] ?? '' })), { rotulo: OBSERVACOES, valor: b.observacoes }]
+  const exame = b.exame
+  return [...campos.map((c) => ({ rotulo: rotulos[c]!, valor: exame[c] ?? '' })), { rotulo: OBSERVACOES, valor: b.observacoes }]
 }
 
 type EntradaAnamnese = {

@@ -7,7 +7,7 @@ não examinado (nunca "normal"). Sinal de alerta respondido leva o texto da list
 from datetime import date
 from typing import TYPE_CHECKING, Literal
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 
 from app.contratos.base import ModeloApi
 from app.privacidade import descrever_paciente
@@ -58,6 +58,14 @@ class ExameDerm(ModeloApi):
     achados: str | None
 
 
+class CampoExame(ModeloApi):
+    """Exame com as partes próprias da especialidade (ex.: Reumatologia: GALS, articulações, IPAM, padrão,
+    extra-articular), já escritas em texto pela tela. None = parte não examinada."""
+
+    rotulo: str = Field(min_length=1, max_length=60)
+    valor: str | None = Field(default=None, max_length=4000)
+
+
 class ItemComplementar(ModeloApi):
     """Valor de exame trazido: PRESENT (lido no laudo), INFERRED (deduzido — exige aviso e evidência) ou
     MISSING (não encontrado — valor null). Nada é inventado."""
@@ -93,7 +101,8 @@ class EntradaConsulta(ModeloApi):
     alergias: list[Alergia]
     falas: list[Fala]
     sinais: list[SinalRespondido]
-    exame: ExameDerm
+    # Dermatologia: os 5 campos; outras especialidades: parte → texto (ex.: {"GALS": "Marcha claudicante."})
+    exame: ExameDerm | dict[str, str | None]
     complementares: list[ExameComplementar]
 
 
@@ -110,7 +119,7 @@ def entrada_da_consulta(
         alergias=anamnese.alergias,
         falas=anamnese.falas,
         sinais=anamnese.sinais,
-        exame=exame.exame,
+        exame=exame.exame if exame.exame is not None else {c.rotulo: c.valor for c in exame.campos},
         complementares=exame.complementares,
     )
 

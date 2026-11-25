@@ -48,6 +48,7 @@ describe('condutaDoServidor', () => {
   })
   it('sem tabela, com IA: um grupo por id, ids de opção estáveis, kit nas orientações e "Outro" em cada grupo', () => {
     const c = condutaDoServidor(bloco(ia), DX, DIA, sinal)
+    expect(c.grupos!.flatMap((g) => g.linhas).find((l) => l.id === 'orientacoes')!.multipla).toBe(true) // exames + retorno (autor, 25/11)
     const topico = c.grupos!.find((g) => g.id === 'topico')!
     expect(topico.linhas[0].opcoes.map((o) => o.id)).toEqual(['topico-0', 'topico-1', OUTRO])
     expect(topico.linhas[0].opcoes[0].receita).toHaveLength(1)

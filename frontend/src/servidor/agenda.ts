@@ -2,6 +2,7 @@
 // Formatos iguais aos contratos do servidor (backend/app/contratos/agenda.py), em camelCase.
 import type { DadosPessoais, FormaFormulario, Transcricao } from '../medico/regras'
 import type { Modalidade } from '../medico/tipos'
+import { medicoDoModulo } from '../medico/exemplo'
 
 export const BASE = '/api'
 
@@ -60,10 +61,18 @@ export class ErroServidor extends Error {
 
 const SEM_CONEXAO = 'Não foi possível falar com o consultório. Confira a internet e tente de novo.'
 
+/** Sem login (só local): dentro de /modulo/<especialidade>, o servidor atende em nome do médico de exemplo daquele
+ *  módulo (Dermatologia → Dra. Ana Souza; Reumatologia → Dr. Paulo Mendes). Some quando o login real entrar. */
+export function cabecalhoDoModulo(): Record<string, string> {
+  const esp = typeof window === 'undefined' ? undefined : /^\/modulo\/([a-z]+)/.exec(window.location.pathname)?.[1]
+  const pagina = esp ? medicoDoModulo(esp)?.slug : undefined
+  return pagina ? { 'X-Medico-Pagina': pagina } : {}
+}
+
 export async function chamar<T>(caminho: string, init?: RequestInit): Promise<T> {
   let r: Response
   try {
-    r = await fetch(BASE + caminho, { ...init, headers: { 'Content-Type': 'application/json', ...init?.headers } })
+    r = await fetch(BASE + caminho, { ...init, headers: { 'Content-Type': 'application/json', ...cabecalhoDoModulo(), ...init?.headers } })
   } catch {
     throw new ErroServidor(0, SEM_CONEXAO)
   }
@@ -109,7 +118,11 @@ export const confirmarPedido = (id: string) => chamar<PedidoNaAgenda>(`/agenda/p
 /** Avisar: o médico não pode atender; o pedido sai da agenda e o horário volta a ficar livre. */
 export const cancelarPedido = (id: string) => chamar<PedidoNaAgenda>(`/agenda/pedidos/${id}/cancelar`, { method: 'POST' })
 
-export const enderecoFoto = (id: string, pergunta: string) => `${BASE}/agenda/pedidos/${id}/fotos/${pergunta}`
+// a imagem não leva cabeçalho: a página do médico do módulo vai no endereço
+export const enderecoFoto = (id: string, pergunta: string) => {
+  const pagina = cabecalhoDoModulo()['X-Medico-Pagina']
+  return `${BASE}/agenda/pedidos/${id}/fotos/${pergunta}${pagina ? `?medico_pagina=${pagina}` : ''}`
+}
 
 /** Arquivo escolhido → base64 sem o prefixo "data:...;base64,". */
 export function lerComoBase64(arquivo: File): Promise<FotoParaEnviar> {

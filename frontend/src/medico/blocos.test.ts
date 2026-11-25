@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blocoRespondido, blocosDoFormulario, faltaResponder } from './blocos'
+import { blocoRespondido, blocosDaAnamnese, blocosDoFormulario, faltaResponder } from './blocos'
 import { partesPreConsulta } from './pre-consulta'
 import type { DadosPessoais } from './regras'
 
@@ -54,5 +54,16 @@ describe('faltaResponder', () => {
   it('as outras partes nunca faltam', () => {
     expect(faltaResponder(queixa, estado({}))).toEqual([])
     expect(faltaResponder(saude, estado({}))).toEqual([])
+  })
+})
+
+describe('blocosDaAnamnese (tela do médico)', () => {
+  it('reumatologia: Onde dói e Rigidez e dor em duas telas cada, sem perder pergunta', () => {
+    const reumato = partesPreConsulta('reumatologia')
+    const b = blocosDaAnamnese(reumato)
+    expect(b.map((x) => x.titulo)).toContain('Onde dói 1/2')
+    expect(b.map((x) => x.titulo)).toContain('Rigidez e dor 2/2')
+    const ids = b.flatMap((x) => ('parte' in x ? x.parte.perguntas.map((q) => q.id) : []))
+    expect(ids.sort()).toEqual(reumato.flatMap((p) => p.perguntas.map((q) => q.id)).sort())
   })
 })

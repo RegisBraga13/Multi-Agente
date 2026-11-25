@@ -122,17 +122,21 @@ export function itensReceita(c: Conduta): { itens: ItemReceita[]; livres: string
 }
 
 function montarReceita(c: Conduta): string {
-  const secoes: Record<ItemReceita['via'], string[]> = { topico: [], oral: [] }
-  let n = 0
+  // primeiro separa por via; a numeração segue a ordem em que as seções aparecem (tópico, oral, injetável)
+  const secoes: Record<ItemReceita['via'], ({ livre: string } | { item: ItemReceita })[]> = { topico: [], oral: [], injetavel: [] }
   for (const [linha, via] of [['cuidados', 'topico'], ['topico', 'topico'], ['sistemico', 'oral']] as const) {
     const l = c.grupos?.flatMap((g) => g.linhas).find((x) => x.id === linha)
     for (const o of l?.opcoes.filter((x) => c.escolha[linha]?.includes(x.id)) ?? []) {
-      if (o.id === OUTRO) { if (c.outros[linha]?.trim()) secoes[via].push(`${++n}. ${c.outros[linha].trim()}`); continue }
-      for (const it of o.receita ?? []) secoes[it.via].push(linhaReceita(++n, it))
+      if (o.id === OUTRO) { if (c.outros[linha]?.trim()) secoes[via].push({ livre: c.outros[linha].trim() }); continue }
+      for (const it of o.receita ?? []) secoes[it.via].push({ item: it })
     }
   }
-  return [secoes.topico.length ? ['USO TÓPICO (EXTERNO)', ...secoes.topico].join('\n') : '', secoes.oral.length ? ['USO ORAL', ...secoes.oral].join('\n') : '']
-    .filter(Boolean).join('\n\n')
+  let n = 0
+  const titulos: [ItemReceita['via'], string][] = [['topico', 'USO TÓPICO (EXTERNO)'], ['oral', 'USO ORAL'], ['injetavel', 'USO INJETÁVEL']]
+  return titulos
+    .filter(([via]) => secoes[via].length)
+    .map(([via, titulo]) => [titulo, ...secoes[via].map((x) => ('livre' in x ? `${++n}. ${x.livre}` : linhaReceita(++n, x.item)))].join('\n'))
+    .join('\n\n')
 }
 
 /** Monta os anexos a partir da conduta salva (grupos: 0 cuidados, 1 tópico, 2 sistêmico, 3 orientações). */

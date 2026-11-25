@@ -4,7 +4,7 @@ import { estiloAlergia } from '../alergia'
 import { buscarEspecialidade, type Especialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
 import { NaoEncontrada } from '../nao-encontrada'
-import { dataLocal, MEDICO_EXEMPLO } from '../medico/exemplo'
+import { dataLocal, MEDICO_EXEMPLO, medicoDoModulo } from '../medico/exemplo'
 import { dataPorExtenso, idade, janelaDeHoje, saudacao, somarDias, vistaDoModulo } from './dia'
 import type { Atendimento } from './tipos'
 import { abrirJanelaProntuario } from '../prontuario/registro'
@@ -42,7 +42,9 @@ function Pagina({ esp }: { esp: Especialidade }) {
   const [selecionado, setSelecionado] = useState<string | null>(null)
   // aviso trazido de outra página (ex.: "Consulta finalizada" ao salvar o prontuário)
   const [aviso, setAviso] = useState<string | null>((useLocation().state as { aviso?: string } | null)?.aviso ?? null)
-  const medico = MEDICO_EXEMPLO
+  const medico = medicoDoModulo(esp.slug) ?? MEDICO_EXEMPLO
+  // pacientes de demonstração são de Dermatologia: nos outros módulos, só os pedidos de verdade
+  const exemplos = esp.slug === 'dermatologia'
   const navegar = useNavigate()
 
   // pedidos feitos na página do médico (servidor), renovados a cada 10 s; sem servidor, só o exemplo
@@ -60,8 +62,8 @@ function Pagina({ esp }: { esp: Especialidade }) {
     return () => clearInterval(t)
   }, [recarregar])
 
-  const deHoje = useMemo(() => vistaDoDia(dataLocal(agora), agora, pedidos, retornos), [agora, pedidos, retornos])
-  const doDia = useMemo(() => vistaDoDia(dia, agora, pedidos, retornos), [dia, agora, pedidos, retornos])
+  const deHoje = useMemo(() => vistaDoDia(dataLocal(agora), agora, pedidos, retornos, exemplos), [agora, pedidos, retornos, exemplos])
+  const doDia = useMemo(() => vistaDoDia(dia, agora, pedidos, retornos, exemplos), [dia, agora, pedidos, retornos, exemplos])
   const atual = vista === 'agenda' ? doDia : deHoje
   const escolhido = atual.lista.find((x) => x.id === selecionado) ?? null
 

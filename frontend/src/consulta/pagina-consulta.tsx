@@ -23,7 +23,7 @@ import { alternarEmitir, atualizarAnexos, avancar, definirCampos, editarAnexo, m
 import { PaginaAnexos } from './anexos-pagina'
 import { RASCUNHO_INICIAL, erroDeHorario, podeSalvarAnexos, retornoParaEnvio, type RascunhoRetorno } from './retorno'
 import { EscolhaRetorno } from './retorno-pagina'
-import { dataLocal, gerarAgenda, marcarOcupados, MEDICO_EXEMPLO } from '../medico/exemplo'
+import { dataLocal, gerarAgenda, marcarOcupados, MEDICO_EXEMPLO, medicoDoModulo } from '../medico/exemplo'
 import { aplicarEdicoes, atualizarProntuario, cabecalhoProntuario, chave, dadosDaConsulta, edicoesDoMedico, secoesDosDados, type SecaoProntuario } from './prontuario'
 import { PaginaProntuario } from './prontuario-pagina'
 import { abrirJanelaProntuario, entradas, salvarEntrada, tituloDaConsulta, type DadosEntrada, type EntradaProntuario } from '../prontuario/registro'
@@ -40,7 +40,8 @@ import { PerguntasHistoria } from './perguntas-historia'
 import { diagnosticosParaServidor, hipotesesDoServidor, idDaHipotese, itensDoServidor } from './diagnosticos-servidor'
 import { aplicarDocumentos, documentoParaServidor, virouEnviado } from './anexos-servidor'
 import { bloqueadasDaConduta, condutaDoServidor, condutaParaServidor, urgenciaDaConduta } from './conduta-servidor'
-import { anamneseDoServidor, anamneseParaServidor, diaDaConsulta, etapasParaOficializar, exameDoServidor, exameParaServidor } from './servidor-mapa'
+import { anamneseDoServidor, anamneseParaServidor, diaDaConsulta, etapasParaOficializar, exameDoServidor, exameParaServidor, exameRoteiroParaServidor } from './servidor-mapa'
+import { roteiroDoExame } from './roteiro-exame'
 import type { Bloco, EstadoConsulta, EtapaId, RespostaAlerta } from './tipos'
 import { Cartao, EtiquetaSituacao, Gaveta, ROTULO } from './ui'
 
@@ -165,7 +166,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
     const h = bloco('historia') as HistoriaServidor | undefined
     const d = bloco('diagnosticos') as DiagnosticosServidor | undefined
     const k = bloco('conduta') as CondutaServidor | undefined
-    return { anamnese: a ? anamneseDoServidor(a, base0.perguntas) : null, exame, historia: h ?? null, diagnosticos: d ?? null, conduta: k ?? null }
+    return { anamnese: a ? anamneseDoServidor(a, base0.perguntas) : null, exame, marcasExame: x?.marcas ?? null, historia: h ?? null, diagnosticos: d ?? null, conduta: k ?? null }
   }, [servidor, base0, at.tipo])
   const conteudo = useMemo(
     () => (retomada.exame ? { ...base0, exame: base0.exame.map((c) => (retomada.exame![c.rotulo] ? { ...c, valor: retomada.exame![c.rotulo], prov: 'confirmado' as const } : c)) } : base0),
@@ -220,10 +221,16 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
 
   // o que foi salvo na página 1: a história é montada só com isso
   // consulta retomada: começa com o que o servidor já guardou (senão, salvar só uma metade monta a história com a outra vazia)
-  const fontes = useRef<{ anamnese: string; perguntas: RespostaPergunta[]; exame: { rotulo: string; valor: string }[]; formulario: FormularioConsulta | null }>({
+  /** exame por roteiro da especialidade (Reumatologia); undefined = campos de texto (Dermatologia) */
+  const roteiro = roteiroDoExame(esp.slug)
+  const fontes = useRef<{ anamnese: string; perguntas: RespostaPergunta[]; exame: { rotulo: string; valor: string }[]; marcasExame: Record<string, string[]> | null; formulario: FormularioConsulta | null }>({
     anamnese: retomada.anamnese?.texto ?? '',
     perguntas: retomada.anamnese?.perguntas ?? [],
-    exame: retomada.exame ? [...conteudo.exame.map((c) => ({ rotulo: c.rotulo, valor: c.valor })), { rotulo: 'Observações', valor: retomada.exame['Observações'] ?? '' }] : [],
+    exame: retomada.exame
+      ? roteiro ? Object.entries(retomada.exame).map(([rotulo, valor]) => ({ rotulo, valor }))
+        : [...conteudo.exame.map((c) => ({ rotulo: c.rotulo, valor: c.valor })), { rotulo: 'Observações', valor: retomada.exame['Observações'] ?? '' }]
+      : [],
+    marcasExame: retomada.marcasExame,
     formulario: null,
   })
   /** geradas = última versão da IA; textos = o que está na tela (com as edições do médico); mudou = seções que a IA reescreveu agora */
@@ -260,7 +267,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
     if (bloco === 'anamnese') {
       await salvarAnamnese(id, anamneseParaServidor({ texto: f.anamnese, falas: conteudo.falas, ficha: at.ficha, alertas: {}, sinais: [], perguntas: f.perguntas, formulario: f.formulario }))
     } else {
-      await salvarExame(id, exameParaServidor(f.exame, at.tipo === 'retorno'))
+      await salvarExame(id, roteiro ? exameRoteiroParaServidor(f.exame, f.marcasExame ?? {}) : exameParaServidor(f.exame, at.tipo === 'retorno'))
     }
     const outra = bloco === 'anamnese' ? 'exame' : 'anamnese'
     for (const etapa of etapasParaOficializar(bloco, estado.blocos[outra].estado === 'oficializado')) await oficializarEtapa(id, etapa)
@@ -438,7 +445,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
     // consulta retomada: a conduta guardada volta como rascunho, com as escolhas e os textos de antes
     const b = retomada.conduta
     if (!b) return null
-    const c = condutaDoServidor(b, { id: idDaHipotese(b.diagnostico), nome: b.diagnostico.nome, cid: b.diagnostico.cid }, dia, (id) => id)
+    const c = condutaDoServidor(b, { id: idDaHipotese(b.diagnostico), nome: b.diagnostico.nome, cid: b.diagnostico.cid }, dia, (id) => id, esp.slug)
     const salva = { ...c, escolha: b.escolha, textos: b.textos, editado: b.textos.map(() => true), revelado: b.textos.map(() => true) }
     // escolhas feitas e ainda não salvas (recarregou antes de Salvar conduta) voltam do navegador
     const r = estado.blocos.conduta.estado !== 'oficializado' ? lerConduta(chaveConduta, c.diagnostico.id) : null
@@ -477,7 +484,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
     if (base) {
       setCondBase(base)
       const nomeDoSinal = (sid: string) => catalogo.find((x) => x.id === sid)?.texto ?? sid
-      const nova = condutaDoServidor(base, { id: idDaHipotese(base.diagnostico), nome: base.diagnostico.nome, cid: base.diagnostico.cid }, dia, nomeDoSinal)
+      const nova = condutaDoServidor(base, { id: idDaHipotese(base.diagnostico), nome: base.diagnostico.nome, cid: base.diagnostico.cid }, dia, nomeDoSinal, esp.slug)
       setConduta((x) => (x ? { versao: x.versao + 1, c: atualizarConduta(x.c, nova) } : { versao: 1, c: nova }))
     }
     setMontandoConduta(false)
@@ -746,7 +753,10 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
               situacao={estado.blocos.exame.estado}
               observacoesIniciais={retomada.exame?.['Observações']}
               onEditar={() => fazer('editar', 'exame')}
-              onOficializar={(valores) => { fontes.current.exame = valores; salvarPagina1('exame') }}
+              roteiro={roteiro}
+              marcasIniciais={retomada.marcasExame ?? undefined}
+              marcasAnteriores={roteiro && at.tipo === 'retorno' ? (consultaAnterior?.dados.marcasExame ?? {}) : undefined}
+              onOficializar={(valores, marcasExame) => { fontes.current.exame = valores; fontes.current.marcasExame = marcasExame ?? null; salvarPagina1('exame') }}
               onAviso={setAviso}
             />
           </div>
@@ -867,7 +877,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
               situacao={situacaoDaEtapa(estado, 'anexos')}
               podeSalvar={podeOficializar(estado, 'anexos')}
               pendencia={pendenciasAnexos(docs.itens) ?? (podeSalvarAnexos(retorno) ? null : 'Escolha o dia e o horário do retorno.')}
-              retorno={at.tipo === 'retorno' ? undefined : <EscolhaRetorno valor={retorno} onMudar={mudarRetorno} agenda={agendaRetorno} atendeOnline={MEDICO_EXEMPLO.atendeOnline} fixo={estado.blocos.prontuario.estado === 'oficializado'} />}
+              retorno={at.tipo === 'retorno' ? undefined : <EscolhaRetorno valor={retorno} onMudar={mudarRetorno} agenda={agendaRetorno} atendeOnline={(medicoDoModulo(esp.slug) ?? MEDICO_EXEMPLO).atendeOnline} fixo={estado.blocos.prontuario.estado === 'oficializado'} />}
               onEmitir={(tipo) => mexerDocs((xs) => alternarEmitir(xs, tipo))}
               onEditar={(tipo, texto) => mexerDocs((xs) => editarAnexo(xs, tipo, texto))}
               onCampos={(tipo, campos) => mexerDocs((xs) => definirCampos(xs, tipo, campos))}

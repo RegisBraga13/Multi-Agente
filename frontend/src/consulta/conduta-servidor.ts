@@ -2,7 +2,7 @@
 // A escolha, o texto e a atualização continuam em `conduta.ts`; aqui só se troca o formato da proposta.
 import type { CondutaServidor, GrupoId, GrupoServidor, ItemReceitaServidor, PropostaCondutaServidor } from '../servidor/consulta'
 import { itensReceita } from './anexos'
-import { GRUPOS_CONDUTA, sugerir, textoDoGrupo, type Conduta, type Grupo, type ItemReceita, type Opcao } from './conduta'
+import { GRUPOS_CONDUTA, gruposConduta, sugerir, textoDoGrupo, type Conduta, type Grupo, type ItemReceita, type Opcao } from './conduta'
 
 const ORDEM: GrupoId[] = ['cuidados', 'topico', 'sistemico', 'orientacoes']
 
@@ -21,30 +21,32 @@ function grupoDaTabela(g: GrupoServidor): Grupo {
   }
 }
 
-/** Sem tabela: as opções da IA, em uma linha só por grupo; o sistêmico é de múltipla escolha em todos os módulos. */
-function grupoDaIa(id: GrupoId, opcoes: { rotulo: string; texto: string; receita: ItemReceitaServidor[] }[]): Grupo {
+/** Sem tabela: as opções da IA, em uma linha só por grupo; o sistêmico e as orientações (ex.: exames + retorno) são de
+ *  múltipla escolha em todos os módulos (autor, 25/11/2026). */
+function grupoDaIa(id: GrupoId, opcoes: { rotulo: string; texto: string; receita: ItemReceitaServidor[] }[], rotulos: string[]): Grupo {
   return {
-    id, rotulo: GRUPOS_CONDUTA[ORDEM.indexOf(id)],
-    linhas: [{ id, rotulo: null, multipla: id === 'sistemico', opcoes: opcoes.map((o, n): Opcao => ({ id: `${id}-${n}`, rotulo: o.rotulo, texto: o.texto, receita: o.receita.map(receitaDaTela) })) }],
+    id, rotulo: rotulos[ORDEM.indexOf(id)],
+    linhas: [{ id, rotulo: null, multipla: id === 'sistemico' || id === 'orientacoes', opcoes: opcoes.map((o, n): Opcao => ({ id: `${id}-${n}`, rotulo: o.rotulo, texto: o.texto, receita: o.receita.map(receitaDaTela) })) }],
   }
 }
 
 /** Sempre os 4 grupos, na ordem fixa: o grupo que a proposta não trouxe fica vazio (os textos e as seções seguem alinhados). */
-function completar(grupos: Grupo[]): Grupo[] {
-  return ORDEM.map((id, i) => grupos.find((g) => g.id === id) ?? { id, rotulo: GRUPOS_CONDUTA[i], linhas: [{ id, rotulo: null, opcoes: [] }] })
+function completar(grupos: Grupo[], rotulos: string[]): Grupo[] {
+  return ORDEM.map((id, i) => grupos.find((g) => g.id === id) ?? { id, rotulo: rotulos[i], linhas: [{ id, rotulo: null, opcoes: [] }] })
 }
 
 /**
  * A proposta do servidor no modelo da tela. `nomeDoSinal`: o texto do sinal de alerta (o servidor devolve o id) para
  * mostrar a fonte da ordem das opções. Sem tabela e sem IA, as 4 seções abrem em branco para o médico escrever.
  */
-export function condutaDoServidor(b: CondutaServidor, diagnostico: Conduta['diagnostico'], dia: string, nomeDoSinal: (id: string) => string): Conduta {
+export function condutaDoServidor(b: CondutaServidor, diagnostico: Conduta['diagnostico'], dia: string, nomeDoSinal: (id: string) => string, especialidade?: string): Conduta {
   const { tabela, ia } = b.proposta
+  const rotulos = gruposConduta(especialidade)
   const vazio = GRUPOS_CONDUTA.map(() => false)
-  const base = { dia, diagnostico, escolha: {}, outros: {}, textos: GRUPOS_CONDUTA.map(() => ''), editado: vazio }
-  const modelo = tabela ? tabela.grupos.map(grupoDaTabela) : ia && ia.grupos.length ? ia.grupos.map((g) => grupoDaIa(g.id, g.opcoes)) : null
+  const base = { dia, diagnostico, rotulos, escolha: {}, outros: {}, textos: GRUPOS_CONDUTA.map(() => ''), editado: vazio }
+  const modelo = tabela ? tabela.grupos.map(grupoDaTabela) : ia && ia.grupos.length ? ia.grupos.map((g) => grupoDaIa(g.id, g.opcoes, rotulos)) : null
   if (!modelo) return { ...base, grupos: null, motivo: {}, revelado: GRUPOS_CONDUTA.map(() => true) }
-  const { grupos } = sugerir({ grupos: completar(modelo), regras: [] }, [])
+  const { grupos } = sugerir({ grupos: completar(modelo, rotulos), regras: [] }, [])
   const motivo = Object.fromEntries(Object.entries(tabela?.motivosOrdem ?? {}).map(([linha, sinal]) => [linha, nomeDoSinal(sinal)]))
   const escolha = { kit: ['kit'] } // o kit de exames de rotina vem marcado
   return { ...base, grupos, motivo, escolha, textos: grupos.map((g) => textoDoGrupo(g, escolha, dia)), revelado: vazio }

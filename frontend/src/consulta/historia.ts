@@ -218,7 +218,10 @@ export function montarHistoriaEvolucao(
 
   const v = (r: string) => exame.find((x) => x.rotulo === r)?.valor.trim().replace(/\.$/, '') ?? ''
   const [aspecto, extensao, comparado, obs] = ['Aspecto atual das lesões', 'Extensão', 'Comparado à consulta anterior', 'Observações'].map(v)
-  const frases = [aspecto, frasePercentual(extensao, contexto.anteriores ?? []), comparado ? `Em relação à consulta anterior: ${minuscula(comparado)}` : '', obs].filter(Boolean)
+  // exame por roteiro (ex.: Reumatologia): cada parte examinada com o seu nome ("GALS: marcha claudicante")
+  const CAMPOS_DERMA = ['Aspecto atual das lesões', 'Extensão', 'Comparado à consulta anterior', 'Observações']
+  const partes = exame.filter((x) => !CAMPOS_DERMA.includes(x.rotulo) && x.valor.trim()).map((x) => `${x.rotulo}: ${x.valor.trim().replace(/\.$/, '')}`)
+  const frases = [aspecto, ...partes, frasePercentual(extensao, contexto.anteriores ?? []), comparado ? `Em relação à consulta anterior: ${minuscula(comparado)}` : '', obs].filter(Boolean)
   return [
     { rotulo: 'Evolução', texto: evolucao },
     { rotulo: 'Exame', texto: frases.length ? frases.map(ponto).join(' ') : 'Não registrado.' },

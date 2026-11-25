@@ -30,7 +30,7 @@ class ItemReceita(ModeloApi):
     forma: str
     concentracao: str
     quantidade: Quantidade
-    via: Literal["topico", "oral"]
+    via: Literal["topico", "oral", "injetavel"]
     posologia: str
     duracao: str
     controlado: bool | None = None
@@ -115,6 +115,8 @@ class DadosEntrada(ModeloApi):
     )
     extensao_pct: float | None = None  # extensão das lesões em % do corpo, do exame físico; None = sem número
     exame_fisico: str
+    # exame por roteiro (ex.: Reumatologia): o que foi marcado em cada parte; o retorno mostra ao lado, em cinza
+    marcas_exame: dict[str, list[str]] | None = None
     exames_texto: str
     exames: list[ExameRegistro]
     diagnosticos: list[DiagnosticoRegistro] = Field(max_length=3)

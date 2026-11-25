@@ -4,7 +4,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from app.contratos.consulta import ExameDerm, Fala, entrada_da_consulta, termos_do_paciente
+from app.contratos.consulta import CampoExame, ExameDerm, Fala, entrada_da_consulta, termos_do_paciente
 from app.contratos.consulta_blocos import (
     CONTEUDO,
     ETAPAS,
@@ -51,6 +51,17 @@ def test_entrada_da_consulta_e_desidentificada():
     texto = e.model_dump_json()
     assert "Mariana" not in texto and "Souza" not in texto and "12345678909" not in texto
     assert e.falas[0].texto == "Espinhas no rosto há 6 meses." and e.exame.morfologia == "Pápulas"
+
+
+def test_exame_por_partes_de_outra_especialidade_chega_a_ia_como_parte_e_texto():
+    # Reumatologia: o exame vem parte por parte, em texto; as marcas ficam só no bloco (reabrir, retorno)
+    reumato = ExameBloco(
+        campos=[CampoExame(rotulo="GALS", valor="Marcha claudicante."), CampoExame(rotulo="IPAM", valor=None)],
+        marcas={"gals.marcha": ["Claudicante"]},
+        complementares=[],
+    )
+    e = entrada_da_consulta(PACIENTE, ANAMNESE, reumato, date(2026, 11, 13))
+    assert e.exame == {"GALS": "Marcha claudicante.", "IPAM": None}
 
 
 def test_idade_na_data_da_consulta():

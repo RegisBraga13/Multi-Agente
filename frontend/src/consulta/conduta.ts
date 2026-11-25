@@ -19,7 +19,7 @@ import type { ItemResumo } from './resumo'
 export type ItemReceita = {
   nome: string; forma: string; concentracao: string
   quantidade: { n: number; unidade: string; feminino: boolean }
-  via: 'topico' | 'oral'; posologia: string
+  via: 'topico' | 'oral' | 'injetavel'; posologia: string
   /** tempo de tratamento, no fim do item: '8sem', '30 dias', 'uso contínuo' */
   duracao: string
   /** controlado (ex.: isotretinoína): a quantidade vai também por extenso */
@@ -83,6 +83,8 @@ export type Conduta = {
   dia: string
   diagnostico: { id: string; nome: string; cid: string }
   grupos: Grupo[] | null
+  /** nomes dos 4 grupos na especialidade (sem proposta, as seções abrem em branco com estes nomes) */
+  rotulos?: string[]
   motivo: Record<string, string>
   escolha: Escolha
   outros: Record<string, string>
@@ -93,6 +95,11 @@ export type Conduta = {
 
 /** Rótulos dos 4 grupos (iguais para todos os diagnósticos). Sem modelo, o médico escreve em cada um. */
 export const GRUPOS_CONDUTA = ['1. Cuidados básicos', '2. Tratamento tópico', '3. Tratamento sistêmico', '4. Orientações']
+/** Os mesmos 4 grupos (cuidados, tópico, sistêmico, orientações), com os nomes de cada especialidade (autor, 24/11/2026). */
+const GRUPOS_POR_ESPECIALIDADE: Partial<Record<string, string[]>> = {
+  reumatologia: ['1. Cuidados e reabilitação', '2. Tópico e infiltração', '3. Tratamento sistêmico', '4. Exames e orientações'],
+}
+export const gruposConduta = (especialidade?: string): string[] => GRUPOS_POR_ESPECIALIDADE[especialidade ?? ''] ?? GRUPOS_CONDUTA
 
 /** O diagnóstico que guia a conduta: o primeiro confirmado com conduta de exemplo; senão o primeiro confirmado. */
 export function diagnosticoPrincipal(itens: ItemDD[]): ItemDD | null {

@@ -13,10 +13,11 @@ export type VistaDoDia = {
   fichasProntas: number; semFicha: number
 }
 
-export function vistaDoDia(dia: string, agora: Date, pedidos: PedidoNaAgenda[] = [], retornos: RetornoNaAgenda[] = []): VistaDoDia {
+/** `exemplos`: os pacientes fictícios de demonstração (só no módulo de Dermatologia, de onde eles são). */
+export function vistaDoDia(dia: string, agora: Date, pedidos: PedidoNaAgenda[] = [], retornos: RetornoNaAgenda[] = [], exemplos = true): VistaDoDia {
   const hoje = dataLocal(agora)
   const ehHoje = dia === hoje
-  const lista = juntarRetornos(juntarPedidos(agendaDoDia(dia, agora), pedidos, dia, agora), retornos, dia, agora)
+  const lista = juntarRetornos(juntarPedidos(exemplos ? agendaDoDia(dia, agora) : [], pedidos, dia, agora), retornos, dia, agora)
   // fichas de quem ainda vai ser atendido: o número muda a cada atendimento
   const aSeguir = lista.filter((x) => !x.atendido)
   const fichasProntas = aSeguir.filter((x) => x.ficha.situacao === 'pronta' || x.ficha.situacao === 'retorno').length

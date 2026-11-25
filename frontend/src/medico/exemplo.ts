@@ -15,10 +15,18 @@ export const MEDICO_EXEMPLO: Medico = {
   convenios: ['Unimed', 'Hapvida', 'Bradesco Saúde', 'SulAmérica', 'Cassi', 'Camed'],
 }
 
-const MEDICOS: Medico[] = [MEDICO_EXEMPLO]
+/** Médico fictício de Reumatologia, só para testar o módulo (autor, 24/11/2026); contatos iguais aos da Dra. Ana Souza. */
+export const MEDICO_REUMATO: Medico = { ...MEDICO_EXEMPLO, slug: 'paulo-mendes', nome: 'Paulo Mendes', tratamento: 'Dr.', especialidade: 'reumatologia', crm: '54321' }
+
+const MEDICOS: Medico[] = [MEDICO_EXEMPLO, MEDICO_REUMATO]
 
 export function buscarMedico(slug: string): Medico | undefined {
   return MEDICOS.find((m) => m.slug === slug)
+}
+
+/** O médico de exemplo de cada módulo (sem login: a tela do módulo fala com o servidor em nome dele). */
+export function medicoDoModulo(especialidade: string): Medico | undefined {
+  return MEDICOS.find((m) => m.especialidade === especialidade)
 }
 
 const DIAS_NA_AGENDA = 14

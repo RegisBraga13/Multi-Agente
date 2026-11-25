@@ -42,7 +42,7 @@ type Props = {
 
 export function PaginaConduta(p: Props) {
   const { conduta: c, primeira } = p
-  const rotulos = c.grupos?.map((g) => g.rotulo) ?? GRUPOS_CONDUTA
+  const rotulos = c.grupos?.map((g) => g.rotulo) ?? c.rotulos ?? GRUPOS_CONDUTA
   const [aberto, setAberto] = useState<number | null>(null)
   const [tentou, setTentou] = useState(false)
   const alergias = p.resumo.filter((x) => x.tipo === 'alergia')
@@ -82,7 +82,7 @@ export function PaginaConduta(p: Props) {
       fundo="bg-historia"
       linha="border-historia-borda"
       cabecalho={<p className="flex-1 text-center text-[13.5px] text-tinta">{aviso}</p>}
-      legenda={c.grupos ? 'Clique no título = abrir/fechar · sistêmico e encaminhamento: mais de um · texto editável' : 'Texto editável'}
+      legenda={c.grupos ? 'Clique no título = abrir/fechar · sistêmico, orientações e encaminhamento: mais de um · texto editável' : 'Texto editável'}
       rodape={
         <BotaoOficializar
           rotulo="Salvar conduta"

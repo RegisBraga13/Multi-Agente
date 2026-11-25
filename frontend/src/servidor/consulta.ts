@@ -1,7 +1,7 @@
 // Conversa com o servidor da consulta (FastAPI). Formatos iguais aos contratos do servidor
 // (backend/app/contratos/consulta_blocos.py), em camelCase.
 import type { DadosEntrada, EntradaProntuario, PacienteComProntuario, RetornoMarcado } from '../prontuario/registro'
-import { BASE, chamar, ErroServidor } from './agenda'
+import { BASE, cabecalhoDoModulo, chamar, ErroServidor } from './agenda'
 
 export type SinalServidor = { id: string; texto: string; resposta: 'sim' | 'nao' }
 export type AnamneseServidor = {
@@ -16,7 +16,10 @@ export type AnamneseServidor = {
   formulario: { respostas: Record<string, string | string[]>; fotos: string[] } | null
 }
 export type ExameServidor = {
-  exame: { morfologia: string | null; localizacao: string | null; extensao: string | null; gravidade: string | null; achados: string | null }
+  /** Dermatologia: os 5 campos. Exame por roteiro (ex.: Reumatologia): null, e as partes vêm em `campos` e `marcas`. */
+  exame: { morfologia: string | null; localizacao: string | null; extensao: string | null; gravidade: string | null; achados: string | null } | null
+  campos?: { rotulo: string; valor: string | null }[]
+  marcas?: Record<string, string[]>
   /** os exames complementares seguem só na tela até a etapa da história */
   complementares: never[]
   observacoes: string
@@ -88,7 +91,7 @@ export type ResultadoEtapa<T> = { gravado: boolean; conteudo: T | null; avisos: 
 /** Pede ao servidor uma etapa escrita pela IA e espera o evento final. Falha da IA ou da rede lança ErroServidor. */
 export async function gerarEtapa<T>(id: string, etapa: 'historia' | 'diagnosticos' | 'conduta'): Promise<ResultadoEtapa<T>> {
   let r: Response
-  try { r = await fetch(urlDaGeracao(id, etapa), { method: 'POST' }) } catch { throw new ErroServidor(0, SEM_CONEXAO) }
+  try { r = await fetch(urlDaGeracao(id, etapa), { method: 'POST', headers: cabecalhoDoModulo() }) } catch { throw new ErroServidor(0, SEM_CONEXAO) }
   if (!r.ok) {
     const corpo = await r.json().catch(() => null) as { detail?: unknown } | null
     throw new ErroServidor(r.status, typeof corpo?.detail === 'string' ? corpo.detail : SEM_CONEXAO)
@@ -126,7 +129,7 @@ export const gerarPerguntas = (id: string) =>
 export type ItemReceitaServidor = {
   nome: string; forma: string; concentracao: string
   quantidade: { n: number; unidade: string; feminino: boolean }
-  via: 'topico' | 'oral'; posologia: string; duracao: string; controlado?: boolean | null
+  via: 'topico' | 'oral' | 'injetavel'; posologia: string; duracao: string; controlado?: boolean | null
 }
 export type OpcaoServidor = { id: string; rotulo: string; texto: string; dias: number | null; receita: ItemReceitaServidor[] }
 export type LinhaServidor = { id: string; rotulo: string | null; opcoes: OpcaoServidor[]; prefixo: string | null; multipla: boolean }

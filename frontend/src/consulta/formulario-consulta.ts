@@ -1,5 +1,5 @@
 // Dados do modo Formulário da anamnese (o formulário do paciente, conferido e completado pelo médico).
-import { ALERGIAS, chaveDaLinha, NOTA_DOR, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
+import { ALERGIAS, chaveDaLinha, NOTA_DOR, perguntaTrabalho, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
 import { calcularIdade, ESTADOS_CIVIS, type DadosPessoais } from '../medico/regras'
 import type { Respostas } from '../servidor/agenda'
 
@@ -20,7 +20,7 @@ const respondida = (v: string | string[] | undefined) => (Array.isArray(v) ? v.l
 
 /** Perguntas do formulário que o paciente não respondeu (viram lembrete em Perguntas). Fotos ficam de fora. */
 export function naoRespondidas(partes: Parte[], f: FormularioConsulta): Pergunta[] {
-  return partes.flatMap((p) => p.perguntas).filter((q) => q.tipo !== 'foto' && q.tipo !== 'arquivos' && perguntaVisivel(q, f.dados.sexo, f.respostas) && !respondida(f.respostas[q.id]))
+  return partes.flatMap((p) => p.perguntas).filter((q) => q.tipo !== 'foto' && q.tipo !== 'arquivos' && !q.semLembrete && perguntaVisivel(q, f.dados.sexo, f.respostas) && !respondida(f.respostas[q.id]))
 }
 
 /** O paciente fala de dor (gravado ou escrito)... */
@@ -83,7 +83,7 @@ export function textoDoFormulario(partes: Parte[], f: FormularioConsulta, hoje: 
   const trabalho = [
     ESTADOS_CIVIS.find((e) => e.valor === d.estadoCivil)?.rotulo ?? '',
     d.profissao.trim(),
-    d.trabalhoExposto === 'sim' ? 'trabalha exposto ao sol ou a produtos químicos' : d.trabalhoExposto === 'nao' ? 'não trabalha exposto ao sol nem a produtos químicos' : '',
+    d.trabalhoExposto === 'sim' ? perguntaTrabalho(partes).sim : d.trabalhoExposto === 'nao' ? perguntaTrabalho(partes).nao : '',
   ].filter(Boolean)
   if (trabalho.length) linhas.push(`Estado civil e trabalho: ${trabalho.join(', ')}.`)
   for (const parte of partes) {

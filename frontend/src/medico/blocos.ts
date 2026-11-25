@@ -17,7 +17,17 @@ export function blocosDoFormulario(partes: Parte[]): Bloco[] {
 
 /** Formulário dentro da anamnese: sem a Identificação (nome, nascimento, cidade). A anamnese só existe para montar a
  *  história clínica, que não leva dado pessoal (regra 9.1); idade e sexo já estão no topo da consulta. */
-export const blocosDaAnamnese = (partes: Parte[]): Bloco[] => blocosDoFormulario(partes).filter((b) => b.id !== 'identificacao')
+export const blocosDaAnamnese = (partes: Parte[]): Bloco[] =>
+  blocosDoFormulario(partes).filter((b) => b.id !== 'identificacao').flatMap((b): Bloco[] => {
+    // parte longa: uma tela para cada grupo de perguntas ("Onde dói 1/2", "Onde dói 2/2")
+    if (!('parte' in b) || !b.parte.telasDoMedico) return [b]
+    const telas = b.parte.telasDoMedico
+    return telas.map((ids, i) => {
+      const titulo = `${b.parte.titulo} ${i + 1}/${telas.length}`
+      const parte: Parte = { ...b.parte, titulo, colunas: undefined, telasDoMedico: undefined, perguntas: b.parte.perguntas.filter((q) => ids.includes(q.id)) }
+      return { ...b, id: `${b.id}-${i + 1}`, titulo, parte }
+    })
+  })
 
 type Estado = { dados: DadosPessoais; respostas: RespostasPreConsulta; fotos: string[]; hoje: Date }
 

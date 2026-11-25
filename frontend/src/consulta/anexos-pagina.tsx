@@ -111,6 +111,8 @@ export function PaginaAnexos(p: Props) {
               <span>Data: <b>{p.dados.data}</b></span>
             </p>
             <Campos a={a} onCampos={(c) => p.onCampos(a.tipo, c)} />
+            {/* documento comprido (ex.: receita com tópico, oral e injetável): só a folha rola por dentro, a página cabe na tela (autor, 25/11/2026) */}
+            <div className="max-h-[max(160px,calc(100vh-440px))] overflow-y-auto">
             <TextoCrescente
               {...SEM_CORRETOR}
               value={a.texto}
@@ -119,6 +121,7 @@ export function PaginaAnexos(p: Props) {
               aria-label={`Texto: ${a.titulo}`}
               className="-mx-1 block w-[calc(100%+0.5rem)] bg-transparent px-1 text-[14.5px] leading-[1.45] text-tinta hover:bg-suave/50 focus:bg-suave/70 focus:outline-none read-only:hover:bg-transparent"
             />
+            </div>
             <p className="mt-auto border-t border-linha pt-1.5 text-[12px] text-apagado">
               {!a.assinatura ? 'Não exige assinatura digital.'
                 : a.estado === 'assinado' || a.estado === 'enviado' ? `${ASSINA} Assinado com certificado digital (simulação).`

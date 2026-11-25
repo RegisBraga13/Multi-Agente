@@ -34,12 +34,132 @@ class ProvedorDemonstracao:
     def _opcao(rotulo: str, texto: str, *receita: dict[str, Any]) -> dict[str, Any]:
         return {"rotulo": rotulo, "texto": texto, "receita": list(receita)}
 
+    def _reumatologia(self, pedido: PedidoIA) -> dict[str, Any]:
+        """Saídas fixas de Reumatologia (demonstração): o exame físico salvo entra no texto, o resto é fixo."""
+        if pedido.motor == "historia":
+            exame = pedido.dados.get("consulta", {}).get("exame") or {}
+            texto = " ".join(f"{k}: {v}" for k, v in exame.items() if v) if isinstance(exame, dict) else ""
+            vazio = {k: "" for k in ["qp", "ap", "hp", "hf", "examesTexto"]}
+            return vazio | {"hda": self.HDA, "exameFisico": texto}
+        if pedido.motor == "diagnosticos":
+            hda = str(pedido.dados.get("historia", {}).get("hda", "")).strip() or self.HDA
+            ev = {"lado": "favor", "texto": "demonstração", "secao": "hda", "trecho": hda}
+            hipoteses = [
+                ("Artrite reumatoide", "M06.9", 60),
+                ("Lúpus eritematoso sistêmico", "M32.9", 15),
+                ("Artrite psoriásica", "L40.5", 15),
+                ("Osteoartrite das mãos", "M15.9", 10),
+            ]
+            return {
+                "hipoteses": [
+                    {"nome": n, "cid": c, "certeza": "hipotese", "pct": pct, "evidencias": [ev]}
+                    for n, c, pct in hipoteses
+                ],
+                "naoPodePerder": {
+                    "nome": "Artrite séptica",
+                    "cid": "M00.9",
+                    "porque": "Junta quente com febre exige afastar infecção.",
+                    "como": "Punção articular com cultura se houver monoartrite febril.",
+                },
+                "rastrear": ["Rastrear psoríase: placas no couro cabeludo, unhas e sulco interglúteo"],
+            }
+        if pedido.motor == "conduta":
+            return {
+                "grupos": [
+                    {
+                        "id": "cuidados",
+                        "opcoes": [
+                            self._opcao("Fisioterapia", "Fisioterapia para mãos e punhos."),
+                            self._opcao("Exercício", "Exercício físico regular, de baixo impacto."),
+                        ],
+                    },
+                    {
+                        "id": "topico",
+                        "opcoes": [
+                            self._opcao(
+                                "Diclofenaco gel",
+                                "Diclofenaco gel nas articulações dolorosas.",
+                                self._item(
+                                    "Diclofenaco dietilamônio",
+                                    "GEL",
+                                    "1%",
+                                    "topico",
+                                    "Aplicar nas articulações dolorosas 3 vezes ao dia.",
+                                    "14 dias",
+                                ),
+                            )
+                        ],
+                    },
+                    {
+                        "id": "sistemico",
+                        "opcoes": [
+                            self._opcao(
+                                "Prednisona",
+                                "Prednisona em dose baixa como ponte.",
+                                self._item(
+                                    "Prednisona", "COMP", "5mg", "oral", "Tomar 1 COMP VO pela manhã.", "30 dias"
+                                ),
+                            ),
+                            self._opcao(
+                                "Metotrexato",
+                                "Metotrexato semanal com ácido fólico.",
+                                self._item(
+                                    "Metotrexato",
+                                    "SOL INJ",
+                                    "25mg/mL",
+                                    "injetavel",
+                                    "Aplicar 0,6 mL SC, 1 vez por semana.",
+                                    "uso contínuo",
+                                ),
+                                self._item(
+                                    "Ácido fólico",
+                                    "COMP",
+                                    "5mg",
+                                    "oral",
+                                    "Tomar 1 COMP VO 1 vez por semana, 24 h após o metotrexato.",
+                                    "uso contínuo",
+                                ),
+                            ),
+                        ],
+                    },
+                    {
+                        "id": "orientacoes",
+                        "opcoes": [
+                            self._opcao(
+                                "Exames",
+                                "Solicito FR, anti-CCP, VHS, PCR, hemograma, TGO, TGP, creatinina e RX de mãos.",
+                            ),
+                            self._opcao("Retorno", "Retorno em 30 dias com os exames."),
+                        ],
+                    },
+                ]
+            }
+        return {
+            "perguntas": [
+                {
+                    "texto": "Alguma junta ficou quente e inchada com febre?",
+                    "seSim": "Refere junta quente e inchada com febre.",
+                    "seNao": "Nega junta quente e inchada com febre.",
+                    "sinalId": "monoartrite-febre",
+                },
+                {
+                    "texto": "Tem dificuldade para levantar da cadeira ou erguer os braços?",
+                    "seSim": "Refere fraqueza para levantar da cadeira ou erguer os braços.",
+                    "seNao": "Nega fraqueza proximal.",
+                    "sinalId": "fraqueza-proximal",
+                },
+            ]
+        }
+
     def gerar(
         self, pedido: PedidoIA, esquema: type[BaseModel], ao_escrever: Callable[[str], None] | None = None
     ) -> RespostaIA:
         meta = {"confianca": 0.5, "evidencias": [], "avisos": [], "origem": "demonstração"}
         resultado: dict[str, Any]
-        if pedido.motor == "historia":
+        # Reumatologia: respostas fixas da especialidade (o prompt da consulta diz qual é: "diagnosticos-reumato-1")
+        if "-reumato-" in pedido.versao_prompt and pedido.motor in ("historia", "diagnosticos", "conduta", "perguntas"):
+            resultado = self._reumatologia(pedido)
+        elif pedido.motor == "historia":
             resultado = {k: "" for k in ["qp", "ap", "hp", "hf", "exameFisico", "examesTexto"]} | {"hda": self.HDA}
         elif pedido.motor == "sinais":
             resultado = {"detectados": [], "extras": []}

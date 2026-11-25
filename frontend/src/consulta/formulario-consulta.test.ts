@@ -111,3 +111,9 @@ describe('lembrete "Nota da dor (0 a 10)" (todos os módulos; autor, 24/11/2026)
     expect(lembretesDoFormulario(partes, F).find((q) => q.id === 'nota_dor')?.lembrete).toBe('Nota da dor (0 a 10)')
   })
 })
+
+describe('"Algo mais" em branco', () => {
+  it('não vira lembrete em Perguntas (autor, 25/11/2026)', () => {
+    expect(lembretesDoFormulario(partes, FORMULARIO_VAZIO).some((q) => q.id === 'algo_mais')).toBe(false)
+  })
+})
