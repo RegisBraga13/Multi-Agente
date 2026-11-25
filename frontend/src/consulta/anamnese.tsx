@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { alternarOpcao, type Parte, type Pergunta as PerguntaFormulario } from '../medico/pre-consulta'
 import type { Respostas } from '../servidor/agenda'
-import { FORMULARIO_VAZIO, formularioParaHistoria, juntarFormularioAoTexto, lembretesDoFormulario, textoDoFormulario, type FormularioConsulta } from './formulario-consulta'
+import { FORMULARIO_VAZIO, formularioParaHistoria, juntarFormularioAoTexto, lembretesDoFormulario, textoDoFormulario, textoDoLembrete, type FormularioConsulta } from './formulario-consulta'
 import { blocosDaAnamnese } from '../medico/blocos'
 import { FormularioMedico } from './formulario-medico'
 import type { Alerta, Fala, Pergunta, RespostaPergunta } from './exemplo'
@@ -115,9 +115,9 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
     mudou()
   }
   // começou a gravar, a escrever ou salvou o formulário: o que o paciente não respondeu vira lembrete em Perguntas (Alergias, sempre)
-  const camposLembrete = !retorno && (segundos > 0 || textoForm !== null || texto.trim() !== '') ? lembretesDoFormulario(partes, form) : []
-  const lembretes = camposLembrete.map((q) => ({ texto: q.rotulo, sim: '', nao: '', secao: 'hda' as const, lembrete: true }))
-  const campoDoLembrete = (rotulo: string) => camposLembrete.find((q) => q.rotulo === rotulo)
+  const camposLembrete = !retorno && (segundos > 0 || textoForm !== null || texto.trim() !== '') ? lembretesDoFormulario(partes, form, textoForm && texto.startsWith(textoForm) ? texto.slice(textoForm.length) : texto) : []
+  const lembretes = camposLembrete.map((q) => ({ texto: textoDoLembrete(q), sim: '', nao: '', secao: 'hda' as const, lembrete: true }))
+  const campoDoLembrete = (rotulo: string) => camposLembrete.find((q) => textoDoLembrete(q) === rotulo)
   const responderLembrete = (id: string, v: string | string[]) => { setRespLembrete((r) => ({ ...r, [id]: v })); mudou() }
 
   /** opções da pergunta (uma ou várias) ou uma linha para escrever, do jeito que o paciente viu */
@@ -188,7 +188,7 @@ export function Anamnese({ falas, perguntas, alertas, respostas, situacao, pende
             setTentou(false)
             // só as perguntas com Sim/Não vão para a história (riscada sem resposta = o médico não quis perguntar)
             // lembretes: só os riscados (perguntados) e respondidos
-            const lembretesFeitos = Object.fromEntries(camposLembrete.filter((q) => q.rotulo in perguntado && q.id in respLembrete).map((q) => [q.id, respLembrete[q.id]]))
+            const lembretesFeitos = Object.fromEntries(camposLembrete.filter((q) => textoDoLembrete(q) in perguntado && q.id in respLembrete).map((q) => [q.id, respLembrete[q.id]]))
             // as de aprofundamento só entram se a pergunta-mãe foi Sim; as abertas, só com texto escrito
             const doFilho = (a: Pergunta): RespostaPergunta[] => {
               if (!(a.texto in perguntado)) return []

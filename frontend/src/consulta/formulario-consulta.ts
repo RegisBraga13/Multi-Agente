@@ -1,5 +1,5 @@
 // Dados do modo Formulário da anamnese (o formulário do paciente, conferido e completado pelo médico).
-import { ALERGIAS, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
+import { ALERGIAS, chaveDaLinha, NOTA_DOR, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
 import { calcularIdade, ESTADOS_CIVIS, type DadosPessoais } from '../medico/regras'
 import type { Respostas } from '../servidor/agenda'
 
@@ -20,13 +20,27 @@ const respondida = (v: string | string[] | undefined) => (Array.isArray(v) ? v.l
 
 /** Perguntas do formulário que o paciente não respondeu (viram lembrete em Perguntas). Fotos ficam de fora. */
 export function naoRespondidas(partes: Parte[], f: FormularioConsulta): Pergunta[] {
-  return partes.flatMap((p) => p.perguntas).filter((q) => q.tipo !== 'foto' && q.tipo !== 'arquivos' && perguntaVisivel(q, f.dados.sexo) && !respondida(f.respostas[q.id]))
+  return partes.flatMap((p) => p.perguntas).filter((q) => q.tipo !== 'foto' && q.tipo !== 'arquivos' && perguntaVisivel(q, f.dados.sexo, f.respostas) && !respondida(f.respostas[q.id]))
 }
 
-/** Lembretes em Perguntas: o que ficou em branco e, sempre, Alergias (mesmo respondida: o médico confirma). */
-export function lembretesDoFormulario(partes: Parte[], f: FormularioConsulta): Pergunta[] {
+/** O paciente fala de dor (gravado ou escrito)... */
+const FALA_DE_DOR = /\b(dor|dores|d[oó]i|doem|doendo|dolorid[oa]s?)(?![\p{L}])/iu
+/** ...e a nota já foi dita ("nota 7", "7 de 10", "8/10")? */
+const NOTA_DITA = /\bnota\s*(de\s*)?(10|\d)\b|\b(10|\d)\s*(\/|de)\s*10\b/i
+
+/** Texto do lembrete em Perguntas: curto quando a pergunta é longa ("Nota da dor (0 a 10)"). */
+export const textoDoLembrete = (q: Pergunta) => q.lembrete ?? q.rotulo
+
+/**
+ * Lembretes em Perguntas: o que ficou em branco e, sempre, Alergias (mesmo respondida: o médico confirma).
+ * `falado`: o que foi gravado ou escrito na anamnese (sem o texto do formulário). Se fala de dor e a nota não foi dita,
+ * entra "Nota da dor (0 a 10)", em todos os módulos (autor, 24/11/2026).
+ */
+export function lembretesDoFormulario(partes: Parte[], f: FormularioConsulta, falado = ''): Pergunta[] {
   const brancas = naoRespondidas(partes, f)
-  return brancas.some((q) => q.id === ALERGIAS.id) ? brancas : [...brancas, ALERGIAS]
+  const lista = brancas.some((q) => q.id === ALERGIAS.id) ? brancas : [...brancas, ALERGIAS]
+  const jaTem = lista.some((q) => q.id === NOTA_DOR.id) || respondida(f.respostas[NOTA_DOR.id])
+  return !jaTem && FALA_DE_DOR.test(falado) && !NOTA_DITA.test(falado) ? [...lista, NOTA_DOR] : lista
 }
 
 /**
@@ -41,6 +55,15 @@ export function formularioParaHistoria(salvo: FormularioConsulta | null, dados: 
 }
 
 const resposta = (v: string | string[] | undefined) => (Array.isArray(v) ? v.join(', ') : (v ?? '')).trim()
+
+/** A resposta com o que foi escrito na linha da opção: "Outro" vira o próprio texto; as demais ganham o texto entre parênteses. */
+function respostaComLinha(q: Pergunta, r: FormularioConsulta['respostas']): string {
+  const linha = resposta(r[chaveDaLinha(q.id)])
+  const v = r[q.id]
+  if (!q.abreLinha || !linha) return resposta(v)
+  const troca = (o: string) => (o !== q.abreLinha ? o : o === 'Outro' ? linha : `${o} (${linha})`)
+  return resposta(Array.isArray(v) ? v.map(troca) : v === undefined ? v : troca(v))
+}
 const ponto = (t: string) => (/[.!?]$/.test(t) ? t : `${t}.`)
 
 /**
@@ -65,10 +88,14 @@ export function textoDoFormulario(partes: Parte[], f: FormularioConsulta, hoje: 
   if (trabalho.length) linhas.push(`Estado civil e trabalho: ${trabalho.join(', ')}.`)
   for (const parte of partes) {
     const ditos = parte.perguntas
-      .filter((q) => q.tipo !== 'foto' && q.tipo !== 'arquivos' && perguntaVisivel(q, d.sexo) && resposta(f.respostas[q.id]))
-      // "Pergunta? resposta." · "Rótulo: resposta." (rótulo que já termina em ":" não ganha outro)
-      .map((q) => `${/[?:]$/.test(q.rotulo.trim()) ? q.rotulo.trim() : `${q.rotulo.trim()}:`} ${ponto(resposta(f.respostas[q.id]))}`)
-    if (ditos.length) linhas.push(`${parte.titulo}: ${ditos.join(' ')}`)
+      .filter((q) => q.tipo !== 'foto' && q.tipo !== 'arquivos' && perguntaVisivel(q, d.sexo, f.respostas) && resposta(f.respostas[q.id]))
+      // "Pergunta? resposta." · "Rótulo: resposta." (rótulo que já termina em ":" não ganha outro; sem rótulo, só a resposta)
+      .map((q) => {
+        const r = ponto(respostaComLinha(q, f.respostas))
+        return q.semRotulo ? r : `${/[?:]$/.test(q.rotulo.trim()) ? q.rotulo.trim() : `${q.rotulo.trim()}:`} ${r}`
+      })
+    // título que já é pergunta ("Algo mais que seu médico deva saber?") não leva dois-pontos
+    if (ditos.length) linhas.push(`${parte.titulo}${parte.titulo.endsWith('?') ? '' : ':'} ${ditos.join(' ')}`)
   }
   const docs = Object.keys(f.fotos).filter((k) => k.startsWith('documentos_')).length
   const fotos = Object.keys(f.fotos).length - docs

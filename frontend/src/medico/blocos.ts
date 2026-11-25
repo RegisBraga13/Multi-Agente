@@ -26,7 +26,7 @@ const preenchida = (r: string | string[] | undefined) => (Array.isArray(r) ? r.l
 /** Para a revisão: o bloco tem alguma resposta (a Identificação, só quando válida). */
 export function blocoRespondido(b: Bloco, { dados, respostas, fotos, hoje }: Estado): boolean {
   if ('parte' in b) {
-    return b.parte.perguntas.some((q) => perguntaVisivel(q, dados.sexo) && (q.tipo === 'foto' ? fotos.includes(q.id)
+    return b.parte.perguntas.some((q) => perguntaVisivel(q, dados.sexo, respostas) && (q.tipo === 'foto' ? fotos.includes(q.id)
       : q.tipo === 'arquivos' ? fotos.some((f) => f.startsWith(`${q.id}_`)) : preenchida(respostas[q.id])))
   }
   if (b.id === 'identificacao') return Object.keys(validarDadosPessoais(dados, hoje)).length === 0
@@ -36,5 +36,5 @@ export function blocoRespondido(b: Bloco, { dados, respostas, fotos, hoje }: Est
 /** Perguntas obrigatórias do bloco ainda sem resposta (a Identificação tem a sua própria validação). */
 export function faltaResponder(b: Bloco, { dados, respostas }: Estado): string[] {
   if (!('parte' in b)) return []
-  return b.parte.perguntas.filter((q) => q.obrigatoria && perguntaVisivel(q, dados.sexo) && !preenchida(respostas[q.id])).map((q) => q.id)
+  return b.parte.perguntas.filter((q) => q.obrigatoria && perguntaVisivel(q, dados.sexo, respostas) && !preenchida(respostas[q.id])).map((q) => q.id)
 }

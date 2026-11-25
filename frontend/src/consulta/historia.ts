@@ -105,7 +105,8 @@ function hdaComFormulario(anamnese: string, anos: number, form: NonNullable<Cont
   const f = frasesDoFormulario(form)
   // as linhas do formulário na caixa ("Queixa principal: ...") já estão nas frases acima
   const rotulos = ['Identificação', 'Alergias', 'Estado civil e trabalho', ...form.partes.map((p) => p.titulo)]
-  const resto = anamnese.split('\n').filter((l) => !rotulos.some((r) => l.trim().startsWith(`${r}:`))).join('\n')
+  // "Algo mais que seu médico deva saber? ..." também já está nas frases (f.algoMais)
+  const resto = anamnese.split('\n').filter((l) => !rotulos.some((r) => l.trim().startsWith(r.endsWith('?') ? `${r} ` : `${r}:`))).join('\n')
   let depois = hda(resto, ident, falas, extras)
   if (depois === 'Não registrada.') depois = ''
   depois = depois.replace(new RegExp(`^${ident.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[,.] ?`), '')
@@ -113,7 +114,7 @@ function hdaComFormulario(anamnese: string, anos: number, form: NonNullable<Cont
   if (f.queixa && depois.startsWith('refere ')) depois = depois.replace(/^refere [^.]*\.\s*/, '')
   depois = depois.charAt(0).toUpperCase() + depois.slice(1)
   const abertura = f.queixa ? ponto(`${ident}, ${f.queixa}`) : ''
-  const texto = [abertura, f.habitos, depois].filter(Boolean).join(' ')
+  const texto = [abertura, f.habitos, depois, f.algoMais].filter(Boolean).join(' ')
   return !texto ? 'Não registrada.' : abertura ? texto : `${ident}. ${texto}`
 }
 

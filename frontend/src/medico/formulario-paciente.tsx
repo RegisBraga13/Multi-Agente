@@ -7,7 +7,7 @@ import { enviarFormulario, ErroServidor, lerComoBase64 } from '../servidor/agend
 import { blocoRespondido, blocosDoFormulario, faltaResponder, type Bloco } from './blocos'
 import { GrupoOpcoes } from './opcoes'
 import { TextoCrescente } from './texto-crescente'
-import { alternarOpcao, partesPreConsulta, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
+import { alternarOpcao, chaveDaLinha, partesPreConsulta, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
 import { chavesDeDocumentos, ESTADOS_CIVIS, MAX_DOCUMENTOS, formatarWhatsapp, normalizarWhatsapp, validarDadosPessoais, validarFoto, type DadosPessoais, type RascunhoPedido } from './regras'
 import { diaComSemana, horaCurta, NOME_MODALIDADE } from './textos'
 import type { Medico } from './tipos'
@@ -20,7 +20,7 @@ const SIM_NAO = [{ valor: 'sim', rotulo: 'Sim' }, { valor: 'nao', rotulo: 'Não'
 const comoOpcoes = (lista: readonly string[]) => lista.map((t) => ({ valor: t, rotulo: t }))
 /** Texto longo, foto e listas grandes de opções ocupam a linha toda; o resto divide a linha no PC. */
 const ocupaLinhaToda = (q: Pergunta) =>
-  q.linhaToda || q.tipo === 'texto-longo' || q.tipo === 'foto' || q.tipo === 'arquivos' || (q.opcoes ?? []).join('').length > 28
+  q.linhaToda || q.escala || q.duasColunas || q.tipo === 'texto-longo' || q.tipo === 'foto' || q.tipo === 'arquivos' || (q.opcoes ?? []).join('').length > 28
 const semChave = <T,>(r: Record<string, T>, chave: string) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== chave))
 
 /** Formulário do paciente, aberto dentro da página logo depois do pedido enviado. */
@@ -78,18 +78,18 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
   }
 
   /** receitas, exames, laudos: troca a lista inteira de uma vez (até MAX_DOCUMENTOS) */
-  function escolherDocumentos(id: string, lista: File[]) {
+  function escolherDocumentos(id: string, lista: File[], soFotos = false) {
     const atuais = Object.keys(fotos).filter((k) => k.startsWith(`${id}_`))
     atuais.forEach((k) => URL.revokeObjectURL(fotos[k].url))
     const outras = Object.fromEntries(Object.entries(fotos).filter(([k]) => !k.startsWith(`${id}_`)))
-    const erro = lista.length > MAX_DOCUMENTOS ? `Envie até ${MAX_DOCUMENTOS} arquivos.` : lista.map((f) => validarFoto(f, true)).find(Boolean) ?? null
+    const erro = lista.length > MAX_DOCUMENTOS ? `Envie até ${MAX_DOCUMENTOS} arquivos.` : lista.map((f) => validarFoto(f, !soFotos)).find(Boolean) ?? null
     const validos = erro ? [] : lista
     const novos = Object.fromEntries(chavesDeDocumentos(id, validos.length).map((k, i) => [k, { nome: validos[i].name, url: URL.createObjectURL(validos[i]), arquivo: validos[i] }]))
     setFotos({ ...outras, ...novos })
     setErrosFoto(erro ? { ...semChave(errosFoto, id), [id]: erro } : semChave(errosFoto, id))
   }
 
-  function campoPergunta(q: Pergunta) {
+  function campoPergunta(q: Pergunta, compacto = false) {
     const valor = pre[q.id]
     if (q.tipo === 'escolha' && q.lista) {
       return (
@@ -103,12 +103,41 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
         </Campo>
       )
     }
+    if (q.tipo === 'escolha' && q.escala) {
+      const nota = typeof valor === 'string' ? valor : ''
+      return (
+        <fieldset key={q.id}>
+          <legend className="mb-1.5 text-[14px] font-semibold">{q.rotulo}</legend>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[12.5px] text-apagado" aria-hidden>sem dor</span>
+            {(q.opcoes ?? []).map((o) => (
+              <label key={o} className={`grid h-9 w-9 cursor-pointer place-items-center border-[1.5px] text-[15px] transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--esp) ${nota === o ? 'border-(--esp) bg-(--esp) font-bold text-papel' : 'border-linha bg-papel hover:border-tinta'}`}>
+                <input type="radio" name={q.id} value={o} checked={nota === o} onChange={() => mudaPre(q.id, o)} className="sr-only" />
+                {o}
+              </label>
+            ))}
+            <span className="text-[12.5px] text-apagado" aria-hidden>pior dor</span>
+          </div>
+        </fieldset>
+      )
+    }
     if (q.tipo === 'escolha' || q.tipo === 'varias') {
       const marcadas = Array.isArray(valor) ? valor : valor ? [valor] : []
+      const linha = pre[chaveDaLinha(q.id)]
       return (
-        <GrupoOpcoes key={q.id} rotulo={q.rotulo} ajuda={q.ajuda} modo={q.tipo === 'escolha' ? 'uma' : 'varias'}
-          opcoes={comoOpcoes(q.opcoes ?? [])} marcadas={marcadas}
-          onAlternar={(o) => mudaPre(q.id, q.tipo === 'escolha' ? o : alternarOpcao(marcadas, o, q.exclusiva))} />
+        <div key={q.id} className="grid gap-1.5">
+          <GrupoOpcoes rotulo={q.rotulo} ajuda={q.ajuda} modo={q.tipo === 'escolha' ? 'uma' : 'varias'} duasColunas={q.duasColunas} compacto={compacto}
+            opcoes={comoOpcoes(q.opcoes ?? [])} marcadas={marcadas}
+            onAlternar={(o) => mudaPre(q.id, q.tipo === 'escolha' ? o : alternarOpcao(marcadas, o, q.exclusiva))}
+            aoLado={q.abreLinha ? {
+              valor: q.abreLinha,
+              // uma linha que cresce para baixo enquanto escreve
+              campo: <TextoCrescente aria-label={`${q.abreLinha}: ${q.placeholder ?? 'escreva'}`} placeholder={q.placeholder} autoFocus
+                value={typeof linha === 'string' ? linha : ''} onChange={(e) => mudaPre(chaveDaLinha(q.id), e.target.value)}
+                className="block w-full border-[1.5px] border-(--esp) bg-branco px-2 py-[3px] text-[14px] leading-tight outline-none" />,
+            } : undefined} />
+          {q.dica && marcadas.includes(q.dica.opcao) && <p className="text-[13px] font-semibold text-(--esp)">{q.dica.texto}</p>}
+        </div>
       )
     }
     if (q.tipo === 'arquivos') {
@@ -117,7 +146,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
         <div key={q.id} className="grid gap-2">
           <Campo rotulo={q.rotulo} erro={errosFoto[q.id]} ajuda={q.ajuda}>
             {(p) => (
-              <input {...p} type="file" multiple accept="image/*,application/pdf" onChange={(e) => escolherDocumentos(q.id, Array.from(e.target.files ?? []))}
+              <input {...p} type="file" multiple accept={q.soFotos ? 'image/*' : 'image/*,application/pdf'} onChange={(e) => escolherDocumentos(q.id, Array.from(e.target.files ?? []), q.soFotos)}
                 className="block w-full text-[15px] file:mr-4 file:border-[1.5px] file:border-tinta file:bg-transparent file:px-4 file:py-2.5 file:font-semibold" />
             )}
           </Campo>
@@ -163,7 +192,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
       )
     }
     return (
-      <Campo key={q.id} rotulo={rotulo} ajuda={q.ajuda} erro={errosPre[q.id]}>
+      <Campo key={q.id} rotulo={rotulo} ajuda={q.ajuda} erro={errosPre[q.id]} rotuloOculto={q.semRotulo}>
         {(p) => q.tipo === 'texto-longo'
           ? <TextoCrescente {...p} placeholder={q.placeholder} value={texto} onChange={(e) => mudaPre(q.id, e.target.value)} className={classeEntrada(p)} />
           : <input {...p} placeholder={q.placeholder} value={texto} onChange={(e) => mudaPre(q.id, e.target.value)} className={classeEntrada(p)} />}
@@ -208,7 +237,10 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
         await Promise.all(Object.entries(fotos).map(async ([id, f]) => [id, await lerComoBase64(f.arquivo)] as const)),
       )
       // só as perguntas que aparecem para este paciente e foram respondidas
-      const visiveis = new Set([...partes.flatMap((pt) => pt.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map((q) => q.id))])
+      // a linha do "Outro" (ou de "Após algum evento") só vai se a opção continua marcada
+      const linhaAberta = (q: Pergunta) => { const v = pre[q.id]; return !!q.abreLinha && (Array.isArray(v) ? v.includes(q.abreLinha) : v === q.abreLinha) }
+      const visiveis = new Set(partes.flatMap((pt) => pt.perguntas.filter((q) => perguntaVisivel(q, dados.sexo, pre))
+        .flatMap((q) => (linhaAberta(q) ? [q.id, chaveDaLinha(q.id)] : [q.id]))))
       const respostas = Object.fromEntries(Object.entries(pre).filter(([id, v]) => visiveis.has(id) && (Array.isArray(v) ? v.length > 0 : v.trim())))
       await enviarFormulario(token, { dados: { ...dados, sexo: dados.sexo || 'I' }, respostas, fotos: fotosBase64 })
       setPronto(true)
@@ -242,11 +274,11 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
         <>
           {b.parte.colunas ? (
             // parte em duas colunas no PC (cabe numa tela); no celular, uma pergunta abaixo da outra
-            <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-x-6">
+            <div className={`grid gap-3.5 sm:gap-x-6 ${b.parte.compacta ? "sm:grid-cols-[5fr_6fr]" : "sm:grid-cols-2"}`}>
               {b.parte.colunas.map((ids, i) => (
                 <div key={i} className="grid content-start gap-3.5">
-                  {ids.map((id) => b.parte.perguntas.find((q) => q.id === id)).filter((q): q is Pergunta => !!q && perguntaVisivel(q, dados.sexo)).map((q) => (
-                    <div key={q.id}>{campoPergunta(q)}</div>
+                  {ids.map((id) => b.parte.perguntas.find((q) => q.id === id)).filter((q): q is Pergunta => !!q && perguntaVisivel(q, dados.sexo, pre)).map((q) => (
+                    <div key={q.id}>{campoPergunta(q, b.parte.compacta)}</div>
                   ))}
                 </div>
               ))}
@@ -254,7 +286,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
           ) : (
             // no PC, perguntas curtas lado a lado; as longas ocupam a linha toda
             <div className="grid gap-3.5 sm:grid-flow-row-dense sm:grid-cols-[3fr_2fr] sm:gap-x-5">
-              {b.parte.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map((q) => (
+              {b.parte.perguntas.filter((q) => perguntaVisivel(q, dados.sexo, pre)).map((q) => (
                 <div key={q.id} className={ocupaLinhaToda(q) ? 'sm:col-span-2' : ''}>{campoPergunta(q)}</div>
               ))}
             </div>
@@ -341,7 +373,9 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
               ) : (
                 <>
                   <h3 ref={tituloBloco} tabIndex={-1} className="mt-4 text-[22px] leading-tight font-bold outline-none">Revise e envie</h3>
-                  <ul className="mt-4 border-t border-linha">
+                  {/* mais de 8 partes: duas colunas no PC, para caber numa tela */}
+                  <ul className={`mt-4 border-t border-linha ${blocos.length > 8 ? 'sm:grid sm:grid-flow-col sm:grid-cols-2 sm:gap-x-6' : ''}`}
+                    style={blocos.length > 8 ? { gridTemplateRows: `repeat(${Math.ceil(blocos.length / 2)}, auto)` } : undefined}>
                     {blocos.map((b, n) => {
                       const falta = faltaResponder(b, estado).length > 0
                       const ok = !falta && blocoRespondido(b, estado)
@@ -349,7 +383,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
                         <li key={b.id} className="flex items-center gap-3 border-b border-linha py-2 text-[15px]">
                           <span aria-hidden className={`w-5 text-center font-bold ${ok ? 'text-(--esp)' : 'text-apagado'}`}>{ok ? '✓' : '–'}</span>
                           <span className="min-w-0 flex-1">{n + 1}. {b.titulo}</span>
-                          <span className={`text-[13px] ${falta ? 'font-semibold text-alerta' : 'hidden text-apagado sm:inline'}`}>{falta ? 'falta responder' : ok ? 'respondido' : 'não respondido'}</span>
+                          <span className={`text-[13px] ${falta ? 'font-semibold text-alerta' : `hidden text-apagado ${blocos.length > 8 ? '' : 'sm:inline'}`}`}>{falta ? 'falta responder' : ok ? 'respondido' : 'não respondido'}</span>
                           <button type="button" onClick={() => setEtapa(n)} className="text-[14px] font-semibold text-(--esp) underline" aria-label={`Editar ${b.titulo}`}>Editar</button>
                         </li>
                       )
@@ -369,7 +403,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
                   <button type="button" onClick={() => setEtapa(etapa - 1)} className="text-apagado underline hover:text-tinta">Voltar</button>
                 )}
                 <span className="flex-1" />
-                {bloco && !bloco.obrigatorio && (
+                {bloco && !bloco.obrigatorio && !('parte' in bloco && bloco.parte.semPular) && (
                   <button type="button" onClick={() => setEtapa(etapa + 1)} className="text-apagado underline hover:text-tinta">Pular</button>
                 )}
                 <button type="submit" disabled={enviando} className="bg-(--esp) px-7 py-3 text-[16px] font-bold text-papel transition hover:-translate-y-0.5 disabled:opacity-60">

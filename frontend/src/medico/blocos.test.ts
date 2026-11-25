@@ -15,9 +15,9 @@ describe('blocosDoFormulario', () => {
     const b = blocosDoFormulario(partes)
     expect(b.map((x) => x.titulo)).toEqual([
       'Identificação', 'Estado civil e trabalho', 'Queixa principal', 'Fototipo e exposição ao sol',
-      'Rotina de cuidados', 'Saúde geral', 'Histórico familiar', 'Fotos e documentos',
+      'Rotina de cuidados', 'Saúde geral', 'Histórico familiar', 'Fotos e documentos', 'Algo mais que seu médico deva saber?',
     ])
-    expect(b.map((x) => x.obrigatorio)).toEqual([true, false, false, false, false, false, false, false])
+    expect(b.map((x) => x.obrigatorio)).toEqual([true, false, false, false, false, false, false, false, false])
     expect(new Set(b.map((x) => x.id)).size).toBe(b.length)
   })
 })

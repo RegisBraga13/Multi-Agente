@@ -5,7 +5,7 @@ import { alternarOpcao, partesPreConsulta, perguntaVisivel, type Pergunta } from
 const todas = (esp: string) => partesPreConsulta(esp).flatMap((p) => p.perguntas)
 
 describe('partesPreConsulta', () => {
-  it('dermatologia segue o modelo: seis partes, na ordem', () => {
+  it('dermatologia segue o modelo: seis partes, na ordem, e "Algo mais" no fim', () => {
     expect(partesPreConsulta('dermatologia').map((p) => p.titulo)).toEqual([
       'Queixa principal',
       'Fototipo e exposição ao sol',
@@ -13,6 +13,7 @@ describe('partesPreConsulta', () => {
       'Saúde geral',
       'Histórico familiar',
       'Fotos e documentos',
+      'Algo mais que seu médico deva saber?',
     ])
   })
 
@@ -37,12 +38,14 @@ describe('partesPreConsulta', () => {
     expect(q.doencas.linhaToda).toBe(true)
     const fotos = partesPreConsulta('dermatologia').find((p) => p.titulo === 'Fotos e documentos')!
     expect(fotos.perguntas.map((x) => x.tipo)).toEqual(['foto', 'foto', 'arquivos'])
-    expect(fotos.nota).toBe('A foto ajuda a acompanhar a evolução, e o exame presencial continua necessário.')
+    expect(fotos.nota).toBe('A foto ajuda a acompanhar a evolução, e o exame presencial continua necessário. Traga também no dia da consulta os exames (mesmo os antigos) e as fotos no celular.')
+    // nota da dor só para quem marcou "Dói" (autor, 24/11/2026)
+    expect(q.nota_dor.soSe).toEqual({ pergunta: 'sintomas', opcao: 'Dói' })
   })
 
   it('especialidade sem pacote próprio recebe as perguntas gerais, sem foto', () => {
     const p = todas('cardiologia')
-    expect(p.map((x) => x.id)).toEqual(['queixa', 'desde_quando', 'medicamentos', 'alergias'])
+    expect(p.map((x) => x.id)).toEqual(['queixa', 'desde_quando', 'medicamentos', 'alergias', 'algo_mais'])
     expect(p.some((x) => x.tipo === 'foto')).toBe(false)
   })
 
@@ -63,14 +66,20 @@ describe('partesPreConsulta', () => {
 })
 
 describe('perguntaVisivel', () => {
+  const dor: Pergunta = { id: 'nota_dor', rotulo: 'n', tipo: 'escolha', opcoes: ['0', '1'], soSe: { pergunta: 'sintomas', opcao: 'Dói' } }
+  it('pergunta que depende de outra: aparece com a opção marcada, ou se já foi respondida', () => {
+    expect(perguntaVisivel(dor, 'F', { sintomas: ['Coça'] })).toBe(false)
+    expect(perguntaVisivel(dor, 'F', { sintomas: ['Coça', 'Dói'] })).toBe(true)
+    expect(perguntaVisivel(dor, 'F', { nota_dor: '6' })).toBe(true)
+  })
   const gestacao: Pergunta = { id: 'g', rotulo: 'g', tipo: 'escolha', opcoes: ['a', 'b'], soParaSexo: 'F' }
   const comum: Pergunta = { id: 'c', rotulo: 'c', tipo: 'texto' }
   it('pergunta restrita só aparece para o sexo indicado', () => {
-    expect(perguntaVisivel(gestacao, 'F')).toBe(true)
-    for (const s of ['M', 'I', ''] as const) expect(perguntaVisivel(gestacao, s)).toBe(false)
+    expect(perguntaVisivel(gestacao, 'F', {})).toBe(true)
+    for (const s of ['M', 'I', ''] as const) expect(perguntaVisivel(gestacao, s, {})).toBe(false)
   })
   it('pergunta comum aparece sempre', () => {
-    for (const s of ['F', 'M', 'I', ''] as const) expect(perguntaVisivel(comum, s)).toBe(true)
+    for (const s of ['F', 'M', 'I', ''] as const) expect(perguntaVisivel(comum, s, {})).toBe(true)
   })
 })
 
@@ -88,5 +97,45 @@ describe('alternarOpcao', () => {
   })
   it('sem opção exclusiva, só alterna', () => {
     expect(alternarOpcao(['a'], 'b')).toEqual(['a', 'b'])
+  })
+})
+
+describe('reumatologia (texto do autor, 24/11/2026)', () => {
+  const partes = partesPreConsulta('reumatologia')
+  const q = Object.fromEntries(todas('reumatologia').map((x) => [x.id, x]))
+
+  it('partes na ordem; a última é "Algo mais", sem Pular', () => {
+    expect(partes.map((p) => p.titulo)).toEqual([
+      'Motivo da consulta', 'Onde dói', 'Rigidez e dor', 'Outros sintomas', 'Saúde geral', 'Histórico familiar', 'Exames e fotos',
+      'Algo mais que seu médico deva saber?',
+    ])
+    expect(partes[partes.length - 1].semPular).toBe(true)
+    expect(partes[partes.length - 1].perguntas[0].tipo).toBe('texto-longo')
+  })
+
+  it('regiões separadas (o local aponta o diagnóstico), em duas colunas, com Outro que abre linha', () => {
+    expect(q.regioes.tipo).toBe('varias')
+    expect(q.regioes.opcoes).toHaveLength(15)
+    expect(q.regioes.duasColunas).toBe(true)
+    expect(q.regioes.abreLinha).toBe('Outro')
+  })
+
+  it('piora: múltipla, "Não percebi relação" desmarca as outras; nota da dor 0 a 10', () => {
+    expect(q.piora.opcoes).toEqual(['Repouso (ex.: madrugada)', 'Esforço ou repetição', 'Frio ou mudança de clima', 'Estresse ou sono ruim', 'Carne vermelha ou álcool', 'Não percebi relação', 'Outro'])
+    expect(q.piora.exclusiva).toBe('Não percebi relação')
+    expect(q.nota_dor.escala).toBe(true)
+    expect(q.nota_dor.opcoes).toEqual(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
+  })
+
+  it('"Após algum evento" abre linha; junta inchada no passado mostra a dica da foto', () => {
+    expect(q.inicio.abreLinha).toBe('Após algum evento específico')
+    expect(q.inchaco.dica?.opcao).toBe('Já ficou inchada no passado, mas hoje não está')
+  })
+
+  it('Saúde geral na ordem aprovada; família com Reumatismo; fotos só imagem e aviso de trazer no dia', () => {
+    expect(partes.find((p) => p.titulo === 'Saúde geral')!.perguntas.map((x) => x.id)).toEqual(['doencas', 'medicamentos', 'remedios_dor', 'alergias', 'gravida', 'amamentando'])
+    expect(q.familia.opcoes).toContain('Reumatismo')
+    expect(q.fotos.soFotos).toBe(true)
+    expect(partes.find((p) => p.titulo === 'Exames e fotos')!.nota).toMatch(/^Traga também no dia/)
   })
 })

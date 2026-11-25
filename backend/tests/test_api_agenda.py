@@ -176,11 +176,12 @@ def test_formulario_aceita_receita_ou_laudo_em_pdf(agenda):
     assert c.post(f"/publico/formularios/{criado['tokenFormulario']}", json=word).status_code == 422
 
 
-def test_formulario_aceita_duas_fotos_e_dez_documentos(agenda):
+def test_formulario_aceita_dez_fotos_e_dez_documentos(agenda):
+    # reumatologia: várias fotos (juntas, manchas) + até 10 documentos (autor, 24/11/2026)
     c = cliente(agenda)
     token = pedir(c).json()["tokenFormulario"]
     png = {"tipo": "image/png", "base64": base64.b64encode(b"png").decode()}
-    fotos = {"foto_perto": png, "foto_longe": png, **{f"documentos_{i}": png for i in range(1, 11)}}
+    fotos = {**{f"fotos_{i}": png for i in range(1, 11)}, **{f"documentos_{i}": png for i in range(1, 11)}}
     assert c.post(f"/publico/formularios/{token}", json={"dados": DADOS, "fotos": fotos}).status_code == 204
     demais = {**fotos, "documentos_11": png}
     assert c.post(f"/publico/formularios/{token}", json={"dados": DADOS, "fotos": demais}).status_code == 422

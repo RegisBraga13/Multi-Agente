@@ -1,0 +1,98 @@
+# Sinais de alerta da Reumatologia — lista FIXA, sempre checada (não depende só da IA).
+# Fonte: resumo de red flags enviado pelo autor em 24/11/2026 (Emergências · Coluna · Sistêmicos e órgãos-alvo).
+# `texto` curto (uma linha na tela), `tipo`, `acao` e `prazo` propostos pelo engenheiro e aprovados pelo autor em 24/11/2026. A ação dos sinais de urgência imediata é a resposta de emergência FIXA: entra na conduta por regra.
+revisao:
+  situacao: aprovado
+  em: 2026-11-24
+
+sinais:
+  # --- 1. Emergências imediatas ---
+  - id: monoartrite-febre
+    texto: Uma junta quente e inchada, com febre
+    porque: Monoartrite aguda quente com febre sugere artrite séptica.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Punção articular urgente, com cultura, antes de antibiótico
+      - Não infiltrar corticoide até afastar infecção
+  - id: arterite-celulas-gigantes
+    texto: Dor de cabeça nova após os 50, com dor ao mastigar ou alteração na visão
+    porque: Sugere arterite de células gigantes, com risco de cegueira.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - VHS e PCR no mesmo dia
+      - Corticoide em dose alta sem esperar a biópsia
+      - Alteração visual = avaliação oftalmológica de emergência
+  - id: isquemia-digital
+    texto: Ferida necrótica na ponta do dedo ou dedo roxo fixo
+    porque: Isquemia digital crítica por vasculite ou esclerose sistêmica.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar para avaliação de urgência (risco de perda do dedo)
+      - Investigar vasculite e esclerose sistêmica
+
+  # --- 2. Coluna (lombalgia / cervicalgia) ---
+  - id: cauda-equina
+    texto: Perda do controle da urina ou fezes, dormência em sela ou fraqueza nas pernas
+    porque: Síndrome da cauda equina.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência para ressonância e avaliação cirúrgica
+  - id: espondilodiscite
+    texto: Dor contínua na coluna com febre, imunossupressão ou droga injetável
+    porque: Suspeita de infecção da coluna (espondilodiscite).
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Hemograma, VHS, PCR e hemoculturas
+      - Ressonância da coluna
+  - id: coluna-cancer-fratura
+    texto: Dor na coluna com >50 ou <20 anos, câncer prévio, perda de peso, dor noturna ou trauma
+    porque: Suspeita de câncer ou fratura da coluna.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Imagem da coluna
+      - Investigar neoplasia ou fratura conforme o quadro
+
+  # --- 3. Sistêmicos e órgãos-alvo ---
+  - id: sintomas-constitucionais
+    texto: Febre persistente sem causa, perda de peso e suor noturno
+    porque: Sintomas constitucionais sugerem infecção, neoplasia ou vasculite.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Investigar infecção, neoplasia e vasculite
+  - id: pulmao-rim
+    texto: Falta de ar progressiva, tosse com sangue, urina espumosa ou com sangue
+    porque: Acometimento pulmonar ou renal (vasculite, lúpus).
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Urina tipo 1, creatinina e radiografia de tórax
+      - Tosse com sangue ou falta de ar em repouso = emergência
+  - id: deficit-neurologico-subito
+    texto: Perda súbita de força ou sensibilidade em um lado do corpo
+    porque: Déficit neurológico focal súbito (AVC, vasculite do sistema nervoso).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+  - id: fraqueza-proximal
+    texto: Fraqueza nos dois lados para levantar da cadeira ou erguer os braços
+    porque: Fraqueza proximal simétrica sugere miopatia inflamatória.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - CK, aldolase, TGO e TGP
+      - Avaliar disfagia e falta de ar (gravidade)
+  - id: olho-vermelho-doloroso
+    texto: Olho vermelho com dor, sensibilidade à luz e visão baixa
+    porque: Sugere uveíte ou esclerite, com risco à visão.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Avaliação oftalmológica no mesmo dia

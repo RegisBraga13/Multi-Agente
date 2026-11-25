@@ -1,8 +1,9 @@
 // Anamnese, modo Formulário: o mesmo formulário que o paciente viu, uma parte por vez, já com as respostas dele.
 // O médico confere cada parte ("Conferido ✓"), corrige ou completa, e na última salva: o formulário vira texto da anamnese.
 // Depois de salvo, fica só para consulta (as correções são feitas na caixa de texto).
+import type { ReactNode } from 'react'
 import { blocosDaAnamnese, type Bloco } from '../medico/blocos'
-import { alternarOpcao, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
+import { alternarOpcao, chaveDaLinha, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
 import { ESTADOS_CIVIS, type DadosPessoais } from '../medico/regras'
 import type { FormularioConsulta } from './formulario-consulta'
 import { SEM_CORRETOR } from './campo-linha'
@@ -46,7 +47,8 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar, confe
     )
   }
 
-  function opcoes(rotulo: string, lista: readonly { valor: string; rotulo: string; nome?: string }[], marcadas: string[], onTocar: (v: string) => void) {
+  /** `extra`: na mesma fileira, depois das opções (a linha do "Outro") */
+  function opcoes(rotulo: string, lista: readonly { valor: string; rotulo: string; nome?: string }[], marcadas: string[], onTocar: (v: string) => void, extra?: ReactNode) {
     return (
       <div role="group" aria-label={rotulo}>
         <RotuloCampo texto={rotulo} vazio={marcadas.length === 0} />
@@ -60,6 +62,7 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar, confe
               </button>
             )
           })}
+          {extra}
         </div>
       </div>
     )
@@ -99,16 +102,22 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar, confe
     }
     if (q.tipo === 'escolha' || q.tipo === 'varias') {
       const marcadas = Array.isArray(v) ? v : v ? [v] : []
+      const linha = valor.respostas[chaveDaLinha(q.id)]
       return (
-        <div key={q.id}>
+        <div key={q.id} className={q.duasColunas || q.escala || (q.opcoes ?? []).join('').length > 60 ? 'col-span-2' : ''}>
           {opcoes(q.rotulo, (q.opcoes ?? []).map((o) => ({ valor: o, rotulo: o })), marcadas, (o) =>
-            mudaResposta(q.id, q.tipo === 'escolha' ? (marcadas.includes(o) ? '' : o) : alternarOpcao(marcadas, o, q.exclusiva)))}
+            mudaResposta(q.id, q.tipo === 'escolha' ? (marcadas.includes(o) ? '' : o) : alternarOpcao(marcadas, o, q.exclusiva)),
+          q.abreLinha && marcadas.includes(q.abreLinha) && (
+            <input {...SEM_CORRETOR} aria-label={`${q.abreLinha}: ${q.placeholder ?? 'escreva'}`} placeholder={q.placeholder}
+              value={typeof linha === 'string' ? linha : ''} onChange={(e) => mudaResposta(chaveDaLinha(q.id), e.target.value)}
+              className={`${ENTRADA} !w-auto min-w-[8rem] flex-1 !py-0`} />
+          ))}
         </div>
       )
     }
     const texto = typeof v === 'string' ? v : ''
     return (
-      <label key={q.id} className={`block ${q.tipo === 'texto-longo' ? 'col-span-2' : ''}`}>
+      <label key={q.id} className={`block ${q.tipo === 'texto-longo' || q.linhaToda ? 'col-span-2' : ''}`}>
         <RotuloCampo texto={q.rotulo} vazio={!texto.trim()} />
         <input {...SEM_CORRETOR} value={texto} onChange={(e) => mudaResposta(q.id, e.target.value)} className={ENTRADA} />
       </label>
@@ -116,7 +125,16 @@ export function FormularioMedico({ partes, valor, parte, onParte, onMudar, confe
   }
 
   function conteudo(b: Bloco) {
-    if ('parte' in b) return b.parte.perguntas.filter((q) => perguntaVisivel(q, dados.sexo)).map(campoPergunta)
+    if ('parte' in b) {
+      const visivel = (q: Pergunta | undefined): q is Pergunta => !!q && perguntaVisivel(q, dados.sexo, valor.respostas)
+      // parte em duas colunas (como o paciente viu no PC): cabe na caixa sem rolar
+      if (b.parte.colunas) {
+        return b.parte.colunas.map((ids, i) => (
+          <div key={i} className="grid content-start gap-y-2">{ids.map((id) => b.parte.perguntas.find((q) => q.id === id)).filter(visivel).map(campoPergunta)}</div>
+        ))
+      }
+      return b.parte.perguntas.filter(visivel).map(campoPergunta)
+    }
     // 'trabalho' (a Identificação não aparece na anamnese)
     return [
       <div key="ec">{opcoes('Estado civil', ESTADOS_CIVIS, dados.estadoCivil ? [dados.estadoCivil] : [], (v) => mudaDado('estadoCivil', dados.estadoCivil === v ? '' : v as DadosPessoais['estadoCivil']))}</div>,

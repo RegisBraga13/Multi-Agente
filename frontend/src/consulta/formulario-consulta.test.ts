@@ -67,3 +67,47 @@ describe('formularioParaHistoria', () => {
     expect(formularioParaHistoria(null, F.dados, { local: '  ' })).toBeNull()
   })
 })
+
+describe('textoDoFormulario: reumatologia', () => {
+  const reumato = partesPreConsulta('reumatologia')
+  it('"Outro" vira o próprio texto; outra opção que abre linha leva o texto entre parênteses; "Algo mais" sem rótulo', () => {
+    const t = textoDoFormulario(reumato, {
+      ...FORMULARIO_VAZIO,
+      respostas: {
+        inicio: 'Após algum evento específico', inicio_qual: 'dengue',
+        regioes: ['Joelhos', 'Outro'], regioes_qual: 'mandíbula',
+        nota_dor: '7',
+        algo_mais: 'Piorou depois da vacina',
+      },
+    }, hoje)
+    expect(t.split('\n')).toEqual([
+      'Motivo da consulta: Como os sintomas começaram? Após algum evento específico (dengue).',
+      'Onde dói: Quais regiões do corpo doem ou incomodam no momento? Joelhos, mandíbula.',
+      'Rigidez e dor: Em uma escala de 0 a 10, qual nota você dá para a sua dor na última semana? 7.',
+      'Algo mais que seu médico deva saber? Piorou depois da vacina.',
+    ])
+  })
+})
+
+describe('lembrete "Nota da dor (0 a 10)" (todos os módulos; autor, 24/11/2026)', () => {
+  // sem "Dói" marcado: a nota não aparece no formulário da dermatologia, só pelo que foi falado
+  const S: FormularioConsulta = { ...F, respostas: { ...F.respostas, sintomas: ['Coça'] } }
+  const temNota = (falado: string, f: FormularioConsulta = S) => lembretesDoFormulario(partes, f, falado).some((q) => q.id === 'nota_dor')
+  it('entra quando o paciente fala de dor e a nota não foi dita', () => {
+    expect(temNota('Paciente diz que o joelho dói muito há duas semanas.')).toBe(true)
+    expect(temNota('Refere dor nas costas.')).toBe(true)
+  })
+  it('não entra sem dor, com a nota dita ou já respondida no formulário', () => {
+    expect(temNota('Manchas que coçam.')).toBe(false)
+    expect(temNota('Dor no joelho, nota 7.')).toBe(false)
+    expect(temNota('Dor no joelho, 8/10.')).toBe(false)
+    expect(temNota('Dor no joelho.', { ...S, respostas: { ...S.respostas, nota_dor: '6' } })).toBe(false)
+    expect(temNota('Sem doenças crônicas.')).toBe(false)
+  })
+  it('na dermatologia, a nota só aparece no formulário para quem marcou "Dói"', () => {
+    const semDoi = { ...F, respostas: { ...F.respostas, sintomas: ['Coça'] } }
+    expect(lembretesDoFormulario(partes, semDoi).some((q) => q.id === 'nota_dor')).toBe(false)
+    // F marcou "Coça" e "Dói" e não deu a nota: vira lembrete do formulário
+    expect(lembretesDoFormulario(partes, F).find((q) => q.id === 'nota_dor')?.lembrete).toBe('Nota da dor (0 a 10)')
+  })
+})

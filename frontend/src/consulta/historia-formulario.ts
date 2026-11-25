@@ -11,6 +11,8 @@ export type FrasesFormulario = {
   /** exposição e hábitos, numa frase ("Trabalha exposta ao sol; usa protetor ...") */
   habitos: string
   antecedentes: string[]
+  /** "Algo mais que seu médico deva saber?" ('' = em branco) */
+  algoMais: string
 }
 
 const txt = (v: string | string[] | undefined) => (Array.isArray(v) ? v : v ? [v] : []).map((x) => x.trim()).filter(Boolean)
@@ -34,6 +36,7 @@ export function frasesDoFormulario({ dados, respostas: r }: Entrada): FrasesForm
       mudou === 'Sim' ? 'com mudança de cor, tamanho ou formato' : mudou === 'Não' ? 'sem mudança de cor, tamanho ou formato' : mudou === 'Não sei' ? 'não sabe se mudou de cor, tamanho ou formato' : '',
       sintomas.includes('Nenhum dos três') ? 'sem prurido, dor ou sangramento'
         : sintomas.length ? `com ${lista(sintomas.map((s) => SINTOMA[s] ?? min(s)))}` : '',
+      um(r.nota_dor) && `intensidade da dor ${um(r.nota_dor)}/10`,
     ]
     queixa = partes.filter(Boolean).join(', ')
   }
@@ -71,5 +74,6 @@ export function frasesDoFormulario({ dados, respostas: r }: Entrada): FrasesForm
   const familia = txt(r.familia)
   if (familia.length) ant.push(familia.includes('Nenhum desses') ? 'Nega história familiar de doenças de pele.' : `História familiar de ${lista(familia.map(min))}.`)
 
-  return { queixa, habitos: frase ? `${frase.charAt(0).toUpperCase()}${frase.slice(1)}.` : '', antecedentes: ant }
+  const algo = sem(um(r.algo_mais))
+  return { queixa, habitos: frase ? `${frase.charAt(0).toUpperCase()}${frase.slice(1)}.` : '', antecedentes: ant, algoMais: algo ? `${algo}.` : '' }
 }

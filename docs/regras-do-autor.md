@@ -50,10 +50,14 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 1. **Só a Identificação é obrigatória** e fica como está. **Alergias fica em Saúde geral, opcional** (com o botão "Não tenho alergia"); na consulta, sempre aparece em Perguntas. O resto é opcional e pode ser pulado.
 2. **Sexo M / F / I** (Masculino, Feminino, Intersexo) e **Nome social** (opcional).
 3. **Fotos e documentos:** fotos da pele e também receitas anteriores, exames e laudos (foto, print ou PDF, até 10).
+   **Enviar e trazer (todos os módulos, 24/11):** o paciente envia pelo formulário **e** recebe o lembrete de trazer os exames (mesmo antigos) e as fotos no dia — "nunca se sabe o que o paciente esqueceu de colocar no formulário". Aviso na parte de fotos (derma e reumato): "Traga também no dia da consulta os exames (mesmo os antigos) e as fotos no celular."
 4. **Ao tocar em Enviar, vai direto para o sistema** e aparece "Formulário enviado". Não passa mais pelo WhatsApp.
 5. **Quem escolheu "preencher na consulta"** recebe aviso no dia, antes da consulta. A consulta só começa com a Identificação preenchida (a página inicial do formulário continua obrigatória). Se o paciente chegar sem ela, **o médico (ou a secretária) preenche no computador**, ao tocar em Abrir consulta; o resto do formulário aparece em Perguntas. **Aviso no dia:** no cartão da agenda, o botão "Lembrar formulário" abre o WhatsApp com a mensagem e o link escritos; o médico ou a secretária toca em enviar. *(feito)*
 6. **Gravidez e amamentação:** duas perguntas Sim/Não ("Está grávida?", "Está amamentando?"), só para sexo F. O médico tem bom senso para saber quando e a quem perguntar.
 7. **Saúde geral, nesta ordem:** Doenças crônicas · Medicamentos · Alergias · Grávida · Amamentando.
+8. **Nota da dor em todos os módulos (24/11):** "Em uma escala de 0 a 10, qual nota você dá para a sua dor na última semana?" — fileira de 11 botões 0–10, "sem dor" e "pior dor" nas pontas. Aparece **sempre que houver dor**: na reumato sempre; na derma só quando o paciente marca "Dói" em "Coça, dói ou sangra?".
+9. **Fim do formulário, todos os módulos (24/11):** última parte antes de "Revise e envie": "Algo mais que seu médico deva saber?" (OPCIONAL), caixa de várias linhas que cresce ao escrever; só Voltar e Próximo.
+10. **Opção "Outro"** nas listas de escolha: abre um campo de uma linha que cresce ao escrever. Opções curtas, para caber em duas colunas.
 
 ## 6. Agenda
 
@@ -70,6 +74,7 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 3. **O que o paciente não respondeu vira lembrete em Perguntas. Alergias aparece sempre**, mesmo respondida. Ficam na lista; se o médico perguntar de novo algo já dito, a IA tira a repetição.
 4. **Perguntas da IA:** clicar risca e abre Sim/Não (duas caixas, como está); a resposta vai para a história.
    **Lembretes do formulário:** clicar risca e abre as opções da própria pergunta (ex.: "Está amamentando?" → Sim / Não; "Usa protetor solar?" → Todo dia / Às vezes…) ou, se for pergunta aberta, uma linha para escrever ("Produtos que usa" → "sabonete e hidratante"). A resposta vai para a história, na seção certa. Riscada sem resposta não entra.
+   **Dor sem nota (24/11, todos os módulos):** se o paciente fala de dor (gravado ou escrito) e a nota não foi dita, entra em Perguntas o lembrete "Nota da dor (0 a 10)"; ao clicar, abre a fileira 0–10.
 5. **Sinais de alerta:** o médico pergunta e marca V ou F. V vai para a história (não para a anamnese).
 6. **Gravar só com o aceite da transcrição.** O que vale é o que é salvo: o médico sempre lê a anamnese antes de salvar.
 
