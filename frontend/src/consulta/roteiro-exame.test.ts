@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { alternarMarca, camposDoRoteiro, roteiroDoExame, textoDaParte } from './roteiro-exame'
+import { alternarMarca, camposDoRoteiro, escreverCampo, parteFeita, resumoDaParte, roteiroDoExame, textoDaParte } from './roteiro-exame'
 
 const r = roteiroDoExame('reumatologia')!
 const parte = (id: string) => r.find((p) => p.id === id)!
 
 describe('roteiro do exame (reumatologia, autor 24/11/2026)', () => {
-  it('5 partes na ordem; dermatologia não tem roteiro', () => {
+  it('5 partes na ordem; especialidade sem roteiro = undefined', () => {
     expect(r.map((p) => p.titulo)).toEqual(['GALS', 'Mapa articular', 'IPAM', 'Padrão', 'Extra-articular'])
-    expect(roteiroDoExame('dermatologia')).toBeUndefined()
+    expect(roteiroDoExame('cardiologia')).toBeUndefined()
   })
 
   it('linha de uma resposta troca; de várias acumula; tocar de novo desmarca', () => {
@@ -34,5 +34,61 @@ describe('roteiro do exame (reumatologia, autor 24/11/2026)', () => {
     expect(textoDaParte(parte('padrao'), m)).toBe('Poli (≥ 5), simétrico.')
     expect(textoDaParte(parte('extra'), m)).toBeNull()
     expect(camposDoRoteiro(r, m).map((c) => c.rotulo)).toEqual(['GALS', 'Articulações acometidas', 'IPAM', 'Padrão', 'Extra-articular'])
+  })
+})
+
+const d = roteiroDoExame('dermatologia')!
+const pd = (id: string) => d.find((p) => p.id === id)!
+
+describe('roteiro do exame (dermatologia, autor 26/11/2026)', () => {
+  it('9 partes na ordem combinada (Lesões cutâneas em duas)', () => {
+    expect(d.map((p) => p.titulo)).toEqual(['Avaliação geral', 'Pele', 'Lesões', 'Local e aspecto', 'Anexos', 'Mucosas', 'Linfonodos', 'Registro fotográfico'])
+  })
+
+  it('"Outro" abre texto; desmarcar apaga o texto; sem texto, fica de fora', () => {
+    let m = alternarMarca({}, 'lesoes.primaria', 'Pápula', true)
+    m = alternarMarca(m, 'lesoes.primaria', 'Outro', true)
+    expect(textoDaParte(pd('lesoes'), m)).toBe('Lesão primária: pápula.')
+    m = escreverCampo(m, 'lesoes.primaria#outro', 'comedões')
+    expect(textoDaParte(pd('lesoes'), m)).toBe('Lesão primária: pápula e comedões.')
+    m = alternarMarca(m, 'lesoes.primaria', 'Outro', true)
+    expect(m['lesoes.primaria#outro']).toBeUndefined()
+  })
+
+  it('"Sem alterações" e "Não…" excluem as outras opções da linha', () => {
+    let m = alternarMarca({}, 'mucosas.achados', 'Eritema', true)
+    m = alternarMarca(m, 'mucosas.achados', 'Sem alterações', true)
+    expect(m['mucosas.achados']).toEqual(['Sem alterações'])
+    m = alternarMarca(m, 'mucosas.achados', 'Úlceras', true)
+    expect(m['mucosas.achados']).toEqual(['Úlceras'])
+  })
+
+  it('sinais vitais e dimensões em caixinhas; uma resposta em estado geral e fototipo', () => {
+    let m = alternarMarca({}, 'geral.estado', 'Bom', false)
+    m = alternarMarca(m, 'geral.estado', 'Regular', false)
+    m = escreverCampo(m, 'geral.vitais#pa', '120/80')
+    m = escreverCampo(m, 'geral.vitais#spo2', '98')
+    expect(textoDaParte(pd('geral'), m)).toBe('Estado geral: regular; sinais vitais: PA 120/80 mmHg, SpO₂ 98%.')
+    m = alternarMarca(m, 'pele.fototipo', 'III', false)
+    expect(textoDaParte(pd('pele'), m)).toBe('Fototipo: III.')
+    m = escreverCampo(m, 'local.dimensoes#a', '12')
+    m = escreverCampo(m, 'local.dimensoes#b', '8')
+    m = alternarMarca(m, 'local.dimensoes', 'mm', false)
+    m = alternarMarca(m, 'local.gravidade', 'Moderada', false)
+    expect(textoDaParte(pd('local'), m)).toBe('Dimensões: 12 × 8 mm; gravidade: moderada.')
+  })
+
+  it('Extensão vira campo próprio (o retorno compara o número), fora do texto da parte', () => {
+    const m = escreverCampo({}, 'local.extensao#pct', '3')
+    expect(textoDaParte(pd('local'), m)).toBeNull()
+    expect(parteFeita(pd('local'), m)).toBe(true)
+    expect(resumoDaParte(pd('local'), m)).toBe('extensão 3% do corpo')
+    const campos = camposDoRoteiro(d, m)
+    expect(campos.find((c) => c.rotulo === 'Extensão')?.valor).toBe('3% do corpo')
+    expect(campos.find((c) => c.rotulo === 'Local e aspecto')?.valor).toBeNull()
+  })
+
+  it('não marcado não entra (parte vazia = null)', () => {
+    expect(camposDoRoteiro(d, {}).every((c) => c.valor === null)).toBe(true)
   })
 })

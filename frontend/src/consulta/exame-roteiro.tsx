@@ -3,7 +3,7 @@
 // qualquer parte e mudar; só fica definitivo quando salva o exame (autor, 24/11/2026).
 import { Fragment, useEffect, useState } from 'react'
 import { SEM_CORRETOR } from './campo-linha'
-import { alternarMarca, chaveDaLinha, COMPARADO, resumoDaParte, textoDaParte, type MarcasExame, type ParteRoteiro, type Roteiro } from './roteiro-exame'
+import { alternarMarca, chaveDaLinha, COMPARADO, escreverCampo, parteFeita, resumoDaParte, type MarcasExame, type ParteRoteiro, type Roteiro } from './roteiro-exame'
 import { TextoCrescente } from '../medico/texto-crescente'
 
 type Props = {
@@ -19,6 +19,8 @@ type Props = {
 }
 
 const CHIP = 'border-[1.5px] px-1.5 py-0 text-[13px] leading-[1.4]'
+/** caixinha de número ou de "Outro", da altura de uma opção */
+const CAIXA_NUMERO = 'border-[1.5px] border-linha bg-branco px-1 py-0 text-center text-[13px] leading-[1.4] focus:border-tinta focus:outline-none'
 
 export function ExameRoteiro({ roteiro, marcas, onMarcas, observacoes, onObservacoes, anteriores, onAbrir }: Props) {
   // consulta nova: abre a primeira parte; retomada (já tem marcas): tudo fechado, com os resumos
@@ -34,7 +36,7 @@ export function ExameRoteiro({ roteiro, marcas, onMarcas, observacoes, onObserva
       <div className="mt-1 flex min-h-0 flex-1 flex-col">
         <nav aria-label="Partes do exame" className="flex flex-wrap items-center gap-x-1 gap-y-0.5 border-b border-linha pb-1 text-[13px]">
           {roteiro.map((p, i) => {
-            const feita = textoDaParte(p, marcas) !== null
+            const feita = parteFeita(p, marcas)
             return (
               // tocar na parte aberta fecha todas (volta à lista com os resumos)
               <button key={p.id} type="button" onClick={() => setAberta(i === aberta ? null : i)} aria-current={i === aberta ? 'step' : undefined}
@@ -62,7 +64,7 @@ export function ExameRoteiro({ roteiro, marcas, onMarcas, observacoes, onObserva
     <div className="mt-2 flex min-h-0 flex-1 flex-col">
       <ol className="border-t border-linha">
         {roteiro.map((parte, i) => {
-          const feita = textoDaParte(parte, marcas) !== null
+          const feita = parteFeita(parte, marcas)
           const antes = anteriores ? resumoDaParte(parte, anteriores) : ''
           return (
             <li key={parte.id} className="border-b border-linha">
@@ -105,17 +107,35 @@ export function ExameRoteiro({ roteiro, marcas, onMarcas, observacoes, onObserva
 
 /** As linhas de uma parte. Linhas só de lado (D/E) ou "Sim" ficam em 3 colunas, por grupo (ex.: MMSS, MMII). */
 function Linhas({ parte, marcas, onMarcas }: { parte: ParteRoteiro; marcas: MarcasExame; onMarcas: (m: MarcasExame) => void }) {
-  const curta = parte.linhas.every((l) => l.opcoes.length <= 2 && l.opcoes.every((o) => o.length <= 3))
+  const curta = parte.linhas.every((l) => !l.numeros && l.opcoes.length >= 1 && l.opcoes.length <= 2 && l.opcoes.every((o) => o.length <= 3))
   const grupos = [...new Set(parte.linhas.map((l) => l.grupo ?? ''))]
   const chips = (l: ParteRoteiro['linhas'][number]) => {
     const chave = chaveDaLinha(parte, l)
     const sel = marcas[chave] ?? []
-    return l.opcoes.map((o) => (
+    const valor = (id: string) => marcas[`${chave}#${id}`]?.[0] ?? ''
+    // caixinhas de número (sinais vitais, dimensões, extensão): só entram se preenchidas
+    const numeros = (l.numeros ?? []).map((n) => (
+      <span key={n.id} className="inline-flex items-center gap-1 text-[13px]">
+        {n.antes && <span className="text-apagado">{n.antes}</span>}
+        <input {...SEM_CORRETOR} inputMode="decimal" aria-label={`${l.rotulo}${n.antes ? ` ${n.antes}` : ''}`} value={valor(n.id)}
+          onChange={(e) => onMarcas(escreverCampo(marcas, `${chave}#${n.id}`, e.target.value))}
+          style={{ width: n.largura ?? 40 }} className={`${CAIXA_NUMERO} ${valor(n.id) ? 'border-tinta' : 'border-linha'}`} />
+        {n.depois && <span className="text-apagado">{n.depois}</span>}
+      </span>
+    ))
+    const opcoes = l.opcoes.map((o) => (
       <button key={o} type="button" aria-pressed={sel.includes(o)} onClick={() => onMarcas(alternarMarca(marcas, chave, o, l.multipla))}
         className={`${CHIP} ${sel.includes(o) ? 'border-tinta bg-tinta font-semibold text-papel' : 'border-linha bg-branco hover:border-tinta'}`}>
         {o}
       </button>
     ))
+    // "Outro" marcado abre uma linha para escrever, logo depois das opções
+    const outro = l.outro && sel.includes('Outro') && (
+      <input key="outro" {...SEM_CORRETOR} autoFocus={!valor('outro')} aria-label={`${l.rotulo}: outro`} placeholder="qual?" value={valor('outro')}
+        onChange={(e) => onMarcas(escreverCampo(marcas, `${chave}#outro`, e.target.value))}
+        className={`${CAIXA_NUMERO} w-40 text-left`} />
+    )
+    return [...numeros, ...opcoes, outro]
   }
   return (
     <div className="grid gap-y-[3px]">
@@ -124,9 +144,9 @@ function Linhas({ parte, marcas, onMarcas }: { parte: ParteRoteiro; marcas: Marc
           {g && <p className="mt-0.5 text-[11.5px] font-bold tracking-[.08em] text-apagado uppercase">{g}</p>}
           <div className={curta ? 'grid grid-cols-3 gap-x-3 gap-y-[3px]' : 'grid gap-y-[3px]'}>
             {parte.linhas.filter((l) => (l.grupo ?? '') === g).map((l) => (
-              <div key={l.id} role="group" aria-label={l.rotulo} className={curta ? 'flex items-center justify-between gap-1' : 'grid grid-cols-[84px_minmax(0,1fr)] items-start gap-2'}>
+              <div key={l.id} role="group" aria-label={l.rotulo} className={curta ? 'flex items-center justify-between gap-1' : 'grid grid-cols-[92px_minmax(0,1fr)] items-start gap-2'}>
                 <span className={`text-[13px] whitespace-nowrap ${curta ? 'truncate' : 'pt-px font-semibold text-apagado'}`}>{l.rotulo}</span>
-                <div className="flex flex-wrap gap-[3px]">{chips(l)}</div>
+                <div className="flex flex-wrap items-center gap-[3px]">{chips(l)}</div>
               </div>
             ))}
           </div>

@@ -80,7 +80,8 @@ function exameFisico(exame: { rotulo: string; valor: string }[]): string {
   const [morf, loc, ext, grav, ach, obs] = conhecidos.map(v)
   const frases = [
     morf ? `${morf}${loc ? ` em ${minuscula(loc)}` : ''}` : loc ? `Localização: ${minuscula(loc)}` : '',
-    ext,
+    // roteiro (Dermatologia): a extensão chega só com o número ("3% do corpo")
+    ext && /^\d/.test(ext) ? `Extensão: ${ext}` : ext,
     ach,
     grav ? `Gravidade estimada: ${minuscula(grav)}` : '',
     ...exame.filter((x) => !conhecidos.includes(x.rotulo) && x.valor.trim()).map((x) => `${x.rotulo}: ${x.valor.trim()}`),

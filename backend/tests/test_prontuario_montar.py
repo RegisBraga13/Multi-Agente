@@ -1,6 +1,6 @@
 from datetime import date
 
-from app.contratos.consulta import ExameComplementar, ItemComplementar
+from app.contratos.consulta import CampoExame, ExameComplementar, ItemComplementar
 from app.contratos.consulta_blocos import Documento, HipoteseItem, ItemDD, PerguntaContextual
 from app.contratos.prontuario import Atestado, DadosEntrada, ItemReceita, Laudo, Quantidade
 from app.prontuario.montar import aplicar_edicoes_narrativas, dados_da_consulta, diagnosticos_do_prontuario
@@ -237,6 +237,13 @@ def test_extensao_em_porcentagem_vem_do_campo_extensao_do_exame():
     exame = EXAME.model_copy(update={"exame": EXAME.exame.model_copy(update={"extensao": "BSA estimada em 6,5%"})})
     assert montar(exame=exame).extensao_pct == 6.5
     assert montar().extensao_pct is None
+
+
+def test_extensao_do_exame_por_roteiro_vem_do_campo_extensao():
+    # Dermatologia por roteiro (26/11/2026): a extensão é um campo próprio ("3% do corpo")
+    exame = EXAME.model_copy(update={"exame": None, "campos": [CampoExame(rotulo="Extensão", valor="3% do corpo")]})
+    assert montar(exame=exame).extensao_pct == 3
+    assert montar(exame=EXAME.model_copy(update={"exame": None, "campos": []})).extensao_pct is None
 
 
 def test_edicao_da_evolucao_vai_para_o_proprio_dado():

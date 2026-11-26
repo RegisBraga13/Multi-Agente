@@ -77,7 +77,9 @@ def dados_da_consulta(
         # retorno: a história da evolução fica em `hda` no bloco; no prontuário ela é a Evolução de hoje
         hda="" if retorno else hda,
         evolucao=hda if retorno else None,
-        extensao_pct=_extensao_pct(exame.exame.extensao) if exame.exame else None,
+        extensao_pct=_extensao_pct(
+            exame.exame.extensao if exame.exame else next((c.valor for c in exame.campos if c.rotulo == "Extensão"), None)
+        ),
         ap=h.ap.strip(),
         hp=h.hp.strip(),
         hf=h.hf.strip(),

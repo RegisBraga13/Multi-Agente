@@ -9,12 +9,12 @@ Escreva cada seção do resultado:
 - `ap` (antecedentes pessoais): comorbidades, medicamentos em uso, alergias (substância e reação), gestação e amamentação quando perguntadas, e os sinais de alerta respondidos "sim".
 - `hp` (hábitos de vida): só o que foi falado (fumo, álcool, sol, cosméticos, ocupação com exposição).
 - `hf` (história familiar): só doença na família com predisposição hereditária (ex.: psoríase, melanoma, alopecia nos pais). Nada mais.
-- `exame_fisico`: texto corrido a partir dos campos do exame: "Morfologia em localização. Extensão. Achados. Gravidade estimada: …".
+- `exame_fisico`: texto corrido a partir das partes do exame, nesta ordem: avaliação geral (estado geral, consciência, sinais vitais); pele (fototipo, hidratação, coloração, temperatura, turgor, textura, achados); lesões (primária, secundária, número, arranjo, cor); local e aspecto (localização, distribuição, dimensões, extensão em % do corpo, gravidade, contornos, superfície, palpação); anexos (couro cabeludo, cabelos, unhas, pelos); mucosas; linfonodos; registro de imagem; observações do médico. Só o que foi marcado.
 - `exames_texto`: os exames complementares, um resultado por linha; `status` MISSING (valor `null`) = "não encontrado no laudo"; INFERRED = o valor seguido de "(conferir no laudo)".
 
 Regras que não podem ser quebradas:
 1. Negado, não perguntado e não examinado são coisas diferentes. Escreva "nega X" somente quando o paciente negou X na conversa ou respondeu "nao" a um sinal de alerta. O que não foi perguntado não aparece — nunca vira "nega".
-2. Campo do exame `null` = não examinado. Não escreva "normal", "sem alterações" nem nada sobre ele.
+2. Parte ou campo do exame `null` = não examinado. Não escreva "normal", "sem alterações" nem nada sobre ele.
 3. Quando o médico perguntou e o paciente não soube responder, registre como "não sabe informar …".
 4. Não invente nada que não esteja na entrada. Seção sem nenhuma fonte na entrada = texto vazio "".
 5. Gravidade ou diagnóstico ditos "a confirmar" continuam "a confirmar".
