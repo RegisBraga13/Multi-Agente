@@ -83,7 +83,7 @@ Fonte: Constituição (`docs/constituicao.md`), desenhos em `docs/superpowers/sp
 
 1. **Fotos numeradas + campos da especialidade.** O rascunho da IA aparece tracejado; o médico edita.
 2. **"Inserir prints, arquivos, laudos":** é onde ficam os exames, laudos e receitas que o paciente trouxe ou mandou.
-3. **O que importa dentro dos documentos** (remédios da receita, resultado do laudo) vai como lembrete da IA para o lugar certo da história, com a página de onde saiu. O médico confirma.
+3. **O que importa dentro dos documentos** (remédios da receita, resultado do laudo) vai como lembrete da IA para o lugar certo da história. O médico confirma. **Não precisa mostrar a página** de onde saiu (26/11): basta nunca inventar (item 4).
 4. **Valor extraído de laudo:** presente / "conferir no laudo" (inferido) / "não encontrado no laudo". Nunca inventar.
 
 ## 9. História clínica

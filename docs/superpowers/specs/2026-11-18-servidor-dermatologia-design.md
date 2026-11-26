@@ -63,6 +63,9 @@ Modelos de IA, abordagem escolhida: **começar com Claude Opus 5.5 em todos os m
 - **Atestado** (período de afastamento) e **laudo** (finalidade) vão ao prontuário só como resumo de uma linha.
 - **Retorno** (desenho detalhado depois): Evolução → História da evolução (com gráfico comparativo, laudos, fotos comparadas) → diagnósticos/conduta/receita e anexos (podem mudar) → prontuário atualizado (retorno em cima). Mesmo mecanismo para todas as especialidades.
 - **Transcrição: Deepgram** (separa as vozes Médico/Paciente e funciona em tempo real; o Whisper não separa vozes sozinho). Áudio apagado depois de transcrito. Testar vocabulário médico PT-BR.
+- **Vídeo da consulta online: LiveKit** (decidido pelo autor em 26/11/2026), dentro do especIAlista (paciente abre um link no navegador, sem instalar nada). Começa com a **conta grátis, para avaliar**. Código aberto: pode sair da nuvem deles para servidor próprio. Áudio da sala vai ao Deepgram para a transcrição. Comparado com Daily, Whereby, Agora e Jitsi; Twilio fora (encerrou o vídeo). A conferir na montagem: servidor no Brasil (atraso do vídeo).
+- **IA: um modelo só para todas as tarefas = Claude Opus 5.5** (decidido pelo autor em 26/11/2026): história, diagnósticos, sinais, perguntas, documentos e fotos. Comparado com Sonnet 5.5, GPT e Gemini 3.1 Pro: custo ≈ R$ 4 por consulta (Sonnet ≈ R$ 2); escolhido pela qualidade clínica. Se o custo pesar, uma etapa pode passar ao Sonnet pela interface trocável. Não há regra de mostrar a página do laudo; vale só "nunca inventar".
+  **Decidido pelo autor em 26/11/2026: Deepgram Nova-3 Medical** (`model=nova-3-medical&language=multi`, que inclui português, ao vivo e com separação de vozes). Comparado com AssemblyAI, Speechmatics, ElevenLabs e Whisper local: custo ≈ R$ 1 por consulta de 20 min em todos; troca só se falhar no uso real.
 
 ## 7. O como decidido
 
