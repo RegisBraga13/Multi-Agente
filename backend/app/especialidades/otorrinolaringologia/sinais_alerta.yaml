@@ -1,0 +1,67 @@
+# Sinais de alerta da Otorrinolaringologia — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (7 alertas), adaptado ("são modelos para servir como uma boa base"):
+# as perguntas do checklist viraram o porquê/ação. Registrar a hora de início nos quadros agudos.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: via-aerea
+    texto: Chiado ao respirar, falta de ar, voz abafada, não consegue engolir a saliva ou língua e pescoço inchando
+    porque: Possível comprometimento da via aérea.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente, sentado e sem deitar
+      - Não examinar a garganta com espátula se houver estridor
+  - id: infeccao-profunda-pescoco
+    texto: Febre com dor forte para engolir, boca que não abre, voz abafada, baba ou inchaço no pescoço
+    porque: Possível abscesso periamigdaliano ou infecção profunda do pescoço. Perguntar se está progredindo.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Tomografia de pescoço com contraste
+  - id: complicacao-otite-sinusite
+    texto: Inchaço ou dor atrás da orelha, orelha projetada, inchaço em volta do olho, dor ao mover o olho ou visão dupla
+    porque: Possível mastoidite ou complicação orbitária de sinusite.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Tomografia com contraste
+  - id: epistaxe-repercussao
+    texto: Sangramento do nariz ativo, volumoso ou que não para, com sangue na garganta, tontura ou desmaio
+    porque: Epistaxe com repercussão. Perguntar uso de anticoagulante ou antiagregante; conferir sinais vitais e perfusão.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Compressão e tamponamento nasal
+      - Encaminhar à emergência se não parar ou houver instabilidade
+  - id: vertigem-neurologica
+    texto: Tontura de repente com visão dupla, fala enrolada, fraqueza, dormência ou sem conseguir ficar em pé
+    porque: Possível AVC de circulação posterior. Anotar a hora do início e a última vez sem sintomas.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente (SAMU 192)
+
+  # --- 2. Prioridade ---
+  - id: surdez-subita
+    texto: Audição caiu de uma vez ou em até 3 dias
+    porque: Possível perda auditiva neurossensorial súbita; o tratamento funciona melhor quanto antes. Ver se o exame da orelha explica (cerume, otite).
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Audiometria o quanto antes
+      - Corticoide no mesmo dia se não houver causa na orelha externa ou média
+  - id: neoplasia-cabeca-pescoco
+    texto: Rouquidão que não melhora, caroço no pescoço que persiste, dificuldade para engolir piorando ou ferida na boca que não cicatriza
+    porque: Possível câncer de cabeça e pescoço. Registrar duração, progressão, tabagismo e perda de peso; dor de ouvido de um lado com otoscopia normal também conta.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Nasofibrolaringoscopia
+      - Biópsia ou punção da lesão

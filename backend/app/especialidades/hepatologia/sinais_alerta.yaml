@@ -1,0 +1,59 @@
+# Sinais de alerta da Hepatologia — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (6 alertas), adaptado ("são modelos para servir como uma boa base"):
+# as perguntas do checklist viraram o porquê/ação. Na cirrose, comparar cognição, diurese, peso e ascite com o habitual.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: hemorragia-digestiva
+    texto: Vômito com sangue ou borra de café, fezes pretas, tontura ou desmaio
+    porque: Possível hemorragia digestiva (varizes); risco maior com cirrose, varizes conhecidas ou sangramento anterior. Conferir sinais vitais e perfusão.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Endoscopia de urgência
+  - id: infeccao-ascite
+    texto: Barriga com líquido e febre, dor na barriga, confusão nova ou piora dos rins
+    porque: Possível peritonite bacteriana espontânea ou outra infecção; internação recente ou peritonite anterior reforçam.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência (paracentese diagnóstica e antibiótico)
+  - id: encefalopatia
+    texto: Cirrose com sonolência, desorientação, troca do dia pela noite ou mudança de comportamento
+    porque: "Encefalopatia hepática. Procurar o gatilho: sangramento, infecção, intestino preso, desidratação ou sedativo novo; confirmar com o acompanhante."
+    tipo: urgencia_imediata
+    prazo: no mesmo dia
+    acao:
+      - Procurar e tratar o gatilho no mesmo dia
+      - Encaminhar à emergência se houver sonolência ou confusão importante
+  - id: insuficiencia-hepatica-aguda
+    texto: Pele ou olhos amarelos há pouco tempo com confusão ou sonolência nova
+    porque: Possível insuficiência hepática aguda. Perguntar paracetamol, remédios novos, suplementos ou intoxicação (datas e doses).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - TP/INR, bilirrubinas, glicemia e nível de paracetamol
+  - id: colangite
+    texto: Febre ou calafrios com amarelão ou dor do lado direito, embaixo das costelas
+    porque: Possível colangite; cálculo, prótese ou procedimento na via biliar reforçam.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Antibiótico e desobstrução da via biliar
+
+  # --- 2. Prioridade ---
+  - id: descompensacao-renal
+    texto: Cirrose com urina diminuindo, barriga ou pernas inchando rápido
+    porque: Piora renal ou descompensação; vômitos, diarreia, infecção, ajuste de diurético ou anti-inflamatório costumam ser a causa.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Creatinina, sódio e potássio no mesmo dia; comparar com os anteriores e o peso
+      - Suspender anti-inflamatório e rever o diurético

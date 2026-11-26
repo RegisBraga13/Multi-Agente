@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blocoRespondido, blocosDaAnamnese, blocosDoFormulario, faltaResponder } from './blocos'
+import { blocoRespondido, blocosDaAnamnese, blocosDoFormulario, blocosVisiveis, faltaResponder } from './blocos'
 import { partesPreConsulta } from './pre-consulta'
 import type { DadosPessoais } from './regras'
 
@@ -65,5 +65,24 @@ describe('blocosDaAnamnese (tela do médico)', () => {
     expect(b.map((x) => x.titulo)).toContain('Rigidez e dor 2/2')
     const ids = b.flatMap((x) => ('parte' in x ? x.parte.perguntas.map((q) => q.id) : []))
     expect(ids.sort()).toEqual(reumato.flatMap((p) => p.perguntas.map((q) => q.id)).sort())
+  })
+})
+
+describe('blocosVisiveis', () => {
+  it('some a parte cujas perguntas não se aplicam (queixa não marcada); as outras ficam', () => {
+    const todos = blocosDoFormulario(partesPreConsulta('neurologia'))
+    const titulos = (r: Record<string, string | string[]>) => blocosVisiveis(todos, 'F', r).map((b) => b.titulo)
+    expect(titulos({ motivo: ['Dor de cabeça'] })).toContain('Dor')
+    expect(titulos({ motivo: ['Dor de cabeça'] })).not.toContain('Tremor ou movimentos')
+    expect(titulos({})).toContain('Histórico de saúde')
+  })
+})
+
+describe('Estado civil e trabalho', () => {
+  it('pediatria não tem (o paciente é criança); as outras têm (autor, 26/11/2026)', () => {
+    expect(blocosDoFormulario(partesPreConsulta('pediatria')).map((b) => b.id)).not.toContain('trabalho')
+    for (const esp of ['geriatria', 'psiquiatria', 'otorrinolaringologia', 'dermatologia']) {
+      expect(blocosDoFormulario(partesPreConsulta(esp))[1].id).toBe('trabalho')
+    }
   })
 })

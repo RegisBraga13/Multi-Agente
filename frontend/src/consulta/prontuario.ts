@@ -10,6 +10,7 @@ import type { ItemDD } from './diagnosticos'
 import type { Complementar } from './exemplo'
 import { extensaoDe, type SecaoHistoria } from './historia'
 import type { ComparacaoRetorno, DadosEntrada, DiagnosticoRegistro, DocumentoRegistro, FotoRegistro, RetornoMarcado } from '../prontuario/registro'
+import { textoDaIdade } from '../modulo/dia'
 
 /** Uma linha ("• QP: texto"; rótulo vazio = só o texto). `id` estável para atualizar sem perder a edição do médico. */
 export type LinhaProntuario = { id: string; rotulo: string; texto: string }
@@ -217,7 +218,7 @@ export const secoesDaEntrada = (e: { dados: DadosEntrada; edicoes: Record<string
 
 /** Cabeçalho: "Data: … | Hora: … | Presencial" e "Paciente: … | Idade: … anos". */
 export const cabecalhoProntuario = (d: DadosConsulta, modalidade: 'presencial' | 'online') =>
-  [`Data: ${d.data}  |  Hora: ${d.hora}  |  ${modalidade === 'online' ? 'Online' : 'Presencial'}`, `Paciente: ${d.paciente}  |  Idade: ${d.idade} anos`]
+  [`Data: ${d.data}  |  Hora: ${d.hora}  |  ${modalidade === 'online' ? 'Online' : 'Presencial'}`, `Paciente: ${d.paciente}  |  Idade: ${textoDaIdade(d.idade)}`]
 
 /** Chave de uma linha (seção + id). */
 export const chave = (s: Pick<SecaoProntuario, 'id'>, l: Pick<LinhaProntuario, 'id'>) => `${s.id}.${l.id}`

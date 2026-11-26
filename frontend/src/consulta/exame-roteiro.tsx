@@ -62,6 +62,7 @@ export function ExameRoteiro({ roteiro, marcas, onMarcas, observacoes, onObserva
 
   return (
     <div className="mt-2 flex min-h-0 flex-1 flex-col">
+      {/* 10 partes ou mais (Neuro, Geriatria, Pediatria, Psiquiatria): linhas mais baixas, para a lista caber em 690 px */}
       <ol className="border-t border-linha">
         {roteiro.map((parte, i) => {
           const feita = parteFeita(parte, marcas)
@@ -69,7 +70,7 @@ export function ExameRoteiro({ roteiro, marcas, onMarcas, observacoes, onObserva
           return (
             <li key={parte.id} className="border-b border-linha">
               <button type="button" onClick={() => setAberta(i)} aria-expanded={false}
-                className="flex w-full items-baseline gap-2 py-[3px] text-left">
+                className={`flex w-full items-baseline gap-2 ${roteiro.length >= 10 ? 'py-px' : 'py-[3px]'} text-left`}>
                 <span aria-hidden className={`w-3 shrink-0 text-[13px] font-bold ${feita ? 'text-(--esp)' : 'text-apagado'}`}>{feita ? '✓' : '›'}</span>
                 <span className="shrink-0 text-[14px] font-bold">{i + 1}. {parte.titulo}</span>
                 {/* hoje e (no retorno) antes dividem a linha; o que não cabe termina em "…" (o título mostra tudo) */}
@@ -117,14 +118,14 @@ function Linhas({ parte, marcas, onMarcas }: { parte: ParteRoteiro; marcas: Marc
     const numeros = (l.numeros ?? []).map((n) => (
       <span key={n.id} className="inline-flex items-center gap-1 text-[13px]">
         {n.antes && <span className="text-apagado">{n.antes}</span>}
-        <input {...SEM_CORRETOR} inputMode="decimal" aria-label={`${l.rotulo}${n.antes ? ` ${n.antes}` : ''}`} value={valor(n.id)}
+        <input {...SEM_CORRETOR} inputMode={n.texto ? 'text' : 'decimal'} aria-label={`${l.rotulo}${n.antes ? ` ${n.antes}` : ''}`} value={valor(n.id)}
           onChange={(e) => onMarcas(escreverCampo(marcas, `${chave}#${n.id}`, e.target.value))}
-          style={{ width: n.largura ?? 40 }} className={`${CAIXA_NUMERO} ${valor(n.id) ? 'border-tinta' : 'border-linha'}`} />
+          style={{ width: n.largura ?? 40 }} className={`${CAIXA_NUMERO} ${n.texto ? 'text-left' : ''} ${valor(n.id) ? 'border-tinta' : 'border-linha'}`} />
         {n.depois && <span className="text-apagado">{n.depois}</span>}
       </span>
     ))
     const opcoes = l.opcoes.map((o) => (
-      <button key={o} type="button" aria-pressed={sel.includes(o)} onClick={() => onMarcas(alternarMarca(marcas, chave, o, l.multipla))}
+      <button key={o} type="button" aria-pressed={sel.includes(o)} onClick={() => onMarcas(alternarMarca(marcas, chave, o, l.multipla, !l.semExclusiva))}
         className={`${CHIP} ${sel.includes(o) ? 'border-tinta bg-tinta font-semibold text-papel' : 'border-linha bg-branco hover:border-tinta'}`}>
         {o}
       </button>

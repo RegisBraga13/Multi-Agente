@@ -1,0 +1,79 @@
+# Sinais de alerta da Cardiologia — lista FIXA, sempre checada (não depende só da IA).
+# Fonte: lista enviada pelo autor em 26/11/2026 (dois grupos: emergência · prioridade), com as redundâncias filtradas
+# a pedido dele: os sintomas que acompanham (falta de ar, desmaio, dor) ficam no sinal principal de cada um, sem repetir;
+# "sem os sinais da seção anterior" sai (o grupo de emergência é checado de qualquer jeito); falta de ar progressiva e
+# inchaço nas pernas viram um sinal só (insuficiência cardíaca).
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro — aprovados pelo autor em 26/11/2026.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: dor-toracica-aguda
+    texto: Dor ou aperto no peito em repouso, intenso, persistente ou que vai e volta
+    porque: Suspeita de síndrome coronariana aguda; mais grave com falta de ar, suor frio, náusea, quase desmaio ou dor que vai para braço, mandíbula ou costas.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente (SAMU 192)
+      - ECG em até 10 minutos, se disponível
+  - id: dispneia-subita
+    texto: Falta de ar súbita ou intensa, principalmente em repouso
+    porque: Suspeita de edema agudo de pulmão, embolia pulmonar ou síndrome coronariana.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Medir saturação e sinais vitais
+  - id: arritmia-sustentada
+    texto: Coração acelerado ou irregular que não passa, ou com falta de ar
+    porque: Arritmia sustentada ou instável (com dor no peito ou desmaio, valem também esses sinais).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - ECG imediato
+      - Encaminhar à emergência
+  - id: sincope-grave
+    texto: Desmaio no esforço ou com dor no peito, palpitação ou falta de ar
+    porque: Síncope de causa cardíaca (arritmia grave ou obstrução da saída do coração), mesmo com recuperação.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - ECG imediato
+      - Encaminhar à emergência
+
+  # --- 2. Prioridade (investigar em poucos dias) ---
+  - id: angina-esforco
+    texto: Desconforto no peito que volta no esforço e melhora no repouso
+    porque: Angina estável (doença coronariana).
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - ECG, perfil lipídico e glicemia
+      - Teste funcional (ergométrico ou cintilografia) conforme o quadro
+      - Dor em repouso ou que vai e volta = emergência
+  - id: insuficiencia-cardiaca
+    texto: Falta de ar que vem piorando, ao deitar ou à noite, ou inchaço novo nas pernas
+    porque: Suspeita de insuficiência cardíaca; mais grave com ganho rápido de peso.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - ECG, BNP ou NT-proBNP e ecocardiograma
+      - Pesar todo dia; falta de ar em repouso = emergência
+  - id: palpitacoes-recorrentes
+    texto: Palpitações que vêm e vão
+    porque: Arritmia paroxística a investigar.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - ECG e Holter de 24 horas
+      - TSH, hemograma e eletrólitos
+  - id: sincope-sem-causa
+    texto: Desmaio recente sem causa esclarecida, com recuperação completa
+    porque: Síncope a esclarecer; pode ser cardíaca.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - ECG e ecocardiograma
+      - Holter conforme o quadro

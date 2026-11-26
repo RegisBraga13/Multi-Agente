@@ -1,0 +1,52 @@
+# Sinais de alerta da Nefrologia — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (5 alertas), adaptado ("são modelos para servir como uma boa base"):
+# as perguntas do checklist viraram o porquê/ação; glomerulonefrite rápida e peritonite com prazo "no mesmo dia".
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: oliguria-anuria
+    texto: Parou de urinar ou passou a urinar muito pouco, de repente
+    porque: Possível lesão renal aguda. Perguntar quanto urinou e em quanto tempo, vômitos, diarreia, pressão baixa, infecção, anti-inflamatório ou contraste; comparar a creatinina com a de base.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Creatinina, potássio e ultrassom; suspender anti-inflamatório e outros nefrotóxicos
+  - id: obstrucao-infectada
+    texto: Febre ou calafrios com dor lombar e pouca ou nenhuma urina, ou em quem tem cálculo ou rim único
+    porque: Possível obstrução urinária infectada.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Ultrassom, antibiótico e desobstrução de urgência
+  - id: hipercalemia-falencia
+    texto: Potássio alto, falta de ar em repouso ou deitado, inchaço piorando rápido, confusão nova ou dor no peito
+    porque: Hipercalemia ou complicação da falência renal. Em diálise, perguntar a data da última sessão e se foi completa.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - ECG e potássio; diálise de urgência conforme o quadro
+
+  # --- 2. Prioridade ---
+  - id: glomerulonefrite-rapida
+    texto: Sangue ou proteína nova na urina com creatinina subindo rápido, ou tosse com sangue
+    porque: Possível glomerulonefrite rapidamente progressiva ou síndrome pulmão-rim. Registrar a evolução da creatinina e da urina.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Urina, creatinina seriada, ANCA, anti-MBG e complemento
+      - Tosse com sangue ou falta de ar = emergência
+  - id: peritonite-dialise
+    texto: Em diálise peritoneal, líquido turvo, dor na barriga ou febre
+    porque: Possível peritonite da diálise. Perguntar quando começou e a última troca.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Contagem de células e cultura do líquido no mesmo dia
+      - Antibiótico no líquido conforme o protocolo do centro

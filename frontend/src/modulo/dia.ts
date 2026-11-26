@@ -15,6 +15,20 @@ export function ordenarPorHorario(lista: Atendimento[]): Atendimento[] {
   return [...lista].sort((x, y) => x.inicio.localeCompare(y.inicio))
 }
 
+/** A idade como texto: até 2 anos em meses ("8 meses"); no primeiro mês em dias ("12 dias"); depois em anos
+ *  (autor, 26/11/2026). Número = anos já calculados ("52 anos"). */
+export function idadeEmTexto(nascimento: string, em: Date): string {
+  const n = paraData(nascimento)
+  const meses = (em.getFullYear() - n.getFullYear()) * 12 + em.getMonth() - n.getMonth() - (em.getDate() < n.getDate() ? 1 : 0)
+  if (meses < 1) {
+    const dias = Math.round((new Date(em.getFullYear(), em.getMonth(), em.getDate()).getTime() - n.getTime()) / 86_400_000)
+    return `${dias} ${dias === 1 ? 'dia' : 'dias'}`
+  }
+  if (meses < 24) return `${meses} ${meses === 1 ? 'mês' : 'meses'}`
+  return `${idade(nascimento, em)} anos`
+}
+export const textoDaIdade = (idade: number | string) => (typeof idade === 'number' ? `${idade} ${idade === 1 ? 'ano' : 'anos'}` : idade)
+
 export function idade(nascimento: string, em: Date): number {
   const n = paraData(nascimento)
   let anos = em.getFullYear() - n.getFullYear()

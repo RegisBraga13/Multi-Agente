@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Literal
 from pydantic import Field, model_validator
 
 from app.contratos.base import ModeloApi
-from app.privacidade import descrever_paciente
+from app.privacidade import descrever_paciente, idade_em_texto
 
 if TYPE_CHECKING:  # só tipos: os blocos importam os motores, que importam este módulo
     from app.contratos.consulta_blocos import AnamneseBloco, ExameBloco
@@ -110,10 +110,8 @@ def entrada_da_consulta(
     paciente: "Paciente", anamnese: "AnamneseBloco", exame: "ExameBloco", quando: date
 ) -> EntradaConsulta:
     """A entrada da IA a partir do paciente e dos blocos oficializados: sem nome, CPF nem telefone."""
-    n = paciente.nascimento
-    idade = quando.year - n.year - ((quando.month, quando.day) < (n.month, n.day))
     return EntradaConsulta(
-        paciente=descrever_paciente(idade, paciente.sexo, paciente.estado_civil, paciente.profissao),
+        paciente=descrever_paciente(idade_em_texto(paciente.nascimento, quando), paciente.sexo, paciente.estado_civil, paciente.profissao),
         em_uso=anamnese.em_uso,
         antecedentes=anamnese.antecedentes,
         alergias=anamnese.alergias,

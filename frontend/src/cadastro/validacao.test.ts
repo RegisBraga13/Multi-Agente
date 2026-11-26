@@ -29,7 +29,7 @@ describe('validarCadastro', () => {
 
   it('recusa especialidade inexistente ou ainda em breve', () => {
     expect(validarCadastro({ ...valido, especialidade: 'xyz' }).especialidade).toBeDefined()
-    expect(validarCadastro({ ...valido, especialidade: 'neurologia' }).especialidade).toMatch(/ainda não/)
+    expect(validarCadastro({ ...valido, especialidade: 'ortopedia' }).especialidade).toMatch(/ainda não/)
   })
 
   it('exige e-mail, nome, senha forte e aceite', () => {

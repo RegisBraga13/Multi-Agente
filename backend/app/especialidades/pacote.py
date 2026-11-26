@@ -29,7 +29,7 @@ class _Modelo(BaseModel):
 
 
 TipoSinal = Literal["urgencia_imediata", "prioridade", "muda_tratamento"]
-Prazo = Literal["imediato", "em dias", "em semanas", "antes de prescrever"]
+Prazo = Literal["imediato", "no mesmo dia", "em dias", "em semanas", "antes de prescrever"]
 
 
 class SinalAlerta(_Modelo):

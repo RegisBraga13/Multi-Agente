@@ -4,7 +4,7 @@ import { Campo } from './campo'
 import { CamposIdentificacao } from './campos-identificacao'
 import { btnSecundario, classeEntrada } from './estilos'
 import { enviarFormulario, ErroServidor, lerComoBase64 } from '../servidor/agenda'
-import { blocoRespondido, blocosDoFormulario, faltaResponder, type Bloco } from './blocos'
+import { blocoRespondido, blocosDoFormulario, blocosVisiveis, faltaResponder, type Bloco } from './blocos'
 import { GrupoOpcoes } from './opcoes'
 import { TextoCrescente } from './texto-crescente'
 import { alternarOpcao, chaveDaLinha, partesPreConsulta, perguntaTrabalho, perguntaVisivel, type Pergunta, type RespostasPreConsulta } from './pre-consulta'
@@ -20,7 +20,7 @@ const SIM_NAO = [{ valor: 'sim', rotulo: 'Sim' }, { valor: 'nao', rotulo: 'Não'
 const comoOpcoes = (lista: readonly string[]) => lista.map((t) => ({ valor: t, rotulo: t }))
 /** Texto longo, foto e listas grandes de opções ocupam a linha toda; o resto divide a linha no PC. */
 const ocupaLinhaToda = (q: Pergunta) =>
-  q.linhaToda || q.escala || q.duasColunas || q.tipo === 'texto-longo' || q.tipo === 'foto' || q.tipo === 'arquivos' || (q.opcoes ?? []).join('').length > 28
+  q.linhaToda || q.escala || q.duasColunas || q.tresColunas || q.tipo === 'texto-longo' || q.tipo === 'foto' || q.tipo === 'arquivos' || (q.opcoes ?? []).join('').length > 28
 const semChave = <T,>(r: Record<string, T>, chave: string) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== chave))
 
 /** Formulário do paciente, aberto dentro da página logo depois do pedido enviado. */
@@ -41,7 +41,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
   const [pronto, setPronto] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [erroEnvio, setErroEnvio] = useState<string | null>(null)
-  const blocos = blocosDoFormulario(partes)
+  const blocos = blocosVisiveis(blocosDoFormulario(partes), dados.sexo, pre)
   const [etapa, setEtapa] = useState(0)
   const tituloBloco = useRef<HTMLHeadingElement>(null)
   const primeiraEtapa = useRef(true)
@@ -126,7 +126,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
       const linha = pre[chaveDaLinha(q.id)]
       return (
         <div key={q.id} className="grid gap-1.5">
-          <GrupoOpcoes rotulo={q.rotulo} ajuda={q.ajuda} modo={q.tipo === 'escolha' ? 'uma' : 'varias'} duasColunas={q.duasColunas} compacto={compacto}
+          <GrupoOpcoes rotulo={q.rotulo} ajuda={q.ajuda} modo={q.tipo === 'escolha' ? 'uma' : 'varias'} duasColunas={q.duasColunas} tresColunas={q.tresColunas} compacto={compacto}
             opcoes={comoOpcoes(q.opcoes ?? [])} marcadas={marcadas}
             onAlternar={(o) => mudaPre(q.id, q.tipo === 'escolha' ? o : alternarOpcao(marcadas, o, q.exclusiva))}
             aoLado={q.abreLinha ? {
@@ -287,7 +287,7 @@ export function FormularioPaciente({ medico, token, pedido, onConcluir }: Props)
             // no PC, perguntas curtas lado a lado; as longas ocupam a linha toda
             <div className="grid gap-3.5 sm:grid-flow-row-dense sm:grid-cols-[3fr_2fr] sm:gap-x-5">
               {b.parte.perguntas.filter((q) => perguntaVisivel(q, dados.sexo, pre)).map((q) => (
-                <div key={q.id} className={ocupaLinhaToda(q) ? 'sm:col-span-2' : ''}>{campoPergunta(q)}</div>
+                <div key={q.id} className={ocupaLinhaToda(q) ? 'sm:col-span-2' : ''}>{campoPergunta(q, b.parte.compacta)}</div>
               ))}
             </div>
           )}

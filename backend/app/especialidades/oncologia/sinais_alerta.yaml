@@ -1,0 +1,68 @@
+# Sinais de alerta da Oncologia — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (5 alertas), adaptado ("são modelos para servir como uma boa base"):
+# as perguntas do checklist viraram o porquê/ação; compressão medular e tromboembolismo viraram dois sinais cada
+# (com déficit/embolia = emergência; dor nova na coluna/perna inchada = mesmo dia).
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: sepse-neutropenica
+    texto: Febre, calafrios ou piora aguda depois de quimioterapia
+    porque: Possível sepse neutropênica. Perguntar data do último ciclo e última contagem de neutrófilos.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Hemograma, culturas e antibiótico na primeira hora
+  - id: compressao-medular
+    texto: Dor na coluna com fraqueza, dormência, dificuldade para andar ou perda do controle da urina ou fezes
+    porque: Possível compressão da medula. Registrar início e progressão.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Ressonância da coluna de urgência; corticoide conforme o quadro
+  - id: embolia-pulmonar
+    texto: Falta de ar súbita, dor no peito ao respirar, tosse com sangue ou desmaio
+    porque: Suspeita de embolia pulmonar.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+
+  # --- 2. Prioridade ---
+  - id: dor-coluna-nova
+    texto: Dor nova ou que vem piorando na coluna, sem fraqueza nem dormência
+    porque: Pode ser metástase óssea antes da compressão da medula.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Ressonância da coluna com prioridade
+      - Fraqueza, dormência ou perda do controle da urina = emergência
+  - id: trombose-membro
+    texto: Dor e inchaço novos em um braço ou perna
+    porque: Suspeita de trombose venosa profunda.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Ultrassom com doppler no mesmo dia
+      - Falta de ar, dor ao respirar ou desmaio = emergência
+  - id: veia-cava-superior
+    texto: Inchaço no rosto, pescoço ou braços, com falta de ar, rouquidão ou piora ao deitar
+    porque: Possível obstrução da veia cava superior.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Tomografia de tórax no mesmo dia
+      - Estridor ou falta de ar em repouso = emergência
+  - id: toxicidade-imunoterapia
+    texto: Em imunoterapia, diarreia nova, sangue nas fezes, tosse ou falta de ar, dor no peito, olhos amarelos ou fraqueza forte
+    porque: Possível toxicidade da imunoterapia. Registrar o remédio e a última dose.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Avaliar no mesmo dia e classificar o grau
+      - Corticoide e suspensão conforme o grau; grave = emergência

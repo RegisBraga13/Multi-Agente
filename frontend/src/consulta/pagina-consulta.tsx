@@ -6,7 +6,7 @@ import { estiloAlergia } from '../alergia'
 import { buscarEspecialidade, type Especialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
 import { NaoEncontrada } from '../nao-encontrada'
-import { idade } from '../modulo/dia'
+import { idadeEmTexto } from '../modulo/dia'
 import type { Atendimento } from '../modulo/tipos'
 import { Anamnese } from './anamnese'
 import { ETAPAS, estadoDoServidor, soAlergias, editar, ehEtapa, inicial, oficializar, pendenciasAnamnese, podeOficializar, podeGravar, responderAlerta, situacaoDaEtapa } from './etapas'
@@ -507,7 +507,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
   const [docs, setDocs] = useState<{ versao: number; itens: Anexo[] } | null>(null)
   const dados: DadosConsulta = {
     paciente: at.paciente.nome,
-    idade: idade(at.paciente.nascimento, new Date()),
+    idade: idadeEmTexto(at.paciente.nascimento, new Date()),
     data: dia.split('-').reverse().join('/'),
     hora: at.inicio,
   }
@@ -693,7 +693,7 @@ function Consulta({ esp, at, etapa, formulario, servidor, anteriores, dia: diaDo
           <Link to={`/modulo/${esp.slug}`} className="no-underline" aria-label={`${esp.raiz}IA, início`}><NomeModulo esp={esp} className="text-[26px]" /></Link>
           <p className="text-[15px]">
             <b className="text-[17px]">{at.paciente.nome}</b>
-            <span className="text-apagado">{at.paciente.nascimento && ` · ${idade(at.paciente.nascimento, new Date())} anos`} · {at.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · {at.modalidade === 'online' ? 'Online' : 'Presencial'}</span>
+            <span className="text-apagado">{at.paciente.nascimento && ` · ${idadeEmTexto(at.paciente.nascimento, new Date())}`} · {at.tipo === 'consulta' ? 'Consulta' : 'Retorno'} · {at.modalidade === 'online' ? 'Online' : 'Presencial'}</span>
           </p>
           {alergias.map((a) => (
             <span key={a.substancia} className="bg-alerta-clinico px-2.5 py-1 text-[13px] text-branco">

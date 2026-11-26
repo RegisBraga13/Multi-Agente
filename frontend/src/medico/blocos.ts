@@ -1,6 +1,6 @@
 // Blocos do formulário do paciente: uma parte por tela. Obrigatória: só a Identificação (alergias ficam em Saúde geral, opcional).
 // O resto pode ser pulado.
-import { perguntaVisivel, type Parte, type RespostasPreConsulta } from './pre-consulta'
+import { perguntaVisivel, temParteTrabalho, type Parte, type RespostasPreConsulta } from './pre-consulta'
 import { validarDadosPessoais, type DadosPessoais } from './regras'
 
 export type Bloco =
@@ -10,7 +10,8 @@ export type Bloco =
 export function blocosDoFormulario(partes: Parte[]): Bloco[] {
   return [
     { id: 'identificacao', titulo: 'Identificação', obrigatorio: true },
-    { id: 'trabalho', titulo: 'Estado civil e trabalho', obrigatorio: false },
+    // Pediatria: o paciente é criança, sem estado civil nem trabalho (autor, 26/11/2026)
+    ...(temParteTrabalho(partes) ? [{ id: 'trabalho' as const, titulo: 'Estado civil e trabalho', obrigatorio: false }] : []),
     ...partes.map((parte, i) => ({ id: `parte-${i}`, titulo: parte.titulo, obrigatorio: parte.perguntas.some((q) => q.obrigatoria), parte })),
   ]
 }
@@ -28,6 +29,11 @@ export const blocosDaAnamnese = (partes: Parte[]): Bloco[] =>
       return { ...b, id: `${b.id}-${i + 1}`, titulo, parte }
     })
   })
+
+/** Some a parte cujas perguntas dependem todas de outra resposta e nenhuma se aplica (ex.: "Dor de cabeça" só para quem
+ *  marcou dor de cabeça no motivo): sem tela vazia. As partes que vêm antes nunca mudam de lugar. */
+export const blocosVisiveis = (blocos: Bloco[], sexo: DadosPessoais['sexo'], respostas: RespostasPreConsulta): Bloco[] =>
+  blocos.filter((b) => !('parte' in b) || b.parte.perguntas.some((q) => perguntaVisivel(q, sexo, respostas)))
 
 type Estado = { dados: DadosPessoais; respostas: RespostasPreConsulta; fotos: string[]; hoje: Date }
 

@@ -1,0 +1,75 @@
+# Sinais de alerta da Cirurgia Geral — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (8 alertas), adaptado ("são modelos para servir como uma boa base"):
+# as perguntas do checklist viraram o porquê/ação. Nos quadros agudos, registrar a hora de início.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: abdome-agudo-peritoneal
+    texto: Dor na barriga súbita ou piorando rápido, contínua ou espalhada, com barriga dura
+    porque: Possível abdome agudo com irritação peritoneal. Conferir sinais vitais, perfusão, defesa involuntária e rigidez; registrar a hora de início.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Jejum; sem analgésico que atrase a avaliação cirúrgica
+  - id: obstrucao-intestinal
+    texto: Barriga inchando, vômitos ou sem eliminar gases e fezes
+    porque: "Possível obstrução intestinal; cirurgia abdominal anterior ou hérnia reforçam. Perguntar quando foi a última eliminação de gases e fezes."
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Jejum e exame de imagem do abdome
+  - id: hernia-encarcerada
+    texto: Hérnia que voltava para dentro e deixou de voltar, com dor nova, vômitos ou pele escurecida
+    porque: Possível hérnia encarcerada ou estrangulada. Registrar desde quando não reduz.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência para avaliação cirúrgica imediata
+  - id: isquemia-mesenterica
+    texto: Dor na barriga súbita e forte, maior do que o exame mostra
+    porque: Possível isquemia mesentérica; fibrilação atrial, doença vascular ou queda de pressão recente reforçam.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Lactato e angiotomografia do abdome
+  - id: infeccao-biliar
+    texto: Febre ou calafrios com amarelão ou dor do lado direito, embaixo das costelas
+    porque: Possível colecistite ou colangite; procedimento recente ou prótese na via biliar reforçam. Conferir sinais de instabilidade.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Hemograma, bilirrubinas e ultrassom do abdome
+  - id: hemorragia-digestiva
+    texto: Vômito com sangue, fezes pretas ou sangue vivo nas fezes, com tontura ou desmaio
+    porque: Possível hemorragia digestiva. Estimar o volume; anticoagulante ou antiagregante reforçam. Conferir sinais vitais e perfusão.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Hemograma e endoscopia ou colonoscopia de urgência
+  - id: tromboembolismo-pos-operatorio
+    texto: Depois da cirurgia, falta de ar súbita, dor no peito ao respirar, sangue na tosse ou perna inchada de um lado
+    porque: Possível trombose venosa ou embolia pulmonar no pós-operatório. Registrar a data da cirurgia e quanto o paciente tem andado.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Angiotomografia de tórax ou ultrassom Doppler da perna
+
+  # --- 2. Prioridade ---
+  - id: complicacao-ferida
+    texto: Depois da cirurgia, febre, dor crescente, vermelhidão aumentando, pus ou ferida aberta
+    porque: Possível infecção ou deiscência da ferida operatória. Registrar o dia pós-operatório, a evolução e o aspecto da ferida.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Examinar a ferida no mesmo dia; abrir e drenar se houver coleção
+      - Encaminhar à emergência se houver febre alta, sinais de sepse ou evisceração

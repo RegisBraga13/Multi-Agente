@@ -1,0 +1,119 @@
+{"item": "pedido registrado", "ok": true, "detalhe": "25/11 (quarta) · 10h"}
+{"item": "a03-form-1-identificacao: cabe em 690 px", "ok": false, "detalhe": "altura 890px"}
+{"item": "a04-form-2: cabe em 690 px", "ok": false, "detalhe": "altura 706px"}
+{"item": "a05-form-3-queixa: cabe em 690 px", "ok": false, "detalhe": "altura 766px"}
+{"item": "a06-form-4: cabe em 690 px", "ok": false, "detalhe": "altura 900px"}
+{"item": "a07-form-5: cabe em 690 px", "ok": false, "detalhe": "altura 715px"}
+{"item": "a08-form-6-saude: cabe em 690 px", "ok": false, "detalhe": "altura 715px"}
+{"item": "a09-form-7: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "a10-form-8-fotos: cabe em 690 px", "ok": false, "detalhe": "altura 842px"}
+{"item": "a11-form-revisao: cabe em 690 px", "ok": false, "detalhe": "altura 817px"}
+{"item": "formulário enviado", "ok": true, "detalhe": ""}
+{"item": "a12-modulo-inicial: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "a13-agenda-cartao: cabe em 690 px", "ok": false, "detalhe": "altura 710px"}
+{"item": "cartão: ficha pronta com a alergia", "ok": true, "detalhe": ""}
+{"item": "cartão: etiqueta \"Pedido novo\"", "ok": true, "detalhe": ""}
+{"item": "confirmar tira \"Pedido novo\"", "ok": true, "detalhe": ""}
+{"item": "a14-consulta-pagina1: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "topo da consulta: tarja de alergia", "ok": true, "detalhe": ""}
+{"item": "topo: idade e tipo", "ok": true, "detalhe": "dermatologIA  Gabriel Teste Nunes · 38 anos · Consulta · Presencial  ALERGIAPenicilina Anexos Anamnese Formulário Gravar"}
+{"item": "a15-anamnese-formulario: cabe em 690 px", "ok": false, "detalhe": "altura 704px"}
+{"item": "formulário vira texto no começo da caixa (com alergia)", "ok": true, "detalhe": "Identificação: Gabriel Teste Nunes, 38 anos, sexo M, Fortaleza/CE. / Estado civil e trabalho: Casado(a), Pedreiro, trabalha exposto ao sol ou "}
+{"item": "a16-anamnese-pronta: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "a17-exame-preenchido: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "a18-historia-gerada: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "recarregar na História: não volta a página antiga de simulação", "ok": true, "detalhe": ""}
+{"item": "a19-historia-recarregada: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "Perguntas: \"Alergias\" aparece sempre (7.3)", "ok": true, "detalhe": "etiqueta Alergias em Perguntas"}
+{"item": "anamnese não salva sem responder o sinal de alerta (alergia V/F)", "ok": true, "detalhe": "botão bloqueado até responder"}
+{"item": "recarregar: anamnese salva volta", "ok": true, "detalhe": ""}
+{"item": "recarregar: exame salvo antes volta", "ok": true, "detalhe": ""}
+{"item": "a20-pagina1-recarregada: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "a21-historia: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "exame salvo ANTES da anamnese: após recarregar continua salvo", "ok": false, "detalhe": "a tela mostrou ✓ Salvo, mas o servidor só oficializa o exame depois da anamnese; ao recarregar o exame perde o 'salvo' e a História fica bloqueada até salvar o exame de novo"}
+{"item": "exame recarregado: valores do médico não aparecem como sugestão da IA", "ok": false, "detalhe": "voltam tracejados ('Tracejado = sugestão da IA') embora digitados pelo médico"}
+{"item": "sinal de alerta respondido (V) aparece marcado ao recarregar", "ok": false, "detalhe": "após recarregar, nem V nem F aparecem marcados (anamnese consta Salvo)"}
+{"item": "a22-historia-escrita: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "a23-diagnosticos: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "DD: \"Para relembrar\" com a alergia da ficha", "ok": true, "detalhe": "PARA RELEMBRAR · DA HISTÓRIA SALVA ·  · Alergia a Penicilina (reação não informada) · Antecedentes · V · F · Losartana 50 mg · Antecedentes · V · F · Mouse em cima = embasamento · Clique = confirmar · × = descartar · + ="}
+{"item": "DD: \"Para relembrar\" com o remédio em uso", "ok": true, "detalhe": ""}
+{"item": "a24-diagnosticos-recarregado: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "recarregar nos Diagnósticos: lista e \"Para relembrar\" voltam", "ok": true, "detalhe": ""}
+{"item": "diagnóstico do médico não duplica", "ok": true, "detalhe": ""}
+{"item": "a25-diagnostico-medico: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "a26-conduta: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "Conduta: alergia no topo", "ok": true, "detalhe": ""}
+{"item": "a27-conduta-montada: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "conduta: sem texto livre da IA (só opções escolhidas)", "ok": true, "detalhe": ""}
+{"item": "a28-anexos: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "a29-receita: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "receita: alergia/nome/data no documento", "ok": true, "detalhe": ""}
+{"item": "a30-anexos-enviados: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "a31-retorno-escolhido: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "agenda do retorno vai até ~15 dias", "ok": true, "detalhe": "12 dias; último: terça-feira, 8 de dezembro, 5 horários livres"}
+{"item": "recarregar no Prontuário: abre o prontuário (não pede salvar anexos)", "ok": true, "detalhe": ""}
+{"item": "prontuário: termina com o retorno marcado", "ok": true, "detalhe": ""}
+{"item": "prontuário: AP com a alergia", "ok": true, "detalhe": ""}
+{"item": "prontuário: HD com o diagnóstico do médico", "ok": true, "detalhe": ""}
+{"item": "a34-apos-finalizar: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "servidor: entrada 'Consulta 1' gravada com retorno, diagnósticos e receita", "ok": true, "detalhe": "retornoMarcado 08/12 08:00; Dermatite de contato assinalado; clobetasol + loratadina"}
+{"item": "servidor: finalizar de novo é recusado (entrada imutável)", "ok": true, "detalhe": "409"}
+{"item": "servidor: mexer na consulta finalizada é recusado", "ok": true, "detalhe": "409"}
+{"item": "servidor: adendo aceito depois de finalizar", "ok": true, "detalhe": "201"}
+{"item": "b01-agenda-retorno: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "cartão Retorno: etiqueta Retorno + ficha do prontuário com alergia", "ok": true, "detalhe": ""}
+{"item": "b02-evolucao: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "retorno: tarja de alergia do prontuário", "ok": true, "detalhe": ""}
+{"item": "retorno: título Evolução, sem Formulário", "ok": true, "detalhe": ""}
+{"item": "b03-evolucao-preenchida: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "b04-historia-evolucao: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "História da evolução: compara a extensão com a consulta 1", "ok": true, "detalhe": ""}
+{"item": "História da evolução: respostas abertas entram", "ok": true, "detalhe": ""}
+{"item": "recarregar na História da evolução: as 3 partes ficam completas", "ok": true, "detalhe": ""}
+{"item": "recarregar na Evolução: respostas abertas voltam", "ok": true, "detalhe": ""}
+{"item": "b05-diagnosticos-retorno: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "retorno DD: \"Para relembrar\" com alergia do prontuário", "ok": true, "detalhe": "PARA RELEMBRAR · DA HISTÓRIA SALVA ·  · Alergia a Penicilina (reação não informada) · Antecedentes · V · F · Mouse em cima = embasamento · Clique = confirmar · × = descartar · + = mais uma da IA · V/F = sim/não · S"}
+{"item": "retorno DD: diagnósticos antigos não aparecem na tela (14.5)", "ok": true, "detalhe": ""}
+{"item": "b06-conduta-retorno: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "retorno conduta: nada marcado, sem \"Manter\" (14.6)", "ok": true, "detalhe": ""}
+{"item": "conduta não salva sem abrir todos os grupos", "ok": true, "detalhe": "Falta abrir 1 grupo"}
+{"item": "retorno: recarregar na Conduta mantém a alergia no topo", "ok": false, "detalhe": "depois de recarregar, o topo da Conduta (e o 'Para relembrar') diz 'Alergias: não informado'; antes dizia 'Alergia a Penicilina'"}
+{"item": "conduta: escolhas ainda não salvas sobrevivem ao recarregar", "ok": false, "detalhe": "menor: recarregar antes de salvar a conduta apaga as escolhas (grupos ficam abertos com 'Nada escolhido')"}
+{"item": "b07-conduta-retorno-montada: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "b08-anexos-retorno: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "retorno anexos: sem a escolha de Retorno (um só por consulta)", "ok": true, "detalhe": ""}
+{"item": "prontuário do retorno: HD \"Confirmado\" sem %", "ok": true, "detalhe": ""}
+{"item": "prontuário do retorno: conduta só o que mudou (Suspenso: Loratadina)", "ok": true, "detalhe": ""}
+{"item": "prontuário do retorno: não repete QP/HDA/AP", "ok": true, "detalhe": ""}
+{"item": "prontuário do retorno: orientações só as novas", "ok": true, "detalhe": "(sem linha de orientações)"}
+{"item": "recarregar no Prontuário do retorno: continua aberto", "ok": true, "detalhe": ""}
+{"item": "cartão B: \"Sem ficha\", só nome/horário/situação (6.3)", "ok": true, "detalhe": ""}
+{"item": "c04-identificacao-chegada: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "paciente B: pedido sem formulário (\"Prefiro preencher na consulta\" pede confirmação) e \"Pedido enviado\"", "ok": true, "detalhe": "quarta-feira, 25 de novembro, às 08:00"}
+{"item": "chegada sem formulário: abre a Identificação antes da consulta", "ok": true, "detalhe": "nome e WhatsApp já preenchidos"}
+{"item": "c05-pagina1-sem-formulario: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "sem formulário: topo com idade (51 anos)", "ok": true, "detalhe": ""}
+{"item": "c06-diagnosticos-b: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "sem alergia: \"Para relembrar\" diz que nega alergias (F)", "ok": true, "detalhe": "PARA RELEMBRAR · DA HISTÓRIA SALVA ·  · Alergias · Antecedentes · V · F · Comorbidades · Antecedentes · V · F · Medicamentos em uso · Antecedentes · V · F · Mouse em cima = embasamento · Clique = confirmar · × = descartar · + = "}
+{"item": "c07-conduta-b: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "sem formulário: o que não foi respondido vira Perguntas, com Alergias (7.3)", "ok": false, "detalhe": "no modo Escrever, sem gravar e sem abrir o Formulário, a lista Perguntas não aparece (nem Alergias); só aparece depois de Gravar ou do Formulário"}
+{"item": "c08-conduta-b-montada: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "c09-anexos-retorno-nao: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "prontuário B: termina com \"Sem retorno\"", "ok": true, "detalhe": ""}
+{"item": "Gabriel: segundo pedido com formulário enviado", "ok": true, "detalhe": ""}
+{"item": "d01-cartao-segunda-consulta: cabe em 690 px", "ok": false, "detalhe": "altura 710px"}
+{"item": "2ª consulta: cartão tem link \"Prontuário\" (já tem histórico)", "ok": false, "detalhe": ""}
+{"item": "d02-segunda-consulta-pagina1: cabe em 690 px", "ok": true, "detalhe": "altura 690px"}
+{"item": "2ª consulta: abre como Consulta (anamnese), nunca Retorno", "ok": true, "detalhe": ""}
+{"item": "2ª consulta: botão Prontuário no topo", "ok": false, "detalhe": ""}
+{"item": "2ª consulta (paciente com prontuário): cartão e topo mostram a alergia conhecida", "ok": false, "detalhe": "servidor liga ao mesmo paciente (ok), mas o cartão diz 'Alergias: nenhuma informada' e a consulta não tem tarja vermelha — a penicilina do prontuário só aparece se o paciente responder de novo no formulário"}
+{"item": "2ª consulta: link/botão 'Prontuário' no cartão e no topo", "ok": false, "detalhe": "não aparecem para consulta nova de quem já tem prontuário (só no retorno)"}
+{"item": "título das entradas não muda depois de finalizada", "ok": false, "detalhe": "a numeração é recalculada pela data/hora MARCADA: a 2ª consulta, marcada às 09:00 do mesmo dia (antes das 10:30 da 1ª), virou 'Consulta 1' e renomeou as já finalizadas ('Consulta 1'→'Consulta 2', 'Consulta 1 — Retorno'→'Consulta 2 — Retorno'); a comparação do retorno gravada diz 'Consulta 1'"}
+{"item": "2ª consulta do mesmo paciente é consulta (nunca retorno) e liga ao mesmo paciente", "ok": true, "detalhe": "tipo consulta, mesmo pacienteId"}
+{"item":"textos ao paciente: sempre \"seu médico\" (sem gênero/especialidade)","ok":true,"detalhe":"nenhum texto com gênero/especialidade"}
+{"item":"agendamento: online aparece como opção","ok":true,"detalhe":""}
+{"item":"e01-lista-prontuarios: cabe em 690 px","ok":true,"detalhe":"altura 690px"}
+{"item":"lista de prontuários: Gabriel com 3 entradas, Igor com 1","ok":true,"detalhe":"Gabriel Teste Nunes · Nasc. 21/07/1988 · 3 entradas · última em 08/12/2026 · Carla M"}
+{"item":"prontuário: só leitura, entradas com Adendo, mais recente no topo","ok":true,"detalhe":""}
+{"item":"prontuário: adendo do teste aparece","ok":true,"detalhe":""}
+{"item":"prontuário: nada editável (fora do adendo)","ok":true,"detalhe":"0 campos editáveis"}

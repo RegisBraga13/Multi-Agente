@@ -57,3 +57,16 @@ def test_sinal_sem_acao_e_recusado(tmp_path):
     (tmp_path / "x" / "sinais_alerta.yaml").write_text(yaml.safe_dump(dados, allow_unicode=True), encoding="utf-8")
     with pytest.raises(PacoteInvalido):
         carregar_sinais("x", raiz=tmp_path)
+
+
+def test_todas_as_especialidades_carregam():
+    """Cada pasta com sinais e prompts abre sem erro (um dois-pontos solto no YAML derruba a consulta inteira)."""
+    from app.especialidades.prompts import carregar_prompt
+    from app.especialidades.registro import carregar_pacote, especialidades_disponiveis
+
+    esps = especialidades_disponiveis()
+    assert {"geriatria", "pediatria", "psiquiatria", "otorrinolaringologia", "pneumologia", "hepatologia", "cirurgia-geral"} <= set(esps)
+    for esp in esps:
+        assert carregar_pacote(esp).sinais
+        for nome in ("sinais", "perguntas", "historia", "diagnosticos", "conduta", "avaliadora"):
+            assert carregar_prompt(esp, nome)

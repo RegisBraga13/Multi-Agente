@@ -1,0 +1,59 @@
+# Sinais de alerta da Ginecologia — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (6 alertas), adaptado ("são modelos para servir como uma boa base"):
+# as perguntas do checklist viraram o porquê/ação; "possibilidade de gestação" do sangramento agudo vai para a ação.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: gestacao-ectopica
+    texto: Atraso, teste positivo ou chance de gravidez, com dor pélvica ou sangramento
+    porque: Possível gestação ectópica; mais grave com dor no ombro, tontura ou desmaio. Confirmar a DUM, o teste e o início dos sintomas.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Beta-hCG e ultrassom transvaginal de urgência
+  - id: torcao-anexial
+    texto: Dor pélvica súbita e forte, de um lado, com náusea ou vômitos
+    porque: Possível torção do ovário (mais suspeita com cisto ou massa conhecida ou dor que vai e volta).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Ultrassom com doppler e avaliação cirúrgica
+  - id: sangramento-agudo
+    texto: Sangramento intenso agora (absorventes encharcados), com coágulos, tontura, desmaio ou falta de ar
+    porque: Sangramento uterino agudo importante. Perguntar quantos absorventes e em quanto tempo.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Sinais vitais, hemograma e beta-hCG
+
+  # --- 2. Prioridade ---
+  - id: infeccao-pelvica
+    texto: Dor pélvica com febre, corrimento diferente, dor na relação ou sangramento fora do normal
+    porque: Possível doença inflamatória pélvica (dor à mobilização do colo ou anexial ao exame).
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Exame especular e bimanual; beta-hCG
+      - Febre alta, vômitos ou suspeita de abscesso = emergência
+  - id: sangramento-pos-menopausa
+    texto: Qualquer sangramento depois da menopausa, mesmo pequeno
+    porque: Investigar câncer de endométrio. Perguntar terapia hormonal ou tamoxifeno.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Ultrassom transvaginal e avaliação do endométrio
+  - id: neoplasia-ginecologica
+    texto: Sangramento na relação que se repete, ferida na vulva que não sara, massa pélvica, barriga inchada ou saciedade precoce
+    porque: Possível câncer de colo, vulva ou ovário.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Exame especular, preventivo e colposcopia conforme o achado
+      - Ultrassom pélvico; biópsia conforme o achado

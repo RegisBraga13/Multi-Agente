@@ -5,7 +5,7 @@ import { buscarEspecialidade, type Especialidade } from '../especialidades'
 import { Marca, NomeModulo } from '../marca'
 import { NaoEncontrada } from '../nao-encontrada'
 import { dataLocal, MEDICO_EXEMPLO, medicoDoModulo } from '../medico/exemplo'
-import { dataPorExtenso, idade, janelaDeHoje, saudacao, somarDias, vistaDoModulo } from './dia'
+import { dataPorExtenso, idadeEmTexto, janelaDeHoje, saudacao, somarDias, vistaDoModulo } from './dia'
 import type { Atendimento } from './tipos'
 import { abrirJanelaProntuario } from '../prontuario/registro'
 import { reiniciarPaciente } from '../prontuario/chave'
@@ -374,7 +374,7 @@ function PainelFicha({ classeAlergia, at, agora, onFechar, onProntuario, pedido,
       <p className={ROTULO}>{f.situacao === 'pronta' ? `Ficha recebida · ${f.recebidaAs}` : f.situacao === 'retorno' ? 'Retorno · ficha do prontuário' : at.pedido ? `Pedido recebido · ${at.pedido.chegouAs}` : `Paciente das ${at.inicio}`}</p>
       <h2 ref={titulo} tabIndex={-1} className="mt-1 pr-6 text-[22px] leading-tight font-semibold outline-none">{at.paciente.nome}</h2>
       <p className="mt-0.5 text-[14px] text-apagado">
-        {[at.paciente.nascimento && `${idade(at.paciente.nascimento, agora)} anos`, at.pagamento].filter(Boolean).join(' · ')}
+        {[at.paciente.nascimento && idadeEmTexto(at.paciente.nascimento, agora), at.pagamento].filter(Boolean).join(' · ')}
         {at.pedido && <> · WhatsApp {formatarWhatsapp(at.pedido.whatsapp)}</>}
       </p>
 

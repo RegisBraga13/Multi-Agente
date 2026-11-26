@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dataPorExtenso, idade, janelaDeHoje, ordenarPorHorario, proximoPaciente, saudacao, somarDias, vistaDoModulo } from './dia'
+import { dataPorExtenso, idade, idadeEmTexto, janelaDeHoje, ordenarPorHorario, proximoPaciente, saudacao, somarDias, vistaDoModulo } from './dia'
 import type { Atendimento } from './tipos'
 
 function at(id: string, inicio: string, atendido = false): Atendimento {
@@ -82,5 +82,18 @@ describe('vistaDoModulo', () => {
   it('#agenda abre a agenda; o resto, o início', () => {
     expect(vistaDoModulo('#agenda')).toBe('agenda')
     for (const h of ['', '#', '#inicio', '#x']) expect(vistaDoModulo(h)).toBe('inicio')
+  })
+})
+
+describe('idadeEmTexto (autor, 26/11/2026)', () => {
+  it('até 2 anos em meses; no primeiro mês em dias; depois em anos', () => {
+    const hoje = new Date(2026, 10, 26)
+    expect(idadeEmTexto('2026-11-14', hoje)).toBe('12 dias')
+    expect(idadeEmTexto('2026-11-25', hoje)).toBe('1 dia')
+    expect(idadeEmTexto('2026-10-26', hoje)).toBe('1 mês')
+    expect(idadeEmTexto('2026-03-27', hoje)).toBe('7 meses')
+    expect(idadeEmTexto('2024-11-27', hoje)).toBe('23 meses')
+    expect(idadeEmTexto('2024-11-26', hoje)).toBe('2 anos')
+    expect(idadeEmTexto('1974-01-01', hoje)).toBe('52 anos')
   })
 })

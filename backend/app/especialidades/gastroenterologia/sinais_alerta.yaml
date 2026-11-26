@@ -1,0 +1,117 @@
+# Sinais de alerta da Gastroenterologia — lista FIXA, sempre checada (não depende só da IA).
+# Fonte: lista enviada pelo autor em 26/11/2026 (Emergência · Avaliação prioritária), com as redundâncias filtradas
+# como na Cardiologia: "sangramento com tontura/suor frio/desmaio" entra nos dois sinais de sangramento (é o que os
+# torna mais graves); "mesmo sem dor ou febre" sai do amarelão recente (com dor ou febre já é o sinal de emergência);
+# o parágrafo de orientação ao paciente sai da lista, mas o "mesmo dia" do amarelão recente vira o prazo dele.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro — aprovados pelo autor em 26/11/2026.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: hematemese
+    texto: Vômito com sangue vivo ou com aspecto de borra de café
+    porque: Hemorragia digestiva alta; mais grave com tontura forte, suor frio, palidez ou desmaio.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Endoscopia digestiva alta de urgência
+  - id: melena-hematoquezia
+    texto: Fezes pretas como piche ou muito sangue vivo pelo ânus
+    porque: Hemorragia digestiva; mais grave com tontura forte, suor frio, palidez ou desmaio.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Endoscopia ou colonoscopia de urgência, conforme o quadro
+  - id: abdome-agudo
+    texto: Dor súbita e intensa na barriga, ou barriga rígida ou muito dolorosa ao toque
+    porque: Abdome agudo (perfuração, isquemia, pancreatite, apendicite e outras).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Avaliação cirúrgica
+  - id: obstrucao-intestinal
+    texto: Barriga muito estufada com vômitos, sem evacuar nem soltar gases
+    porque: Suspeita de obstrução intestinal.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Imagem do abdome e avaliação cirúrgica
+  - id: impactacao-alimentar
+    texto: Comida entalada, sem conseguir engolir a própria saliva
+    porque: Impactação de alimento no esôfago (risco de aspiração e perfuração).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Endoscopia de urgência
+  - id: colangite
+    texto: Olhos ou pele amarelados com febre, calafrios ou dor forte na barriga
+    porque: Suspeita de colangite ou obstrução das vias biliares.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Hemograma, bilirrubinas, enzimas do fígado e ultrassom de abdome
+
+  # --- 2. Avaliação prioritária ---
+  - id: ictericia-recente
+    texto: Olhos ou pele amarelados há pouco tempo
+    porque: Icterícia recente a esclarecer (hepatite, obstrução biliar, outras).
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Bilirrubinas, enzimas do fígado e ultrassom de abdome
+      - Com febre, calafrios ou dor forte = emergência
+  - id: disfagia
+    texto: Dificuldade nova, persistente ou piorando para engolir
+    porque: Disfagia a investigar (inclusive câncer de esôfago).
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Endoscopia digestiva alta
+  - id: perda-de-peso
+    texto: Perda de peso sem querer
+    porque: Mais suspeita junto com sintomas digestivos (câncer, doença inflamatória, má absorção).
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Hemograma e exames gerais
+      - Endoscopia e/ou colonoscopia conforme o quadro
+  - id: sangue-fezes-recorrente
+    texto: Sangue nas fezes em pequena quantidade que se repete
+    porque: Sangramento baixo a investigar (hemorroida, pólipo, câncer, doença inflamatória).
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Hemograma e colonoscopia
+      - Com tontura ou desmaio = emergência
+  - id: mudanca-habito-intestinal
+    texto: Mudança persistente e sem explicação no intestino
+    porque: Pode ser câncer colorretal ou doença inflamatória.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Hemograma e colonoscopia conforme idade e quadro
+  - id: anemia-ferropriva
+    texto: Anemia por falta de ferro em exame, sem causa esclarecida
+    porque: Perda de sangue oculta ou má absorção (câncer digestivo, doença celíaca).
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Endoscopia e colonoscopia
+      - Investigar doença celíaca
+  - id: vomitos-persistentes
+    texto: Vômitos persistentes ou que voltam
+    porque: Obstrução, doença do estômago, gravidez ou causa metabólica.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Eletrólitos e função renal
+      - Teste de gravidez, se puder estar grávida
+      - Barriga estufada sem evacuar nem soltar gases = emergência

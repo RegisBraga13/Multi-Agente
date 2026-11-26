@@ -2,7 +2,7 @@
 // O médico confere cada parte ("Conferido ✓"), corrige ou completa, e na última salva: o formulário vira texto da anamnese.
 // Depois de salvo, fica só para consulta (as correções são feitas na caixa de texto).
 import type { ReactNode } from 'react'
-import { blocosDaAnamnese, type Bloco } from '../medico/blocos'
+import { blocosDaAnamnese, blocosVisiveis, type Bloco } from '../medico/blocos'
 import { alternarOpcao, chaveDaLinha, perguntaTrabalho, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
 import { ESTADOS_CIVIS, type DadosPessoais } from '../medico/regras'
 import type { FormularioConsulta } from './formulario-consulta'
@@ -31,7 +31,8 @@ type Props = {
 }
 
 export function FormularioMedico({ partes, valor, parte, onParte, onMudar, conferidas, onConferir, onSalvar, salvo }: Props) {
-  const blocos = blocosDaAnamnese(partes) // sem a Identificação: a anamnese só monta a história clínica
+  // sem a Identificação: a anamnese só monta a história clínica; sem as partes que não se aplicam a este paciente
+  const blocos = blocosVisiveis(blocosDaAnamnese(partes), valor.dados.sexo, valor.respostas)
   const bloco = blocos[parte]
   const dados = valor.dados
   const mudaDado = <K extends keyof FormularioConsulta['dados']>(k: K, v: FormularioConsulta['dados'][K]) => onMudar({ ...valor, dados: { ...dados, [k]: v } })

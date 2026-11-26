@@ -3,6 +3,7 @@
 // Assinatura e envio são simulação nesta fase. Quais documentos exigem certificado digital segue regras
 // do CFM que o autor vai mandar antes do deploy — a lista abaixo é provisória.
 import { KIT_ROTINA, OUTRO, type Conduta, type ItemReceita } from './conduta'
+import { textoDaIdade } from '../modulo/dia'
 
 export type TipoAnexo = 'receita' | 'exames' | 'encaminhamento' | 'orientacoes' | 'atestado' | 'laudo'
 /** rascunho → revisado → assinado (só se exige) → enviado. Editar o texto volta a rascunho (a assinatura cai). */
@@ -72,7 +73,8 @@ const TITULO: Record<TipoAnexo, string> = {
 }
 
 /** Dados da consulta que entram nos documentos. `data` 'DD/MM/AAAA', `hora` 'HH:MM'. */
-export type DadosConsulta = { paciente: string; idade: number; data: string; hora: string }
+/** `idade`: o texto da idade ("8 meses", "52 anos") ou os anos */
+export type DadosConsulta = { paciente: string; idade: number | string; data: string; hora: string }
 
 const lista = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} e ${xs[xs.length - 1]}`)
 const rotulos = (c: Conduta, linha: string) =>
@@ -154,13 +156,13 @@ export function montarAnexos(c: Conduta, d: DadosConsulta): Anexo[] {
   if (exames.length) docs.push(['exames', `Solicito: ${lista(exames)}.\nIndicação clínica: ${dx}.`, true])
 
   const especialistas = rotulos(c, 'encaminhamento').map((x) => x.toLowerCase())
-  if (especialistas.length) docs.push(['encaminhamento', `Encaminho para avaliação em ${lista(especialistas)}.\nPaciente de ${d.idade} anos, com ${dx}.${t[1] || t[2] ? `\nTratamento atual: ${[t[1], t[2]].filter(Boolean).join(' ')}` : ''}`, true])
+  if (especialistas.length) docs.push(['encaminhamento', `Encaminho para avaliação em ${lista(especialistas)}.\nPaciente de ${textoDaIdade(d.idade)}, com ${dx}.${t[1] || t[2] ? `\nTratamento atual: ${[t[1], t[2]].filter(Boolean).join(' ')}` : ''}`, true])
 
   if (t[3]) docs.push(['orientacoes', t[3], true])
 
   // o médico decide se emite
   docs.push(['atestado', `Atesto, para os devidos fins, que ${d.paciente} esteve em consulta médica em ${d.data}, às ${d.hora}.`, false])
-  docs.push(['laudo', `Paciente de ${d.idade} anos, em acompanhamento por ${dx}.${t[1] || t[2] ? `\nConduta: ${[t[1], t[2]].filter(Boolean).join(' ')}` : ''}`, false])
+  docs.push(['laudo', `Paciente de ${textoDaIdade(d.idade)}, em acompanhamento por ${dx}.${t[1] || t[2] ? `\nConduta: ${[t[1], t[2]].filter(Boolean).join(' ')}` : ''}`, false])
 
   return docs.map(([tipo, texto, emitir]) => ({
     tipo, titulo: TITULO[tipo], texto, base: texto, textoIA: texto, emitir, assinatura: PRECISA_ASSINATURA[tipo], estado: 'rascunho' as const,

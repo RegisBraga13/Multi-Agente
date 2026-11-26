@@ -10,6 +10,8 @@ type Props = {
   onAlternar(valor: string): void
   /** no PC, as opções em duas colunas, lidas de cima para baixo */
   duasColunas?: boolean
+  /** listas muito longas (mais de 16 opções): três colunas em vez de duas, para caber numa tela */
+  tresColunas?: boolean
   /** opções mais baixas (texto em linhas justas), para a parte caber numa tela */
   compacto?: boolean
   /** campo que aparece quando a opção está marcada (ex.: "Outro" → onde?): em duas colunas, no lugar vazio logo abaixo dela;
@@ -18,7 +20,9 @@ type Props = {
 }
 
 /** Pergunta de tocar: opções em botões largos, com rádio ou caixa nativos por baixo. */
-export function GrupoOpcoes({ rotulo, ajuda, modo, opcoes, marcadas, onAlternar, duasColunas, compacto, aoLado }: Props) {
+export function GrupoOpcoes({ rotulo, ajuda, modo, opcoes, marcadas, onAlternar, duasColunas: duas, tresColunas, compacto, aoLado }: Props) {
+  const duasColunas = duas || tresColunas
+  const nColunas = tresColunas ? 3 : 2
   const justo = duasColunas || compacto
   const id = useId()
   return (
@@ -26,8 +30,8 @@ export function GrupoOpcoes({ rotulo, ajuda, modo, opcoes, marcadas, onAlternar,
       <legend className="mb-1 text-[14px] font-semibold">{rotulo}</legend>
       {ajuda && <p id={`${id}-ajuda`} className="-mt-1 mb-2 text-[13px] text-apagado">{ajuda}</p>}
       <div
-        className={duasColunas ? 'grid gap-1 sm:grid-flow-col sm:grid-cols-2 sm:grid-rows-[repeat(var(--linhas),auto)] sm:gap-x-3' : 'flex flex-wrap gap-1.5'}
-        style={duasColunas ? ({ '--linhas': Math.ceil((opcoes.length + (aoLado && marcadas.includes(aoLado.valor) ? 1 : 0)) / 2) } as CSSProperties) : undefined}
+        className={duasColunas ? `grid gap-1 sm:grid-flow-col ${tresColunas ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} sm:grid-rows-[repeat(var(--linhas),auto)] sm:gap-x-3` : 'flex flex-wrap gap-1.5'}
+        style={duasColunas ? ({ '--linhas': Math.ceil((opcoes.length + (aoLado && marcadas.includes(aoLado.valor) ? 1 : 0)) / nColunas) } as CSSProperties) : undefined}
       >
         {opcoes.map((o) => {
           const sel = marcadas.includes(o.valor)

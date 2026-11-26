@@ -1,0 +1,86 @@
+# Sinais de alerta da Endocrinologia — lista FIXA, sempre checada (não depende só da IA).
+# Fonte: lista enviada pelo autor em 26/11/2026 (Atendimento imediato · Avaliação prioritária), com as redundâncias
+# filtradas: "não dar nada pela boca" vai para a ação da hipoglicemia; "mesmo sem dor ou febre" sai da ferida no pé
+# (com febre já é emergência); "mesmo dia" vira o prazo; a orientação ao paciente sai da lista.
+# Só para o médico (autor, 26/11/2026: "adaptar apenas para o médico"); os campos para o paciente (início, acontecendo
+# agora, glicose medida) ficam de fora.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro — aceitos pelo autor em 26/11/2026 ("são modelos para servir como uma boa base").
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Atendimento imediato ---
+  - id: hipoglicemia-grave
+    texto: Glicose baixa com confusão forte, convulsão, desmaio ou sem conseguir engolir
+    porque: Hipoglicemia grave.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente (SAMU 192)
+      - Nada pela boca se não engole com segurança; glicose na veia ou glucagon
+  - id: hiperglicemia-grave
+    texto: Sede e muita urina com vômitos, dor na barriga ou respiração rápida e funda
+    porque: Suspeita de cetoacidose ou estado hiperosmolar (diabetes conhecido ou glicose alta recente).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Glicemia capilar e cetonas, se disponíveis
+  - id: crise-adrenal
+    texto: Insuficiência suprarrenal com vômitos que impedem o corticoide, fraqueza forte ou desmaio
+    porque: Crise adrenal.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Hidrocortisona injetável sem esperar exames
+  - id: tempestade-tireoidiana
+    texto: Febre alta e coração muito acelerado com agitação, confusão ou sonolência
+    porque: Tempestade tireoidiana, sobretudo em quem tem hipertireoidismo.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+  - id: apoplexia-hipofisaria
+    texto: Dor de cabeça súbita e forte com perda de visão, visão dupla ou sonolência
+    porque: Suspeita de apoplexia hipofisária.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Corticoide e imagem da hipófise de urgência
+  - id: pe-diabetico-grave
+    texto: Diabetes com ferida no pé e febre, área escurecida ou infecção profunda
+    porque: Pé diabético infectado ou com isquemia (risco de amputação).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Antibiótico e avaliação cirúrgica
+
+  # --- 2. Avaliação prioritária ---
+  - id: febre-antitireoidiano
+    texto: Febre ou dor de garganta usando metimazol ou propiltiouracil
+    porque: Suspeita de agranulocitose pelo antitireoidiano.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Hemograma no mesmo dia
+      - Suspender o antitireoidiano até o resultado
+  - id: pe-diabetico
+    texto: Diabetes com ferida nova no pé, ou pé quente, vermelho e inchado
+    porque: Úlcera nova ou pé de Charcot.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Examinar o pé no mesmo dia e tirar a carga
+      - Radiografia do pé se houver suspeita de Charcot
+  - id: hipoglicemias-repetidas
+    texto: Glicose baixa que se repete, inclusive à noite
+    porque: Hipoglicemias de repetição (remédio, função renal, outras causas).
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Rever insulina e remédios que baixam a glicose
+      - Registros de glicose ou do sensor

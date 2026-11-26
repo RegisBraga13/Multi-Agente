@@ -2,6 +2,7 @@
 import { ALERGIAS, chaveDaLinha, NOTA_DOR, perguntaTrabalho, perguntaVisivel, type Parte, type Pergunta } from '../medico/pre-consulta'
 import { calcularIdade, ESTADOS_CIVIS, type DadosPessoais } from '../medico/regras'
 import type { Respostas } from '../servidor/agenda'
+import { idadeEmTexto } from '../modulo/dia'
 
 export type FormularioConsulta = {
   dados: Pick<DadosPessoais, 'nomeCompleto' | 'nomeSocial' | 'nascimento' | 'sexo' | 'cidade' | 'uf' | 'estadoCivil' | 'profissao' | 'trabalhoExposto'>
@@ -76,7 +77,7 @@ export function textoDoFormulario(partes: Parte[], f: FormularioConsulta, hoje: 
   const linhas: string[] = []
   // só o que ajuda o raciocínio clínico: a anamnese não leva nome, nome social nem cidade (regra 9.1)
   const ident = [
-    idade !== null ? `${idade} ${idade === 1 ? 'ano' : 'anos'}` : '',
+    idade !== null ? idadeEmTexto(d.nascimento, hoje) : '',
     d.sexo && `sexo ${d.sexo}`,
   ].filter(Boolean)
   if (ident.length) linhas.push(`Identificação: ${ident.join(', ')}.`)

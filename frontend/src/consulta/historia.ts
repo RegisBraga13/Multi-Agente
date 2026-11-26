@@ -1,6 +1,6 @@
 // História clínica: montada SÓ com a anamnese e o exame físico salvos (Constituição, fase 2).
 // Simulação da IA: organiza o que foi salvo em seções, como na landing.
-import { idade } from '../modulo/dia'
+import { idadeEmTexto, textoDaIdade } from '../modulo/dia'
 import type { Atendimento } from '../modulo/tipos'
 import { estadoCivilNoTexto, type EstadoCivil } from '../medico/regras'
 import type { Parte } from '../medico/pre-consulta'
@@ -91,8 +91,8 @@ function exameFisico(exame: { rotulo: string; valor: string }[]): string {
 }
 
 /** "Paciente, 52 anos, casado, comerciante": idade de hoje + estado civil e profissão da ficha desta consulta (mudou na ficha, muda aqui). */
-export function identificacaoHda(anos: number, f: { sexo: 'F' | 'M' | 'I' | ''; estadoCivil: EstadoCivil | ''; profissao: string } | null): string {
-  return ['Paciente', `${anos} anos`, f?.estadoCivil ? estadoCivilNoTexto(f.estadoCivil, f.sexo) : '', minuscula(f?.profissao.trim() ?? '')].filter(Boolean).join(', ')
+export function identificacaoHda(anos: number | string, f: { sexo: 'F' | 'M' | 'I' | ''; estadoCivil: EstadoCivil | ''; profissao: string } | null): string {
+  return ['Paciente', textoDaIdade(anos), f?.estadoCivil ? estadoCivilNoTexto(f.estadoCivil, f.sexo) : '', minuscula(f?.profissao.trim() ?? '')].filter(Boolean).join(', ')
 }
 
 const textoResposta = (v: string | string[] | undefined) => (Array.isArray(v) ? v.join(', ') : (v ?? '')).trim()
@@ -101,7 +101,7 @@ const textoResposta = (v: string | string[] | undefined) => (Array.isArray(v) ? 
  * HDA quando o formulário foi salvo na anamnese: o formulário abre a história em linguagem de prontuário
  * (exemplo aprovado pelo autor em 19/11/2026) e o que foi gravado ou escrito continua depois, sem repetir a queixa.
  */
-function hdaComFormulario(anamnese: string, anos: number, form: NonNullable<ContextoHistoria['formulario']>, falas: Fala[], extras: string[]): string {
+function hdaComFormulario(anamnese: string, anos: number | string, form: NonNullable<ContextoHistoria['formulario']>, falas: Fala[], extras: string[]): string {
   const ident = identificacaoHda(anos, form.dados)
   const f = frasesDoFormulario(form)
   // as linhas do formulário na caixa ("Queixa principal: ...") já estão nas frases acima
@@ -129,7 +129,7 @@ export function montarHistoria(
 ): SecaoHistoria[] {
   const f = at.ficha
   const pronta = f.situacao === 'pronta' ? f : null
-  const anos = idade(at.paciente.nascimento, agora)
+  const anos = idadeEmTexto(at.paciente.nascimento, agora)
   const respostas = (secao: 'hda' | 'ant') => (contexto.perguntas ?? []).filter((x) => x.pergunta.secao === secao).map((x) => (x.resposta === 'sim' ? x.pergunta.sim : x.pergunta.nao))
 
   // sinal de alerta marcado V entra na história; F (ou sem resposta) não entra
@@ -154,7 +154,7 @@ export function montarHistoria(
 
   return [
     // história só serve de fonte para DD e tratamento (depois some): sem nome, sem consulta/retorno, sem presencial/online
-    { rotulo: 'Identificação', texto: `Paciente, ${anos} anos` },
+    { rotulo: 'Identificação', texto: `Paciente, ${anos}` },
     { rotulo: 'Queixa principal', texto: (form && textoResposta(form.respostas.queixa)) || pronta?.queixa || 'Não registrada na ficha.' },
     { rotulo: 'História da doença atual', texto: form ? hdaComFormulario(anamnese, anos, form, contexto.falas, respostas('hda')) : hda(anamnese, identificacaoHda(anos, pronta), contexto.falas, respostas('hda')) },
     { rotulo: 'Antecedentes e alertas', texto: antecedentes },

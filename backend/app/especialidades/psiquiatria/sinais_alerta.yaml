@@ -1,0 +1,68 @@
+# Sinais de alerta da Psiquiatria — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (7 alertas), adaptado ("são modelos para servir como uma boa base"):
+# as perguntas do checklist viraram o porquê/ação.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: risco-suicidio
+    texto: Pensa em morrer, se machucar ou tirar a própria vida, com intenção, plano ou tentativa recente
+    porque: Risco de suicídio. Perguntar se pensa nisso agora, acesso aos meios, preparativos, tentativas anteriores, apoio e se consegue se manter em segurança.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Não deixar o paciente sozinho; encaminhar à emergência psiquiátrica
+      - Afastar os meios (remédios, armas) com a família
+      - Plano de segurança e contato com a rede de apoio
+  - id: risco-agressao
+    texto: Ameaça atual a alguém, com intenção, plano, acesso a armas ou agressão recente
+    porque: Risco de agressão a terceiros; maior com intoxicação ou vozes dando ordens.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Garantir a segurança da equipe e de terceiros
+      - Encaminhar à emergência psiquiátrica
+  - id: psicose-risco
+    texto: Vozes mandando fazer coisas, crenças que levam a condutas perigosas ou não come nem bebe por desorganização
+    porque: Psicose com risco ou prejuízo grave do autocuidado. Perguntar se a mudança é recente.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência psiquiátrica
+      - Avaliar causa clínica ou uso de substâncias
+  - id: delirium-causa-clinica
+    texto: Confusão, desatenção ou sonolência que começaram em horas ou dias e oscilam
+    porque: Possível delirium ou outra causa clínica aguda (febre, doença, remédio novo, substância). Confirmar o estado habitual com alguém que conhece o paciente.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência clínica para investigar a causa
+  - id: abstinencia-grave
+    texto: Parou ou diminuiu álcool ou calmantes há pouco, com tremor forte, suor, alucinações, confusão ou convulsão
+    porque: Possível abstinência grave (delirium tremens, convulsão). Perguntar a última dose e abstinências complicadas antes.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Tiamina antes de glicose
+  - id: catatonia-reacao-remedio
+    texto: Mutismo, imobilidade, recusa de líquidos ou comida, febre ou rigidez, sobretudo após psicotrópico novo ou ajustado
+    porque: Possível catatonia ou síndrome neuroléptica maligna/serotoninérgica. Conferir sinais vitais e evolução.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Suspender o psicotrópico suspeito
+      - Encaminhar à emergência imediatamente (CPK, sinais vitais)
+
+  # --- 2. Prioridade ---
+  - id: mania-prejuizo
+    texto: Dias dormindo muito pouco sem cansaço, com energia, fala ou impulsividade acima do normal
+    porque: Possível mania com prejuízo importante. Perguntar sobre gastos, direção de risco, exposição sexual e sintomas psicóticos.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Suspender antidepressivo, se estiver em uso
+      - Avaliar internação se houver risco ou psicose

@@ -44,9 +44,50 @@ describe('partesPreConsulta', () => {
   })
 
   it('especialidade sem pacote próprio recebe as perguntas gerais, sem foto', () => {
-    const p = todas('cardiologia')
+    const p = todas('ortopedia')
     expect(p.map((x) => x.id)).toEqual(['queixa', 'desde_quando', 'medicamentos', 'alergias', 'algo_mais'])
     expect(p.some((x) => x.tipo === 'foto')).toBe(false)
+  })
+
+  it('cardiologia e gastroenterologia (autor, 26/11/2026): partes na ordem do modelo, Saúde geral padrão, Exames com aviso e Algo mais no fim', () => {
+    expect(partesPreConsulta('cardiologia').map((p) => p.titulo)).toEqual([
+      'Motivo da consulta', 'Sintomas', 'Como são os sintomas', 'Histórico de saúde', 'Saúde geral', 'Histórico familiar',
+      'Hábitos', 'Exames', 'O que espera da consulta', 'Algo mais que seu médico deva saber?',
+    ])
+    expect(partesPreConsulta('gastroenterologia').map((p) => p.titulo)).toEqual([
+      'Motivo da consulta', 'Sintomas que tem ou teve recentemente', 'Como são os sintomas', 'Dor e intestino', 'Histórico de saúde', 'Saúde geral',
+      'Alimentação e hábitos', 'Histórico familiar', 'Exames', 'O que espera da consulta', 'Algo mais que seu médico deva saber?',
+    ])
+    for (const esp of ['cardiologia', 'gastroenterologia']) {
+      const saude = partesPreConsulta(esp).find((p) => p.titulo === 'Saúde geral')!
+      expect(saude.perguntas.map((x) => x.id)).toEqual(['medicamentos', 'remedios_tipo', 'alergias', 'gravida', 'amamentando'])
+      const exames = partesPreConsulta(esp).find((p) => p.titulo === 'Exames')!
+      expect(exames.nota).toContain('Traga também no dia da consulta')
+      expect(exames.perguntas.some((x) => x.tipo === 'arquivos')).toBe(true)
+      // nota da dor só para quem marcou alguma dor (regra 5.8)
+      expect(todas(esp).find((x) => x.id === 'nota_dor')?.soSe?.pergunta).toBe('sintomas')
+    }
+  })
+
+  it('neurologia e endocrinologia: quem preenche no motivo; partes conforme a queixa só para quem marcou', () => {
+    for (const esp of ['neurologia', 'endocrinologia', 'hematologia', 'infectologia', 'oncologia', 'nefrologia']) {
+      expect(partesPreConsulta(esp)[0].perguntas[0].id).toBe('preenchido_por')
+      expect(partesPreConsulta(esp)[partesPreConsulta(esp).length - 1].titulo).toBe('Algo mais que seu médico deva saber?')
+    }
+    const dor = partesPreConsulta('neurologia').find((p) => p.titulo === 'Dor')!
+    expect(dor.perguntas.every((q) => !perguntaVisivel(q, 'F', { motivo: ['Tremor ou movimentos involuntários'] }))).toBe(true)
+    expect(dor.perguntas.every((q) => perguntaVisivel(q, 'F', { motivo: ['Dor de cabeça'] }))).toBe(true)
+    // dor em queimação: só a nota da dor (regra 5.8)
+    expect(dor.perguntas.filter((q) => perguntaVisivel(q, 'F', { motivo: ['Dor em queimação ou choque'] })).map((q) => q.id)).toEqual(['nota_dor'])
+  })
+
+  it('pergunta que depende de várias opções aparece com qualquer uma delas', () => {
+    const quanto = todas('cardiologia').find((x) => x.id === 'tabagismo_quanto')!
+    expect(perguntaVisivel(quanto, 'M', { tabagismo: 'Nunca fumou' })).toBe(false)
+    expect(perguntaVisivel(quanto, 'M', { tabagismo: 'Ex-fumante' })).toBe(true)
+    const dor = todas('gastroenterologia').find((x) => x.id === 'nota_dor')!
+    expect(perguntaVisivel(dor, 'F', { sintomas: ['Diarreia'] })).toBe(false)
+    expect(perguntaVisivel(dor, 'F', { sintomas: ['Diarreia', 'Dor ao evacuar'] })).toBe(true)
   })
 
   it('todo pacote é coerente: alergias em Saúde geral (opcional), ids únicos, opções só onde se escolhe', () => {
@@ -138,4 +179,78 @@ describe('reumatologia (texto do autor, 24/11/2026)', () => {
     expect(q.fotos.soFotos).toBe(true)
     expect(partes.find((p) => p.titulo === 'Exames e fotos')!.nota).toMatch(/^Traga também no dia/)
   })
+
+  it('ginecologia e urologia começam pela queixa (sem "quem preenche")', () => {
+    for (const esp of ['ginecologia', 'urologia']) {
+      expect(partesPreConsulta(esp)[0].perguntas[0].id).toBe('queixa')
+      expect(partesPreConsulta(esp)[partesPreConsulta(esp).length - 1].titulo).toBe('Algo mais que seu médico deva saber?')
+    }
+  })
+
+  it('geriatria, pediatria, psiquiatria e otorrino (autor, 26/11/2026): partes na ordem do modelo, quem preenche no início', () => {
+    expect(partesPreConsulta('geriatria').map((p) => p.titulo)).toEqual([
+      'Motivo da consulta', 'Memória e comportamento', 'Mobilidade e quedas', 'Autonomia', 'Alimentação e deglutição', 'Humor, sono e sentidos',
+      'Moradia e apoio', 'Histórico de saúde', 'Saúde geral', 'O que é importante para você', 'Exames', 'Algo mais que seu médico deva saber?',
+    ])
+    expect(partesPreConsulta('pediatria').map((p) => p.titulo)).toEqual([
+      'Motivo da consulta', 'Queixa atual', 'Gestação e nascimento', 'Alimentação, urina e fezes', 'Crescimento e desenvolvimento', 'Sono, rotina e escola',
+      'Adolescência', 'Histórico de saúde', 'Saúde geral', 'Documentos', 'Algo mais que seu médico deva saber?',
+    ])
+    expect(partesPreConsulta('psiquiatria').map((p) => p.titulo)).toEqual([
+      'Motivo da consulta', 'Como começou', 'Impacto na rotina', 'Sono e energia', 'Tratamentos anteriores', 'Saúde geral', 'Álcool e outras substâncias',
+      'Histórico de saúde', 'Exames', 'Algo mais que seu médico deva saber?',
+    ])
+    expect(partesPreConsulta('otorrinolaringologia').map((p) => p.titulo)).toEqual([
+      'Motivo da consulta', 'Ouvido e audição', 'Tontura', 'Nariz e rosto', 'Garganta, voz e engolir', 'Sono', 'Pescoço', 'Histórico de saúde', 'Saúde geral',
+      'Exames', 'Algo mais que seu médico deva saber?',
+    ])
+    for (const esp of ['geriatria', 'pediatria', 'psiquiatria', 'otorrinolaringologia']) {
+      expect(partesPreConsulta(esp)[0].perguntas[0].id).toBe('preenchido_por')
+      const fim = partesPreConsulta(esp).slice(-2)[0]
+      expect(fim.nota).toContain('Traga também no dia da consulta')
+      expect(fim.perguntas.some((x) => x.tipo === 'arquivos')).toBe(true)
+    }
+    // pessoa idosa e criança: sem gravidez e amamentação
+    for (const esp of ['geriatria', 'pediatria']) expect(todas(esp).some((x) => x.id === 'gravida' || x.id === 'amamentando')).toBe(false)
+    expect(todas('pediatria')[0].opcoes).toEqual(['Responsável', 'O próprio adolescente'])
+    // nota da dor sempre que houver dor (regra 5.8)
+    expect(todas('pediatria').find((x) => x.id === 'nota_dor')?.soSe).toEqual({ pergunta: 'motivo', opcao: ['Dor'] })
+    expect(todas('otorrinolaringologia').find((x) => x.id === 'nota_dor')?.soSe).toEqual({ pergunta: 'motivo', opcao: ['Dor de ouvido', 'Dor de garganta'] })
+  })
+
+  it('otorrino: cada bloco só para quem marcou a queixa dele', () => {
+    const ouvido = partesPreConsulta('otorrinolaringologia').find((p) => p.titulo === 'Ouvido e audição')!
+    expect(ouvido.perguntas.every((q) => !perguntaVisivel(q, 'F', { motivo: ['Rouquidão'] }))).toBe(true)
+    expect(ouvido.perguntas.every((q) => perguntaVisivel(q, 'F', { motivo: ['Zumbido'] }))).toBe(true)
+  })
+
+  it('pneumologia e hepatologia (autor, 26/11/2026): partes na ordem do modelo', () => {
+    expect(partesPreConsulta('pneumologia').map((p) => p.titulo)).toEqual([
+      'Motivo da consulta', 'Tosse e catarro', 'Falta de ar', 'Chiado ou aperto no peito', 'Crises nos últimos 12 meses', 'Sono', 'Cigarro e exposições',
+      'Histórico de saúde', 'Saúde geral', 'Exames', 'Algo mais que seu médico deva saber?',
+    ])
+    expect(partesPreConsulta('hepatologia').map((p) => p.titulo)).toEqual([
+      'Motivo da consulta', 'Diagnóstico ou exame alterado', 'Sintomas', 'Complicações e procedimentos', 'Bebida alcoólica', 'Hepatites e tratamentos',
+      'Outras doenças e família', 'Remédios e peso', 'Saúde geral', 'Exames', 'Algo mais que seu médico deva saber?',
+    ])
+    // cigarros por dia só para quem fuma ou fumou; "quando parou" só para ex-fumante
+    const q = Object.fromEntries(todas('pneumologia').map((x) => [x.id, x]))
+    expect(perguntaVisivel(q.cigarros_dia, 'M', { tabagismo: 'Nunca fumou' })).toBe(false)
+    expect(perguntaVisivel(q.cigarros_dia, 'M', { tabagismo: 'Fuma atualmente' })).toBe(true)
+    expect(perguntaVisivel(q.parou, 'M', { tabagismo: 'Fuma atualmente' })).toBe(false)
+    expect(q.nota_dor.soSe).toEqual({ pergunta: 'motivo', opcao: ['Dor no peito'] })
+  })
+
+  it('cirurgia geral (autor, 26/11/2026): partes na ordem do modelo; cada queixa só para quem a marcou', () => {
+    expect(partesPreConsulta('cirurgia-geral').map((p) => p.titulo)).toEqual([
+      'Motivo da consulta', 'Dor na barriga', 'Hérnia ou abaulamento', 'Pedra na vesícula', 'Caroço ou lesão na pele', 'Problema no ânus',
+      'Retorno após cirurgia', 'Cirurgias e anestesia', 'Remédios', 'Saúde geral', 'Exames', 'Algo mais que seu médico deva saber?',
+    ])
+    const hernia = partesPreConsulta('cirurgia-geral').find((p) => p.titulo === 'Hérnia ou abaulamento')!
+    expect(hernia.perguntas.every((q) => !perguntaVisivel(q, 'M', { motivo: ['Pedra na vesícula'] }))).toBe(true)
+    expect(hernia.perguntas.every((q) => perguntaVisivel(q, 'M', { motivo: ['Hérnia ou abaulamento'] }))).toBe(true)
+    const q = Object.fromEntries(todas('cirurgia-geral').map((x) => [x.id, x]))
+    expect(q.nota_dor.soSe).toEqual({ pergunta: 'motivo', opcao: ['Dor na barriga'] })
+  })
 })
+

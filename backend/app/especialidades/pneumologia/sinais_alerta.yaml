@@ -1,0 +1,58 @@
+# Sinais de alerta da Pneumologia — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (6 alertas), adaptado ("são modelos para servir como uma boa base"):
+# as perguntas do checklist viraram o porquê/ação. Registrar o horário de início.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: deterioracao-respiratoria
+    texto: Falta de ar piorando rápido, sem conseguir completar frases, lábios roxos, sonolência ou saturação caindo
+    porque: "Deterioração respiratória aguda. Na asma: pouca resposta à bombinha de alívio ou tórax silencioso."
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Oxigênio e broncodilatador
+      - Encaminhar à emergência imediatamente
+  - id: tromboembolismo-pulmonar
+    texto: Falta de ar de repente, dor no peito ao respirar, sangue na tosse, desmaio ou perna inchada e dolorida de um lado
+    porque: Possível tromboembolismo pulmonar; risco maior com trombose prévia, câncer ativo, cirurgia ou imobilização recente.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+  - id: pneumotorax
+    texto: Dor de um lado do peito e falta de ar que começaram de repente
+    porque: Possível pneumotórax (trauma, procedimento no tórax ou pneumotórax anterior reforçam). Conferir assimetria na ausculta e estabilidade.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Raio X de tórax
+  - id: hemoptise
+    texto: Sangue saindo com a tosse em quantidade, que não para, ou com falta de ar ou tontura
+    porque: Hemoptise com risco. Perguntar quantidade, frequência, se está ativa e uso de anticoagulante.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+
+  # --- 2. Prioridade ---
+  - id: tuberculose
+    texto: Tosse há mais de 3 semanas com febre, suor à noite, emagrecimento ou sangue no catarro
+    porque: Possível tuberculose pulmonar; contato conhecido ou imunossupressão reforçam. Registrar duração e contexto.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Baciloscopia ou teste rápido molecular do escarro e raio X de tórax
+      - Máscara cirúrgica para o paciente até esclarecer
+  - id: neoplasia-pulmonar
+    texto: Sangue na tosse sem causa, tosse nova ou diferente da habitual, emagrecimento sem querer ou pneumonias repetidas
+    porque: Possível câncer de pulmão. Conferir carga tabágica, exposição no trabalho e imagens anteriores.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Tomografia de tórax
+      - Encaminhar para broncoscopia ou biópsia conforme o achado

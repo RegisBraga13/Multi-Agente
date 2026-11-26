@@ -1,0 +1,66 @@
+# Sinais de alerta da Pediatria — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (7 alertas), adaptado ("são modelos para servir como uma boa base"):
+# as perguntas do checklist viraram o porquê/ação. Registrar a idade exata nos primeiros meses e separar o que o
+# responsável contou do que foi visto no exame.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: febre-menor-3-meses
+    texto: Bebê com menos de 3 meses com temperatura de 38 °C ou mais
+    porque: Risco de infecção bacteriana grave. Registrar o valor, como foi medida e a hora.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+  - id: respiracao-comprometida
+    texto: Pausa na respiração, lábios roxos, gemido ao respirar ou cansaço para mamar
+    porque: Comprometimento respiratório. Conferir esforço, frequência respiratória para a idade e saturação.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Oxigênio se a saturação estiver baixa
+  - id: infeccao-grave-neurologico
+    texto: Difícil de acordar, convulsão, moleira estufada ou febre com manchas que não somem ao apertar
+    porque: Possível meningite, sepse ou outra causa neurológica grave.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+  - id: desidratacao
+    texto: Não consegue mamar ou beber, ou urina muito menos que o normal
+    porque: Possível desidratação importante. Perguntar a última vez que urinou e quantas fraldas molhou; conferir perfusão e mucosas.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência para hidratação
+  - id: vomito-bilioso
+    texto: Vômito verde, barriga estufada, dor forte ou em crises, ou sangue nas fezes
+    porque: Possível obstrução intestinal (volvo, invaginação). Confirmar a cor do vômito e a hora do início.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente (avaliação cirúrgica)
+
+  # --- 2. Prioridade ---
+  - id: violencia-negligencia
+    texto: Lesão que não combina com o relato ou com a idade, explicações diferentes ou demora para buscar atendimento
+    porque: "Possível violência ou negligência (ex.: roxo em bebê que ainda não se desloca sozinho)."
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Descrever as lesões no prontuário de forma objetiva
+      - Notificação compulsória e comunicar o Conselho Tutelar
+      - Se houver risco, garantir a proteção da criança no mesmo dia
+  - id: regressao-crescimento
+    texto: Deixou de fazer algo que já fazia (falar, interagir, andar) ou parou de ganhar peso
+    porque: Perda de habilidades ou mudança na curva de crescimento. Comparar medidas com data e anotar quando a mudança foi percebida.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Comparar peso, altura e perímetro cefálico nas curvas
+      - Encaminhar para avaliação neurológica ou do desenvolvimento

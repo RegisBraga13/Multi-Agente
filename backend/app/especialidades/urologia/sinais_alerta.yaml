@@ -1,0 +1,67 @@
+# Sinais de alerta da Urologia — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (7 alertas), adaptado ("são modelos para servir como uma boa base"):
+# as perguntas do checklist viraram o porquê/ação.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: torcao-testicular
+    texto: Dor súbita no testículo ou na bolsa, principalmente de um lado
+    porque: Possível torção do testículo (náusea, vômitos ou episódios anteriores que passaram sozinhos reforçam).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente, sem esperar exame
+      - Anotar a hora exata do início
+  - id: obstrucao-infectada
+    texto: Febre ou calafrios com dor lombar, cálculo ou obstrução conhecida, rim único ou pouca urina
+    porque: Possível obstrução urinária infectada.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Ultrassom, antibiótico e desobstrução de urgência
+  - id: retencao-urinaria
+    texto: Vontade de urinar sem conseguir, barriga baixa dolorida, coágulos ou sonda que parou de drenar
+    porque: Retenção urinária aguda ou por coágulos. Perguntar quando urinou pela última vez.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Sondagem vesical; irrigação se houver coágulos
+  - id: priapismo
+    texto: Ereção que dura 4 horas ou mais
+    porque: Possível priapismo isquêmico. Anotar início, injeção no pênis ou outros remédios e doença falciforme.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+  - id: fournier
+    texto: Dor forte na genital ou no períneo, inchaço ou vermelhidão que se espalha rápido, febre, bolhas ou pele escura
+    porque: Possível infecção necrosante do períneo (Fournier); dor maior que o aspecto da pele.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Antibiótico e cirurgia de urgência
+
+  # --- 2. Prioridade ---
+  - id: hematuria-visivel
+    texto: Sangue visível na urina sem causa esclarecida, mesmo sem dor
+    porque: Investigar câncer de bexiga ou rim. Registrar tabagismo e exposições.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Urina, urocultura e creatinina
+      - Tomografia das vias urinárias e cistoscopia
+  - id: massa-testicular
+    texto: Nódulo, aumento sem dor ou mudança de forma do testículo
+    porque: Possível câncer de testículo.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Ultrassom da bolsa escrotal
+      - Alfafetoproteína, beta-hCG e LDH

@@ -309,7 +309,7 @@ def test_a_especialidade_da_consulta_escolhe_o_pacote():
     c = repo.criar(
         medico,
         NovaConsulta(
-            paciente_id=p.id, tipo="consulta", modalidade="presencial", agendada_para=QUANDO, especialidade="geriatria"
+            paciente_id=p.id, tipo="consulta", modalidade="presencial", agendada_para=QUANDO, especialidade="ortopedia"
         ),
     )
 
@@ -322,9 +322,9 @@ def test_a_especialidade_da_consulta_escolhe_o_pacote():
     oficializar(repo, medico, c.id, "anamnese", QUANDO)
     editar(repo, medico, c.id, "exame", EXAME)
     oficializar(repo, medico, c.id, "exame", QUANDO)
-    with pytest.raises(PacoteInvalido):  # Geriatria ainda não tem prompts: o servidor pediu a pasta dela
+    with pytest.raises(PacoteInvalido):  # Ortopedia ainda não tem prompts: o servidor pediu a pasta dela
         gerar(ctx, medico, c.id, "historia")
-    assert pedidas == ["geriatria"]
+    assert pedidas == ["ortopedia"]
 
 
 def test_perguntas_usam_a_especialidade_da_consulta():
@@ -339,7 +339,7 @@ def test_perguntas_usam_a_especialidade_da_consulta():
     c = repo.criar(
         medico,
         NovaConsulta(
-            paciente_id=p.id, tipo="consulta", modalidade="presencial", agendada_para=QUANDO, especialidade="geriatria"
+            paciente_id=p.id, tipo="consulta", modalidade="presencial", agendada_para=QUANDO, especialidade="ortopedia"
         ),
     )
     editar(repo, medico, c.id, "anamnese", ANAMNESE)
@@ -351,9 +351,9 @@ def test_perguntas_usam_a_especialidade_da_consulta():
         return Pacote(sinais=LISTA, protocolos={})
 
     ctx = Contexto(repo=repo, pacientes=pacientes, provedor=Roteiro(), relogio=RelogioFixo(QUANDO), pacote=pacote)
-    with pytest.raises(PacoteInvalido):  # Geriatria ainda não tem prompts: o servidor pediu a pasta dela
+    with pytest.raises(PacoteInvalido):  # Ortopedia ainda não tem prompts: o servidor pediu a pasta dela
         gerar_perguntas(ctx, medico, c.id)
-    assert pedidas == ["geriatria"]
+    assert pedidas == ["ortopedia"]
 
 
 def _ate_historia_com_perguntas(cenario, perguntas):

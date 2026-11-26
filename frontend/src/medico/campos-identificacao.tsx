@@ -4,6 +4,7 @@ import { UFS } from '../cadastro/validacao'
 import { Campo } from './campo'
 import { classeEntrada } from './estilos'
 import { calcularIdade, type DadosPessoais } from './regras'
+import { idadeEmTexto } from '../modulo/dia'
 
 type Props = {
   dados: DadosPessoais
@@ -28,7 +29,7 @@ export function CamposIdentificacao({ dados, erros, muda }: Props) {
         </Campo>
       </div>
       <div className="w-[9.5rem]">
-        <Campo rotulo="Nascimento" erro={erros.nascimento} ajuda={idade !== null ? `${idade} ${idade === 1 ? 'ano' : 'anos'}` : undefined}>
+        <Campo rotulo="Nascimento" erro={erros.nascimento} ajuda={idade !== null ? idadeEmTexto(dados.nascimento, new Date()) : undefined}>
           {/* no iPad (Safari) o campo de data tem largura própria: min-w-0 o mantém dentro da caixa */}
           {(p) => <input {...p} type="date" autoComplete="bday" value={dados.nascimento} onChange={(e) => muda('nascimento', e.target.value)} className={`${classeEntrada(p)} min-w-0 appearance-none`} />}
         </Campo>

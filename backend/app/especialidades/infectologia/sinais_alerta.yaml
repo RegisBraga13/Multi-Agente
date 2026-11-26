@@ -1,0 +1,68 @@
+# Sinais de alerta da Infectologia — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (7 alertas com "pergunta para não deixar passar"), adaptado
+# ("são modelos para servir como uma boa base"): as perguntas viraram o porquê/ação; malária e raiva com prazo
+# "no mesmo dia"; profilaxia pós-exposição como emergência (quanto antes, até 72 h).
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: sepse
+    texto: Infecção com piora rápida, confusão nova, falta de ar, desmaio ou pouca urina
+    porque: Suspeita de sepse ou disfunção de órgão. Correlacionar com sinais vitais e perfusão.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Lactato, culturas e antibiótico na primeira hora
+  - id: meningite
+    texto: Febre com dor de cabeça forte, rigidez na nuca, confusão ou manchas que não clareiam
+    porque: Suspeita de meningite ou meningococcemia.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Não atrasar o antibiótico por causa de exames
+  - id: febre-imunossuprimido
+    texto: Febre em quem usa imunossupressor, fez quimioterapia, tem neutropenia ou transplante
+    porque: Infecção grave em imunossuprimido. Perguntar cateter ou procedimento recente.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Culturas (inclusive do cateter) e antibiótico
+  - id: dengue-alarme
+    texto: Dengue com dor forte na barriga, vômitos, sangramento, tontura ao levantar ou sonolência
+    porque: Dengue com sinais de alarme (atenção quando a febre começa a baixar).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Hidratação na veia e hemograma
+  - id: profilaxia-exposicao
+    texto: Exposição sexual ou a sangue há até 72 horas
+    porque: Janela para profilaxia pós-exposição. Anotar a hora exata, o tipo de exposição e a vacina de hepatite B.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Iniciar a profilaxia pós-exposição o quanto antes
+      - Testes rápidos de HIV, sífilis e hepatites; violência sexual = protocolo próprio
+
+  # --- 2. Prioridade ---
+  - id: febre-area-malaria
+    texto: Febre depois de estar em área de malária, inclusive na Amazônia
+    porque: Suspeita de malária. Perguntar local, datas, profilaxia e malária anterior.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Gota espessa ou teste rápido no mesmo dia
+  - id: exposicao-raiva
+    texto: Mordida, arranhão ou saliva de animal em ferida ou mucosa, ou contato com morcego
+    porque: Possível exposição à raiva. Perguntar qual animal, quando, onde, se pode ser observado e vacina anterior.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Lavar a ferida com água e sabão
+      - Profilaxia antirrábica (vacina e, se indicado, soro) conforme o animal e a exposição

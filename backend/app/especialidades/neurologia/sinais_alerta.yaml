@@ -1,0 +1,84 @@
+# Sinais de alerta da Neurologia — lista FIXA, sempre checada (não depende só da IA).
+# Fonte: lista enviada pelo autor em 26/11/2026 (Atendimento imediato · Avaliação prioritária), com as redundâncias
+# filtradas como na Cardiologia e na Gastro: "ligue 192 mesmo se melhorar" e "hora de início" vão para o porquê e a
+# ação do AVC; o desequilíbrio súbito entra no AVC; a orientação ao paciente sai da lista.
+# Só para o médico (autor, 26/11/2026: "adaptar apenas para o médico"); os campos para o paciente (início, acontecendo
+# agora, glicose medida) ficam de fora.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro — aceitos pelo autor em 26/11/2026 ("são modelos para servir como uma boa base").
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Atendimento imediato ---
+  - id: avc
+    texto: Boca torta, fraqueza ou dormência de um lado, fala ou visão alterada de repente
+    porque: Suspeita de AVC (também o desequilíbrio súbito intenso); vale mesmo se melhorou (AIT).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente (SAMU 192), mesmo se melhorou
+      - Anotar a hora de início ou a última vez em que estava bem
+  - id: cefaleia-explosiva
+    texto: Dor de cabeça que chega ao máximo em segundos ou poucos minutos
+    porque: Suspeita de hemorragia subaracnoide.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Tomografia de crânio de urgência
+  - id: convulsao
+    texto: Primeira convulsão, crise de 5 minutos ou mais, ou crises seguidas sem acordar
+    porque: Primeira crise ou estado de mal epiléptico; mais grave com dificuldade para respirar ou acordar depois.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente (SAMU 192)
+  - id: meningite
+    texto: Febre e dor de cabeça com rigidez na nuca, confusão ou muita sonolência
+    porque: Suspeita de meningite ou encefalite.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Não atrasar o antibiótico por causa de exames
+  - id: cauda-equina
+    texto: Dor lombar com perda do controle da urina ou fezes, ou dormência entre as pernas
+    porque: Síndrome da cauda equina.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência para ressonância e avaliação cirúrgica
+  - id: fraqueza-rapida
+    texto: Fraqueza nos braços ou pernas piorando rápido
+    porque: Guillain-Barré, miastenia ou compressão da medula; mais grave com dificuldade para andar, engolir ou respirar.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+
+  # --- 2. Avaliação prioritária ---
+  - id: cefaleia-nova
+    texto: Dor de cabeça nova que vem piorando, mudou de padrão ou surge com tosse ou esforço
+    porque: Cefaleia secundária a investigar (tumor, hipertensão intracraniana, outras).
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Tomografia ou ressonância de crânio
+      - Dor que chega ao máximo em segundos = emergência
+  - id: deficit-progressivo
+    texto: Fraqueza, dormência ou marcha piorando em semanas, com perda de função ou quedas
+    porque: Doença neurológica progressiva (medula, nervo, músculo ou cérebro).
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Ressonância conforme o local; eletroneuromiografia conforme o quadro
+      - Piora rápida ou dificuldade para engolir ou respirar = emergência
+  - id: declinio-cognitivo
+    texto: Memória ou outras habilidades piorando, com dificuldade nova para remédios, dinheiro ou tarefas
+    porque: Declínio cognitivo a investigar (inclusive causas tratáveis).
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Teste cognitivo breve
+      - Vitamina B12, TSH, função renal, glicemia e neuroimagem

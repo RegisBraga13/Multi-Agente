@@ -98,6 +98,24 @@ export const GRUPOS_CONDUTA = ['1. Cuidados básicos', '2. Tratamento tópico', 
 /** Os mesmos 4 grupos (cuidados, tópico, sistêmico, orientações), com os nomes de cada especialidade (autor, 24/11/2026). */
 const GRUPOS_POR_ESPECIALIDADE: Partial<Record<string, string[]>> = {
   reumatologia: ['1. Cuidados e reabilitação', '2. Tópico e infiltração', '3. Tratamento sistêmico', '4. Exames e orientações'],
+  // PROPOSTA (26/11/2026), aguardando o autor: o grupo "tópico" vira Procedimentos (cardio) e Tratamento local (gastro)
+  cardiologia: ['1. Estilo de vida e reabilitação', '2. Procedimentos', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  gastroenterologia: ['1. Dieta e hábitos', '2. Tratamento local', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  neurologia: ['1. Cuidados e reabilitação', '2. Procedimentos', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  endocrinologia: ['1. Estilo de vida', '2. Monitorização e educação', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  hematologia: ['1. Cuidados gerais', '2. Procedimentos e transfusão', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  infectologia: ['1. Cuidados gerais', '2. Vacinas e profilaxias', '3. Antimicrobianos e outros remédios', '4. Exames e orientações'],
+  oncologia: ['1. Suporte e cuidados', '2. Tratamento oncológico', '3. Controle de sintomas', '4. Exames e orientações'],
+  nefrologia: ['1. Dieta e hábitos', '2. Diálise e procedimentos', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  ginecologia: ['1. Cuidados gerais', '2. Tratamento local', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  urologia: ['1. Hábitos e cuidados', '2. Procedimentos', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  geriatria: ['1. Cuidados e reabilitação', '2. Revisão dos remédios', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  pediatria: ['1. Cuidados gerais', '2. Vacinas e prevenção', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  psiquiatria: ['1. Psicoterapia e cuidados', '2. Segurança e apoio', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  otorrinolaringologia: ['1. Cuidados gerais', '2. Tratamento local e procedimentos', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  pneumologia: ['1. Cuidados e reabilitação', '2. Inalatórios e oxigênio', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  hepatologia: ['1. Dieta e hábitos', '2. Procedimentos', '3. Tratamento medicamentoso', '4. Exames e orientações'],
+  'cirurgia-geral': ['1. Cuidados e preparo', '2. Cirurgia e procedimentos', '3. Tratamento medicamentoso', '4. Exames e orientações'],
 }
 export const gruposConduta = (especialidade?: string): string[] => GRUPOS_POR_ESPECIALIDADE[especialidade ?? ''] ?? GRUPOS_CONDUTA
 

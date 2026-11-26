@@ -1,0 +1,62 @@
+# Sinais de alerta da Geriatria — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (6 alertas), adaptado ("são modelos para servir como uma boa base"):
+# as perguntas do checklist viraram o porquê/ação. Comparar sempre com o estado habitual (confirmar com quem conhece a rotina).
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: avc-ait
+    texto: Boca torta, fraqueza de um lado, fala enrolada ou perda da visão de repente, mesmo que tenha passado
+    porque: Possível AVC ou AIT. Anotar a hora do início ou a última vez em que estava sem o déficit.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente (SAMU 192)
+      - Anotar a hora do início ou a última vez sem o déficit
+  - id: queda-trauma-craniano
+    texto: Bateu a cabeça na queda ou caiu sem ninguém ver, com desmaio, vômitos, confusão ou uso de anticoagulante
+    porque: Possível traumatismo craniano com sangramento; o risco é maior com anticoagulante ou antiagregante.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Tomografia de crânio
+  - id: sincope-queda
+    texto: Apagou antes de cair, com palpitação, dor no peito, falta de ar ou durante esforço
+    porque: Possível síncope de causa cardíaca. Perguntar se alguém viu.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Eletrocardiograma
+      - Encaminhar à emergência
+  - id: delirium
+    texto: Confusão, desatenção, sonolência ou agitação que começaram em horas ou dias e oscilam
+    porque: Possível delirium, quase sempre com causa clínica (infecção, remédio, retenção urinária, desidratação). Perguntar quando estava no estado habitual pela última vez.
+    tipo: urgencia_imediata
+    prazo: no mesmo dia
+    acao:
+      - Avaliar a causa no mesmo dia (sinais vitais, glicemia, urina, exames de sangue)
+      - Revisar remédios novos ou alterados
+      - Encaminhar à emergência se não houver como investigar no mesmo dia
+
+  # --- 2. Prioridade ---
+  - id: declinio-funcional
+    texto: Em poucos dias passou a precisar de ajuda para andar, comer, beber ou se cuidar
+    porque: Declínio funcional agudo; costuma ser infecção, desidratação, delirium ou efeito de remédio. Perguntar como era a autonomia antes.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Procurar a causa (exames de sangue, urina, revisão dos remédios)
+      - Avaliar ingestão de líquidos e engasgos novos
+  - id: violencia-negligencia
+    texto: Lesões sem explicação clara, medo de alguém em casa ou necessidades básicas sem assistência
+    porque: Possível violência ou negligência contra a pessoa idosa. Perguntar em conversa reservada.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Conversar a sós com o paciente
+      - Descrever as lesões no prontuário de forma objetiva
+      - Notificação compulsória e acionar o serviço social e a rede de proteção

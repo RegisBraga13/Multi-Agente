@@ -29,3 +29,18 @@ def test_cpf_com_espacos():
 
 def test_descrever_paciente_intersexo():
     assert descrever_paciente(40, "I", None, None) == "Paciente, 40 anos, intersexo"
+
+
+def test_idade_de_bebe_em_meses():
+    from datetime import date
+
+    from app.privacidade import idade_em_texto
+
+    hoje = date(2026, 11, 26)
+    assert idade_em_texto(date(2026, 11, 14), hoje) == "12 dias"
+    assert idade_em_texto(date(2026, 10, 26), hoje) == "1 mês"
+    assert idade_em_texto(date(2026, 3, 27), hoje) == "7 meses"
+    assert idade_em_texto(date(2024, 11, 27), hoje) == "23 meses"
+    assert idade_em_texto(date(2024, 11, 26), hoje) == "2 anos"
+    assert idade_em_texto(date(1974, 1, 1), hoje) == "52 anos"
+    assert descrever_paciente(idade_em_texto(date(2026, 3, 27), hoje), "F", None, None) == "Paciente, 7 meses, feminino"

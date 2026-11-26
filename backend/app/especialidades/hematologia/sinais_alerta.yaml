@@ -1,0 +1,69 @@
+# Sinais de alerta da Hematologia — lista FIXA, sempre checada (não depende só da IA). Só para o médico.
+# Fonte: checklist enviado pelo autor em 26/11/2026 (6 alertas com "pergunta para não deixar passar"), adaptado
+# ("são modelos para servir como uma boa base"): as perguntas do checklist viraram o porquê/ação; o tromboembolismo
+# virou dois sinais (embolia = emergência; trombose na perna = mesmo dia); febre, sangramento ou falta de ar na
+# citopenia já disparam os outros sinais.
+# `texto` curto (uma linha na tela), `porque`, `acao` e `prazo` propostos pelo engenheiro.
+revisao:
+  situacao: aprovado
+  em: 2026-11-26
+
+sinais:
+  # --- 1. Emergência ---
+  - id: febre-neutropenia
+    texto: Febre ou calafrios depois de quimioterapia ou com neutropenia conhecida
+    porque: Neutropenia febril. Perguntar temperatura máxima, data do último ciclo e última contagem de neutrófilos.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Hemograma, culturas e antibiótico na primeira hora
+  - id: sangramento-importante
+    texto: Sangramento ativo ou volumoso, vômito com sangue, fezes pretas, ou com tontura ou desmaio
+    porque: Sangramento grave. Perguntar anticoagulante ou antiagregante e a última dose.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Anotar anticoagulante ou antiagregante e a hora da última dose
+  - id: embolia-pulmonar
+    texto: Falta de ar súbita, dor no peito ao respirar, tosse com sangue ou desmaio
+    porque: Suspeita de embolia pulmonar.
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+  - id: falciforme-toracica
+    texto: Doença falciforme com febre, dor no peito, tosse ou falta de ar
+    porque: Suspeita de síndrome torácica aguda (perguntar se já teve antes).
+    tipo: urgencia_imediata
+    prazo: imediato
+    acao:
+      - Encaminhar à emergência imediatamente
+      - Saturação e radiografia de tórax
+
+  # --- 2. Prioridade ---
+  - id: trombose-perna
+    texto: Dor e inchaço novos em uma perna
+    porque: Suspeita de trombose venosa profunda.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Ultrassom com doppler no mesmo dia
+      - Falta de ar, dor ao respirar ou desmaio = emergência
+  - id: citopenia-nova
+    texto: Queda importante de hemoglobina, neutrófilos ou plaquetas, duas séries alteradas ou blastos
+    porque: Citopenia nova ou em piora (inclusive leucemia aguda). Comparar valores e datas.
+    tipo: prioridade
+    prazo: no mesmo dia
+    acao:
+      - Hemograma com esfregaço no mesmo dia
+      - Com febre, sangramento ou falta de ar = emergência
+  - id: linfonodo-constitucional
+    texto: Íngua que cresce ou não some, com febre, suor noturno ou perda de peso
+    porque: Suspeita de linfoma ou outra doença grave. Perguntar quanto peso perdeu e em quanto tempo.
+    tipo: prioridade
+    prazo: em dias
+    acao:
+      - Hemograma, LDH e imagem
+      - Biópsia do linfonodo conforme o quadro

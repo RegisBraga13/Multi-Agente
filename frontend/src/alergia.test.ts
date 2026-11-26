@@ -12,7 +12,7 @@ describe('estiloAlergia', () => {
     expect(estiloAlergia(buscarEspecialidade('geriatria')!)).toContain('bg-alerta-clinico')
     expect(estiloAlergia(buscarEspecialidade('geriatria')!)).toContain('text-branco')
   })
-  it('só dermatologia, cardiologia e pediatria têm cor parecida', () => {
-    expect(ESPECIALIDADES.filter((e) => e.alergiaContornada).map((e) => e.slug).sort()).toEqual(['cardiologia', 'dermatologia', 'pediatria'])
+  it('só dermatologia, cardiologia, hematologia e pediatria têm cor parecida', () => {
+    expect(ESPECIALIDADES.filter((e) => e.alergiaContornada).map((e) => e.slug).sort()).toEqual(['cardiologia', 'dermatologia', 'hematologia', 'pediatria'])
   })
 })
